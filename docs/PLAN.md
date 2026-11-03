@@ -10,6 +10,9 @@
 > arena latihan persona: misi → skill (draft→tested→ready) → assign gating (§13.8) ·
 > **Multi-model per persona** (persona.yaml `model`+`fallback`, §13.10) · pipeline
 > **desain→kode** di fase develop (§13.9) · keputusan D18–D21.
+> Putusan lanjutan: **Yui Designer resmi masuk roster** (D9 = 7 persona, §7.4) · Penpot
+> **wajib ter-embed di platform** — bukan app terpisah; scope v0 **ramping tapi flow utuh**
+> (tangga embed §13.9).
 >
 > **Changelog v0.4:** visi **Studio Proyek multi-agent** (§13): project = entitas first-class
 > (kode+docs+tasklist+struktur agent masing-masing) · workflow deklaratif 7 fase
@@ -99,7 +102,7 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D6 | Prioritas fitur: **MCP, memory learning-loop, delegation** | Ketiganya naik ke Fase 1; persona v1 (infrastruktur data) juga Fase 1 karena terkait erat |
 | D7 | **Pure TypeScript dikunci** (tim 3 orang, TS-dominan semua) | Monorepo TS: npm+turbo, kontrak zod, Node+Fastify, Next.js/Expo/Tauri — detail §9.4 |
 | D8 | Ekspresi persona = **animasi**; teknologi rekomendasi **Rive** (state machine interaktif, runtime web/RN/desktop) | Spec asset & pemetaan state di §7.6; fallback Spine/Lottie dilihat bersama artist |
-| D9 | Roster 6 persona (§7.4) **disetujui untuk sekarang** | Conductor + 5 spesialis; ilustrasi = workstream paralel non-blocking |
+| D9 | Roster persona (§7.4) — **7 persona per v0.5** (semula 6): Conductor + 6 spesialis — **+Yui Designer** (putusan user v0.5, §12.16) | Conductor + spesialis; ilustrasi = workstream paralel non-blocking |
 | D10 | Varian ilustrasi **gratis by usage**; monetisasi kosmetik via **skin berbayar + event musiman + achievement** (konsep baru) | Garis keras: tidak ada pay-to-win — skin murni kosmetik, keahlian persona tidak pernah dijual (§7.6) |
 | D11 | Self-host = **lisensi berbayar + wajib akun premium**; premium = entitlement akun lintas platform (sekali premium → web+mobile+desktop) | Butuh license/entitlement service + validasi saat start + grace offline (§8.3) |
 | D12 | Model = **kunci provider langsung, OpenAI-compatible saja** untuk sekarang | Tetap di belakang interface `ProviderAdapter`; adapter lain (Anthropic native, dll.) menunggu Fase 1 |
@@ -108,7 +111,7 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D15 | **Workflow = DAG deklaratif per fase** (bukan free-form graph): template 7 fase bawaan; mode `sequential`/`parallel` per fase; human gate antar fase default | Engine di atas job queue (P0-DEL-1 diperluas); builder visual node-graph menyusul Fase 3; kontrak event `workflow.*` aditif |
 | D16 | **Terminal & browser = permukaan (surface) dari tool yang sudah ada**, bukan sistem paralel: terminal = PTY di sandbox (`run_command` generalisasi), browser = server-side proxy dari `web_fetch`/browser tool | Workbench multi-tab web/desktop; pola OpenBot (browser persisten + agent control) jadi referensi; keamanan = review wajib |
 | D17 | **MCP binding granular: project × persona × tool** — koneksi sekali (OAuth, vault), turunannya di-scope per persona di project tertentu | Pain point utama user: MCP semacam Figma “menempel” sebagai skill persona yang punya tanggung jawab; audit log per binding |
-| D18 | **Penpot = mesin desain studio** (open source; menggantikan pen.dev yang tidak open source): persona desain memproduksi/mengubah file via API publik/plugin, hasil ter-embed di platform (tab Design), dan fase `develop` membaca file → generate kode | Self-host docker/cloud; binding D17; eksplorasi repo `D:\projects\penpot` menyusul (clone berjalan); ekspektasi v0 = komponen + design tokens, bukan pixel-perfect |
+| D18 | **Penpot = mesin desain studio yang TER-EMBED di platform** (open source; menggantikan pen.dev yang tidak open source): user tidak pernah keluar Your-Yui — canvas desain hidup di dalam tab Design; persona Designer memproduksi/mengubah file via API, dan fase `develop` membaca file → generate kode | Kebutuhan user v0.5: embedded, bukan app terpisah; **scope v0 ramping tapi flow utuh** (lihat tangga embed §13.9); mekanisme embed pasti (iframe scoped / komponen frontend / plugin) = hasil eksplorasi P2-DSN-1; ekspektasi hasil = komponen + design tokens, bukan pixel-perfect |
 | D19 | **TaskTree = hierarki pemantauan delegasi** (task → subtask → step → job agent) yang **diproyeksikan dari event**, bukan state kedua | TaskList (board) = flat view dari tree; refresh/reconnect = replay; status paralel/sequential terlihat dari struktur node |
 | D20 | **Dungeon = arena latihan persona**: misi (research/praktik/template) → skill dengan lifecycle `draft→tested→ready`; assign ke project digating skill readiness | Bukan fine-tuning bobot model — skill = file deklaratif + memory domain; rigor eval = kunci kualitas (blind test + curator) |
 | D21 | **Model per persona**: persona.yaml `model` + `fallback` — tiap loop (parent & delegation anak) resolve model persona masing-masing | Quirk provider dinetralkan terpusat (`normalizeToolSchema` — pelajaran GLM 1210); metering per persona (P1-CRED-4) |
@@ -496,8 +499,11 @@ Satu sesi = satu persona utama; persona lain hadir sebagai **delegation target**
 | **Yui Analyst** | data | code-exec, file | data cleaning, viz, statistics |
 | **Yui Scribe** | tulis/konten | file, web | writing styles, editing, SEO |
 | **Yui Operator** | otomasi/devops | terminal, cron, delegation | cron blueprints, monitoring |
+| **Yui Designer** (v0.5) | desain produk/UI | Penpot connector (embed), file, delegation | design-system basics, design→code handoff, Penpot operation |
 
 > Mulai 4–6 persona; Conductor + 3 spesialis adalah minimum untuk demo cerita delegation.
+> v0.5: **Yui Designer** ditambahkan (putusan user — D9 jadi 7) sebagai persona inti studio
+> desain→kode (§13.9); skill seed-nya dilatih lewat dungeon (P1-DUN, P1-PER-7).
 
 ### 7.5 Arsitektur memori per persona
 
@@ -818,6 +824,8 @@ expression states; burn-rate credit terukur per turn."
 14. **Browser embed scope (v0.4):** screenshot+DOM read-only dulu, atau interaktif penuh (klik/scroll via CDP) sejak awal? (Usulan: read-only v0 — interaktif menyusul bersama sandbox render.)
 15. **Penpot cloud vs self-host untuk v0 (v0.5):** (Usulan: token API cloud/self-host ringan dulu — cepat integrasi; self-host penuh bareng D11 self-host edition.)
 16. **Persona desain (v0.5):** tambah persona baru “Designer” (roster D9 jadi 7) atau varian Scribe? (Usulan: Designer sebagai persona inti studio — pembeda produk; final saat P2-DSN-5.)
+    → **TERJAWAB (putusan user): Designer ditambahkan** sebagai persona inti — roster D9 = 7
+    (§7.4); task P1-PER-7 + P2-DSN-5.
 17. **Threshold eval dungeon (v0.5):** siapa penentu `tested→ready`? (Usulan: blind test otomatis + spot-check manusia untuk skill kritis; threshold per kategori skill.)
 
 ---
@@ -928,6 +936,7 @@ Katalog + custom server menyusul dari P1-MCP; yang baru hanya model binding gran
 | **File** | Tree kode/docs project + viewer + diff hasil kerja agent | Di atas file tools yang sudah ada |
 | **Board** | Tasklist project (kolom todo/doing/review/done) + run workflow aktif | P1-PRJ tasklist + P2-FLOW monitoring |
 | **Docs** | Markdown deliverable, laporan run | Viewer/editor sederhana |
+| **Design** (v0.5) | Canvas Penpot **ter-embed** — hasil kerja persona Designer, live; artefak ter-link ke TaskTree | Tangga embed §13.9: v0 ramping (view + navigasi) → v2 white-label SSO |
 
 Desktop (Tauri, P2-DTL) membungkus semua tab ini native + relay eksekusi lokal; mobile
 fokus monitoring board, chat, dan approval push. Pola referensi: OpenBot (browser
@@ -1018,6 +1027,17 @@ fase `develop` : agent membaca file Penpot (API) → generate komponen kode + to
 ```
 
 - Ekspektasi v0 jujur: **komponen + design tokens**, bukan pixel-perfect app penuh.
+
+**Embed di dalam platform (kebutuhan user v0.5, D18) — bukan app/platform terpisah.**
+User tidak pernah keluar Your-Yui; canvas desain hidup di tab Design. Tangga embed —
+**mulai ramping, jaga flow utuh**:
+
+| Layer | Isi (fitur sengaja lean) | Flow yang WAJIB utuh sejak v0 |
+|---|---|---|
+| **v0 (ramping)** | Canvas Penpot ter-embed scoped ke file project (mekanisme sesuai eksplorasi DSN-1): lihat, navigasi halaman/frame, zoom — tanpa editor penuh; artefak ter-link ke node TaskTree | Agent membuat frame (fase `design`) → user melihat hasilnya live di tab → fase `develop` membaca file → komponen kode → diff — **semua tanpa keluar platform** |
+| **v1** | Sunting ringan di dalam tab (komentar, pindah objek) · multi-file project · palet subset | Iterasi manusia di tengah fase desain masuk ke alur agent |
+| **v2** | Embed dalam: frontend Penpot self-host di belakang SSO platform (white-label, tanpa login kedua, tema menyatu) | Pengalaman “desain adalah bagian dari Your-Yui”, bukan jendela pinjaman |
+
 - Eksplorasi repo `D:\projects\penpot` (clone berjalan) → laporan kemampuan API vs
   kebutuhan (task P2-DSN-1); jangan asumsi detail API sebelum dibaca.
 - Mulai dari token API (cloud/self-host ringan); self-host penuh menyusul bareng

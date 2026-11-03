@@ -30,6 +30,11 @@
 > latihan persona → skill lifecycle `draft→tested→ready` → assign gating (P1-DUN) ·
 > **pipeline desain→kode Penpot** (P2-DSN) · **multi-model per persona** (P1-MDL).
 > Detail konsep: PLAN §13.7–13.10.
+>
+> **Update sesi dev 5 (putusan user):** **Yui Designer masuk roster** (D9 = 7, PLAN §7.4 —
+> task P1-PER-7) · **Penpot wajib ter-embed di platform** (bukan app terpisah) — scope v0
+> **ramping tapi flow utuh**: agent buat (fase design) → user lihat live di tab Design →
+> develop baca → kode — tanpa keluar platform (tangga embed PLAN §13.9; D18 diperinci).
 
 ## Peta Fase & Gerbang
 
@@ -228,6 +233,7 @@
 - [ ] **P1-PER-4** Growth tracking (usage → level → varian gratis unlock) + timeline UI · *C+B · 3d*
 - [ ] **P1-PER-5** Persona acceptance test blind (perilaku beda nyata antar persona — anti "hanya kosmetik") · *S · 2d* → ≥80% penguji menebak persona benar dari output
 - [ ] **P1-PER-6** 2 persona tambahan (Analyst, Operator) sesuai roster D9 · *C · 1d*
+- [ ] **P1-PER-7** **Persona Yui Designer** (roster ke-7 — putusan user v0.5, §7.4): manifest + PERSONA.md + skill seed (design-system basics, design→code handoff, Penpot operation) + potret/tint · *C · 1d* → GET /api/personas menampilkan Designer; delegasi dari Conductor jalan
 
 ### P1-CRED (SaaS credits v1 — wajib sebelum alpha)
 
@@ -333,11 +339,12 @@
 
 ### P2-DSN — Pipeline desain→kode via Penpot (Studio §13.9; D18)
 
-- [ ] **P2-DSN-1** Eksplorasi Penpot (repo `D:\projects\penpot`, tunggu clone selesai): API publik, plugin system, export/tokens, kemampuan render → laporan `docs/refs/penpot.md` + keputusan cloud vs self-host (§12.15) · *C · 1d* → peta kemampuan API vs kebutuhan studio (produksi file oleh agent · render di platform · baca di develop)
+- [ ] **P2-DSN-1** Eksplorasi Penpot (repo `D:\projects\penpot`, tunggu clone selesai): API publik, plugin system, export/tokens, kemampuan render, **+ opsi mekanisme embed** (iframe scoped / komponen frontend / plugin — rekomendasi untuk tab Design) → laporan `docs/refs/penpot.md` + keputusan cloud vs self-host (§12.15) · *C · 1d* → peta kemampuan API vs kebutuhan studio + rekomendasi mekanisme embed
 - [ ] **P2-DSN-2** Penpot connector (token API / MCP komunitas / plugin tipis — sesuai laporan DSN-1) + binding ke persona desain (D17) · *C · 2d · dep P2-DSN-1 + P1-PRJ-5* → persona desain membuat/mengubah file Penpot dari dalam turn
-- [ ] **P2-DSN-3** Tab Design di workbench: hasil desain terlihat di platform (embed viewer / render export) + artefak ter-link ke node TaskTree · *B · 2d · dep P2-DSN-2 + P2-STU-1* → desain fase `design` terlihat tanpa keluar app
+- [ ] **P2-DSN-3** Tab Design = canvas Penpot **TER-EMBED di platform** (bukan link/app terpisah — D18): scope v0 ramping — lihat, navigasi halaman/frame, zoom, artefak ter-link ke node TaskTree; mekanisme embed sesuai DSN-1 · *B · 2d · dep P2-DSN-2 + P2-STU-1* → desain fase `design` terlihat live di tab tanpa keluar app
 - [ ] **P2-DSN-4** Pipeline design→kode: fase `develop` membaca file Penpot (shapes + tokens via API) → generate komponen kode → diff di tab File → acceptance di human gate · *A+C · 3d · dep P2-DSN-2 + P2-FLOW-2* → frame sederhana → komponen kode + diff (ekspektasi v0: komponen+tokens, bukan pixel-perfect — D18)
-- [ ] **P2-DSN-5** Persona desain final: tambah “Designer” ke roster (§12.16) + skill seed Penpot (dilatih lewat dungeon P1-DUN) · *C · 1d · dep P2-DSN-2* → persona desain lulus misi dungeon Penpot → `ready`
+- [ ] **P2-DSN-5** Persona Designer final (roster ke-7 — sudah diputuskan, lihat P1-PER-7): skill seed Penpot dilatih lewat dungeon + misi acceptance · *C · 1d · dep P2-DSN-2 + P1-PER-7* → Designer lulus misi dungeon Penpot → skill `ready`
+- [ ] **P2-DSN-6** **Golden path flow ramping** (garansi flow utuh walau fitur lean): E2E test alur — agent Designer buat frame (fase `design`) → user lihat live di tab ter-embed → fase `develop` baca → generate komponen → diff — semua tanpa keluar platform · *S · 1d · dep P2-DSN-3 + P2-DSN-4* → skrip golden path hijau 2× berturut
 
 ### G-BETA — SIAP TESTING #2 (closed beta)
 
@@ -351,7 +358,7 @@
 - [ ] **(Studio)** Run workflow 7-fase template E2E di project demo (≥2 fase paralel) — monitoring board live, resume mid-run lulus
 - [ ] **(Studio)** Terminal & browser tab: security review lulus (path, egress, SSRF, allowlist) · binding MCP Figma bekerja di satu persona saja
 - [ ] **(Studio v0.5)** TaskTree board live: pohon delegasi utuh via replay; steering per node jalan
-- [ ] **(Studio v0.5)** Pipeline Penpot E2E minimal: persona desain produksi file di fase `design` → dikonversi komponen kode di fase `develop`
+- [ ] **(Studio v0.5)** Pipeline Penpot E2E minimal **ter-embed**: canvas hidup di tab Design (user tidak keluar platform); persona Designer produksi file di fase `design` → dikonversi komponen kode di fase `develop`; golden path (P2-DSN-6) hijau
 - [ ] **(Dungeon)** ≥1 persona dilatih lewat misi research nyata (mis. Phaser) → skill `ready` → di-assign ke project; gating terlihat di roster
 - [ ] **(Multi-model)** ≥2 model berbeda aktif untuk persona berbeda dalam satu run; fallback per persona terbukti; metering per persona akurat
 
