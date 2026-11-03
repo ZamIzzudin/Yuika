@@ -23,6 +23,13 @@
 > fix provider GLM 400/1210 (normalisasi `exclusiveMinimum` boolean di tool schema) ·
 > **PLAN v0.4: pilar Studio Proyek** (§13 — D14–D17) → task baru di **P1-PRJ**, **P2-FLOW**,
 > **P2-STU**. Referensi: `D:\projects\openbot`; pen.dev menyusul di-clone (P2-STU-6).
+>
+> **Update sesi dev 4:** **pen.dev → Penpot** (pen.dev tidak open source; repo
+> `D:\projects\penpot` sedang di-clone — eksplorasi menyusul P2-DSN-1) · **PLAN v0.5**
+> (D18–D21): TaskTree & TaskList monitoring (P1-PRJ-7, P2-FLOW-7) · **Dungeon** arena
+> latihan persona → skill lifecycle `draft→tested→ready` → assign gating (P1-DUN) ·
+> **pipeline desain→kode Penpot** (P2-DSN) · **multi-model per persona** (P1-MDL).
+> Detail konsep: PLAN §13.7–13.10.
 
 ## Peta Fase & Gerbang
 
@@ -35,8 +42,9 @@
 | **P3** | Marketplace · teams · voice · self-host | ±3–4 bulan | G-P3 |
 | **P4** | Workflow builder · eval · enterprise | berkelanjutan | — |
 
-> **Track Studio (v0.4, PLAN §13):** P1-PRJ (project entity) numpang di P1; P2-FLOW + P2-STU
-> numpang di P2. Gerbang tambahan masuk G-BETA. UI hasil sesi dev 3 sudah tab-ready.
+> **Track Studio (v0.4–v0.5, PLAN §13):** P1-PRJ + P1-DUN + P1-MDL numpang di P1;
+> P2-FLOW + P2-STU + P2-DSN numpang di P2. Gerbang tambahan masuk G-BETA. UI hasil
+> sesi dev 3 sudah tab-ready.
 
 ---
 
@@ -246,6 +254,21 @@
 - [ ] **P1-PRJ-4** Tasklist per project (CRUD + status todo/doing/review/done + assignee persona) + tool `todo` agent melihat/menambah task · *C · 1d · dep P1-PRJ-1* → agent menandai task selesai dari turn
 - [ ] **P1-PRJ-5** Binding MCP project×persona (D17): koneksi server di level project, tool `mcp__<srv>__*` hanya muncul di toolset persona yang di-bind · *C · 2d · dep P1-MCP-3* → test: persona tanpa binding tidak melihat tool MCP
 - [ ] **P1-PRJ-6** UI: project picker + project home (shell v0: chat + roster sidebar) — sesi melekat ke project · *B · 2d · dep P1-PRJ-3* → buka project → sesi persona di scope project
+- [ ] **P1-PRJ-7** TaskTree model (D19): TaskNode hierarki `{id,parent,title,status,assignee,refs(job/step),artefak}` + event `task.node.*`; TaskList = proyeksi flat dari tree · *A · 1.5d · dep P1-PRJ-1* → refresh → pohon utuh dari replay (tanpa state kedua)
+
+### P1-DUN — Dungeon: arena latihan persona (Studio §13.8; D20)
+
+- [ ] **P1-DUN-1** Tipe ruang `dungeon` (bukan project produksi) + format misi `mission.yaml` (goal, sumber belajar, acceptance, skill target) + runner sesi sandbox terisolasi · *C · 1d* → misi contoh "riset dokumentasi Phaser" parse & jalan
+- [ ] **P1-DUN-2** Skill inventory per persona: registry skill milik + lifecycle `draft→tested→ready` (sambungan flow P1-MEM-3) + UI daftar “apa yang persona ini bisa” · *C+B · 2d* → persona menampilkan skill + statusnya
+- [ ] **P1-DUN-3** Eval acceptance skill: misi verifikasi buta otomatis (hanya lulus bila skill benar) + threshold `tested→ready` (§12.17) · *S · 2d · dep P1-DUN-1* → skill lulus eval berubah jadi `ready`
+- [ ] **P1-DUN-4** Dungeon UI (arena): pilih persona → jalankan misi → progress live → skill dihasilkan · *B · 2d · dep P1-DUN-1..3* → 1 persona selesai misi research nyata & skill-nya `ready`
+- [ ] **P1-DUN-5** Assign gating: roster project menampilkan skill readiness persona; persona tanpa skill fase ditandai “belum siap” · *C · 1d · dep P1-DUN-2 + P1-PRJ-3* → roster menandai siap/belum per fase
+
+### P1-MDL — Multi-model per persona (Studio §13.10; D21)
+
+- [ ] **P1-MDL-1** Kontrak & runtime: `model` + `model_fallback` per persona di persona.yaml; parent & tiap delegation anak resolve model persona masing-masing · *A · 1d* → Conductor & Scholar jalan di model berbeda dalam 1 run
+- [ ] **P1-MDL-2** Router model: map peran→model + smoke test kecil per model (tool-call 2 langkah; quirk dinetralkan `normalizeToolSchema` — pelajaran GLM 1210) · *A · 1.5d · dep P1-MDL-1* → model gagal smoke → fallback otomatis
+- [ ] **P1-MDL-3** UI settings: model picker per persona + indikator biaya + metering per persona tetap akurat (sambung P1-CRED-4) · *B · 1d · dep P1-MDL-1* → ganti model persona tanpa restart
 
 ### G-ALPHA — SIAP TESTING #1 (internal alpha)
 
@@ -296,6 +319,7 @@
 - [ ] **P2-FLOW-4** Event `workflow.started/phase.entered/phase.done/step.started/step.done/workflow.done` (aditif ke YuiEvent) + replay `?since=` · *A · 1d · dep P2-FLOW-2* → board di-refresh → state run utuh
 - [ ] **P2-FLOW-5** Monitoring board UI: kolom fase, kartu agent jalan (sequential satu kolom / paralel berdampingan), progress persona, hasil per langkah — live via SSE · *B · 3d · dep P2-FLOW-4* → 2 persona paralel terlihat jalan bersamaan + hasil terkumpul
 - [ ] **P2-FLOW-6** Steering mid-run: pause/stop step, reassign ke persona lain, suntik instruksi (pola OpenBot Stop/Resume/Reassign) · *B · 2d · dep P2-FLOW-5* → reassign mid-run tercatat di event & audit
+- [ ] **P2-FLOW-7** TaskTree board UI (D19): pohon task→subtask→step dengan kartu agent & status live; sequential/paralel terbaca dari struktur; klik node → sesi agent + steering · *B · 2d · dep P1-PRJ-7 + P2-FLOW-4* → pohon delegasi live; refresh → utuh via replay
 
 ### P2-STU — Workbench multi-tab & surface (Studio §13.5; D16)
 
@@ -304,8 +328,16 @@
 - [ ] **P2-STU-3** File tab: tree + viewer + diff hasil edit agent (di atas file tools) · *B · 2d · dep P1-PRJ-2* → diff write_file agent terlihat
 - [ ] **P2-STU-4** Browser tab v0 read-only: server-side proxy + render (screenshot/DOM), domain allowlist per project, **security review = gerbang** (risiko §11) · *A · 4d · dep P0-SEC-1* → agent membuka URL riset & user melihat halaman yang sama
 - [ ] **P2-STU-5** MCP Figma connector (OAuth P1-MCP-2; bind ke persona design — D17) · *C · 2d · dep P1-PRJ-5* → persona design membaca frame Figma di fase desain
-- [ ] **P2-STU-6** Eksplorasi **pen.dev** (repo di-clone) → laporan: konsep yang relevan (browser/MCP/agent UX) + rekomendasi adopsi · *C · 1d* → doc `docs/refs/pen-dev.md`
+- [ ] **P2-STU-6** ~~Eksplorasi pen.dev~~ → **digantikan Penpot** (pen.dev tidak open source — keputusan D18): pindah ke **P2-DSN-1** (eksplorasi repo `D:\projects\penpot`; deliverable sama: laporan referensi)
 - [ ] **P2-STU-7** Docs tab: viewer/editor markdown deliverable + ringkasan run · *B · 1d · dep P1-PRJ-6* → laporan run terbuka sebagai doc
+
+### P2-DSN — Pipeline desain→kode via Penpot (Studio §13.9; D18)
+
+- [ ] **P2-DSN-1** Eksplorasi Penpot (repo `D:\projects\penpot`, tunggu clone selesai): API publik, plugin system, export/tokens, kemampuan render → laporan `docs/refs/penpot.md` + keputusan cloud vs self-host (§12.15) · *C · 1d* → peta kemampuan API vs kebutuhan studio (produksi file oleh agent · render di platform · baca di develop)
+- [ ] **P2-DSN-2** Penpot connector (token API / MCP komunitas / plugin tipis — sesuai laporan DSN-1) + binding ke persona desain (D17) · *C · 2d · dep P2-DSN-1 + P1-PRJ-5* → persona desain membuat/mengubah file Penpot dari dalam turn
+- [ ] **P2-DSN-3** Tab Design di workbench: hasil desain terlihat di platform (embed viewer / render export) + artefak ter-link ke node TaskTree · *B · 2d · dep P2-DSN-2 + P2-STU-1* → desain fase `design` terlihat tanpa keluar app
+- [ ] **P2-DSN-4** Pipeline design→kode: fase `develop` membaca file Penpot (shapes + tokens via API) → generate komponen kode → diff di tab File → acceptance di human gate · *A+C · 3d · dep P2-DSN-2 + P2-FLOW-2* → frame sederhana → komponen kode + diff (ekspektasi v0: komponen+tokens, bukan pixel-perfect — D18)
+- [ ] **P2-DSN-5** Persona desain final: tambah “Designer” ke roster (§12.16) + skill seed Penpot (dilatih lewat dungeon P1-DUN) · *C · 1d · dep P2-DSN-2* → persona desain lulus misi dungeon Penpot → `ready`
 
 ### G-BETA — SIAP TESTING #2 (closed beta)
 
@@ -318,6 +350,10 @@
 - [ ] Load: 100 sesi paralel, p95 turn-start < 2 dtk
 - [ ] **(Studio)** Run workflow 7-fase template E2E di project demo (≥2 fase paralel) — monitoring board live, resume mid-run lulus
 - [ ] **(Studio)** Terminal & browser tab: security review lulus (path, egress, SSRF, allowlist) · binding MCP Figma bekerja di satu persona saja
+- [ ] **(Studio v0.5)** TaskTree board live: pohon delegasi utuh via replay; steering per node jalan
+- [ ] **(Studio v0.5)** Pipeline Penpot E2E minimal: persona desain produksi file di fase `design` → dikonversi komponen kode di fase `develop`
+- [ ] **(Dungeon)** ≥1 persona dilatih lewat misi research nyata (mis. Phaser) → skill `ready` → di-assign ke project; gating terlihat di roster
+- [ ] **(Multi-model)** ≥2 model berbeda aktif untuk persona berbeda dalam satu run; fallback per persona terbukti; metering per persona akurat
 
 ---
 
@@ -351,6 +387,9 @@
 | Browser embed = permukaan serangan | D16: proxy server-side default-deny, allowlist per project; review = gerbang P2-STU-4 |
 | Paralel = biaya & race | Cap concurrency per project; metering per step; replay untuk debug race (event = sumber kebenaran tunggal) |
 | Studio menggeser kernel | Urutan P1-PRJ → P2-FLOW → P2-STU; kernel tidak boleh tahu UI (contract-first) |
+| Dungeon skill basah | Eval acceptance wajib (blind test P1-PER-5) + curator (P2-AGT-3); misi hanya di sandbox; tanpa lulus = tetap `draft` (D20) |
+| Multi-model quirk & biaya | Normalisasi schema terpusat (GLM 1210) + smoke test per model + fallback per persona + metering/budget per persona (D21) |
+| Penpot ops & API berubah | Mulai token API (cloud/self-host ringan); adapter tipis + pin versi; self-host penuh bareng D11 (D18) |
 
 ## Konvensi Task Baru
 

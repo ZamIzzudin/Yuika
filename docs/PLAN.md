@@ -1,9 +1,15 @@
 # YOUR-YUI — Blueprint Platform Agent Multi-Platform
 
-> Dokumen perencanaan **v0.4** — diperbarui setelah putaran keputusan kedua (lihat §2) dan
-> perluasan visi Studio Proyek (lihat §13).
+> Dokumen perencanaan **v0.5** — diperbarui setelah putaran keputusan kedua (lihat §2),
+> perluasan visi Studio Proyek (§13), dan pilar v0.5 (§13.7–13.10).
 > Disusun dari pembelajaran mendalam `hermes-agent` (Nous Research) + brainstorming
 > konsep dari ekosistem tools lain. Status: draft aktif — eksekusi demo dimulai.
+>
+> **Changelog v0.5:** **Penpot menggantikan pen.dev** (open source — §12.11, §13.9) ·
+> **TaskTree & TaskList** sebagai struktur pemantauan delegasi (§13.7) · **Dungeon** =
+> arena latihan persona: misi → skill (draft→tested→ready) → assign gating (§13.8) ·
+> **Multi-model per persona** (persona.yaml `model`+`fallback`, §13.10) · pipeline
+> **desain→kode** di fase develop (§13.9) · keputusan D18–D21.
 >
 > **Changelog v0.4:** visi **Studio Proyek multi-agent** (§13): project = entitas first-class
 > (kode+docs+tasklist+struktur agent masing-masing) · workflow deklaratif 7 fase
@@ -39,7 +45,7 @@
 10. [Roadmap Bertahap (di-prioritas ulang)](#10-roadmap-bertahap-di-prioritas-ulas)
 11. [Risiko & Mitigasi](#11-risiko--mitigasi)
 12. [Pertanyaan Terbuka Berikutnya](#12-pertanyaan-terbuka-berikutnya)
-13. [Studio Proyek: Multi-Project Agent OS (pilar baru v0.4)](#13-studio-proyek-multi-project-agent-os-pilar-baru-v04)
+13. [Studio Proyek: Multi-Project Agent OS (pilar v0.4–v0.5)](#13-studio-proyek-multi-project-agent-os-pilar-v04v05)
 
 ---
 
@@ -102,6 +108,10 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D15 | **Workflow = DAG deklaratif per fase** (bukan free-form graph): template 7 fase bawaan; mode `sequential`/`parallel` per fase; human gate antar fase default | Engine di atas job queue (P0-DEL-1 diperluas); builder visual node-graph menyusul Fase 3; kontrak event `workflow.*` aditif |
 | D16 | **Terminal & browser = permukaan (surface) dari tool yang sudah ada**, bukan sistem paralel: terminal = PTY di sandbox (`run_command` generalisasi), browser = server-side proxy dari `web_fetch`/browser tool | Workbench multi-tab web/desktop; pola OpenBot (browser persisten + agent control) jadi referensi; keamanan = review wajib |
 | D17 | **MCP binding granular: project × persona × tool** — koneksi sekali (OAuth, vault), turunannya di-scope per persona di project tertentu | Pain point utama user: MCP semacam Figma “menempel” sebagai skill persona yang punya tanggung jawab; audit log per binding |
+| D18 | **Penpot = mesin desain studio** (open source; menggantikan pen.dev yang tidak open source): persona desain memproduksi/mengubah file via API publik/plugin, hasil ter-embed di platform (tab Design), dan fase `develop` membaca file → generate kode | Self-host docker/cloud; binding D17; eksplorasi repo `D:\projects\penpot` menyusul (clone berjalan); ekspektasi v0 = komponen + design tokens, bukan pixel-perfect |
+| D19 | **TaskTree = hierarki pemantauan delegasi** (task → subtask → step → job agent) yang **diproyeksikan dari event**, bukan state kedua | TaskList (board) = flat view dari tree; refresh/reconnect = replay; status paralel/sequential terlihat dari struktur node |
+| D20 | **Dungeon = arena latihan persona**: misi (research/praktik/template) → skill dengan lifecycle `draft→tested→ready`; assign ke project digating skill readiness | Bukan fine-tuning bobot model — skill = file deklaratif + memory domain; rigor eval = kunci kualitas (blind test + curator) |
+| D21 | **Model per persona**: persona.yaml `model` + `fallback` — tiap loop (parent & delegation anak) resolve model persona masing-masing | Quirk provider dinetralkan terpusat (`normalizeToolSchema` — pelajaran GLM 1210); metering per persona (P1-CRED-4) |
 
 ---
 
@@ -699,6 +709,10 @@ resume setelah refresh.
 ### Fase 1 — Tiga prioritas + persona v1 + credits v1 + project entity (± 8–10 minggu)
 - [ ] **P1-PRJ (v0.4): project entity** — CRUD + isolasi workspace per project + roster agent
       per project + tasklist + binding MCP per persona (detail §13.2; task di TASKS.md)
+- [ ] **P1-DUN (v0.5): dungeon v0** — misi latihan persona → skill lifecycle
+      draft→tested→ready → assign gating (§13.8)
+- [ ] **P1-MDL (v0.5): model per persona** — `model`+`fallback` di persona.yaml,
+      router + smoke test per model (§13.10)
 - [ ] **MCP**: client multi-transport + katalog kurasi ±20 + OAuth web + MCP worker tersandbox
 - [ ] **Memory learning-loop**: USER.md/MEMORY.md + nudge persist + skill-create-from-experience
       + per-domain persona memory (dasar §7.5) + `session_search`
@@ -717,6 +731,9 @@ expression states; burn-rate credit terukur per turn."
 ### Fase 2 — Multi-platform UX penuh + Studio v0 (± 10–12 minggu)
 - [ ] **P2-FLOW (v0.4): workflow engine** — DAG fase deklaratif (template 7 fase),
            sequential/paralel per fase, human gate, monitoring board live (§13.3)
+- [ ] **P2-FLOW (v0.5): TaskTree board** — pohon pemantauan delegasi + steering per node (§13.7)
+- [ ] **P2-DSN (v0.5): pipeline desain→kode via Penpot** — persona desain produksi file,
+           tab Design, generate komponen di fase develop (§13.9)
 - [ ] **P2-STU (v0.4): workbench multi-tab** — tab shell, terminal (PTY sandbox),
       file explorer, browser embed read-only, board, docs; Figma MCP (§13.5)
 - [ ] Mobile (Expo): chat, push approval, mission control, persona picker
@@ -759,6 +776,10 @@ expression states; burn-rate credit terukur per turn."
 | Embedded browser = permukaan serangan (SSRF, XSS, session leak) | Keamanan | D16: server-side proxy default-deny, domain allowlist per project, sandbox render terpisah, security review gerbang (P2-STU-4) |
 | Eksekusi paralel agent = biaya & race meledak | Biaya & correctness | Cap concurrency per project (plan); metering per-step (§8); event sourcing = sumber kebenaran tunggal; replay untuk debugging race |
 | Piringan berat studio (terminal/browser/monitor) menggeser kernel | Kualitas inti | Urutan: P1-PRJ (data) → P2-FLOW (engine+monitoring) → P2-STU (tab kaya); kernel tidak boleh tahu UI |
+| Dungeon menghasilkan skill basah/berbahaya | Skill buruk masuk project produksi | Eval acceptance wajib (blind test — pola P1-PER-5) + curator review (P2-AGT-3) + misi hanya di sandbox terisolasi; tanpa lulus eval skill tetap `draft` |
+| Multi-model = fragmentasi quirk provider & biaya meledak | Turn gagal / biaya tak terkendali | Normalisasi schema terpusat (pelajaran GLM 1210) + smoke test per model di router + fallback per persona + metering/budget per persona (P1-CRED) |
+| Penpot: ops self-host & API berubah | Integrasi desain patah | Mulai dari token API (cloud/self-host ringan); adapter tipis + pin versi; self-host penuh menyusul D11 |
+| Design→kode: ekspektasi melenceng dari realitas | Kecewa terhadap fitur unggulan | Kontrak ekspektasi v0 = komponen + tokens (D18); acceptance di human gate per fase; contoh “golden path” dirilis bersama fitur |
 
 ---
 
@@ -788,14 +809,20 @@ expression states; burn-rate credit terukur per turn."
    di Fase 2 — jangan sekarang, demo tidak butuh.)
 9. **Expiring credits?** (belum terjawab dari v0.2 — 12 bulan vs non-expiring).
 10. **Nama:** "Your-Yui" final? Cek domain/trademark sebelum branding jalan jauh.
-11. **pen.dev (v0.4):** eksplorasi repo (akan di-clone user) — komponen mana yang relevan untuk browser-embed/MCP? Catat di §13.5 setelah ditelusuri; jangan asumsi sebelum baca sumbernya.
+11. **Penpot (v0.5, menggantikan pen.dev — tidak open source):** eksplorasi repo
+    `D:\projects\penpot` (clone sedang berjalan) → kemampuan API publik/plugin/export
+    vs kebutuhan studio (produksi file oleh agent + render di platform + baca di develop).
+    Laporan → `docs/refs/penpot.md` (task P2-DSN-1). Jangan asumsi detail API sebelum baca.
 12. **Isolasi kode project (v0.4):** folder `workspace/projects/<id>/` vs git worktree vs repo penuh per project? (Usulan: folder dulu, worktree saat fitur git masuk.)
 13. **Human gate antar fase workflow (v0.4):** default selalu ada (approve sebelum fase berikut), atau per-fase opt-out? (Usulan: default ON; fase otomatis hanya untuk run unattended berjenjang kepercayaan.)
 14. **Browser embed scope (v0.4):** screenshot+DOM read-only dulu, atau interaktif penuh (klik/scroll via CDP) sejak awal? (Usulan: read-only v0 — interaktif menyusul bersama sandbox render.)
+15. **Penpot cloud vs self-host untuk v0 (v0.5):** (Usulan: token API cloud/self-host ringan dulu — cepat integrasi; self-host penuh bareng D11 self-host edition.)
+16. **Persona desain (v0.5):** tambah persona baru “Designer” (roster D9 jadi 7) atau varian Scribe? (Usulan: Designer sebagai persona inti studio — pembeda produk; final saat P2-DSN-5.)
+17. **Threshold eval dungeon (v0.5):** siapa penentu `tested→ready`? (Usulan: blind test otomatis + spot-check manusia untuk skill kritis; threshold per kategori skill.)
 
 ---
 
-## 13. Studio Proyek: Multi-Project Agent OS (pilar baru v0.4)
+## 13. Studio Proyek: Multi-Project Agent OS (pilar v0.4–v0.5)
 
 > Keputusan D14–D17. Visi: Your-Yui bukan sekadar "chat dengan persona", melainkan
 > **studio tempat banyak project hidup** — tiap project membawa kode, dokumentasi, tasklist,
@@ -803,7 +830,9 @@ expression states; burn-rate credit terukur per turn."
 > (sequential/paralel) yang bisa dimonitor; dan seluruhnya dibuka lewat **workbench
 > multi-tab** (chat, terminal, browser, file, board). Referensi hidup konsep ini:
 > **OpenBot** (`D:\projects\openbot` — desktop agent workspace dengan browser embed,
-> queue, threads, subagents) dan **pen.dev** (eksplorasi menyusul — §12.11).
+> queue, threads, subagents) dan **Penpot** (`D:\projects\penpot` — design & prototyping
+> platform open source; pengganti pen.dev yang tidak open source; eksplorasi repo
+> menyusul — §12.11).
 
 ### 13.1 Konsep inti
 
@@ -814,7 +843,11 @@ expression states; burn-rate credit terukur per turn."
 | **Workflow** | DAG deklaratif per fase: planning → perencanaan → riset → desain → develop → testing → dokumentasi → deliverable; tiap fase `sequential`/`parallel`; langkah = (persona, task) | Job queue delegation (P0-DEL-1); approval engine (human gate); event bus |
 | **Monitoring** | Board live: agent mana sedang jalan, di fase apa, paralel/sequential, progres & hasil | Event sourcing + `delegation.progress` + SSE replay — tinggal diperluas `workflow.*` |
 | **Workbench multi-tab** | Tab chat / terminal / browser / file / board / monitoring dalam satu project (web & desktop; mobile fokus monitoring+approval) | Tool sandbox `run_command`, `web_fetch`, file tools — diangkat jadi *surface* (D16) |
-| **MCP sebagai skill persona** | Koneksi MCP (mis. Figma, pen.dev) di-bind ke persona tertentu di project tertentu — "skill yang menempel pada agent yang bertanggung jawab" (D17) | MCP client + katalog + OAuth (P1-MCP); persona toolset binding |
+| **MCP sebagai skill persona** | Koneksi MCP (mis. Figma, Penpot) di-bind ke persona tertentu di project tertentu — "skill yang menempel pada agent yang bertanggung jawab" (D17) | MCP client + katalog + OAuth (P1-MCP); persona toolset binding |
+| **TaskTree** (v0.5) | Pohon pemantauan task → subtask → step → job agent; TaskList = flat view dari tree (D19) | Event sourcing + delegation.* — board = proyeksi, replay gratis |
+| **Dungeon** (v0.5) | Arena latihan persona: misi → skill baru (draft→tested→ready); persona siap di-assign setelah skill-nya lulus (D20) | Memory loop + skill-create (P1-MEM-3) + growth (P1-PER-4) |
+| **Model per persona** (v0.5) | Tiap persona jalan di model berbeda sesuai keunggulan scope tugas (D21) | Provider config per loop + adapter multi-provider (P1-INF-2) |
+| **Pipeline desain→kode** (v0.5) | Persona desain memproduksi file Penpot di fase `design`; fase `develop` membaca → generate komponen kode (D18) | MCP/API binding + file tools + workflow fase |
 
 ### 13.2 Model data (aditif terhadap skema §6)
 
@@ -915,6 +948,98 @@ persisten + agent control, queue FIFO, thread tabs, dynamic island status).
 
 Yang paling berat (jujur): keamanan browser embed, correctness DAG engine (resume/gate),
 dan biaya eksekusi paralel — ketiganya sudah masuk tabel risiko §11.
+
+### 13.7 TaskTree & TaskList — pemantauan delegasi (v0.5, D19)
+
+Satu sumber kebenaran = event stream (append-only). **TaskTree** = hierarki dekomposisi
+kerja; **TaskList** = flat view (board kolom) dari tree yang sama.
+
+```
+Project Board (TaskList — flat)
+└── TaskTree (per task aktif — pohon)
+    └── task "Riset Phaser untuk game platformer"        [doing]
+        ├── subtask "Dokumentasi Physics"  ─ agent Scholar  [running]  ← paralel
+        │     └── step: baca docs → ringkas → tulis SKILL draft
+        ├── subtask "Contoh project"        ─ agent Coder    [queued]   ← paralel
+        └── subtask "Template skor"         ─ agent Scribe   [done → artefak]
+```
+
+- **TaskNode**: `{ id, parent, title, status (todo/doing/review/done),
+  assignee (persona), refs (delegation job / workflow step), artefak }`.
+- Semua transisi lewat event (`task.node.updated`, `delegation.*`) → board di-refresh
+  / reconnect = **replay**, tanpa state kedua yang bisa drift.
+- Sequential vs paralel **terlihat dari struktur**: satu node aktif dalam satu cabang =
+  sequential; node bersaudara ber-status `running` bersamaan = paralel (cap per project).
+- Node = juga **titik steering**: klik node → buka sesi agent itu → pause/reassign (P2-FLOW-6).
+
+### 13.8 Dungeon — arena latihan persona (v0.5, D20)
+
+> Jawaban atas “apakah mungkin persona dilatih sampai siap di-assign ke project?” —
+> **ya**, karena “skill” di Your-Yui bukan bobot model, melainkan **file deklaratif
+> (SKILL.md) + memory domain persona**. Melatih = menjalankan sesi terpandu yang
+> berakhir di skill baru — tanpa infra fine-tuning sama sekali.
+
+```
+pilih persona → jalankan MISI (mission.yaml: goal, sumber belajar, acceptance,
+                        skill target — mis. “riset dokumentasi Phaser”)
+                 │  sesi sandbox terisolasi (bukan project produksi)
+                 │  agent: baca sumber → praktik → tulis SKILL draft + bukti
+                 ▼
+             SKILL lifecycle:  draft ──▶ tested ──▶ ready
+                               (hasil sesi)  (lulus eval    (boleh di-assign
+                                              acceptance)    ke project)
+                 ▼
+     Skill inventory per persona (UI: “apa yang persona ini bisa”)
+                 ▼
+     ASSIGN GATING: roster project menampilkan skill readiness —
+     persona tanpa skill yang dibutuhkan fase ditandai “belum siap”
+```
+
+- **Eval acceptance** = misi verifikasi buta (blind) yang hanya bisa lulus jika skill
+  benar + spot-check manusia untuk skill kritis; threshold = gerbang `tested → ready`
+  (pola blind test P1-PER-5).
+- Misi berulang → persona makin kaya skill (bersambung ke growth/level P1-PER-4).
+- Batas jujur: kualitas skill = fungsi rigor eval — skill basah dicegat di eval +
+  curator (P2-AGT-3), bukan dilimmpahkan ke project produksi.
+
+### 13.9 Pipeline desain → kode via Penpot (v0.5, D18)
+
+Penpot = design & prototyping platform **open source** (web; self-host docker/cloud;
+API publik + plugin system; file = data terstruktur: shapes, components, design tokens)
+> cocok diproduksi & dibaca agent. (pen.dev dicoret: tidak open source.)
+
+```
+fase `design`  : persona desain (binding Penpot — D17) membuat/mengubah file Penpot
+                 via API/connector dari dalam turn (frame, komponen, tokens)
+      ─────────▶ tab Design di platform: hasil terlihat langsung (embed viewer /
+                 render export) — user memantau tanpa keluar app
+fase `develop` : agent membaca file Penpot (API) → generate komponen kode + tokens
+                 → diff di tab File → acceptance di human gate fase
+```
+
+- Ekspektasi v0 jujur: **komponen + design tokens**, bukan pixel-perfect app penuh.
+- Eksplorasi repo `D:\projects\penpot` (clone berjalan) → laporan kemampuan API vs
+  kebutuhan (task P2-DSN-1); jangan asumsi detail API sebelum dibaca.
+- Mulai dari token API (cloud/self-host ringan); self-host penuh menyusul bareng
+  self-host edition (D11). Figma tetap opsional sebagai MCP lain (P2-STU-5).
+
+### 13.10 Multi-model per persona (v0.5, D21)
+
+Tiap persona boleh jalan di model berbeda karena model unggul di scope tugas berbeda:
+
+```
+persona.yaml:  Conductor → glm/glm-5.1        (reasoning kuat)
+               Coder      → <model kode unggul>
+               Scribe     → <model murah & cepat>
+               + model_fallback PER PERSONA (bukan hanya global YUI_MODEL_FALLBACK)
+```
+
+- Runtime: provider config **per loop** — parent dan tiap delegation anak resolve model
+  persona masing-masing (anak bisa beda model dari parent dalam satu run).
+- Quirk provider dinetralkan **terpusat** di registry (`normalizeToolSchema` — pelajaran
+  kasus GLM 400/1210) + adapter; router menjalankan smoke test kecil per model
+  (tool-call 2 langkah) sebelum dipakai — gagal → fallback otomatis.
+- Metering & attribution per persona tetap akurat (P1-CRED-4) walau model campuran.
 
 ---
 
