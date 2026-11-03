@@ -10,6 +10,7 @@ import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
+import { McpPanel } from "@/components/McpPanel";
 import { TaskDrawer } from "@/components/TaskDrawer";
 import type { PersonaInfo, PersonaState, ProjectInfo, YuiEvent } from "@yui/contracts";
 
@@ -258,6 +259,7 @@ export default function Home() {
           onCreated={loadProjects}
         />
         <PersonaPicker personas={personas} activeId={active?.id ?? null} onPick={pick} />
+        <McpPanel />
       </aside>
       <main className="yui-main">
         {!active ? (

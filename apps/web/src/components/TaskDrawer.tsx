@@ -30,16 +30,23 @@ export function TaskDrawer({
   const [title, setTitle] = useState("");
   const [pick, setPick] = useState("");
   const [role, setRole] = useState("");
+  const [mcpServer, setMcpServer] = useState("");
+  const [mcpServers, setMcpServers] = useState<{ name: string; declared: boolean }[]>([]);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
-      const [t, r] = await Promise.all([
+      const [t, r, m] = await Promise.all([
         fetch(`/api/projects/${project.id}/tasks`),
         fetch(`/api/projects/${project.id}/roster`),
+        fetch("/api/mcp/servers"),
       ]);
       if (t.ok) setTasks(((await t.json()) as { tasks: TaskItem[] }).tasks);
       if (r.ok) setRoster(((await r.json()) as { roster: RosterEntry[] }).roster);
+      if (m.ok)
+        setMcpServers(
+          ((await m.json()) as { servers: { name: string; declared: boolean }[] }).servers.filter((s) => s.declared),
+        );
     } catch {
       /* drawer refresh berikutnya */
     }
@@ -86,7 +93,17 @@ export function TaskDrawer({
     if (!persona || !role.trim() || busy) return;
     setPick("");
     setRole("");
-    void saveRoster([...roster, { personaId: persona.id, role: role.trim(), phases: [], mcp: [] }]);
+    const server = mcpServer;
+    setMcpServer("");
+    void saveRoster([
+      ...roster,
+      {
+        personaId: persona.id,
+        role: role.trim(),
+        phases: [],
+        mcp: server ? [{ server, tools: [] }] : [],
+      },
+    ]);
   }
 
   async function cycle(t: TaskItem) {
@@ -130,6 +147,12 @@ export function TaskDrawer({
                     <b>{p?.name ?? r.personaId}</b>
                     <small>{r.role}</small>
                     {r.phases.length > 0 && <em>{r.phases.join(" · ")}</em>}
+                    {r.mcp.map((b) => (
+                      <em key={b.server} className="roster-mcp">
+                        MCP:{b.server}
+                        {b.tools.length > 0 ? ` (${b.tools.length})` : ""}
+                      </em>
+                    ))}
                   </span>
                   <button
                     className="task-close"
@@ -161,6 +184,16 @@ export function TaskDrawer({
               onChange={(e) => setRole(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && assign()}
             />
+            {mcpServers.length > 0 && (
+              <select value={mcpServer} onChange={(e) => setMcpServer(e.target.value)} aria-label="Binding MCP (opsional)">
+                <option value="">Tanpa binding MCP…</option>
+                {mcpServers.map((s) => (
+                  <option key={s.name} value={s.name}>
+                    Bind MCP: {s.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <button className="btn" onClick={assign} disabled={!pick || !role.trim() || busy}>
               Assign
             </button>

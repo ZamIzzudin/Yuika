@@ -59,6 +59,10 @@ export const registry = {
   registerMany(defs: ToolDefinition[]): void {
     defs.forEach((d) => registry.register(d));
   },
+  /** Lepas tool (dipakai disconnect MCP dinamis, P1-MCP-3). */
+  unregister(name: string): boolean {
+    return tools.delete(name);
+  },
   has(name: string): boolean {
     return tools.has(name);
   },

@@ -11,6 +11,19 @@ import type { ApprovalEngine } from "./approval/engine.js";
 
 const MAX_ITERATIONS = 12;
 
+/** P1-PRJ-5 (D17): terapkan binding MCP pada daftar tool sesi — tool `mcp__*`
+ *  hanya lolos bila ada di allowlist (prefix `...__*` atau nama persis). null = blokir semua. */
+export function applyMcpBinding<T extends { name: string }>(
+  schemas: T[],
+  allowlist: string[] | null,
+): T[] {
+  return schemas.filter(
+    (t) =>
+      !t.name.startsWith("mcp__") ||
+      allowlist?.some((a) => (a.endsWith("*") ? t.name.startsWith(a.slice(0, -1)) : a === t.name)),
+  );
+}
+
 export interface LoopDeps {
   store: SessionStore;
   provider: ProviderAdapter;
@@ -18,6 +31,9 @@ export interface LoopDeps {
   workspacePath: string;
   approvals: ApprovalEngine;
   emit: Emit;
+  /** P1-PRJ-5 (D17): allowlist tool MCP untuk sesi ini (prefix `mcp__<srv>__*` / nama persis).
+   *  null/undefined = sesi tanpa binding → SEMUA tool MCP disembunyikan (fail-closed). */
+  mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
 }
 
 export class AgentLoop {
@@ -40,7 +56,8 @@ export class AgentLoop {
       { role: "system", content: session.systemPrompt },
       ...store.getMessages(sessionId),
     ];
-    const tools = registry.toolSchemas(session.toolsets);
+    // P1-PRJ-5 (D17): tool MCP hanya muncul bila persona DI-BIND di roster project.
+    const tools = applyMcpBinding(registry.toolSchemas(session.toolsets), this.deps.mcpAllowlistFor?.(session) ?? null);
 
     let usedDelegation = false;
 

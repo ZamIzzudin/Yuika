@@ -3,12 +3,13 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type RosterEntry as RosterEntryIn, type YuiEvent } from "@yui/contracts";
+import { PersonaInfo, type McpServerStatus, type RosterEntry as RosterEntryIn, type YuiEvent } from "@yui/contracts";
 import { SessionStore } from "./session/store.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
 import { OpenAICompatProvider } from "./provider/openai-compat.js";
 import { AgentLoop } from "./loop.js";
+import { registry } from "./registry.js";
 import { ApprovalEngine, resolvePendingApproval } from "./approval/engine.js";
 import { listPersonas } from "./personas/loader.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
@@ -18,7 +19,9 @@ import { registerSkillTools } from "./tools/skill-tools.js";
 import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
 import { registerTodoTools } from "./tools/todo-tools.js";
-import { connectMcpFromConfig, type McpRegistry } from "./mcp/client.js";
+import { connectMcpFromConfig, connectMcpServer, type McpCallInfo, type McpRegistry } from "./mcp/client.js";
+import { McpAuditStore } from "./mcp/audit.js";
+import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { resolvePaths, type YuiPaths } from "./paths.js";
 import { ProjectStore } from "./project/store.js";
@@ -52,11 +55,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     personasDir: paths.personasDir,
     skillsDir: paths.skillsDir,
     workspacePath: paths.workspacePath,
+    mcpAllowlistFor, // P1-PRJ-5: anak mewarisi binding MCP sesuai roster persona anak
   });
 
   // MCP dari config (demo: best-effort, lanjut jika gagal).
   // Placeholder {workspace} di-substitusi path absolut — path relatif salah resolve
   // karena CWD dev server = apps/web, bukan root repo (bug npx 404/folder hilang).
+  // P1-MCP-3: trust gate fail-closed — hanya server di-trust workspace yang connect;
+  // tiap panggilan tool MCP di-audit. Trust berubah (PUT /api/mcp/trust) =
+  // connect/disconnect dinamis + re-register handler (deny list baru).
+  const mcpAudit = new McpAuditStore(paths.dbPath);
+  const onMcpCall = (info: McpCallInfo) => mcpAudit.log(info);
   let mcpConfig: McpRegistry | null = null;
   if (paths.mcpConfigPath && fs.existsSync(paths.mcpConfigPath)) {
     mcpConfig = JSON.parse(fs.readFileSync(paths.mcpConfigPath, "utf-8")) as McpRegistry;
@@ -64,9 +73,36 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       cfg.args = cfg.args?.map((a) => a.replaceAll("{workspace}", paths.workspacePath));
     }
   }
-  void connectMcpFromConfig(mcpConfig).then((conns) => {
-    for (const c of conns) console.log(`[yui] MCP '${c.name}' terhubung (${c.toolCount} tools)`);
-  });
+  const mcpConns = new Map<string, { close: () => Promise<void>; toolNames: string[] }>();
+
+  function trustConfig() {
+    return loadTrust(paths.workspacePath);
+  }
+
+  async function disconnectMcp(name: string): Promise<void> {
+    const conn = mcpConns.get(name);
+    if (!conn) return;
+    mcpConns.delete(name);
+    conn.toolNames.forEach((t) => registry.unregister(t));
+    await conn.close().catch(() => undefined);
+  }
+
+  async function connectMcp(name: string): Promise<boolean> {
+    const cfg = mcpConfig?.mcpServers[name];
+    if (!cfg) throw new Error(`server MCP tidak dideklarasikan di mcp.json: ${name}`);
+    const entry = trustOf(trustConfig(), name);
+    if (!entry?.trusted) throw new Error(`server MCP belum di-trust: ${name}`);
+    const conn = await connectMcpServer(name, cfg, { denyTools: entry.denyTools, onCall: onMcpCall });
+    mcpConns.set(name, conn);
+    console.log(`[yui] MCP '${name}' terhubung (${conn.toolCount} tools)`);
+    return true;
+  }
+
+  // Startup: connect semua server yang sudah di-trust (via helper di atas supaya
+  // mcpConns terisi — connectMcpFromConfig hanya untuk pemakaian standalone).
+  for (const name of Object.keys(mcpConfig?.mcpServers ?? {})) {
+    void connectMcp(name).catch((e) => console.warn(`[yui] ${e instanceof Error ? e.message : e}`));
+  }
 
   function listPersonaInfos(): PersonaInfo[] {
     return listPersonas(paths.personasDir).map((p) => ({
@@ -114,6 +150,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return path.join(paths.workspacePath, project.rootPath);
   }
 
+  /** P1-PRJ-5 (D17): allowlist tool MCP sesi = binding persona di roster project.yaml.
+   *  Sesi global / persona tanpa entry roster → null → SEMUA mcp__* disembunyikan. */
+  function mcpAllowlistFor(session: { personaId: string; projectId: string | null }): string[] | null {
+    if (!session.projectId) return null;
+    const entry = loadRoster(projectRoot(session.projectId)).find((r) => r.personaId === session.personaId);
+    if (!entry?.mcp.length) return null;
+    return entry.mcp.flatMap((b) =>
+      b.tools.length ? b.tools.map((t) => `mcp__${b.server}__${t}`) : [`mcp__${b.server}__*`],
+    );
+  }
+
   function makeLoopFor(sessionId: string): AgentLoop {
     const emit = makeEmitter(store, EventBus, sessionId);
     const approvals = new ApprovalEngine(emit);
@@ -124,6 +171,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       workspacePath: effectiveWorkspace(sessionId), // P1-PRJ-2: scope per sesi
       approvals,
       emit,
+      mcpAllowlistFor, // P1-PRJ-5: binding MCP granular per project×persona
     });
   }
 
@@ -164,6 +212,36 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     ) => projectStore.updateTask(taskId, patch),
     /** TaskTree (P1-PRJ-7): pohon utuh dari replay event project — tanpa state kedua. */
     getTaskTree: (projectId: string) => taskTreeFromEvents(projectStore.listEvents(projectId)),
+    // ---- MCP trust/audit (P1-MCP-3) ----
+    /** Status semua server: deklarasi mcp.json + trust workspace + koneksi live. */
+    mcpServerStatuses: (): McpServerStatus[] => {
+      const trust = trustConfig();
+      const names = new Set([...Object.keys(mcpConfig?.mcpServers ?? {}), ...trust.servers.map((s) => s.server)]);
+      return [...names].sort().map((name) => {
+        const entry = trustOf(trust, name);
+        const conn = mcpConns.get(name);
+        return {
+          name,
+          declared: Boolean(mcpConfig?.mcpServers[name]),
+          trusted: entry?.trusted ?? false,
+          denyTools: entry?.denyTools ?? [],
+          connected: Boolean(conn),
+          toolCount: conn?.toolNames.length ?? 0,
+          tools: conn?.toolNames.map((t) => t.replace(`mcp__${name}__`, "")) ?? [],
+        };
+      });
+    },
+    /** Ubah trust (upsert file) → connect/disconnect/re-register handler deny baru. */
+    setMcpTrust: async (input: { server: string; trusted: boolean; denyTools: string[] }) => {
+      if (input.trusted && !mcpConfig?.mcpServers[input.server]) {
+        throw new Error(`server MCP tidak dideklarasikan di mcp.json: ${input.server}`);
+      }
+      upsertTrust(paths.workspacePath, input);
+      await disconnectMcp(input.server); // untrust / deny baru → re-register handler
+      if (input.trusted) await connectMcp(input.server);
+      return trustOf(trustConfig(), input.server)!;
+    },
+    mcpAuditRecent: (limit = 50) => mcpAudit.recent(limit),
     // ---- roster project (P1-PRJ-3) ----
     getProjectRoster: (projectId: string) => loadRoster(projectRoot(projectId)),
     saveProjectRoster: (projectId: string, roster: RosterEntryIn[]): RosterEntryIn[] => {

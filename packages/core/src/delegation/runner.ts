@@ -19,6 +19,8 @@ export interface DelegationDeps {
   personasDir: string;
   skillsDir: string;
   workspacePath: string;
+  /** P1-PRJ-5: allowlist MCP sesi anak (binding roster persona anak; null = tanpa). */
+  mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
 }
 
 const MAX_PARALLEL_CHILDREN = 2; // DEMO cap — P1: pool berbasis workspace + plan
@@ -80,6 +82,7 @@ export function runChildPersona(
         workspacePath: deps.workspacePath,
         approvals,
         emit: childEmit,
+        mcpAllowlistFor: deps.mcpAllowlistFor,
       });
       await loop.runTurn(childSessionId, context ? `${goal}\n\nContext:\n${context}` : goal);
       const msgs = deps.store.getMessages(childSessionId);

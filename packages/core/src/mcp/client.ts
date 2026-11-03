@@ -4,6 +4,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { z } from "zod";
+import type { McpTrustConfig } from "@yui/contracts";
 import { registry } from "../registry.js";
 
 export interface McpServerConfig {
@@ -19,10 +20,20 @@ export interface McpRegistry {
 /** Passthrough schema: parameter MCP sudah JSON Schema dari server. */
 const passthrough = z.object({}).passthrough();
 
+export interface McpCallInfo {
+  server: string;
+  tool: string;
+  sessionId: string | null;
+  ok: boolean;
+  error: string | null;
+  durationMs: number;
+}
+
 export async function connectMcpServer(
   serverName: string,
   cfg: McpServerConfig,
-): Promise<{ close: () => Promise<void>; toolCount: number }> {
+  opts: { denyTools?: string[]; onCall?: (info: McpCallInfo) => void } = {},
+): Promise<{ close: () => Promise<void>; toolCount: number; toolNames: string[] }> {
   const client = new Client({ name: "your-yui", version: "0.1.0" }, { capabilities: {} });
   const transport = new StdioClientTransport({
     command: cfg.command,
@@ -32,32 +43,70 @@ export async function connectMcpServer(
   await client.connect(transport);
 
   const { tools } = await client.listTools();
+  const registered: string[] = [];
   for (const t of tools) {
+    const fullName = `mcp__${serverName}__${t.name}`;
     registry.register({
-      name: `mcp__${serverName}__${t.name}`,
+      name: fullName,
       description: `[MCP:${serverName}] ${t.description ?? t.name}`,
       parameters: passthrough, // TODO(P1): schema nyata dari t.inputSchema
-      handler: async (args: Record<string, unknown>) => {
-        const res = await client.callTool({ name: t.name, arguments: args });
-        return { result: { content: res.content, isError: res.isError ?? false } };
+      handler: async (args: Record<string, unknown>, ctx) => {
+        // P1-MCP-3: izin granular (deny list per workspace) + audit tiap panggilan.
+        if (opts.denyTools?.includes(t.name)) {
+          const err = `tool MCP '${serverName}.${t.name}' diblokir izin workspace (denyTools)`;
+          opts.onCall?.({ server: serverName, tool: t.name, sessionId: ctx?.sessionId ?? null, ok: false, error: err, durationMs: 0 });
+          throw new Error(err);
+        }
+        const t0 = Date.now();
+        try {
+          const res = await client.callTool({ name: t.name, arguments: args });
+          const ok = !(res.isError ?? false);
+          opts.onCall?.({
+            server: serverName,
+            tool: t.name,
+            sessionId: ctx?.sessionId ?? null,
+            ok,
+            error: ok ? null : `server error: ${t.name}`,
+            durationMs: Date.now() - t0,
+          });
+          return { result: { content: res.content, isError: res.isError ?? false } };
+        } catch (err) {
+          opts.onCall?.({
+            server: serverName,
+            tool: t.name,
+            sessionId: ctx?.sessionId ?? null,
+            ok: false,
+            error: err instanceof Error ? err.message : String(err),
+            durationMs: Date.now() - t0,
+          });
+          throw err;
+        }
       },
     });
+    registered.push(fullName);
   }
   return {
     close: () => client.close(),
     toolCount: tools.length,
+    toolNames: registered,
   };
 }
 
 export async function connectMcpFromConfig(
   config: McpRegistry | null,
   log: (msg: string) => void = console.warn,
+  opts: { trust?: McpTrustConfig; onCall?: (info: McpCallInfo) => void } = {},
 ): Promise<{ name: string; close: () => Promise<void>; toolCount: number }[]> {
   const out: { name: string; close: () => Promise<void>; toolCount: number }[] = [];
   if (!config) return out;
   for (const [name, cfg] of Object.entries(config.mcpServers)) {
+    const entry = opts.trust?.servers.find((s) => s.server === name);
+    if (!entry?.trusted) {
+      log(`MCP server '${name}' SKIPPED — belum di-trust workspace ini (fail-closed, P1-MCP-3)`);
+      continue;
+    }
     try {
-      out.push({ name, ...(await connectMcpServer(name, cfg)) });
+      out.push({ name, ...(await connectMcpServer(name, cfg, { denyTools: entry.denyTools, onCall: opts.onCall })) });
     } catch (err) {
       log(`MCP server '${name}' gagal connect (demo: lanjut tanpa itu): ${err instanceof Error ? err.message : err}`);
     }

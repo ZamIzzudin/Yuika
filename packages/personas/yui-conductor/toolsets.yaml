@@ -7,7 +7,7 @@ tools:
   - list_files
   - web_fetch
   - run_command
-  - mcp__*
   - todo_list
   - todo_add
   - todo_update
+  - "mcp__*"
