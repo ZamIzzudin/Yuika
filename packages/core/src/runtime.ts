@@ -54,10 +54,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     workspacePath: paths.workspacePath,
   });
 
-  // MCP dari config (demo: best-effort, lanjut jika gagal)
+  // MCP dari config (demo: best-effort, lanjut jika gagal).
+  // Placeholder {workspace} di-substitusi path absolut — path relatif salah resolve
+  // karena CWD dev server = apps/web, bukan root repo (bug npx 404/folder hilang).
   let mcpConfig: McpRegistry | null = null;
   if (paths.mcpConfigPath && fs.existsSync(paths.mcpConfigPath)) {
     mcpConfig = JSON.parse(fs.readFileSync(paths.mcpConfigPath, "utf-8")) as McpRegistry;
+    for (const cfg of Object.values(mcpConfig.mcpServers)) {
+      cfg.args = cfg.args?.map((a) => a.replaceAll("{workspace}", paths.workspacePath));
+    }
   }
   void connectMcpFromConfig(mcpConfig).then((conns) => {
     for (const c of conns) console.log(`[yui] MCP '${c.name}' terhubung (${c.toolCount} tools)`);

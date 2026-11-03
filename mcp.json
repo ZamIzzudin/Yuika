@@ -1,12 +1,8 @@
 {
   "mcpServers": {
-    "fetch": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-fetch"]
-    },
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./workspace/reports"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "{workspace}/reports"]
     }
   }
 }
