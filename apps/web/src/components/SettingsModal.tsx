@@ -4,7 +4,7 @@
 // MCP (katalog + trust + audit — dulunya sesak di dasar sidebar), + fondasi
 // seksi setelan lain ke depan.
 import { useCallback, useEffect, useState } from "react";
-import type { ProviderSettings } from "@yui/contracts";
+import type { ModelRoutes, ProviderSettings } from "@yui/contracts";
 import { McpPanel } from "./McpPanel";
 import { Skeleton } from "./Skeleton";
 
@@ -33,6 +33,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         setCfg(c);
         setBaseUrl(c.baseUrl);
         setModel(c.model);
+        setFallback(c.fallbackModel ?? "");
       }
     } catch {
       /* coba lagi saat buka */ 
@@ -126,9 +127,10 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="glm/glm-5.1" spellCheck={false} />
                 </label>
                 <label className="settings-field">
-                  <span>Model fallback (opsional — belum dipakai runtime, P0-CORE-2)</span>
+                  <span>Model fallback (opsional — dipakai otomatis bila model utama gagal, P0-CORE-2)</span>
                   <input value={fallback} onChange={(e) => setFallback(e.target.value)} placeholder="glm/glm-5" spellCheck={false} />
                 </label>
+                <ModelRoutesEditor defaultModel={cfg.model} />
                 <div className="settings-actions">
                   <button className="btn" onClick={() => void save()} disabled={!dirty}>
                     Simpan
@@ -150,4 +152,93 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
       </div>
     </div>
   );
+}
+
+/** P1-MDL: editor model per persona — kosong = ikut default; tersimpan ke
+ *  model-overrides.json, sesi berikutnya langsung memakai route baru. */
+function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
+  const [routes, setRoutes] = useState<ModelRoutes | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [ok, setOk] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch("/api/settings/models");
+      if (r.ok) setRoutes((await r.json()) as ModelRoutes);
+    } catch {
+      /* coba lagi */
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (!routes) return <Skeleton lines={3} />;
+  return (
+    <div className="settings-field model-routes">
+      <span className="field-title">Model per persona (P1-MDL)</span>
+      <small className="dim">
+        Kosongkan untuk ikut default (<code>{defaultModel}</code>). Anak delegasi memakai model
+        persona-nya sendiri — jadi Conductor & Coder bisa berjalan di model berbeda dalam satu run.
+      </small>
+      <table className="model-table">
+        <tbody>
+          {routes.personas.map((p) => {
+            const o = routes.overrides[p.id];
+            return (
+              <tr key={p.id} data-dirty={saving === p.id ? "" : undefined}>
+                <th>{p.name}</th>
+                <td>
+                  <input
+                    defaultValue={o?.model ?? ""}
+                    placeholder={defaultModel}
+                    spellCheck={false}
+                    onBlur={(e) => void save(p.id, "model", e.target.value, routes, setRoutes, setSaving, setOk)}
+                  />
+                </td>
+                <td>
+                  <input
+                    defaultValue={o?.fallback ?? ""}
+                    placeholder={routes.defaultFallback || "—"}
+                    spellCheck={false}
+                    onBlur={(e) => void save(p.id, "fallback", e.target.value, routes, setRoutes, setSaving, setOk)}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {ok && <small className="ok">{ok}</small>}
+    </div>
+  );
+}
+
+async function save(
+  personaId: string,
+  field: "model" | "fallback",
+  value: string,
+  routes: ModelRoutes,
+  setRoutes: (m: ModelRoutes) => void,
+  setSaving: (s: string | null) => void,
+  setOk: (s: string | null) => void,
+) {
+  const cur = routes.overrides[personaId] ?? {};
+  const next = { ...cur, [field]: value.trim() } as { model?: string; fallback?: string };
+  const empty = !next.model && !next.fallback;
+  setSaving(personaId);
+  setOk(null);
+  try {
+    const r = await fetch("/api/settings/models", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ personaId, model: empty ? "" : next.model ?? "", fallback: empty ? "" : next.fallback ?? "" }),
+    });
+    if (r.ok) {
+      setRoutes((await r.json()) as ModelRoutes);
+      setOk("Tersimpan — sesi berikutnya memakai route baru.");
+    }
+  } finally {
+    setSaving(null);
+  }
 }

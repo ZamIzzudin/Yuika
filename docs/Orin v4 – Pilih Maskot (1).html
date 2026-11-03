@@ -18,7 +18,8 @@ h1{font-weight:300;font-size:1.6rem;margin:0 0 4px}
 .sub{color:var(--mute);margin:0 0 18px;font-size:.92rem}
 .stage{background:#0A0A0A;border:1px solid #222;border-radius:28px;padding:10px 8px 18px;--ink:#F2F2F2;--mute:#9A9A9A;--chip:#171717;--line:#2E2E2E;--acc:#fff;--bg:#111;color:#F2F2F2}
 svg#m{display:block;width:100%;max-width:400px;margin:0 auto;cursor:pointer;touch-action:manipulation}
-#shape{transition:fill .45s}
+#shape{transition:fill .45s,color .45s}
+.sw{width:34px;height:34px;display:block}button.pk{padding:6px;border-radius:14px;gap:0}
 .state{text-align:center;color:var(--mute);font-size:.85rem;min-height:1.4em}
 .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 10px 0}
 .lbl{width:100%;text-align:center;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:6px}
@@ -67,7 +68,7 @@ th{color:var(--ink);font-weight:600}tr:last-child td{border-bottom:0}
 
 <section>
 <h2>Rig (siap dipindah ke Rive)</h2>
-<p>Satu rig mata dipakai semua bentuk. Di Rive, buat satu artboard per bentuk dengan hirarki identik, atau satu artboard dengan number input <code>shape</code> (0–4) yang menukar Body dan warna.</p>
+<p>Satu rig mata dipakai semua bentuk. Di Rive, buat satu artboard per bentuk dengan hirarki identik, atau satu artboard dengan number input <code>shape</code> (0–14) yang menukar Body dan warna.</p>
 <div class="tw"><table>
 <tr><th>Bone / shape</th><th>Pivot</th><th>Digerakkan oleh</th></tr>
 <tr><td>Root › Body (bentuk + warna)</td><td>tengah</td><td>napas, squash-stretch, bounce, goyang</td></tr>
@@ -75,7 +76,7 @@ th{color:var(--ink);font-weight:600}tr:last-child td{border-bottom:0}
 <tr><td>Face › EyeL, EyeR (kapsul gelap)</td><td>tengah mata</td><td>tinggi, lebar, rotasi cermin, jarak, kedip</td></tr>
 <tr><td>Eye › ArcShape (mata "^")</td><td>tengah mata</td><td>cross-fade dengan kapsul saat senang</td></tr>
 </table></div>
-<p style="margin-top:14px">State machine "Mascot": <code>mood</code> (0 idle, 1 listening, 2 thinking, 3 speaking, 4 happy, 5 confused), <code>audioLevel</code> 0–100, <code>lookX</code>/<code>lookY</code> −100..100, <code>shape</code> 0–4, trigger <code>blink</code> dan <code>nod</code>.</p>
+<p style="margin-top:14px">State machine "Mascot": <code>mood</code> (0 idle, 1 listening, 2 thinking, 3 speaking, 4 happy, 5 confused), <code>audioLevel</code> 0–100, <code>lookX</code>/<code>lookY</code> −100..100, <code>shape</code> 0–14, trigger <code>blink</code> dan <code>nod</code>.</p>
 <pre>const { rive, RiveComponent } = useRive({ src: "/orin.riv", stateMachines: "Mascot", autoplay: true });
 const mood  = useStateMachineInput(rive, "Mascot", "mood");
 const shape = useStateMachineInput(rive, "Mascot", "shape");
@@ -91,9 +92,19 @@ var $=function(i){return document.getElementById(i)},Q=function(c){return docume
 var SH={
 orb:{n:'Bola',c:'#F2620F',fy:0,gs:1,es:1,gr:1,r:'50%',g:'<circle r="130"/>'},
 cloud:{n:'Awan',c:'#F5A00A',fy:8,gs:.92,es:.88,gr:.8,r:'40%',g:'<circle cx="-62" cy="22" r="64"/><circle cx="8" cy="-26" r="76"/><circle cx="76" cy="14" r="58"/><rect x="-112" y="10" width="228" height="88" rx="44"/>'},
-blob:{n:'Tetes',c:'#2B8CF0',fy:0,gs:1,es:1,gr:1,r:'45% 55% 50% 50%',g:'<path d="M-122,10C-126,-70 -50,-126 10,-122C80,-117 126,-60 122,10C117,80 60,126 0,123C-70,121 -120,80 -122,10Z"/>'},
+blob:{n:'Telur',c:'#2B8CF0',fy:0,gs:1,es:1,gr:1,r:'45% 55% 50% 50%',g:'<path d="M-122,10C-126,-70 -50,-126 10,-122C80,-117 126,-60 122,10C117,80 60,126 0,123C-70,121 -120,80 -122,10Z"/>'},
 square:{n:'Kotak',c:'#12D1A0',fy:0,gs:1.05,es:.95,gr:.9,r:'30%',g:'<rect x="-118" y="-118" width="236" height="236" rx="80"/>'},
-tri:{n:'Segitiga',c:'#F0278E',fy:36,gs:.72,es:.76,gr:.6,r:'',g:'<path d="M0,-128C22,-128 40,-98 70,-42L116,48C132,82 118,112 86,112L-86,112C-118,112 -132,82 -116,48L-70,-42C-40,-98 -22,-128 0,-128Z"/>'}
+tri:{n:'Segitiga',c:'#F0278E',fy:36,gs:.72,es:.76,gr:.6,r:'',g:'<path d="M0,-128C22,-128 40,-98 70,-42L116,48C132,82 118,112 86,112L-86,112C-118,112 -132,82 -116,48L-70,-42C-40,-98 -22,-128 0,-128Z"/>'},
+pill:{n:'Kapsul',c:'#2BC4D8',fy:0,gs:1.25,es:.95,gr:1.2,g:'<g transform="rotate(-6)"><rect x="-135" y="-80" width="270" height="160" rx="80"/></g>'},
+bean:{n:'Kacang',c:'#A653C8',fy:-20,gs:.95,es:.9,gr:.8,g:'<path d="M-70,-112C-20,-132 55,-125 88,-80C115,-42 100,-5 72,20C50,40 48,62 62,80C82,105 70,130 35,135C-30,142 -105,100 -118,28C-126,-30 -108,-92 -70,-112Z"/>'},
+drop:{n:'Tetes',c:'#FF7662',fy:30,gs:.8,es:.85,gr:.6,g:'<path d="M0,-132C20,-100 98,-30 108,30C118,92 70,128 0,128C-70,128 -118,92 -108,30C-98,-30 -20,-100 0,-132Z"/>'},
+star:{n:'Bintang',c:'#8FDB6F',fy:6,gs:.72,es:.75,gr:.5,g:'<polygon points="0,-108 30.6,-42.1 102.7,-33.4 49.5,16.1 63.5,87.4 0,52 -63.5,87.4 -49.5,16.1 -102.7,-33.4 -30.6,-42.1" stroke="currentColor" stroke-width="26" stroke-linejoin="round"/>'},
+flower:{n:'Bunga',c:'#C48DEB',fy:0,gs:1,es:.95,gr:.9,g:'<circle r="82"/><circle cx="78" cy="0" r="48"/><circle cx="55" cy="55" r="48"/><circle cx="0" cy="78" r="48"/><circle cx="-55" cy="55" r="48"/><circle cx="-78" cy="0" r="48"/><circle cx="-55" cy="-55" r="48"/><circle cx="0" cy="-78" r="48"/><circle cx="55" cy="-55" r="48"/>'},
+hex:{n:'Segi enam',c:'#A8D83E',fy:0,gs:1,es:.95,gr:.85,g:'<polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50" stroke="currentColor" stroke-width="30" stroke-linejoin="round"/>'},
+trap:{n:'Trapesium',c:'#E8503A',fy:8,gs:.95,es:.9,gr:.8,g:'<polygon points="-52,-96 52,-96 100,98 -100,98" stroke="currentColor" stroke-width="30" stroke-linejoin="round"/>'},
+diamond:{n:'Berlian',c:'#3A4FB0',fy:0,gs:.8,es:.85,gr:.6,g:'<g transform="rotate(45)"><rect x="-88" y="-88" width="176" height="176" rx="40"/></g>'},
+dome:{n:'Kubah',c:'#E6DC3A',fy:6,gs:1.05,es:.95,gr:.9,g:'<path d="M-125,95C-125,-60 -70,-125 0,-125C70,-125 125,-60 125,95Q125,120 100,120L-100,120Q-125,120 -125,95Z"/>'},
+tube:{n:'Tabung',c:'#1F9A9A',fy:-18,gs:.75,es:.95,gr:.6,g:'<rect x="-75" y="-125" width="150" height="250" rx="75"/>'}
 };
 var cur0=(function(){try{return localStorage.getItem('orinShape')}catch(e){return null}})();
 var shapeKey=SH[cur0]?cur0:'orb',sc={fy:0,gs:1,es:1,gr:1};
@@ -112,14 +123,15 @@ var cur=mk({}),tgt=S.idle,name='idle',t0=performance.now(),last=t0,blink=0,nextB
 lvl=0,lvlT=0,mx=0,my=0,micOn=false,micLevel=0,ana=null,sm=0;
 function set(n){name=n;tgt=S[n];$('st').textContent=n;
 Q('#chips button').forEach(function(b){b.classList.toggle('on',b.dataset.s===n)})}
-function pick(k,fromUser){shapeKey=k;var d=SH[k];$('shape').innerHTML=d.g;$('shape').style.fill=d.c;
+function pick(k,fromUser){shapeKey=k;var d=SH[k];$('shape').innerHTML=d.g;$('shape').style.fill=d.c;$('shape').style.color=d.c;
 ['r1','r2','halo'].forEach(function(i){$(i).setAttribute('stroke',d.c)});
 Q('#shapes button').forEach(function(b){b.classList.toggle('on',b.dataset.k===k)});
 if(fromUser){bump=1;try{localStorage.setItem('orinShape',k)}catch(e){}}}
 Object.keys(S).forEach(function(n){var b=document.createElement('button');b.textContent=n;b.dataset.s=n;
 b.onclick=function(){set(n)};$('chips').appendChild(b)});
 Object.keys(SH).forEach(function(k){var d=SH[k],b=document.createElement('button');b.dataset.k=k;
-b.innerHTML='<span class="dot" style="background:'+d.c+';border-radius:'+d.r+';'+(k==='tri'?'clip-path:polygon(50% 0,100% 100%,0 100%)':'')+'"></span>'+d.n;
+b.className='pk';b.title=d.n;b.setAttribute('aria-label',d.n);
+b.innerHTML='<svg class="sw" viewBox="-140 -140 280 280" aria-hidden="true"><g style="fill:'+d.c+';color:'+d.c+'">'+d.g+'</g></svg>';
 b.onclick=function(){pick(k,true)};$('shapes').appendChild(b)});
 document.addEventListener('pointermove',function(e){var r=$('m').getBoundingClientRect();
 mx=Math.max(-1,Math.min(1,(e.clientX-r.left-r.width/2)/(r.width*.7)));

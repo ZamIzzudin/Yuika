@@ -138,4 +138,78 @@ describe("AgentLoop (fake provider)", () => {
     expect(states).toEqual(["thinking", "error"]);
     store.close();
   });
+
+  // P0-CORE-2: primary gagal (setelah retry internal) → fallback model SEKALI,
+  // lalu iterasi berikutnya TETAP di fallback (jangan bolak-balik).
+  it("P0-CORE-2: primary mati → fallback aktif otomatis + markUnhealthy dipanggil", async () => {
+    resetRegistryForTests();
+    class FlakyProvider implements ProviderAdapter {
+      readonly id = "flaky";
+      public calls: ChatRequest[] = [];
+      constructor(private fallbackOk: string) {}
+      async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
+        this.calls.push(req);
+        if (req.model !== this.fallbackOk) throw new Error(`model ${req.model} mati`);
+        onChunk({ type: "text_delta", delta: "dari fallback" });
+        const done = { type: "done" as const, finishReason: "stop" as const, text: "dari fallback", toolCalls: [] };
+        onChunk(done);
+        return done;
+      }
+    }
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-fb-"));
+    const store = new SessionStore(path.join(dir, "t.db"));
+    const events: YuiEvent[] = [];
+    const makeEmit = (sid: string) => (draft: EventDraft) => events.push(store.appendEvent(sid, draft));
+    const sid = "s_fb";
+    store.createSession(sid, "yui-coder", "SYS", []);
+    const unhealthy: string[] = [];
+    const provider = new FlakyProvider("glm/glm-5");
+    const loop = new AgentLoop({
+      store,
+      provider,
+      model: "glm/glm-5.1",
+      routeModel: () => ({
+        model: "glm/glm-5.1",
+        fallback: "glm/glm-5",
+        markUnhealthy: (m) => unhealthy.push(m),
+      }),
+      workspacePath: dir,
+      approvals: new ApprovalEngine(makeEmit(sid)),
+      emit: makeEmit(sid),
+    });
+    await loop.runTurn(sid, "kerjakan");
+    // attempt 1 = primary (gagal), attempt 2 = fallback (sukses)
+    expect(provider.calls.map((c) => c.model)).toEqual(["glm/glm-5.1", "glm/glm-5"]);
+    expect(unhealthy).toEqual(["glm/glm-5.1"]);
+    expect(events.some((e) => e.type === "session.error")).toBe(false);
+    const msg = store.getMessages(sid).find((m) => m.role === "assistant");
+    expect(msg?.content).toContain("dari fallback");
+    store.close();
+  });
+
+  // P1-MDL-1: loop memakai model dari routeModel(personaId), bukan deps.model.
+  it("P1-MDL-1: routeModel per persona menentukan model sesi", async () => {
+    resetRegistryForTests();
+    const provider = new FakeProvider([
+      { deltas: ["ok"], done: { type: "done", finishReason: "stop", text: "ok", toolCalls: [] } },
+    ]);
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-pm-"));
+    const store = new SessionStore(path.join(dir, "t.db"));
+    const events: YuiEvent[] = [];
+    const makeEmit = (sid: string) => (draft: EventDraft) => events.push(store.appendEvent(sid, draft));
+    const sid = "s_pm";
+    store.createSession(sid, "yui-scholar", "SYS", []);
+    const loop = new AgentLoop({
+      store,
+      provider,
+      model: "glm/glm-5.1",
+      routeModel: () => ({ model: "glm/glm-5" }),
+      workspacePath: dir,
+      approvals: new ApprovalEngine(makeEmit(sid)),
+      emit: makeEmit(sid),
+    });
+    await loop.runTurn(sid, "halo");
+    expect(provider.calls[0]!.model).toBe("glm/glm-5");
+    store.close();
+  });
 });

@@ -15,6 +15,9 @@ const AssetSpec = z.object({
 
 const ModelRoute = z.object({
   quality: z.enum(["low", "medium", "high"]),
+  /** P1-MDL-1: nama model konkret (OpenAI-compatible id). Kosong = default env YUI_MODEL. */
+  name: z.string().optional(),
+  fallback: z.string().optional(),
 });
 
 const MemoryPolicy = z.object({

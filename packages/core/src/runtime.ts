@@ -30,6 +30,7 @@ import { registerMemoryTools } from "./tools/memory-tools.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
 import { findUvx, installUv } from "./mcp/uv.js";
+import { buildModelRouter, loadModelOverrides, saveModelOverride } from "./model-router.js";
 import { acceptDraft, listDrafts, rejectDraft, updateDraft } from "./skills/manager.js";
 import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
@@ -61,6 +62,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   let provider = new OpenAICompatProvider({ baseUrl: cfg.provider.baseUrl, apiKey: cfg.provider.apiKey });
   let providerBaseUrl = cfg.provider.baseUrl;
   let model = cfg.provider.model;
+  // P1-MDL-1: override per persona (diedit di Settings) — file JSON di samping DB.
+  const modelOverridesFile = path.join(path.dirname(paths.dbPath), "model-overrides.json");
 
   // tools core (sekali per proses)
   registerFileTools();
@@ -70,6 +73,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({ sessionStore: store, projects: projectStore, workspacePath: paths.workspacePath });
   // Objek deps delegasi DI-MUTASI saat provider swap (spread terjadi di call time).
+  // P1-MDL-1: router model per persona — override file (Settings) → persona.yaml → default.
+  const modelRouter = buildModelRouter({
+    defaultModel: () => model, // getter: default bisa di-swap panas (updateProviderSettings)
+    defaultFallback: process.env.YUI_MODEL_FALLBACK,
+    personasDir: paths.personasDir,
+    overridesFile: modelOverridesFile,
+  });
+  const routeModelFor = (personaId: string) => ({ ...modelRouter.route(personaId), markUnhealthy: modelRouter.markUnhealthy });
   const delegateDeps: Parameters<typeof registerDelegateTool>[0] = {
     store,
     bus: EventBus,
@@ -83,6 +94,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     skillsDir: paths.skillsDir,
     workspacePath: paths.workspacePath,
     workspaceGlobalPath: paths.workspacePath, // USER.md selalu global walau delegasi menimpa workspacePath
+    routeModel: routeModelFor, // P1-MDL-1: anak resolve model persona-nya sendiri
     mcpAllowlistFor, // P1-PRJ-5: anak mewarisi binding MCP sesuai roster persona anak
   };
   registerDelegateTool(delegateDeps);
@@ -246,6 +258,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       store,
       provider,
       model,
+      // P1-MDL-1: model per persona (override Settings → persona.yaml → default)
+      // + fallback P0-CORE-2 dengan cooldown 5 mnt.
+      routeModel: (personaId) => ({ ...modelRouter.route(personaId), markUnhealthy: modelRouter.markUnhealthy }),
       workspacePath: effectiveWorkspace(sessionId), // P1-PRJ-2: scope per sesi
       approvals,
       emit,
@@ -312,9 +327,24 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getProviderSettings: () => ({
       baseUrl: providerBaseUrl,
       model,
+      fallbackModel: process.env.YUI_MODEL_FALLBACK ?? "",
       hasApiKey: Boolean(process.env.YUI_API_KEY),
       keyPreview: process.env.YUI_API_KEY ? `…${process.env.YUI_API_KEY.slice(-4)}` : "",
     }),
+    // P1-MDL: model per persona — override untuk UI Settings (sumber: file JSON).
+    getModelRoutes: () => ({
+      defaultModel: model,
+      defaultFallback: process.env.YUI_MODEL_FALLBACK ?? "",
+      overrides: loadModelOverrides(modelOverridesFile),
+      personas: listPersonas(paths.personasDir).map((p) => ({ id: p.manifest.id, name: p.manifest.name })),
+    }),
+    /** Simpan override model satu persona ("" = hapus → ikut default). loopCache.clear()
+     *  supaya sesi baru langsung memakai route baru. */
+    updateModelRoute: (personaId: string, o: { model?: string; fallback?: string }) => {
+      if (!listPersonas(paths.personasDir).some((p) => p.manifest.id === personaId)) throw new Error(`persona ${personaId} tidak dikenal`);
+      saveModelOverride(modelOverridesFile, personaId, o);
+      loopCache.clear();
+    },
     /** Update provider/model: swap in-memory (sesi baru langsung pakai; loopCache
      *  dikosongkan) + persist ke .env agar bertahan restart. apiKey kosong = keep. */
     updateProviderSettings: (input: { baseUrl?: string; apiKey?: string; model?: string; fallbackModel?: string | null }) => {

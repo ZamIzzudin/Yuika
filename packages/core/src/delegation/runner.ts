@@ -7,7 +7,7 @@ import type { SessionStore } from "../session/store.js";
 import type { Emit } from "../session/emit.js";
 import type { EventBus } from "../bus.js";
 import type { ProviderAdapter } from "../provider/adapter.js";
-import { AgentLoop } from "../loop.js";
+import { AgentLoop, type LoopDeps } from "../loop.js";
 import { makeApprovalEngineForSession, createSessionWithPrompt } from "../runtime-helpers.js";
 import { memoryPromptSection } from "../memory/manager.js";
 import { listPersonas } from "../personas/loader.js";
@@ -17,6 +17,8 @@ export interface DelegationDeps {
   bus: typeof EventBus;
   provider: ProviderAdapter;
   model: string;
+  /** P1-MDL-1: teruskan ke loop anak — tiap anak resolve model persona-nya sendiri. */
+  routeModel?: LoopDeps["routeModel"];
   personasDir: string;
   skillsDir: string;
   workspacePath: string,
@@ -89,6 +91,7 @@ export function runChildPersona(
         store: deps.store,
         provider: deps.provider,
         model: deps.model,
+        routeModel: deps.routeModel,
         workspacePath: deps.workspacePath,
         approvals,
         emit: childEmit,

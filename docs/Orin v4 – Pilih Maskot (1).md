@@ -10,7 +10,7 @@ Ekspresi
 
 ## Rig (siap dipindah ke Rive)
 
-Satu rig mata dipakai semua bentuk. Di Rive, buat satu artboard per bentuk dengan hirarki identik, atau satu artboard dengan number input `shape` (0–4) yang menukar Body dan warna.
+Satu rig mata dipakai semua bentuk. Di Rive, buat satu artboard per bentuk dengan hirarki identik, atau satu artboard dengan number input `shape` (0–14) yang menukar Body dan warna.
 
 | Bone / shape | Pivot | Digerakkan oleh |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Satu rig mata dipakai semua bentuk. Di Rive, buat satu artboard per bentuk denga
 | Face › EyeL, EyeR (kapsul gelap) | tengah mata | tinggi, lebar, rotasi cermin, jarak, kedip |
 | Eye › ArcShape (mata "^") | tengah mata | cross-fade dengan kapsul saat senang |
 
-State machine "Mascot": `mood` (0 idle, 1 listening, 2 thinking, 3 speaking, 4 happy, 5 confused), `audioLevel` 0–100, `lookX`/`lookY` −100..100, `shape` 0–4, trigger `blink` dan `nod`.
+State machine "Mascot": `mood` (0 idle, 1 listening, 2 thinking, 3 speaking, 4 happy, 5 confused), `audioLevel` 0–100, `lookX`/`lookY` −100..100, `shape` 0–14, trigger `blink` dan `nod`.
 
 ```
 const { rive, RiveComponent } = useRive({ src: "/orin.riv", stateMachines: "Mascot", autoplay: true });

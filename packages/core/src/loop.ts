@@ -1,7 +1,7 @@
 // @yui/core — agent turn loop (pola fase Hermes §4.1, versi demo linear):
 // assembly → api_call → tool_round → (iterate) → finalizer.
-// TODO(P0) lihat TASKS.md: interrupt/AbortSignal end-to-end, retry+fallback model,
-// repetition guard, iteration budget proper, compression, celebrating detection.
+// TODO(P0) lihat TASKS.md: interrupt/AbortSignal end-to-end (P0-CORE-1),
+// compression v0 (P0-CORE-4), celebrating detection. Fallback model // repetition guard, iteration budget proper, compression, celebrating detection. guard repetisi: DONE dev 9.
 import { randomUUID } from "node:crypto";
 import type { ProviderAdapter, InternalMessage, ToolCallRequest } from "./provider/adapter.js";
 import { registry } from "./registry.js";
@@ -36,7 +36,11 @@ export function applyMcpBinding<T extends { name: string }>(
 export interface LoopDeps {
   store: SessionStore;
   provider: ProviderAdapter;
+  /** Model default sesi (env/Settings). Bisa dioverride per persona via `routeModel`. */
   model: string;
+  /** P1-MDL-1: resolusi model PER PERSONA (override Settings → persona.yaml → default).
+   *  Mengembalikan juga fallback model — P0-CORE-2: provider mati → fallback otomatis. */
+  routeModel?: (personaId: string) => { model: string; fallback?: string; markUnhealthy?: (model: string) => void };
   workspacePath: string;
   approvals: ApprovalEngine;
   emit: Emit;
@@ -50,9 +54,12 @@ export class AgentLoop {
 
   async runTurn(sessionId: string, userText: string): Promise<void> {
     const t0 = Date.now();
-    const { store, provider, model, emit } = this.deps;
+    const { store, provider, emit } = this.deps;
     const session = store.getSession(sessionId);
     if (!session) throw new Error(`session ${sessionId} tidak ditemukan`);
+    // P1-MDL-1: model sesi ini = route persona (override/persona.yaml) atau default.
+    const route = this.deps.routeModel?.(session.personaId) ?? { model: this.deps.model };
+    let model = route.model;
 
     const turnId = `t_${randomUUID()}`;
 
@@ -77,18 +84,34 @@ export class AgentLoop {
     let repeatRounds = 0;
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
-      // 3) api phase
-      let done;
+      // 3) api phase — rantai attempt: primary → fallback (P0-CORE-2). Provider
+      // sudah retry transien ×2 di dalam (maxRetries); sampai sini = model itu
+      // benar-benar gagal → tandai unhealthy (cooldown) & coba fallback SEKALI.
+      let done: Awaited<ReturnType<ProviderAdapter["chatStream"]>> | undefined;
       const tProvider = Date.now();
-      try {
-        done = await provider.chatStream({ model, messages, tools }, (chunk) => {
-          if (chunk.type === "text_delta") emit({ type: "message.delta", turnId, delta: chunk.delta });
-        });
-      } catch (err) {
-        // TODO(P0): retry + fallback model (YUI_MODEL_FALLBACK)
+      const attempts = [model, route.fallback].filter((m, i, a): m is string => !!m && a.indexOf(m) === i);
+      let lastErr: unknown;
+      for (let ai = 0; ai < attempts.length; ai++) {
+        try {
+          const attemptModel = attempts[ai]!;
+          done = await provider.chatStream({ model: attemptModel, messages, tools }, (chunk) => {
+            if (chunk.type === "text_delta") emit({ type: "message.delta", turnId, delta: chunk.delta });
+          });
+          if (ai > 0) {
+            trace(`turn=${turnId.slice(0, 10)} FALLBACK AKTIF: ${attempts[0]} → ${attemptModel} (cooldown 5 mnt)`);
+            model = attemptModel; // iterasi berikutnya tetap di fallback (jangan bolak-balik)
+          }
+          lastErr = undefined;
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (ai < attempts.length - 1) route.markUnhealthy?.(attempts[ai]!);
+        }
+      }
+      if (lastErr || !done) {
         emit({
           type: "session.error",
-          message: err instanceof Error ? err.message : String(err),
+          message: lastErr instanceof Error ? lastErr.message : String(lastErr ?? "provider tanpa respons"),
           recoverable: false,
         });
         emit({ type: "persona.state", personaId: session.personaId, state: "error" });
@@ -174,7 +197,7 @@ export class AgentLoop {
         const personaName = `Yui ${short.charAt(0).toUpperCase()}${short.slice(1)}`;
         void runLearnNudge({
           provider: this.deps.provider,
-          model: this.deps.model,
+          model,
           personaName,
           transcript: messages,
           sessionId,
