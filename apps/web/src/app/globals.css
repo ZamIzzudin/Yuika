@@ -1025,15 +1025,33 @@ html, body {
 .skill-usage { margin-left: 8px; color: var(--yui-text-dim); font-weight: 400; font-size: 11px; }
 
 /* ── Galeri 15 bentuk Orin (dev 10) ──────────────────────────────── */
-.shape-toggle { margin-top: var(--yui-space-3); }
-.shape-gallery {
-  display: flex; flex-wrap: wrap; gap: var(--yui-space-2); justify-content: center;
-  max-width: 720px; margin-top: var(--yui-space-3);
+/* ── Kartu & modal galeri 15 bentuk Orin (dev 10) ────────────────── */
+.shape-card .shape-trio { display: flex; align-items: center; gap: 2px; height: 44px; }
+.shape-card .shape-trio svg { opacity: 0.95; }
+.shape-card .shape-trio svg:nth-child(2) { margin: 0 -7px; }
+.shape-modal {
+  width: min(680px, 94vw); max-height: min(620px, 88vh);
+  display: flex; flex-direction: column;
+  background: var(--yui-glass); backdrop-filter: var(--yui-glass-blur);
+  -webkit-backdrop-filter: var(--yui-glass-blur);
+  border: 1px solid var(--yui-glass-border); border-radius: var(--yui-radius-xl);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.shape-modal-hint {
+  margin: 0; padding: var(--yui-space-3) var(--yui-space-5) 0;
+  color: var(--yui-text-dim); font-size: var(--yui-text-sm);
+}
+.shape-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--yui-space-2);
+  padding: var(--yui-space-4) var(--yui-space-5) var(--yui-space-5);
+  overflow-y: auto;
 }
 .shape-cell {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
   border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
-  padding: var(--yui-space-2) var(--yui-space-2) 4px; cursor: default;
+  padding: var(--yui-space-2) 4px;
 }
 .shape-cell[data-owned] { border-color: var(--yui-accent); }
+.shape-cell b { font-weight: 600; font-size: var(--yui-text-sm); }
 .shape-cell small { color: var(--yui-text-dim); font-size: 11px; }

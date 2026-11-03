@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PersonaInfo } from "@yui/contracts";
 import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
 
@@ -34,6 +34,7 @@ export function PersonaFace({ personaId, size = 22 }: { personaId: string; size?
 
 /** Kartu persona besar untuk pemilihan di tengah layar (scope Workspace). */
 export function PersonaGrid({ personas, onPick }: { personas: PersonaInfo[]; onPick: (p: PersonaInfo) => void }) {
+  const [showShapes, setShowShapes] = useState(false);
   return (
     <>
       <div className="persona-grid">
@@ -46,39 +47,67 @@ export function PersonaGrid({ personas, onPick }: { personas: PersonaInfo[]; onP
             <p>{p.description}</p>
           </button>
         ))}
+        {/* Kartu katalog bentuk — satu sel grid, ukurannya identik kartu persona */}
+        <button className="persona-card shape-card" onClick={() => setShowShapes(true)}>
+          <span className="face shape-trio" aria-hidden>
+            {(["pill", "star", "flower"] as const).map((k) => {
+              const s = SHAPES[k];
+              return (
+                <svg key={k} width={30} height={30} viewBox="-150 -150 300 300" focusable="false">
+                  <g fill={s.color} style={{ color: s.color }}>
+                    {s.geom}
+                  </g>
+                </svg>
+              );
+            })}
+          </span>
+          <b>15 Bentuk Orin</b>
+          <p>Katalog bentuk maskot — identitas persona mendatang.</p>
+        </button>
       </div>
-      <ShapeGallery />
+      {showShapes && <ShapeGalleryModal onClose={() => setShowShapes(false)} />}
     </>
   );
 }
 
-/** Galeri 15 bentuk Orin (dev 10) — verifikasi render + referensi pilihan
- *  identitas persona mendatang (Analyst, Operator, dst.). Klik = tidak beraksi
- *  (pemetaan persona di PERSONA_SHAPE; pemilihan bebas user menyusul). */
-function ShapeGallery() {
-  const [open, setOpen] = useState(false);
-  if (!open)
-    return (
-      <button className="btn secondary shape-toggle" onClick={() => setOpen(true)}>
-        Lihat 15 bentuk Orin
-      </button>
-    );
+/** Modal galeri 15 bentuk Orin (dev 10) — verifikasi render + referensi
+ *  pilihan identitas persona mendatang (Analyst, Operator, dst.). Pemetaan
+ *  persona ada di PERSONA_SHAPE; pemilihan bebas user menyusul. */
+function ShapeGalleryModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   return (
-    <div className="shape-gallery" aria-label="Galeri bentuk maskot Orin">
-      {SHAPE_ORDER.map((k) => {
-        const s = SHAPES[k];
-        const owner = Object.entries(PERSONA_SHAPE).find(([, v]) => v === k)?.[0];
-        return (
-          <div key={k} className="shape-cell" data-owned={owner ? "" : undefined} title={owner ? `${s.name} — dipakai ${owner}` : `${s.name} (bebas)`}>
-            <svg width={54} height={54} viewBox="-150 -150 300 300" aria-hidden focusable="false">
-              <g fill={s.color} style={{ color: s.color }}>
-                {s.geom}
-              </g>
-            </svg>
-            <small>{s.name}</small>
-          </div>
-        );
-      })}
+    <div className="settings-overlay" role="dialog" aria-modal="true" aria-label="Galeri bentuk Orin" onClick={onClose}>
+      <div className="shape-modal" onClick={(e) => e.stopPropagation()}>
+        <header className="settings-head">
+          <b>15 Bentuk Orin</b>
+          <button className="settings-close" onClick={onClose} aria-label="Tutup">✕</button>
+        </header>
+        <p className="shape-modal-hint">
+          Satu rig mata dipakai semua bentuk — urutan = indeks <code>shape</code> 0–14 di Rive. Bertanda = sudah
+          dipakai persona; sisanya bebas untuk persona mendatang.
+        </p>
+        <div className="shape-grid">
+          {SHAPE_ORDER.map((k, i) => {
+            const s = SHAPES[k];
+            const owner = Object.entries(PERSONA_SHAPE).find(([, v]) => v === k)?.[0];
+            return (
+              <div key={k} className="shape-cell" data-owned={owner ? "" : undefined}>
+                <svg width={64} height={64} viewBox="-150 -150 300 300" aria-hidden focusable="false">
+                  <g fill={s.color} style={{ color: s.color }}>
+                    {s.geom}
+                  </g>
+                </svg>
+                <b>{s.name}</b>
+                <small>{owner ? owner.replace("yui-", "yui · ") : `bebas · ${i}`}</small>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
