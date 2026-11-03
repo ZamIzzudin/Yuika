@@ -2,6 +2,7 @@
 // DEMO-SHORTCUT: core berjalan in-process di Next.js; P0 memisah jadi service + worker.
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
+import path from "node:path";
 import { PersonaInfo, type YuiEvent } from "@yui/contracts";
 import { SessionStore } from "./session/store.js";
 import { makeEmitter } from "./session/emit.js";
@@ -19,6 +20,7 @@ import { registerDelegateTool } from "./tools/delegate-tool.js";
 import { connectMcpFromConfig, type McpRegistry } from "./mcp/client.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { resolvePaths, type YuiPaths } from "./paths.js";
+import { ProjectStore } from "./project/store.js";
 
 export interface YuiRuntimeConfig {
   provider: { baseUrl: string; apiKey: string; model: string };
@@ -30,6 +32,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   fs.mkdirSync(paths.workspacePath, { recursive: true });
 
   const store = new SessionStore(paths.dbPath);
+  const projectStore = new ProjectStore(paths.dbPath);
   const provider = new OpenAICompatProvider({ baseUrl: cfg.provider.baseUrl, apiKey: cfg.provider.apiKey });
 
   // tools core (sekali per proses)
@@ -106,5 +109,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     getEvents: (sessionId: string, since = 0): YuiEvent[] => store.getEvents(sessionId, since),
     subscribe: (sessionId: string, listener: (e: YuiEvent) => void) => EventBus.subscribe(sessionId, listener),
+    // ---- projects (P1-PRJ-1, PLAN §13.1) ----
+    createProject: (name: string, description = "") => {
+      const id = `p_${randomUUID().slice(0, 8)}`;
+      const rootPath = `projects/${id}`; // relatif terhadap workspace — diisolasi penuh di P1-PRJ-2
+      for (const sub of ["code", "docs", "reports"]) {
+        fs.mkdirSync(path.join(paths.workspacePath, rootPath, sub), { recursive: true });
+      }
+      return projectStore.createProject({ id, name, description, rootPath });
+    },
+    listProjects: () => projectStore.listProjects(),
+    getProject: (id: string) => projectStore.getProject(id),
+    updateProject: (id: string, patch: { name?: string; description?: string; status?: "active" | "archived" }) =>
+      projectStore.updateProject(id, patch),
   };
 }

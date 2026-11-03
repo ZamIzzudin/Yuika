@@ -2,3 +2,4 @@
 export * from "./events.js";
 export * from "./rest.js";
 export * from "./persona.js";
+export * from "./project.js";

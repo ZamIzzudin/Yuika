@@ -1,6 +1,7 @@
 // @yui/contracts — REST payloads (DEMO-WEEK-1.md §5)
 import { z } from "zod";
 import { PersonaState } from "./events.js";
+import { ProjectStatus } from "./project.js";
 
 export const PersonaInfo = z.object({
   id: z.string(),
@@ -31,4 +32,19 @@ export const ApprovalDecisionResponse = z.object({ ok: z.literal(true) });
 // GET /api/sessions/:id/events?since=<id>
 export const EventReplayQuery = z.object({
   since: z.coerce.number().int().nonnegative().default(0),
+});
+
+// ---- Projects (PLAN §13.1, P1-PRJ-1) ----
+
+// POST /api/projects
+export const CreateProjectRequest = z.object({
+  name: z.string().min(1).max(80),
+  description: z.string().max(280).default(""),
+});
+
+// PATCH /api/projects/:id
+export const UpdateProjectRequest = z.object({
+  name: z.string().min(1).max(80).optional(),
+  description: z.string().max(280).optional(),
+  status: ProjectStatus.optional(),
 });
