@@ -6,6 +6,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { z } from "zod";
 import type { McpTrustConfig } from "@yui/contracts";
 import { registry } from "../registry.js";
+import { findUvx } from "./uv.js";
 
 export interface McpServerConfig {
   command: string;
@@ -35,8 +36,14 @@ export async function connectMcpServer(
   opts: { denyTools?: string[]; onCall?: (info: McpCallInfo) => void } = {},
 ): Promise<{ close: () => Promise<void>; toolCount: number; toolNames: string[] }> {
   const client = new Client({ name: "your-yui", version: "0.1.0" }, { capabilities: {} });
+  // Server Python (uvx): bila uvx tak di PATH (mis. baru di-install via UI dan
+  // PATH proses belum menyegarkan), pakai path absolut — tanpa restart server.
+  let command = cfg.command;
+  if (command === "uvx") {
+    command = (await findUvx()) ?? "uvx"; // biarkan ENOENT natural bila tak ada
+  }
   const transport = new StdioClientTransport({
-    command: cfg.command,
+    command,
     args: cfg.args ?? [],
     env: cfg.env as Record<string, string> | undefined,
   });

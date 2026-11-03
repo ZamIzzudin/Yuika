@@ -898,3 +898,11 @@ html, body {
   border-radius: 999px; padding: 1px 6px; margin-left: 4px; white-space: nowrap;
 }
 .catalog-note { color: var(--yui-text-dim); font-size: 11px; }
+.uv-status {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 10px; border: 1px dashed var(--yui-border);
+  border-radius: 10px; margin: 6px 0 10px;
+}
+.uv-status[data-ok] { border-style: solid; border-color: var(--yui-ok, #4caf7d); }
+.uv-status small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
+.uv-status code { font-family: var(--yui-font-mono, ui-monospace, monospace); font-size: 11px; }

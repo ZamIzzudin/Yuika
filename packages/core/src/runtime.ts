@@ -29,6 +29,7 @@ import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js
 import { registerMemoryTools } from "./tools/memory-tools.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
+import { findUvx, installUv } from "./mcp/uv.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
 import { taskTreeFromEvents } from "./project/tasktree.js";
@@ -340,6 +341,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return { ok: true, note: "Sesi baru & turn berikutnya memakai config baru (loopCache dikosongkan; .env diperbarui)." };
     },
     mcpAuditRecent: (limit = 50) => mcpAudit.recent(limit),
+    // ---- Runtime uv/uvx (server MCP Python) ----
+    /** Status uvx: path yang bisa dijalankan ("uvx" bila di PATH) atau null. */
+    mcpUvxCheck: async () => ({ uvxPath: await findUvx() }),
+    /** One-click install uv (installer resmi astral.sh) — dipanggil UI dengan konfirmasi. */
+    mcpInstallUv: async () => installUv(),
     // ---- Memory manager (P1-MEM-1) ----
     /** Baca dokumen memori (header dibuat bila belum ada). */
     readMemory: (scope: "user" | "project", projectId?: string | null) =>

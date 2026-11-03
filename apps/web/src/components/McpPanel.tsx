@@ -16,17 +16,23 @@ export function McpPanel() {
   const [envVals, setEnvVals] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [uvx, setUvx] = useState<string | null | "loading">("loading");
+  const [uvConfirm, setUvConfirm] = useState(false);
+  const [uvInstalling, setUvInstalling] = useState(false);
+  const [uvLog, setUvLog] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const [s, a, c] = await Promise.all([
+      const [s, a, c, rt] = await Promise.all([
         fetch("/api/mcp/servers"),
         fetch("/api/mcp/audit?limit=5"),
         fetch("/api/mcp/catalog"),
+        fetch("/api/mcp/runtime"),
       ]);
       if (s.ok) setServers(((await s.json()) as { servers: McpServerStatus[] }).servers);
       if (a.ok) setAudit(((await a.json()) as { entries: McpAuditEntry[] }).entries);
       if (c.ok) setCatalog(((await c.json()) as { catalog: McpCatalogEntry[] }).catalog);
+      if (rt.ok) setUvx((((await rt.json()) as { uvxPath: string | null }).uvxPath) ?? null);
     } catch {
       /* refresh berikutnya */
     }
@@ -35,6 +41,27 @@ export function McpPanel() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  /** One-click install uv (installer resmi astral.sh) — konfirmasi eksplisit UI. */
+  async function installUv() {
+    setUvInstalling(true);
+    setErr(null);
+    setUvLog(null);
+    try {
+      const res = await fetch("/api/mcp/runtime", { method: "POST" });
+      const j = (await res.json()) as { ok: boolean; uvxPath: string | null; log: string };
+      if (j.ok) setUvx(j.uvxPath ?? "uvx");
+      else {
+        setErr("installer selesai tapi uvx belum terdeteksi — coba restart dev server");
+        setUvLog(j.log || null);
+      }
+      setUvConfirm(false);
+    } catch {
+      setErr("gagal menjalankan installer");
+    } finally {
+      setUvInstalling(false);
+    }
+  }
 
   async function toggle(s: McpServerStatus) {
     setBusy(s.name);
@@ -137,6 +164,38 @@ export function McpPanel() {
         <div className="project-head">
           <span className="project-title">Katalog ({catalog.length})</span>
         </div>
+        <div className="uv-status" data-ok={uvx && uvx !== "loading" ? "" : undefined}>
+          {uvx === "loading" ? (
+            <small>cek runtime Python (uvx)…</small>
+          ) : uvx ? (
+            <small>
+              Python/uvx: siap ✓ <code>{uvx === "uvx" ? "di PATH" : uvx}</code>
+            </small>
+          ) : uvInstalling ? (
+            <small>menjalankan installer resmi astral.sh… (±30–120 dtk)</small>
+          ) : uvConfirm ? (
+            <>
+              <small>
+                <b>Install uv?</b> Menjalankan installer resmi
+                <code>astral.sh/uv</code> di mesin ini (~30 MB, profil user). Lanjut?
+              </small>
+              <button className="btn" onClick={() => void installUv()}>
+                Ya, install
+              </button>
+              <button className="btn secondary" onClick={() => setUvConfirm(false)}>
+                Batal
+              </button>
+            </>
+          ) : (
+            <>
+              <small>Python/uvx: belum terpasang — server Git/Time butuh ini (18 server lain tak butuh)</small>
+              <button className="btn" onClick={() => setUvConfirm(true)}>
+                Install uv
+              </button>
+            </>
+          )}
+        </div>
+        {uvLog && <small className="catalog-note">log installer: {uvLog}</small>}
         <input
           className="mcp-search"
           placeholder="Cari server… (web, data, github…)"
@@ -165,6 +224,14 @@ export function McpPanel() {
                 {isInstalled ? (
                   <button className="btn mcp-toggle" onClick={() => void uninstall(c)} disabled={busy === c.id} title="Lepas dari mcp.json (putuskan koneksi)">
                     {busy === c.id ? "…" : "Lepas"}
+                  </button>
+                ) : c.runtime === "python" && uvx === null ? (
+                  <button
+                    className="btn mcp-toggle"
+                    disabled
+                    title={c.setupNote ?? "Butuh uv (Python) — klik Install uv di atas"}
+                  >
+                    Butuh uv
                   </button>
                 ) : openForm === c.id ? (
                   <div className="catalog-form">

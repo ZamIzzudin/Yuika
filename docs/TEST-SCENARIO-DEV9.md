@@ -15,9 +15,13 @@
 1. Klik **⚙ Pengaturan** → seksi **Provider & Model**:
    - Terlihat Base URL, model aktif, dan indikasi key `…4 digit terakhir` (key TIDAK tampil penuh ✔)
 2. Pindah ke seksi **MCP & Tools**:
+   - Baris status runtime: **"Python/uvx: belum terpasang [Install uv]"**
+   - Klik **Install uv** → konfirmasi "Ya, install" → tunggu ±30–120 dtk → status jadi
+     "Python/uvx: siap ✓" (tanpa restart dev server — koneksi pakai path absolut)
    - **Katalog (20)** tampil lega — cari "fetch" → klik **Pasang**
    - Baris `fetch` muncul di daftar atas dengan status `untrusted` → klik **Trust**
    - Tunggu ±5–15 dtk (npx unduh) → status jadi `N tools` (titik hijau)
+   - Opsional setelah uv terpasang: coba **Git** atau **Time** (badge Python/uvx)
    - Coba **Lepas** salah satu, lalu pasang lagi (opsional)
 3. Tutup pengaturan (✕ / Esc). File `mcp.json` di root sekarang berisi entri baru — cek bila penasaran.
 
