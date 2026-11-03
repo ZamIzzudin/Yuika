@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import type { ProviderAdapter, InternalMessage, ToolCallRequest } from "./provider/adapter.js";
 import { registry } from "./registry.js";
+import { runLearnNudge } from "./memory/nudge.js";
 import type { SessionStore } from "./session/store.js";
 import type { Emit } from "./session/emit.js";
 import type { ApprovalEngine } from "./approval/engine.js";
@@ -68,6 +69,7 @@ export class AgentLoop {
     const tools = applyMcpBinding(registry.toolSchemas(session.toolsets), this.deps.mcpAllowlistFor?.(session) ?? null);
 
     let usedDelegation = false;
+    let usedTools = false; // P1-MEM-2: turn yang melibatkan tool = kandidat nudge belajar
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       // 3) api phase
@@ -91,6 +93,7 @@ export class AgentLoop {
 
       // 4) tool round
       if (done.finishReason === "tool_calls" && done.toolCalls.length) {
+        usedTools = true;
         const assistantMsg: InternalMessage = {
           role: "assistant",
           content: done.text,
@@ -145,6 +148,31 @@ export class AgentLoop {
         personaId: session.personaId,
         state: usedDelegation ? "celebrating" : "done",
       });
+      // P1-MEM-2: learn nudge — aux call ringan pasca-turn yang MELIBATKAN TOOL.
+      // Fire-and-forget: tidak memblokir UI; hasil lewat event memory.noted + trace.
+      if (usedTools) {
+        const tLearn = Date.now();
+        const short = session.personaId.replace(/^yui-/, "");
+        const personaName = `Yui ${short.charAt(0).toUpperCase()}${short.slice(1)}`;
+        void runLearnNudge({
+          provider: this.deps.provider,
+          model: this.deps.model,
+          personaName,
+          transcript: messages,
+          sessionId,
+          turnId,
+          workspacePath: this.deps.workspacePath,
+          emit,
+        })
+          .then((r) =>
+            trace(
+              `nudge turn=${turnId.slice(0, 10)} ${Date.now() - tLearn}ms → ${
+                r.note ? `tercatat (${r.scope}): ${r.note.slice(0, 80)}` : `skip: ${r.skipped}`
+              }`,
+            ),
+          )
+          .catch((e) => trace(`nudge turn=${turnId.slice(0, 10)} GAGAL ${e instanceof Error ? e.message : e}`));
+      }
       return;
     }
 

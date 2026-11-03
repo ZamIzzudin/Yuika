@@ -821,3 +821,14 @@ html, body {
   color: var(--yui-text-primary);
 }
 .memory-doc small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
+
+/* ── Noted chip (P1-MEM-2: learn nudge) ─────────────────────────── */
+.noted-chip {
+  display: flex; align-items: flex-start; gap: 8px; max-width: 560px;
+  margin: 2px auto; padding: 8px 12px; border-radius: 12px;
+  background: var(--yui-bg-inset, rgba(255, 255, 255, 0.03));
+  border: 1px dashed var(--yui-border-strong);
+  font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
+}
+.noted-icon { color: var(--yui-accent, #7c9cff); flex: none; }
+.noted-text b { color: var(--yui-text-primary); font-weight: 600; margin-right: 2px; }

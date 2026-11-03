@@ -10,7 +10,7 @@ import type { PersonaState } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
 
 export interface ChatItem {
-  kind: "msg" | "activity" | "delegation" | "approval" | "error";
+  kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted";
   // msg
   role?: "user" | "assistant";
   text?: string;
@@ -30,6 +30,8 @@ export interface ChatItem {
   requestId?: string;
   reason?: string;
   resolved?: "approved" | "denied" | null;
+  // noted (P1-MEM-2: hasil learn nudge)
+  scope?: "user" | "project";
 }
 
 const STATE_LABEL: Record<PersonaState, string> = {
@@ -177,6 +179,16 @@ export function ChatView({
                       </div>
                     )}
                   </div>
+                </div>
+              );
+            }
+            if (it.kind === "noted") {
+              return (
+                <div key={`r${i}`} className="noted-chip" title="Learn nudge pasca-task — bisa diedit/dihapus di tab Memori">
+                  <span className="noted-icon">✎</span>
+                  <span className="noted-text">
+                    <b>Yui mencatat</b> ({it.scope === "project" ? "memori proyek" : "tentang Anda"}): {it.text}
+                  </span>
                 </div>
               );
             }

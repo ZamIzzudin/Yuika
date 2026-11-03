@@ -181,6 +181,9 @@ export default function Home() {
           ),
         );
         break;
+      case "memory.noted":
+        setItems((prev) => [...prev, { kind: "noted", text: e.note, scope: e.scope }]);
+        break;
       case "session.error":
         setItems((prev) => [...prev, { kind: "error", text: e.message }]);
         setBusy(false);

@@ -101,6 +101,14 @@ export const SessionErrorEvent = EventMeta.extend({
   recoverable: z.boolean(),
 });
 
+/** P1-MEM-2: learn nudge menghasilkan catatan ( transparansi — tampil sebagai chip di chat). */
+export const MemoryNotedEvent = EventMeta.extend({
+  type: z.literal("memory.noted"),
+  turnId: z.string(),
+  scope: z.enum(["user", "project"]),
+  note: z.string().min(1),
+});
+
 /** Discriminated union — setiap event punya `type` literal; UI switch-case atas ini. */
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
@@ -113,6 +121,7 @@ export const YuiEvent = z.discriminatedUnion("type", [
   DelegationDoneEvent,
   PersonaStateEvent,
   ApprovalRequestedEvent,
+  MemoryNotedEvent,
   ApprovalResolvedEvent,
   SessionErrorEvent,
 ]);
