@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orin v4 – Pilih Maskot</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap">
+<style>
+:root{--bg:#EEF0F7;--panel:#FFFFFF;--ink:#1A1D33;--mute:#5E6384;--line:#D4D8EA;--acc:#2F6FE0;--chip:#E4E9F8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A0C16;--panel:#12152A;--ink:#E9EAF5;--mute:#9499B8;--line:#252A4C;--acc:#8CB4FF;--chip:#1B1F3A}}
+:root[data-theme="dark"]{--bg:#0A0C16;--panel:#12152A;--ink:#E9EAF5;--mute:#9499B8;--line:#252A4C;--acc:#8CB4FF;--chip:#1B1F3A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Sora',system-ui,sans-serif;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+h1{font-weight:300;font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 18px;font-size:.92rem}
+.stage{background:#0A0A0A;border:1px solid #222;border-radius:28px;padding:10px 8px 18px;--ink:#F2F2F2;--mute:#9A9A9A;--chip:#171717;--line:#2E2E2E;--acc:#fff;--bg:#111;color:#F2F2F2}
+svg#m{display:block;width:100%;max-width:400px;margin:0 auto;cursor:pointer;touch-action:manipulation}
+#shape{transition:fill .45s}
+.state{text-align:center;color:var(--mute);font-size:.85rem;min-height:1.4em}
+.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 10px 0}
+.lbl{width:100%;text-align:center;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:6px}
+button{font:inherit;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:7px 15px;cursor:pointer;font-size:.85rem;display:inline-flex;align-items:center;gap:8px}
+button:hover{border-color:var(--acc)}button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.on{border-color:var(--acc);background:#fff;color:#111}
+.dot{width:16px;height:16px;display:inline-block}
+form{display:flex;gap:8px;margin:16px 14px 0}
+input{flex:1;min-width:0;font:inherit;font-size:.92rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:10px 16px}
+.reply{margin:12px 18px 0;min-height:2.8em;font-size:.92rem;text-align:center}
+section{margin-top:30px}
+h2{font-weight:600;font-size:1.05rem;margin:0 0 8px}
+p{font-size:.9rem;color:var(--mute)}
+code,pre{font-family:ui-monospace,Menlo,monospace;font-size:.8rem}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;overflow-x:auto;color:var(--ink)}
+.tw{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+td,th{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);color:var(--mute);white-space:nowrap}
+th{color:var(--ink);font-weight:600}tr:last-child td{border-bottom:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Orin</h1>
+<p class="sub">Pilih bentuk dan warna maskot. Rig mata sama untuk semua bentuk, jadi ekspresinya konsisten dan selalu simetris.</p>
+
+<div class="stage">
+<svg id="m" viewBox="0 0 400 400" role="img" aria-label="Maskot Orin">
+<circle id="r1" cx="200" cy="200" r="135" fill="none" stroke-width="2" opacity="0"/>
+<circle id="r2" cx="200" cy="200" r="135" fill="none" stroke-width="2" opacity="0"/>
+<g id="body">
+<circle id="halo" r="130" fill="none" stroke-width="14" opacity="0"/>
+<g id="shape"></g>
+<g id="face">
+<g id="eL"><rect id="cL" fill="#0B0B0E"/><path id="aL" fill="none" stroke="#0B0B0E" stroke-linecap="round" opacity="0"/></g>
+<g id="eR"><rect id="cR" fill="#0B0B0E"/><path id="aR" fill="none" stroke="#0B0B0E" stroke-linecap="round" opacity="0"/></g>
+</g>
+</g>
+</svg>
+<div class="state" id="st">idle</div>
+<div class="row"><span class="lbl">Bentuk</span><span id="shapes" style="display:contents"></span></div>
+<div class="row"><span class="lbl">Ekspresi</span><span id="chips" style="display:contents"></span></div>
+<form id="f"><input id="in" placeholder="Ketik pesan untuk Orin…" autocomplete="off" aria-label="Pesan"><button type="submit">Kirim</button><button type="button" id="mic">Suara</button></form>
+<div class="reply" id="rp" aria-live="polite"></div>
+</div>
+
+<section>
+<h2>Rig (siap dipindah ke Rive)</h2>
+<p>Satu rig mata dipakai semua bentuk. Di Rive, buat satu artboard per bentuk dengan hirarki identik, atau satu artboard dengan number input <code>shape</code> (0–4) yang menukar Body dan warna.</p>
+<div class="tw"><table>
+<tr><th>Bone / shape</th><th>Pivot</th><th>Digerakkan oleh</th></tr>
+<tr><td>Root › Body (bentuk + warna)</td><td>tengah</td><td>napas, squash-stretch, bounce, goyang</td></tr>
+<tr><td>Body › Face (grup)</td><td>tengah</td><td>geser tatapan (parallax), offset per bentuk</td></tr>
+<tr><td>Face › EyeL, EyeR (kapsul gelap)</td><td>tengah mata</td><td>tinggi, lebar, rotasi cermin, jarak, kedip</td></tr>
+<tr><td>Eye › ArcShape (mata "^")</td><td>tengah mata</td><td>cross-fade dengan kapsul saat senang</td></tr>
+</table></div>
+<p style="margin-top:14px">State machine "Mascot": <code>mood</code> (0 idle, 1 listening, 2 thinking, 3 speaking, 4 happy, 5 confused), <code>audioLevel</code> 0–100, <code>lookX</code>/<code>lookY</code> −100..100, <code>shape</code> 0–4, trigger <code>blink</code> dan <code>nod</code>.</p>
+<pre>const { rive, RiveComponent } = useRive({ src: "/orin.riv", stateMachines: "Mascot", autoplay: true });
+const mood  = useStateMachineInput(rive, "Mascot", "mood");
+const shape = useStateMachineInput(rive, "Mascot", "shape");
+mood.value = 2;   // agent berpikir
+shape.value = 1;  // pilih bentuk awan</pre>
+</section>
+</main>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},Q=function(c){return document.querySelectorAll(c)};
+// Shapes: fy face y, gs gap scale, es eye scale, gr gaze range
+var SH={
+orb:{n:'Bola',c:'#F2620F',fy:0,gs:1,es:1,gr:1,r:'50%',g:'<circle r="130"/>'},
+cloud:{n:'Awan',c:'#F5A00A',fy:8,gs:.92,es:.88,gr:.8,r:'40%',g:'<circle cx="-62" cy="22" r="64"/><circle cx="8" cy="-26" r="76"/><circle cx="76" cy="14" r="58"/><rect x="-112" y="10" width="228" height="88" rx="44"/>'},
+blob:{n:'Tetes',c:'#2B8CF0',fy:0,gs:1,es:1,gr:1,r:'45% 55% 50% 50%',g:'<path d="M-122,10C-126,-70 -50,-126 10,-122C80,-117 126,-60 122,10C117,80 60,126 0,123C-70,121 -120,80 -122,10Z"/>'},
+square:{n:'Kotak',c:'#12D1A0',fy:0,gs:1.05,es:.95,gr:.9,r:'30%',g:'<rect x="-118" y="-118" width="236" height="236" rx="80"/>'},
+tri:{n:'Segitiga',c:'#F0278E',fy:36,gs:.72,es:.76,gr:.6,r:'',g:'<path d="M0,-128C22,-128 40,-98 70,-42L116,48C132,82 118,112 86,112L-86,112C-118,112 -132,82 -116,48L-70,-42C-40,-98 -22,-128 0,-128Z"/>'}
+};
+var cur0=(function(){try{return localStorage.getItem('orinShape')}catch(e){return null}})();
+var shapeKey=SH[cur0]?cur0:'orb',sc={fy:0,gs:1,es:1,gr:1};
+// ew/eh eye size, gap, gx/gy gaze, tilt (mirrored; + = tops outward), hap = arc eyes
+var B={ew:24,eh:60,gap:36,gx:0,gy:0,tilt:0,hap:0,by:0,sy:1,rot:0,ring:0,halo:0,ey:0};
+function mk(o){var r={};for(var k in B)r[k]=o&&k in o?o[k]:B[k];return r}
+var S={
+idle:mk({}),
+listening:mk({ew:26,eh:74,gap:38,by:-8,sy:1.04,ring:1,ey:-8}),
+thinking:mk({ew:22,eh:48,tilt:14,gx:-.7,gy:-.8,rot:-4}),
+speaking:mk({halo:1,by:-3}),
+happy:mk({ew:24,eh:52,gap:50,hap:1,by:-14,sy:1.05,rot:3,ey:-4}),
+confused:mk({ew:22,eh:50,tilt:22,gx:.3,rot:9})
+};
+var cur=mk({}),tgt=S.idle,name='idle',t0=performance.now(),last=t0,blink=0,nextBlink=t0+2500,bump=0,
+lvl=0,lvlT=0,mx=0,my=0,micOn=false,micLevel=0,ana=null,sm=0;
+function set(n){name=n;tgt=S[n];$('st').textContent=n;
+Q('#chips button').forEach(function(b){b.classList.toggle('on',b.dataset.s===n)})}
+function pick(k,fromUser){shapeKey=k;var d=SH[k];$('shape').innerHTML=d.g;$('shape').style.fill=d.c;
+['r1','r2','halo'].forEach(function(i){$(i).setAttribute('stroke',d.c)});
+Q('#shapes button').forEach(function(b){b.classList.toggle('on',b.dataset.k===k)});
+if(fromUser){bump=1;try{localStorage.setItem('orinShape',k)}catch(e){}}}
+Object.keys(S).forEach(function(n){var b=document.createElement('button');b.textContent=n;b.dataset.s=n;
+b.onclick=function(){set(n)};$('chips').appendChild(b)});
+Object.keys(SH).forEach(function(k){var d=SH[k],b=document.createElement('button');b.dataset.k=k;
+b.innerHTML='<span class="dot" style="background:'+d.c+';border-radius:'+d.r+';'+(k==='tri'?'clip-path:polygon(50% 0,100% 100%,0 100%)':'')+'"></span>'+d.n;
+b.onclick=function(){pick(k,true)};$('shapes').appendChild(b)});
+document.addEventListener('pointermove',function(e){var r=$('m').getBoundingClientRect();
+mx=Math.max(-1,Math.min(1,(e.clientX-r.left-r.width/2)/(r.width*.7)));
+my=Math.max(-1,Math.min(1,(e.clientY-r.top-r.height/2)/(r.height*.7)))});
+$('m').addEventListener('click',function(){bump=1;if(name==='idle'){set('happy');setTimeout(function(){if(name==='happy')set('idle')},1100)}});
+
+function frame(now){
+var dt=Math.min(.05,(now-last)/1e3);last=now;var t=(now-t0)/1e3,k=1-Math.exp(-dt*9);
+for(var p in cur)cur[p]+=(tgt[p]-cur[p])*k;
+var d=SH[shapeKey];for(var q in sc)sc[q]+=(d[q]-sc[q])*k;
+var bl=1;
+if(now>nextBlink){blink=1;nextBlink=now+2200+Math.random()*3500}
+if(blink>0){blink-=dt/.15;bl=blink>0?Math.max(.1,Math.abs(blink*2-1)):1;if(blink<=0)blink=0}
+if(name==='speaking'){if(now>lvlT){lvlT=now+80+Math.random()*110;lvl=Math.random()<.18?.05:.35+Math.random()*.65}}
+else if(name==='listening'&&micOn)lvl=micLevel;else lvl=0;
+sm+=(lvl-sm)*(1-Math.exp(-dt*14));var L=sm;
+var gx=cur.gx,gy=cur.gy;
+if(name==='thinking'){gx+=Math.sin(t*1.1)*.4;gy+=Math.sin(t*.8)*.15}
+else if(name==='idle'||name==='listening'||name==='happy'){gx+=mx*.9;gy+=my*.7}
+bump*=Math.exp(-dt*4);
+var br=Math.sin(t*1.6),by=cur.by+br*2-Math.sin(bump*Math.PI)*18,
+sy=cur.sy+br*.012+L*.05+bump*.05,sx=1+(1-sy)*.7,
+rot=cur.rot+Math.sin(t*.9)*.8+(name==='speaking'?Math.sin(t*5)*L*2:0);
+$('body').setAttribute('transform','translate(200 '+(200+by)+') rotate('+rot+') scale('+sx+' '+sy+')');
+$('face').setAttribute('transform','translate('+gx*34*sc.gr+' '+(gy*26*sc.gr+cur.ey+sc.fy)+')');
+var hp=Math.min(1,cur.hap),w=cur.ew*sc.es,h=cur.eh*sc.es*(1+L*.3)*bl;
+[['L',-1],['R',1]].forEach(function(a){
+var s=a[0],dd=a[1],r=$('c'+s);
+r.setAttribute('x',-w/2);r.setAttribute('y',-h/2);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx',w/2);r.style.opacity=1-hp;
+var ar=$('a'+s),aw=w*.8;ar.setAttribute('stroke-width',w*.8);ar.setAttribute('d','M'+(-aw)+',6Q0,-12 '+aw+',6');ar.style.opacity=hp;
+$('e'+s).setAttribute('transform','translate('+(dd*cur.gap*sc.gs)+' 0) rotate('+(dd*cur.tilt)+')')});
+[['r1',0],['r2',.5]].forEach(function(a){var ph=((t*.6)+a[1])%1,el=$(a[0]);
+el.setAttribute('r',135+ph*40);el.setAttribute('opacity',cur.ring*(1-ph)*.5)});
+$('halo').setAttribute('r',134+L*14);$('halo').setAttribute('opacity',cur.halo*(.1+L*.4));
+requestAnimationFrame(frame)}
+pick(shapeKey,false);set('idle');
+requestAnimationFrame(frame);
+
+var busy=false;
+function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
+var replies=['Tentu, saya bantu. Ini ringkasan singkatnya untuk Anda.','Sudah saya periksa. Semuanya terlihat baik dan siap dilanjutkan.','Menarik. Izinkan saya jelaskan langkah demi langkah.'];
+async function run(text,skip){
+if(busy)return;busy=true;$('rp').textContent='';
+if(!skip){set('listening');await wait(700)}
+if(/\?\?|bingung|xyz/i.test(text)){set('confused');await wait(1800);$('rp').textContent='Hmm, bisa dijelaskan lebih rinci?';await wait(1200);set('idle');busy=false;return}
+set('thinking');await wait(1500);
+var r=replies[Math.floor(Math.random()*replies.length)];set('speaking');
+for(var i=0;i<=r.length;i++){$('rp').textContent=r.slice(0,i);await wait(34)}
+await wait(300);set('happy');await wait(1300);set('idle');busy=false}
+$('f').addEventListener('submit',function(e){e.preventDefault();var v=$('in').value.trim();if(!v)return;$('in').value='';run(v)});
+$('mic').addEventListener('click',async function(){
+if(busy&&!micOn)return;
+if(!micOn){micOn=true;$('mic').classList.add('on');$('mic').textContent='Selesai';set('listening');
+try{var s=await navigator.mediaDevices.getUserMedia({audio:true}),c=new (window.AudioContext||window.webkitAudioContext)(),
+a=c.createAnalyser();a.fftSize=256;c.createMediaStreamSource(s).connect(a);var dd=new Uint8Array(a.frequencyBinCount);
+ana={s:s,c:c};(function poll(){if(!micOn)return;a.getByteFrequencyData(dd);var sum=0;for(var i=0;i<dd.length;i++)sum+=dd[i];
+micLevel=Math.min(1,sum/dd.length/70);setTimeout(poll,50)})()}
+catch(e){(function sim(){if(!micOn)return;micLevel=.2+Math.random()*.6;setTimeout(sim,120)})()}
+}else{micOn=false;micLevel=0;$('mic').classList.remove('on');$('mic').textContent='Suara';
+if(ana){ana.s.getTracks().forEach(function(t){t.stop()});ana.c.close();ana=null}
+run('suara',true)}});
+})();
+</script>
+</body>
+</html>

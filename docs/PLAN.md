@@ -784,7 +784,7 @@ expression states; burn-rate credit terukur per turn."
 | Piringan berat studio (terminal/browser/monitor) menggeser kernel | Kualitas inti | Urutan: P1-PRJ (data) → P2-FLOW (engine+monitoring) → P2-STU (tab kaya); kernel tidak boleh tahu UI |
 | Dungeon menghasilkan skill basah/berbahaya | Skill buruk masuk project produksi | Eval acceptance wajib (blind test — pola P1-PER-5) + curator review (P2-AGT-3) + misi hanya di sandbox terisolasi; tanpa lulus eval skill tetap `draft` |
 | Multi-model = fragmentasi quirk provider & biaya meledak | Turn gagal / biaya tak terkendali | Normalisasi schema terpusat (pelajaran GLM 1210) + smoke test per model di router + fallback per persona + metering/budget per persona (P1-CRED) |
-| Penpot: ops self-host & API berubah | Integrasi desain patah | Mulai dari token API (cloud/self-host ringan); adapter tipis + pin versi; self-host penuh menyusul D11 |
+| Penpot: ops self-host & API berubah | Integrasi desain patah | **Self-host wajib (CSP) — terjawab P2-DSN-1**; adapter tipis + pin versi stable (repo = 2.19.0-dev); stack penuh (pg/redis/exporter/wasm) disediakan profil docker “lite” untuk dev; OpenAPI spec bawaan → client digenerate |
 | Design→kode: ekspektasi melenceng dari realitas | Kecewa terhadap fitur unggulan | Kontrak ekspektasi v0 = komponen + tokens (D18); acceptance di human gate per fase; contoh “golden path” dirilis bersama fitur |
 
 ---
@@ -816,13 +816,18 @@ expression states; burn-rate credit terukur per turn."
 9. **Expiring credits?** (belum terjawab dari v0.2 — 12 bulan vs non-expiring).
 10. **Nama:** "Your-Yui" final? Cek domain/trademark sebelum branding jalan jauh.
 11. **Penpot (v0.5, menggantikan pen.dev — tidak open source):** eksplorasi repo
-    `D:\projects\penpot` (clone sedang berjalan) → kemampuan API publik/plugin/export
-    vs kebutuhan studio (produksi file oleh agent + render di platform + baca di develop).
-    Laporan → `docs/refs/penpot.md` (task P2-DSN-1). Jangan asumsi detail API sebelum baca.
+    `D:\projects\penpot` → **selesai**: laporan `docs/refs/penpot.md` (P2-DSN-1).
+    Temuan utama: embed wajib self-host (CSP `frame-ancestors`); v0 = agent via RPC API
+    (`update-file` headless) + iframe share-link viewer; v1 = MCP server resmi (plugin di
+    dalam sesi embedded); render headless via exporter WASM.
 12. **Isolasi kode project (v0.4):** folder `workspace/projects/<id>/` vs git worktree vs repo penuh per project? (Usulan: folder dulu, worktree saat fitur git masuk.)
 13. **Human gate antar fase workflow (v0.4):** default selalu ada (approve sebelum fase berikut), atau per-fase opt-out? (Usulan: default ON; fase otomatis hanya untuk run unattended berjenjang kepercayaan.)
 14. **Browser embed scope (v0.4):** screenshot+DOM read-only dulu, atau interaktif penuh (klik/scroll via CDP) sejak awal? (Usulan: read-only v0 — interaktif menyusul bersama sandbox render.)
-15. **Penpot cloud vs self-host untuk v0 (v0.5):** (Usulan: token API cloud/self-host ringan dulu — cepat integrasi; self-host penuh bareng D11 self-host edition.)
+15. **Penpot cloud vs self-host untuk v0 (v0.5):** **TERJAWAB (eksplorasi): self-host
+    wajib** — CSP default `frame-ancestors 'self'` tidak bisa dilepas di cloud; deployment
+    self-host meng-overwrite `PENPOT_CSP_POLICY` utuh (frame-ancestors origin platform).
+    Mekanisme embed: v0 iframe share-link viewer + agent via RPC API; v1 MCP resmi;
+    v2 white-label SSO (tangga §13.9; detail `docs/refs/penpot.md`).
 16. **Persona desain (v0.5):** tambah persona baru “Designer” (roster D9 jadi 7) atau varian Scribe? (Usulan: Designer sebagai persona inti studio — pembeda produk; final saat P2-DSN-5.)
     → **TERJAWAB (putusan user): Designer ditambahkan** sebagai persona inti — roster D9 = 7
     (§7.4); task P1-PER-7 + P2-DSN-5.
@@ -1042,6 +1047,14 @@ User tidak pernah keluar Your-Yui; canvas desain hidup di tab Design. Tangga emb
   kebutuhan (task P2-DSN-1); jangan asumsi detail API sebelum dibaca.
 - Mulai dari token API (cloud/self-host ringan); self-host penuh menyusul bareng
   self-host edition (D11). Figma tetap opsional sebagai MCP lain (P2-STU-5).
+- **Hasil eksplorasi (P2-DSN-1 selesai — `docs/refs/penpot.md`):** mekanisme embed v0 =
+  **self-host docker + CSP override** (wajib; cloud tidak bisa di-iframe) · agent kerja
+  **headless via RPC API** (`update-file` dengan vektor `changes`; OpenAPI spec bawaan)
+  · user memantau via **iframe share-link viewer** (scoped per halaman, update live) ·
+  render/thumbnail tanpa browser via **exporter WASM** · v1 = **MCP server resmi**
+  (arsitektur plugin-di-dalam-UI — justru cocok karena iframe kita selalu “aktif”;
+  tool inti `executeCode` + `exportShape`) · design tokens first-class (input enak
+  untuk generate kode). Verifikasi runtime tersisa di checklist laporan.
 
 ### 13.10 Multi-model per persona (v0.5, D21)
 

@@ -35,6 +35,13 @@
 > task P1-PER-7) · **Penpot wajib ter-embed di platform** (bukan app terpisah) — scope v0
 > **ramping tapi flow utuh**: agent buat (fase design) → user lihat live di tab Design →
 > develop baca → kode — tanpa keluar platform (tangga embed PLAN §13.9; D18 diperinci).
+>
+> **Update sesi dev 6 (P2-DSN-1 selesai):** eksplorasi Penpot (`docs/refs/penpot.md`) —
+> **embed wajib self-host** (CSP `frame-ancestors`, cloud tak bisa di-iframe; §12.15
+> terjawab) · v0 = agent via **RPC API** (`update-file` headless) + **iframe share-link
+> viewer** (update live) · v1 = **MCP server resmi** (plugin hidup di sesi embedded —
+> konstrain “tab aktif” terpenuhi otomatis) · render headless via exporter WASM ·
+> OpenAPI spec bawaan (`/api/main/doc`) → client digenerate.
 
 ## Peta Fase & Gerbang
 
@@ -339,8 +346,8 @@
 
 ### P2-DSN — Pipeline desain→kode via Penpot (Studio §13.9; D18)
 
-- [ ] **P2-DSN-1** Eksplorasi Penpot (repo `D:\projects\penpot`, tunggu clone selesai): API publik, plugin system, export/tokens, kemampuan render, **+ opsi mekanisme embed** (iframe scoped / komponen frontend / plugin — rekomendasi untuk tab Design) → laporan `docs/refs/penpot.md` + keputusan cloud vs self-host (§12.15) · *C · 1d* → peta kemampuan API vs kebutuhan studio + rekomendasi mekanisme embed
-- [ ] **P2-DSN-2** Penpot connector (token API / MCP komunitas / plugin tipis — sesuai laporan DSN-1) + binding ke persona desain (D17) · *C · 2d · dep P2-DSN-1 + P1-PRJ-5* → persona desain membuat/mengubah file Penpot dari dalam turn
+- [x] **P2-DSN-1** Eksplorasi Penpot (repo `D:\projects\penpot`, tunggu clone selesai): API publik, plugin system, export/tokens, kemampuan render, **+ opsi mekanisme embed** (iframe scoped / komponen frontend / plugin — rekomendasi untuk tab Design) → laporan `docs/refs/penpot.md` + keputusan cloud vs self-host (§12.15) · *C · 1d* → peta kemampuan API vs kebutuhan studio + rekomendasi mekanisme embed — *verif: `docs/refs/penpot.md` — keputusan: self-host (CSP) + RPC API v0 + iframe share-link viewer + MCP resmi v1 + exporter WASM untuk artefak; checklist verifikasi runtime disiapkan*
+- [ ] **P2-DSN-2** Penpot connector — **mekanisme diputuskan (DSN-1)**: jalur utama v0 = **RPC API + access token** (create/update file headless via `update-file`, share-link per halaman, snapshot); MCP server resmi = jalur v1 (Streamable HTTP `/mcp`, plugin di sesi embedded); binding ke persona Designer (D17) · *C · 2d · dep P2-DSN-1 + P1-PRJ-5* → persona Designer membuat/mengubah file Penpot dari dalam turn (headless)
 - [ ] **P2-DSN-3** Tab Design = canvas Penpot **TER-EMBED di platform** (bukan link/app terpisah — D18): scope v0 ramping — lihat, navigasi halaman/frame, zoom, artefak ter-link ke node TaskTree; mekanisme embed sesuai DSN-1 · *B · 2d · dep P2-DSN-2 + P2-STU-1* → desain fase `design` terlihat live di tab tanpa keluar app
 - [ ] **P2-DSN-4** Pipeline design→kode: fase `develop` membaca file Penpot (shapes + tokens via API) → generate komponen kode → diff di tab File → acceptance di human gate · *A+C · 3d · dep P2-DSN-2 + P2-FLOW-2* → frame sederhana → komponen kode + diff (ekspektasi v0: komponen+tokens, bukan pixel-perfect — D18)
 - [ ] **P2-DSN-5** Persona Designer final (roster ke-7 — sudah diputuskan, lihat P1-PER-7): skill seed Penpot dilatih lewat dungeon + misi acceptance · *C · 1d · dep P2-DSN-2 + P1-PER-7* → Designer lulus misi dungeon Penpot → skill `ready`
