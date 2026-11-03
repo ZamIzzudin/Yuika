@@ -343,7 +343,7 @@
 - [ ] **P2-FLOW-4** Event `workflow.started/phase.entered/phase.done/step.started/step.done/workflow.done` (aditif ke YuiEvent) + replay `?since=` · *A · 1d · dep P2-FLOW-2* → board di-refresh → state run utuh
 - [ ] **P2-FLOW-5** Monitoring board UI: kolom fase, kartu agent jalan (sequential satu kolom / paralel berdampingan), progress persona, hasil per langkah — live via SSE · *B · 3d · dep P2-FLOW-4* → 2 persona paralel terlihat jalan bersamaan + hasil terkumpul
 - [ ] **P2-FLOW-6** Steering mid-run: pause/stop step, reassign ke persona lain, suntik instruksi (pola OpenBot Stop/Resume/Reassign) · *B · 2d · dep P2-FLOW-5* → reassign mid-run tercatat di event & audit
-- [ ] **P2-FLOW-7** TaskTree board UI (D19): pohon task→subtask→step dengan kartu agent & status live; sequential/paralel terbaca dari struktur; klik node → sesi agent + steering · *B · 2d · dep P1-PRJ-7 + P2-FLOW-4* → pohon delegasi live; refresh → utuh via replay
+- [ ] **P2-FLOW-7** TaskTree board UI (D19): pohon task→subtask→step dengan kartu agent & status live; sequential/paralel terbaca dari struktur; klik node → sesi agent + steering · *B · 2d · dep P1-PRJ-7 + P2-FLOW-4* → pohon delegasi live; refresh → utuh via replay — *v0 sesi dev 8: tab **Papan** = kanban 4 kolom (Belum/Kerja/Reviu/Selesai) dari flatten TaskTree + task pra-migrasi, drag&drop HTML5 → PATCH status (sinkron tasklist & pohon, auto-refresh saat agent `todo_*`); sisa: kartu agent per langkah + klik node → sesi & steering (dep P2-FLOW-4)*
 
 ### P2-STU — Workbench multi-tab & surface (Studio §13.5; D16)
 

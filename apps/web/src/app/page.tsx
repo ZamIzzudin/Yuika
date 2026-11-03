@@ -353,6 +353,7 @@ export default function Home() {
                 (
                   [
                     { id: "team", label: "Tim" },
+                    { id: "board", label: "Papan" },
                     { id: "tree", label: "Pohon" },
                     { id: "roster", label: "Roster" },
                     { id: "sessions", label: "Sesi" },

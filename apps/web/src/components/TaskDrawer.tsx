@@ -8,7 +8,7 @@ const NEXT: Record<TaskStatus, TaskStatus> = { todo: "doing", doing: "review", r
 const LABEL: Record<TaskStatus, string> = { todo: "Belum", doing: "Kerja", review: "Reviu", done: "Selesai" };
 const DOT: Record<TaskStatus, string> = { todo: "○", doing: "◐", review: "◑", done: "●" };
 
-export type WorkspaceTab = "chat" | "team" | "tree" | "roster" | "sessions";
+export type WorkspaceTab = "chat" | "team" | "board" | "tree" | "roster" | "sessions";
 
 /** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
 export interface LiveDelegation {
@@ -188,7 +188,7 @@ export function ProjectTabs({
   }, [rev, refresh]);
 
   useEffect(() => {
-    if (activeTab === "tree") void refreshTree();
+    if (activeTab === "tree" || activeTab === "board") void refreshTree();
   }, [activeTab, rev, refreshTree]);
 
   async function add() {
@@ -234,9 +234,36 @@ export function ProjectTabs({
     await refresh();
   }
 
+  /** P2-FLOW-7: pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
+  async function moveTask(taskId: string, status: TaskStatus) {
+    await fetch(`/api/projects/${project.id}/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    await Promise.all([refresh(), refreshTree()]);
+  }
+
   const done = tasks.filter((t) => t.status === "done").length;
   const runningIds = new Set(live.delegations.map((d) => d.personaId));
   const bench = roster.filter((r) => !runningIds.has(r.personaId));
+  /** P2-FLOW-7: kartu papan = flatten TaskTree + task pra-migrasi (hanya di DB) di depth 0. */
+  const treeFlat = tree.flatMap((n) => {
+    const out: Array<{ node: TaskNode; depth: number }> = [];
+    const walk = (x: TaskNode, d: number) => {
+      out.push({ node: x, depth: d });
+      x.children.forEach((c) => walk(c, d + 1));
+    };
+    walk(n, 0);
+    return out;
+  });
+  const inTree = new Set(treeFlat.map((t) => t.node.id));
+  const flattenCards = [
+    ...treeFlat,
+    ...tasks
+      .filter((t) => !inTree.has(t.id))
+      .map((t) => ({ node: { ...t, artefak: [], children: [] } as unknown as TaskNode, depth: 0 })),
+  ];
 
   return (
     <div className="pane-scroll">
@@ -333,6 +360,54 @@ export function ProjectTabs({
               </button>
             </div>
           )}
+        </section>
+      )}
+
+      {activeTab === "board" && (
+        <section aria-label="Papan kanban task">
+          <p className="pane-hint">Seret kartu antar kolom untuk mengubah status — sinkron dengan tasklist agent & TaskTree.</p>
+          <div className="board">
+            {(["todo", "doing", "review", "done"] as const).map((col) => {
+              const cards = flattenCards.filter((c) => c.node.status === col);
+              return (
+                <div
+                  key={col}
+                  className="board-col"
+                  data-s={col}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData("text/yui-task");
+                    if (id) void moveTask(id, col);
+                  }}
+                >
+                  <header>
+                    <b>{LABEL[col]}</b>
+                    <span className="board-count">{cards.length}</span>
+                  </header>
+                  <div className="board-cards">
+                    {cards.map(({ node, depth }) => (
+                      <article
+                        key={node.id}
+                        className="board-card"
+                        style={{ marginLeft: depth * 10 }}
+                        draggable
+                        onDragStart={(e) => e.dataTransfer.setData("text/yui-task", node.id)}
+                        title={depth > 0 ? "subtask" : undefined}
+                      >
+                        {depth > 0 && <span className="board-sub">↳</span>}
+                        <span className="board-title">{node.title}</span>
+                        {node.assignee && (
+                          <small className="board-assignee">{node.assignee.replace("yui-", "")}</small>
+                        )}
+                        {node.artefak.length > 0 && <small className="board-art">+{node.artefak.length}</small>}
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </section>
       )}
 
