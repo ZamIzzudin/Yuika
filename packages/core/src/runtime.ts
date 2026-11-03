@@ -1,0 +1,107 @@
+// @yui/core — runtime wiring: satu factory untuk seluruh kernel (dipakai apps/web).
+// DEMO-SHORTCUT: core berjalan in-process di Next.js; P0 memisah jadi service + worker.
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import { PersonaInfo, type YuiEvent } from "@yui/contracts";
+import { SessionStore } from "./session/store.js";
+import { makeEmitter } from "./session/emit.js";
+import { EventBus } from "./bus.js";
+import { OpenAICompatProvider } from "./provider/openai-compat.js";
+import { AgentLoop } from "./loop.js";
+import { ApprovalEngine, resolvePendingApproval } from "./approval/engine.js";
+import { listPersonas } from "./personas/loader.js";
+import { createSessionWithPrompt } from "./runtime-helpers.js";
+import { registerFileTools } from "./tools/file-tools.js";
+import { registerWebTools } from "./tools/web-tools.js";
+import { registerSkillTools } from "./tools/skill-tools.js";
+import { registerRunCommandTool } from "./tools/run-command.js";
+import { registerDelegateTool } from "./tools/delegate-tool.js";
+import { connectMcpFromConfig, type McpRegistry } from "./mcp/client.js";
+import { resolvePaths, type YuiPaths } from "./paths.js";
+
+export interface YuiRuntimeConfig {
+  provider: { baseUrl: string; apiKey: string; model: string };
+  paths?: Partial<YuiPaths>;
+}
+
+export function createYuiRuntime(cfg: YuiRuntimeConfig) {
+  const paths = { ...resolvePaths(), ...cfg.paths } as YuiPaths;
+  fs.mkdirSync(paths.workspacePath, { recursive: true });
+
+  const store = new SessionStore(paths.dbPath);
+  const provider = new OpenAICompatProvider({ baseUrl: cfg.provider.baseUrl, apiKey: cfg.provider.apiKey });
+
+  // tools core (sekali per proses)
+  registerFileTools();
+  registerWebTools();
+  registerSkillTools(paths.skillsDir);
+  registerRunCommandTool();
+  registerDelegateTool({
+    store,
+    bus: EventBus,
+    provider,
+    model: cfg.provider.model,
+    personasDir: paths.personasDir,
+    skillsDir: paths.skillsDir,
+    workspacePath: paths.workspacePath,
+  });
+
+  // MCP dari config (demo: best-effort, lanjut jika gagal)
+  let mcpConfig: McpRegistry | null = null;
+  if (paths.mcpConfigPath && fs.existsSync(paths.mcpConfigPath)) {
+    mcpConfig = JSON.parse(fs.readFileSync(paths.mcpConfigPath, "utf-8")) as McpRegistry;
+  }
+  void connectMcpFromConfig(mcpConfig).then((conns) => {
+    for (const c of conns) console.log(`[yui] MCP '${c.name}' terhubung (${c.toolCount} tools)`);
+  });
+
+  function listPersonaInfos(): PersonaInfo[] {
+    return listPersonas(paths.personasDir).map((p) => ({
+      id: p.manifest.id,
+      name: p.manifest.name,
+      expertise: p.manifest.expertise,
+      description: p.manifest.description,
+      portrait: p.manifest.assets.portrait,
+      states: p.manifest.assets.expressions,
+    }));
+  }
+
+  function createSession(personaId: string): { sessionId: string; persona: PersonaInfo } {
+    const persona = listPersonas(paths.personasDir).find((p) => p.manifest.id === personaId);
+    if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
+    const sessionId = `s_${randomUUID()}`;
+    // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline)
+    createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir);
+    const info = listPersonaInfos().find((p) => p.id === personaId)!;
+    return { sessionId, persona: info };
+  }
+
+  function makeLoopFor(sessionId: string): AgentLoop {
+    const emit = makeEmitter(store, EventBus, sessionId);
+    const approvals = new ApprovalEngine(emit);
+    return new AgentLoop({
+      store,
+      provider,
+      model: cfg.provider.model,
+      workspacePath: paths.workspacePath,
+      approvals,
+      emit,
+    });
+  }
+
+  return {
+    paths,
+    store,
+    bus: EventBus,
+    listPersonas: listPersonaInfos,
+    createSession,
+    runTurn: (sessionId: string, text: string) => makeLoopFor(sessionId).runTurn(sessionId, text),
+    resolveApproval: (requestId: string, approved: boolean) => resolvePendingApproval(requestId, approved),
+    emitSessionError: (sessionId: string, message: string) => {
+      const e = store.appendEvent(sessionId, { type: "session.error", message, recoverable: false });
+      EventBus.publish(sessionId, e);
+    },
+    getEvents: (sessionId: string, since = 0): YuiEvent[] => store.getEvents(sessionId, since),
+    subscribe: (sessionId: string, listener: (e: YuiEvent) => void) => EventBus.subscribe(sessionId, listener),
+  };
+}

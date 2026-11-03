@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orin v2 – Maskot AI Agent</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&display=swap">
+<style>
+:root{--bg:#EEF0F7;--panel:#FFFFFF;--ink:#1A1D33;--mute:#5E6384;--line:#D4D8EA;--acc:#2F6FE0;--chip:#E4E9F8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A0C16;--panel:#12152A;--ink:#E9EAF5;--mute:#9499B8;--line:#252A4C;--acc:#8CB4FF;--chip:#1B1F3A}}
+:root[data-theme="dark"]{--bg:#0A0C16;--panel:#12152A;--ink:#E9EAF5;--mute:#9499B8;--line:#252A4C;--acc:#8CB4FF;--chip:#1B1F3A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Sora',system-ui,sans-serif;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+h1{font-weight:300;font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 18px;font-size:.92rem}
+.stage{background:#EAF1FF;color:#1A1D33;border:1px solid var(--line);border-radius:28px;padding:10px 8px 18px;--ink:#1A1D33;--mute:#5E6384;--chip:#fff;--line:#C9D4F0;--acc:#2F6FE0;--bg:#F6F9FF}
+svg#m{display:block;width:100%;max-width:420px;margin:0 auto;cursor:pointer;touch-action:manipulation}
+.state{text-align:center;color:var(--mute);font-size:.85rem;min-height:1.4em}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 10px 0}
+button{font:inherit;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:7px 15px;cursor:pointer;font-size:.85rem}
+button:hover{border-color:var(--acc)}button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.on{border-color:var(--acc);color:var(--acc)}
+form{display:flex;gap:8px;margin:16px 14px 0}
+input{flex:1;min-width:0;font:inherit;font-size:.92rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:10px 16px}
+.reply{margin:12px 18px 0;min-height:2.8em;font-size:.92rem;text-align:center}
+section{margin-top:30px}
+h2{font-weight:600;font-size:1.05rem;margin:0 0 8px}
+p,li{font-size:.9rem;color:var(--mute)}
+code,pre{font-family:ui-monospace,Menlo,monospace;font-size:.8rem}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;overflow-x:auto;color:var(--ink)}
+.tw{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+td,th{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);color:var(--mute);white-space:nowrap}
+th{color:var(--ink);font-weight:600}tr:last-child td{border-bottom:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Orin</h1>
+<p class="sub">Maskot serigala kecil dengan rig: telinga, mata, pupil, kelopak, hidung, dan badan bergerak mengikuti percakapan.</p>
+
+<div class="stage">
+<svg id="m" viewBox="0 0 400 400" role="img" aria-label="Maskot Orin">
+<defs>
+<path id="head" d="M-52,-88C-26,-98 26,-98 52,-88C84,-68 100,-22 102,26L112,35C115,39 114,44 111,49C86,96 42,120 0,120C-42,120 -86,96 -111,49C-114,44 -115,39 -112,35L-102,26C-100,-22 -84,-68 -52,-88Z"/>
+<path id="earR" d="M12,-82C20,-100 28,-116 42,-118C52,-118 58,-112 66,-104C80,-86 90,-64 92,-40L28,-40Z"/>
+<path id="earL" d="M-12,-82C-20,-100 -28,-116 -42,-118C-52,-118 -58,-112 -66,-104C-80,-86 -90,-64 -92,-40L-28,-40Z"/>
+<clipPath id="cL"><ellipse rx="35" ry="42"/></clipPath>
+<clipPath id="cR"><ellipse rx="35" ry="42"/></clipPath>
+<clipPath id="mc"><path id="mclip" d="M0,0Z"/></clipPath>
+<mask id="pmL" maskUnits="userSpaceOnUse" x="-40" y="-40" width="80" height="80"><rect x="-40" y="-40" width="80" height="80" fill="#fff"/><ellipse id="pbL" rx="30" ry="14" fill="#000"/></mask>
+<mask id="pmR" maskUnits="userSpaceOnUse" x="-40" y="-40" width="80" height="80"><rect x="-40" y="-40" width="80" height="80" fill="#fff"/><ellipse id="pbR" rx="30" ry="14" fill="#000"/></mask>
+<filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
+<radialGradient id="sh"><stop offset="0" stop-color="#04235A" stop-opacity=".25"/><stop offset="1" stop-color="#04235A" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse id="shadow" cx="200" cy="368" rx="100" ry="11" fill="url(#sh)"/>
+<circle id="r1" cx="200" cy="200" r="160" fill="none" stroke="#6FA8FF" stroke-width="2" opacity="0"/>
+<circle id="r2" cx="200" cy="200" r="160" fill="none" stroke="#6FA8FF" stroke-width="2" opacity="0"/>
+<circle id="halo" cx="200" cy="200" r="150" fill="none" stroke="#6FA8FF" stroke-width="16" opacity="0" filter="url(#soft)"/>
+<g id="body">
+<g fill="#04235A" stroke="#04235A" stroke-width="16" stroke-linejoin="round">
+<use class="eo" data-s="-1" href="#earL"/><use class="eo" data-s="1" href="#earR"/><use href="#head"/></g>
+<g fill="#AACBFF">
+<use class="ef" data-s="-1" href="#earL"/><use class="ef" data-s="1" href="#earR"/><use href="#head"/></g>
+<path class="ei" data-s="-1" fill="#04235A" d="M-50,-96C-60,-84 -68,-72 -72,-60C-65,-62 -56,-64 -47,-60Z"/>
+<path class="ei" data-s="1" fill="#04235A" d="M50,-96C60,-84 68,-72 72,-60C65,-62 56,-64 47,-60Z"/>
+<g id="face">
+<path fill="#fff" d="M-88,26L-68,42C-50,70 -26,98 0,100C26,98 50,70 68,42L88,26L64,6L-64,6Z"/>
+<g id="eL"><g clip-path="url(#cL)"><ellipse rx="35" ry="42" fill="#fff"/><g id="gL"><ellipse id="pL" rx="13" ry="18" fill="#04235A" mask="url(#pmL)"/></g><rect id="lL" x="-46" y="-60" width="92" height="20" fill="#AACBFF"/></g></g>
+<g id="eR"><g clip-path="url(#cR)"><ellipse rx="35" ry="42" fill="#fff"/><g id="gR"><ellipse id="pR" rx="13" ry="18" fill="#04235A" mask="url(#pmR)"/></g><rect id="lR" x="-46" y="-60" width="92" height="20" fill="#AACBFF"/></g></g>
+<path id="nose" fill="#04235A" d="M-14,-6C-8,-9 8,-9 14,-6C12,0 5,5 0,8C-5,5 -12,0 -14,-6Z"/>
+<path id="mopen" fill="#04235A" stroke="#04235A" stroke-width="9" stroke-linejoin="round" opacity="0" d="M0,0Z"/>
+<ellipse id="tongue" fill="#FF8FA3" clip-path="url(#mc)" opacity="0" rx="10" ry="4" cx="0" cy="75"/>
+<path id="mouth" fill="none" stroke="#04235A" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" d="M-22,64Q2,70 22,60"/>
+<path id="fgL" fill="#fff" opacity="0" d="M0,0"/>
+<path id="fgR" fill="#fff" opacity="0" d="M0,0"/>
+<path id="dmL" fill="none" stroke="#04235A" stroke-width="3.5" stroke-linecap="round" opacity="0" d="M0,0"/>
+<path id="dmR" fill="none" stroke="#04235A" stroke-width="3.5" stroke-linecap="round" opacity="0" d="M0,0"/>
+</g>
+</g>
+</svg>
+<div class="state" id="st">idle</div>
+<div class="chips" id="chips"></div>
+<form id="f"><input id="in" placeholder="Ketik pesan untuk Orin…" autocomplete="off" aria-label="Pesan"><button type="submit">Kirim</button><button type="button" id="mic">Suara</button></form>
+<div class="reply" id="rp" aria-live="polite"></div>
+</div>
+
+<section>
+<h2>Rig (siap dipindah ke Rive)</h2>
+<p>Gambar ini orisinal, digambar ulang mengikuti gaya referensi (bukan hasil menjiplak logonya). Hirarki bone dan input di bawah dipakai persis sama saat Anda membangun artboard di Rive Editor: gambar tiap bagian sebagai shape terpisah, beri bone, lalu atur pivot sesuai tabel.</p>
+<div class="tw"><table>
+<tr><th>Bone / shape</th><th>Pivot</th><th>Digerakkan oleh</th></tr>
+<tr><td>Root › Body (kepala + outline)</td><td>tengah</td><td>squash-stretch, goyang, napas, bounce</td></tr>
+<tr><td>Body › EarL, EarR (+ inner ear)</td><td>pangkal telinga</td><td>rotasi: perk, flick, layu, miring</td></tr>
+<tr><td>Body › Face › Muzzle</td><td>tengah</td><td>parallax ringan mengikuti tatapan</td></tr>
+<tr><td>Face › EyePatchL/R › Pupil</td><td>tengah patch</td><td>translasi tatapan, skala (besar/kecil), squash untuk kedip</td></tr>
+<tr><td>EyePatch › Lid (clipping)</td><td>tepi atas</td><td>turun + miring (berpikir, bingung)</td></tr>
+<tr><td>Pupil › BottomCut (mask)</td><td>bawah pupil</td><td>naik menjadi mata "^ ^" saat senang</td></tr>
+<tr><td>Face › Nose</td><td>tengah hidung</td><td>sniff saat berpikir</td></tr>
+<tr><td>Face › Mouth</td><td>tengah mulut</td><td>garis smirk, rahang V, taring, lidah; buka mengikuti audioLevel</td></tr>
+</table></div>
+<p style="margin-top:14px">State machine "Mascot": number <code>mood</code> (0 idle, 1 listening, 2 thinking, 3 speaking, 4 happy, 5 confused), <code>audioLevel</code> 0–100, <code>lookX</code>/<code>lookY</code> −100..100, trigger <code>blink</code> dan <code>nod</code>.</p>
+<pre>const { rive, RiveComponent } = useRive({ src: "/orin.riv", stateMachines: "Mascot", autoplay: true });
+const mood  = useStateMachineInput(rive, "Mascot", "mood");
+const level = useStateMachineInput(rive, "Mascot", "audioLevel");
+mood.value = 2;          // agent berpikir
+level.value = ttsLevel;  // 0-100 tiap frame saat bicara</pre>
+<p>Nilai keyframe tiap ekspresi ada pada tabel <code>S</code> di sumber halaman ini.</p>
+</section>
+</main>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},Q=function(c){return document.querySelectorAll(c)};
+// rig params: eL/eR ear angle (+ = droop outward, - = perk), pw/ph pupil size, pr pupil ratio R, ps patch scale,
+// gx/gy gaze, top lid cover, tl/tr lid tilt, hap = happy arc, sniff, body by/sy/rot, ring, halo
+var B={eL:0,eR:0,pw:13,ph:18,pr:1,ps:1,gx:0,gy:0,top:0,tl:0,tr:0,hap:0,sniff:0,by:0,sy:1,rot:0,ring:0,halo:0,ms:.35,mo:0,mx:0};
+function mk(o){var r={};for(var k in B)r[k]=o&&k in o?o[k]:B[k];return r}
+var S={
+idle:mk({}),
+listening:mk({eL:-7,eR:-7,pw:14,ph:22,ps:1.06,by:-8,sy:1.04,rot:3,ring:1,ms:.1,mo:.2}),
+thinking:mk({eL:8,eR:-4,pw:12,ph:15,gx:-.8,gy:-.8,top:.2,tl:-8,tr:8,sniff:1,rot:-5,ms:-.15,mx:-7}),
+speaking:mk({eL:-2,eR:-2,pw:13,ph:19,halo:1,by:-3,ms:.3,mo:.3}),
+happy:mk({eL:-10,eR:-10,pw:15,ph:17,hap:1,by:-14,sy:1.05,rot:3,ms:1,mo:.5}),
+confused:mk({eL:-12,eR:24,pw:11,ph:16,pr:1.45,top:.28,tl:14,tr:-4,gx:.5,gy:-.2,rot:8,ms:-.6,mx:6})
+};
+var cur=mk({}),tgt=S.idle,name='idle',t0=performance.now(),last=t0,blink=0,nextBlink=t0+2500,bump=0,
+lvl=0,lvlT=0,mx=0,my=0,micOn=false,micLevel=0,ana=null,sm=0;
+function set(n){name=n;tgt=S[n];$('st').textContent=n;
+Q('#chips button').forEach(function(b){b.classList.toggle('on',b.dataset.s===n)})}
+Object.keys(S).forEach(function(n){var b=document.createElement('button');b.textContent=n;b.dataset.s=n;
+b.onclick=function(){set(n)};$('chips').appendChild(b)});
+document.addEventListener('pointermove',function(e){var r=$('m').getBoundingClientRect();
+mx=Math.max(-1,Math.min(1,(e.clientX-r.left-r.width/2)/(r.width*.7)));
+my=Math.max(-1,Math.min(1,(e.clientY-r.top-r.height/2)/(r.height*.7)))});
+$('m').addEventListener('click',function(){bump=1;if(name==='idle'){set('happy');setTimeout(function(){if(name==='happy')set('idle')},1100)}});
+
+function frame(now){
+var dt=Math.min(.05,(now-last)/1e3);last=now;var t=(now-t0)/1e3,k=1-Math.exp(-dt*9);
+for(var p in cur)cur[p]+=(tgt[p]-cur[p])*k;
+var bl=1;
+if(now>nextBlink){blink=1;nextBlink=now+2200+Math.random()*3500}
+if(blink>0){blink-=dt/.15;bl=blink>0?Math.max(.1,Math.abs(blink*2-1)):1;if(blink<=0)blink=0}
+if(name==='speaking'){if(now>lvlT){lvlT=now+80+Math.random()*110;lvl=Math.random()<.18?.05:.35+Math.random()*.65}}
+else if(name==='listening'&&micOn)lvl=micLevel;else lvl=0;
+sm+=(lvl-sm)*(1-Math.exp(-dt*14));var L=sm;
+var gx=cur.gx,gy=cur.gy;
+if(name==='thinking'){gx+=Math.sin(t*1.1)*.4;gy+=Math.sin(t*.8)*.15}
+else if(name==='idle'||name==='listening'||name==='happy'){gx+=mx*.9;gy+=my*.7}
+bump*=Math.exp(-dt*4);
+var br=Math.sin(t*1.6),by=cur.by+br*1.8-Math.sin(bump*Math.PI)*16,
+sy=cur.sy+br*.012+L*.05+bump*.05,sx=1+(1-sy)*.7,
+rot=cur.rot+Math.sin(t*.9)*.8+(name==='speaking'?Math.sin(t*5)*L*2.2:0);
+$('body').setAttribute('transform','translate(200 '+(206+by)+') rotate('+rot+') scale('+(1.2*sx)+' '+(1.2*sy)+')');
+$('face').setAttribute('transform','translate('+gx*5+' '+gy*3+')');
+$('shadow').setAttribute('rx',100-by*.9);$('shadow').setAttribute('opacity',.8+by*.015);
+// ears
+var wig=Math.sin(t*9)*L*4;
+function ear(c,key){Q(c).forEach(function(e){var s=+e.dataset.s,a=(s<0?cur.eL:cur.eR)*s+(s<0?-wig:wig)+Math.sin(t*.7+s)*.8;
+e.setAttribute('transform','rotate('+a+' '+(s*52)+' -72)')})}
+ear('.eo');ear('.ef');ear('.ei');
+// eyes
+[['L',-1,1,cur.tl],['R',1,cur.pr,cur.tr]].forEach(function(a){
+var s=a[0],x=a[1]*46,m=a[2],tl=a[3],ph=cur.ph*(1+L*.14),pw=cur.pw*(1-L*.05);
+$('e'+s).setAttribute('transform','translate('+x+' 4) scale('+cur.ps+')');
+$('g'+s).setAttribute('transform','translate('+(gx*14+a[1]*-3)+' '+(gy*15)+')');
+var e=$('p'+s);e.setAttribute('rx',pw*m);e.setAttribute('ry',Math.max(1.5,ph*m*bl));
+var b=$('pb'+s),H=ph*m;b.setAttribute('ry',H*1.25);b.setAttribute('rx',pw*m*2.2);b.setAttribute('cy',H*2.3-cur.hap*H*1.4);
+var ye=-42+cur.top*84,l=$('l'+s);l.setAttribute('height',Math.max(0,ye+60));
+l.setAttribute('transform','rotate('+tl+' 0 '+ye+')')});
+var mo=Math.max(0,Math.min(1,cur.mo+(name==='speaking'?L*.9:0))),ms=cur.ms,mw=22+ms*4-mo*3,mxx=cur.mx,mcy=64-ms*1.5+Math.sin(t*1.6)*.3,ly=mcy-ms*3+1,ry_=mcy-ms*5-2,lx=mxx-mw,rx_=mxx+mw,ctx=mxx+2,cty=mcy+4+ms*6;
+var up='M'+lx+','+ly+'Q'+ctx+','+cty+' '+rx_+','+ry_,od=up+'Q'+mxx+','+(mcy+4+mo*26)+' '+lx+','+ly+'Z',oo=Math.min(1,mo*6);
+$('mouth').setAttribute('d',up);$('mouth').style.opacity=1-oo;
+$('mopen').setAttribute('d',od);$('mopen').style.opacity=oo;$('mclip').setAttribute('d',od);
+var tg=$('tongue');tg.setAttribute('cx',mxx);tg.setAttribute('cy',mcy+4+mo*24);tg.setAttribute('rx',mw*.4);tg.setAttribute('ry',2+mo*8);tg.style.opacity=0;
+function qp(u){var a=1-u;return[a*a*lx+2*a*u*ctx+u*u*rx_,a*a*ly+2*a*u*cty+u*u*ry_]}
+var f1=qp(.25),f2=qp(.75),fl=4+mo*4;
+$('fgL').setAttribute('d','M'+(f1[0]-3.5)+','+(f1[1]-.5)+'L'+(f1[0]+3.5)+','+(f1[1]-.5)+'L'+f1[0]+','+(f1[1]+fl)+'Z');
+$('fgR').setAttribute('d','M'+(f2[0]-3.5)+','+(f2[1]-.5)+'L'+(f2[0]+3.5)+','+(f2[1]-.5)+'L'+f2[0]+','+(f2[1]+fl)+'Z');
+$('fgL').style.opacity=0;$('fgR').style.opacity=0;
+$('dmR').setAttribute('d','M'+(rx_+2)+','+ry_+'L'+(rx_+8)+','+(ry_-4));
+$('dmL').setAttribute('d','M'+(lx-2)+','+ly+'L'+(lx-8)+','+(ly-4));
+var dop=0;$('dmR').style.opacity=dop;$('dmL').style.opacity=dop;
+
+var sn=1+Math.sin(t*14)*.07*cur.sniff;
+$('nose').setAttribute('transform','translate(0 '+(26-cur.sniff*Math.abs(Math.sin(t*14))*1.5)+') scale('+sn+')');
+[['r1',0],['r2',.5]].forEach(function(a){var ph=((t*.6)+a[1])%1,el=$(a[0]);
+el.setAttribute('r',160+ph*36);el.setAttribute('opacity',cur.ring*(1-ph)*.55)});
+$('halo').setAttribute('r',150+L*14);$('halo').setAttribute('opacity',cur.halo*(.15+L*.55));
+requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+
+var busy=false;
+function wait(ms){return new Promise(function(r){setTimeout(r,ms)})}
+var replies=['Tentu, saya bantu. Ini ringkasan singkatnya untuk Anda.','Sudah saya periksa. Semuanya terlihat baik dan siap dilanjutkan.','Menarik. Izinkan saya jelaskan langkah demi langkah.'];
+async function run(text,skip){
+if(busy)return;busy=true;$('rp').textContent='';
+if(!skip){set('listening');await wait(700)}
+if(/\?\?|bingung|xyz/i.test(text)){set('confused');await wait(1800);$('rp').textContent='Hmm, bisa dijelaskan lebih rinci?';await wait(1200);set('idle');busy=false;return}
+set('thinking');await wait(1500);
+var r=replies[Math.floor(Math.random()*replies.length)];set('speaking');
+for(var i=0;i<=r.length;i++){$('rp').textContent=r.slice(0,i);await wait(34)}
+await wait(300);set('happy');await wait(1300);set('idle');busy=false}
+$('f').addEventListener('submit',function(e){e.preventDefault();var v=$('in').value.trim();if(!v)return;$('in').value='';run(v)});
+$('mic').addEventListener('click',async function(){
+if(busy&&!micOn)return;
+if(!micOn){micOn=true;$('mic').classList.add('on');$('mic').textContent='Selesai';set('listening');
+try{var s=await navigator.mediaDevices.getUserMedia({audio:true}),c=new (window.AudioContext||window.webkitAudioContext)(),
+a=c.createAnalyser();a.fftSize=256;c.createMediaStreamSource(s).connect(a);var d=new Uint8Array(a.frequencyBinCount);
+ana={s:s,c:c};(function poll(){if(!micOn)return;a.getByteFrequencyData(d);var sum=0;for(var i=0;i<d.length;i++)sum+=d[i];
+micLevel=Math.min(1,sum/d.length/70);setTimeout(poll,50)})()}
+catch(e){(function sim(){if(!micOn)return;micLevel=.2+Math.random()*.6;setTimeout(sim,120)})()}
+}else{micOn=false;micLevel=0;$('mic').classList.remove('on');$('mic').textContent='Suara';
+if(ana){ana.s.getTracks().forEach(function(t){t.stop()});ana.c.close();ana=null}
+run('suara',true)}});
+set('idle');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+id: yui-conductor
+name: "Yui Conductor"
+version: 0.1.0
+expertise: orchestration
+tags: [planning, delegation, coordination]
+description: "Memecah tugas kompleks dan mengoordinasikan persona spesialis."
+assets:
+  portrait: null
+  riv: null
+  expressions: [idle, thinking, working, awaiting_input, done, error, celebrating]
+model:
+  primary: { quality: high }
+  aux: { quality: low }
+memory:
+  domain: orchestration
+  learn: true

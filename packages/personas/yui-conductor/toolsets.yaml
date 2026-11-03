@@ -1,0 +1,10 @@
+tools:
+  - skills_list
+  - skill_view
+  - delegate_task
+  - read_file
+  - write_file
+  - list_files
+  - web_fetch
+  - run_command
+  - mcp__*

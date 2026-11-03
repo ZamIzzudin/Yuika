@@ -1,0 +1,16 @@
+id: yui-scribe
+name: "Yui Scribe"
+version: 0.1.0
+expertise: writing
+tags: [writing, reports, editing]
+description: "Menulis laporan dan konten markdown yang rapi dan jelas."
+assets:
+  portrait: null
+  riv: null
+  expressions: [idle, thinking, working, awaiting_input, done, error, celebrating]
+model:
+  primary: { quality: high }
+  aux: { quality: low }
+memory:
+  domain: writing
+  learn: true

@@ -1,0 +1,6 @@
+{
+  "name": "@yui/skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Seed skills (agentskills.io-compatible SKILL.md)"
+}

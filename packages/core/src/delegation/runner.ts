@@ -1,0 +1,96 @@
+// @yui/core — delegation-lite (DEMO): child = turn loop in-process dengan persona anak.
+// DEMO-SHORTCUT: tanpa job queue persist, tanpa steering — dibayar di P0/P1 (TASKS.md).
+// Parent hanya menerima ringkasan, bukan tool calls anak (context economy — Hermes §4.6).
+import { randomUUID } from "node:crypto";
+import type { PersonaState } from "@yui/contracts";
+import type { SessionStore } from "../session/store.js";
+import type { Emit } from "../session/emit.js";
+import type { EventBus } from "../bus.js";
+import type { ProviderAdapter } from "../provider/adapter.js";
+import { AgentLoop } from "../loop.js";
+import { makeApprovalEngineForSession, createSessionWithPrompt } from "../runtime-helpers.js";
+import { listPersonas } from "../personas/loader.js";
+
+export interface DelegationDeps {
+  store: SessionStore;
+  bus: typeof EventBus;
+  provider: ProviderAdapter;
+  model: string;
+  personasDir: string;
+  skillsDir: string;
+  workspacePath: string;
+}
+
+const MAX_PARALLEL_CHILDREN = 2; // DEMO cap — P1: pool berbasis workspace + plan
+
+let activeChildren = 0;
+
+export interface ChildRunHandle {
+  childSessionId: string;
+  summary: Promise<string>;
+}
+
+export function runChildPersona(
+  deps: DelegationDeps,
+  parent: { sessionId: string; turnId: string },
+  personaId: string,
+  goal: string,
+  context: string | null,
+  parentEmit: Emit,
+): ChildRunHandle {
+  const persona = listPersonas(deps.personasDir).find((p) => p.manifest.id === personaId);
+  if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
+  if (!persona.manifest.delegation.spawnable_by.includes("yui") && !persona.manifest.delegation.spawnable_by.includes("user")) {
+    throw new Error(`persona ${personaId} tidak spawnable`);
+  }
+  if (activeChildren >= MAX_PARALLEL_CHILDREN) throw new Error("batas delegation paralel demo (2) tercapai");
+
+  const childSessionId = `s_${randomUUID()}`;
+  // Toolset anak = toolset persona MINUS delegate_task (kedalaman 1 utk demo) — TODO(P1): depth policy
+  const childTools = persona.manifest.tools.filter((t) => t !== "delegate_task");
+
+  // Reuse pembuatan sesi dari AgentLoop factory (prompt frozen, skills index persona anak)
+  createSessionWithPrompt(deps.store, persona, childSessionId, childTools, deps.skillsDir);
+
+  parentEmit({ type: "delegation.started", turnId: parent.turnId, childSessionId, personaId, goal });
+  activeChildren++;
+
+  const summary = (async () => {
+    try {
+      const childEmit: Emit = (draft) => {
+        // Event anak juga tersimpan di sesi anak (bisa diinspeksi terpisah)
+        const event = deps.store.appendEvent(childSessionId, draft);
+        deps.bus.publish(childSessionId, event);
+        // Teruskan state persona anak ke parent sebagai delegation.progress
+        if (draft.type === "persona.state") {
+          parentEmit({ type: "delegation.progress", childSessionId, state: draft.state as PersonaState });
+        }
+        // Approval yang diminta anak HARUS terlihat di parent — kalau tidak, turn parent
+        // menggantung selamanya (UI parent hanya subscribe sesi parent). Kartu approval
+        // tetap match by requestId (resolvePendingApproval global).
+        if (draft.type === "approval.requested" || draft.type === "approval.resolved") {
+          parentEmit(draft);
+        }
+      };
+      const approvals = makeApprovalEngineForSession(childEmit);
+      const loop = new AgentLoop({
+        store: deps.store,
+        provider: deps.provider,
+        model: deps.model,
+        workspacePath: deps.workspacePath,
+        approvals,
+        emit: childEmit,
+      });
+      await loop.runTurn(childSessionId, context ? `${goal}\n\nContext:\n${context}` : goal);
+      const msgs = deps.store.getMessages(childSessionId);
+      const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant" && m.content.trim());
+      const summaryText = lastAssistant?.content ?? "(child selesai tanpa output)";
+      parentEmit({ type: "delegation.done", turnId: parent.turnId, childSessionId, summary: summaryText });
+      return summaryText;
+    } finally {
+      activeChildren--;
+    }
+  })();
+
+  return { childSessionId, summary };
+}

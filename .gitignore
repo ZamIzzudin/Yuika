@@ -1,0 +1,9 @@
+node_modules/
+.next/
+dist/
+.turbo/
+.env
+*.db
+*.db-journal
+workspace/
+next-env.d.ts
