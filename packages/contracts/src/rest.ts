@@ -1,7 +1,7 @@
 // @yui/contracts — REST payloads (DEMO-WEEK-1.md §5)
 import { z } from "zod";
 import { PersonaState } from "./events.js";
-import { ProjectStatus, TaskStatus } from "./project.js";
+import { ProjectStatus, RosterEntry, TaskStatus } from "./project.js";
 
 export const PersonaInfo = z.object({
   id: z.string(),
@@ -66,4 +66,9 @@ export const UpdateTaskRequest = z.object({
   status: TaskStatus.optional(),
   assignee: z.string().nullable().optional(),
   addRefs: z.array(z.string()).optional(),
+});
+
+// GET/PUT /api/projects/:id/roster (P1-PRJ-3) — sumber: project.yaml di root project
+export const SaveRosterRequest = z.object({
+  roster: z.array(RosterEntry).min(0),
 });

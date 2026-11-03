@@ -319,7 +319,13 @@ export default function Home() {
         )}
       </main>
       {activeProject && (
-        <TaskDrawer project={activeProject} open={drawerOpen} onClose={() => setDrawerOpen(false)} rev={taskRev} />
+        <TaskDrawer
+          project={activeProject}
+          personas={personas}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          rev={taskRev}
+        />
       )}
     </div>
   );

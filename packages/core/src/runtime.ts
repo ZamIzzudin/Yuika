@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type YuiEvent } from "@yui/contracts";
+import { PersonaInfo, type RosterEntry as RosterEntryIn, type YuiEvent } from "@yui/contracts";
 import { SessionStore } from "./session/store.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
@@ -22,6 +22,7 @@ import { connectMcpFromConfig, type McpRegistry } from "./mcp/client.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { resolvePaths, type YuiPaths } from "./paths.js";
 import { ProjectStore } from "./project/store.js";
+import { loadRoster, saveRoster } from "./project/roster.js";
 
 export interface YuiRuntimeConfig {
   provider: { baseUrl: string; apiKey: string; model: string };
@@ -100,6 +101,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return path.join(paths.workspacePath, project.rootPath);
   }
 
+  /** Root absolut project di workspace (validasi project ada) — dipakai roster (PRJ-3). */
+  function projectRoot(projectId: string): string {
+    const project = projectStore.getProject(projectId);
+    if (!project) throw new Error(`project tidak ditemukan: ${projectId}`);
+    return path.join(paths.workspacePath, project.rootPath);
+  }
+
   function makeLoopFor(sessionId: string): AgentLoop {
     const emit = makeEmitter(store, EventBus, sessionId);
     const approvals = new ApprovalEngine(emit);
@@ -148,5 +156,19 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       taskId: string,
       patch: { title?: string; status?: "todo" | "doing" | "review" | "done"; assignee?: string | null; addRefs?: string[] },
     ) => projectStore.updateTask(taskId, patch),
+    // ---- roster project (P1-PRJ-3) ----
+    getProjectRoster: (projectId: string) => loadRoster(projectRoot(projectId)),
+    saveProjectRoster: (projectId: string, roster: RosterEntryIn[]): RosterEntryIn[] => {
+      projectRoot(projectId); // validasi project ada
+      const known = new Set(listPersonas(paths.personasDir).map((p) => p.manifest.id));
+      const seen = new Set<string>();
+      for (const r of roster) {
+        if (!known.has(r.personaId)) throw new Error(`persona tidak ditemukan: ${r.personaId}`);
+        if (seen.has(r.personaId)) throw new Error(`persona duplikat di roster: ${r.personaId}`);
+        seen.add(r.personaId);
+      }
+      saveRoster(projectRoot(projectId), roster);
+      return loadRoster(projectRoot(projectId));
+    },
   };
 }

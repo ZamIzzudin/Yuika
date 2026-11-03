@@ -49,6 +49,12 @@ export const RosterEntry = z.object({
 });
 export type RosterEntry = z.infer<typeof RosterEntry>;
 
+/** `project.yaml` di root project — sumber roster (P1-PRJ-3) & binding MCP (P1-PRJ-5). */
+export const ProjectManifest = z.object({
+  roster: z.array(RosterEntry).default([]),
+});
+export type ProjectManifest = z.infer<typeof ProjectManifest>;
+
 // Tasklist per project (P1-PRJ-4 memakai kontrak ini; TaskTree = D19 menyusul).
 export const TaskStatus = z.enum(["todo", "doing", "review", "done"]);
 export type TaskStatus = z.infer<typeof TaskStatus>;

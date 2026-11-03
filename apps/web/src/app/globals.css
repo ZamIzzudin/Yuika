@@ -595,3 +595,22 @@ html, body {
 .task-body { display: flex; flex-direction: column; min-width: 0; }
 .task-title { font-size: var(--yui-text-md); color: var(--yui-text-secondary); line-height: 1.45; overflow-wrap: anywhere; }
 .task-assignee { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
+
+/* ── Roster (P1-PRJ-3, di drawer proyek) ───────────────────────── */
+.roster-section { display: flex; flex-direction: column; gap: var(--yui-space-2); padding-bottom: var(--yui-space-4); border-bottom: 1px solid var(--yui-border); margin-bottom: var(--yui-space-3); }
+.roster-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.roster-row { display: flex; align-items: center; gap: var(--yui-space-2); padding: 5px 4px; border-radius: 8px; }
+.roster-row:hover { background: var(--yui-hover); }
+.roster-row .face { flex: none; width: 24px; height: 24px; }
+.roster-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.roster-body b { font-size: var(--yui-text-md); font-weight: 500; color: var(--yui-text-secondary); }
+.roster-body small { font-size: var(--yui-text-sm); color: var(--yui-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.roster-body em { font-size: var(--yui-text-sm); font-style: normal; color: var(--yui-accent-text); }
+.roster-assign { display: flex; flex-direction: column; gap: var(--yui-space-2); }
+.roster-assign select, .roster-assign input {
+  font: inherit; font-size: var(--yui-text-md); color: var(--yui-text-primary);
+  background: var(--yui-bg-inset); border: 1px solid var(--yui-border-strong); border-radius: 8px;
+  padding: 6px 10px; min-width: 0;
+}
+.roster-assign select:focus-visible, .roster-assign input:focus-visible { outline: none; border-color: var(--yui-border-focus); }
+.roster-assign .btn { align-self: flex-end; }
