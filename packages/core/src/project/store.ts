@@ -87,7 +87,7 @@ export class ProjectStore {
     return { ...cur, ...next };
   }
 
-  // ---- tasks (tabel siap; REST/tool menyusul P1-PRJ-4) ----
+  // ---- tasks (P1-PRJ-4) ----
 
   createTask(input: { id: string; projectId: string; title: string; assignee?: string | null }): TaskItem {
     const now = Date.now();
@@ -101,7 +101,7 @@ export class ProjectStore {
 
   listTasks(projectId: string): TaskItem[] {
     const rows = this.db
-      .prepare("SELECT * FROM project_tasks WHERE project_id = ? ORDER BY created_at ASC")
+      .prepare("SELECT * FROM project_tasks WHERE project_id = ? ORDER BY created_at ASC, rowid ASC")
       .all(projectId) as { id: string; project_id: string; title: string; status: string; assignee: string | null; refs: string; created_at: number; updated_at: number }[];
     return rows.map((r) => ({
       id: r.id,
@@ -113,6 +113,43 @@ export class ProjectStore {
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     }));
+  }
+
+  getTask(id: string): TaskItem | undefined {
+    const row = this.db.prepare("SELECT * FROM project_tasks WHERE id = ?").get(id) as
+      | { id: string; project_id: string; title: string; status: string; assignee: string | null; refs: string; created_at: number; updated_at: number }
+      | undefined;
+    if (!row) return undefined;
+    return {
+      id: row.id,
+      projectId: row.project_id,
+      title: row.title,
+      status: row.status as TaskItem["status"],
+      assignee: row.assignee,
+      refs: JSON.parse(row.refs) as string[],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  /** Update parsial (title/status/assignee); refs di-append (bukan replace). */
+  updateTask(
+    id: string,
+    patch: { title?: string; status?: TaskItem["status"]; assignee?: string | null; addRefs?: string[] },
+  ): TaskItem | undefined {
+    const cur = this.getTask(id);
+    if (!cur) return undefined;
+    const next = {
+      title: patch.title ?? cur.title,
+      status: patch.status ?? cur.status,
+      assignee: patch.assignee === undefined ? cur.assignee : patch.assignee,
+      refs: patch.addRefs?.length ? [...new Set([...cur.refs, ...patch.addRefs])] : cur.refs,
+      updatedAt: Date.now(),
+    };
+    this.db
+      .prepare("UPDATE project_tasks SET title = ?, status = ?, assignee = ?, refs = ?, updated_at = ? WHERE id = ?")
+      .run(next.title, next.status, next.assignee, JSON.stringify(next.refs), next.updatedAt, id);
+    return { ...cur, ...next };
   }
 
   close(): void {

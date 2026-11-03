@@ -18,3 +18,5 @@ export { createYuiRuntime, type YuiRuntimeConfig } from "./runtime.js";
 export { resolvePaths, resolveRepoRoot } from "./paths.js";
 export { appendUserPreferenceNote, userMdPath } from "./memory/usermd.js";
 export { runChildPersona, type DelegationDeps } from "./delegation/runner.js";
+export { registerTodoTools } from "./tools/todo-tools.js";
+export { ProjectStore } from "./project/store.js";

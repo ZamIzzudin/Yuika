@@ -37,7 +37,7 @@ describe("ProjectStore", () => {
     expect(store.getProject("p_nope")).toBeUndefined();
   });
 
-  it("tasks: tabel siap (P1-PRJ-4) — create + list per project", () => {
+  it("tasks: CRUD penuh (P1-PRJ-4) — create, list scoped, update parsial + refs append", () => {
     const store = makeStore();
     store.createProject({ id: "p_a", name: "A", rootPath: "projects/p_a" });
     store.createProject({ id: "p_b", name: "B", rootPath: "projects/p_b" });
@@ -48,5 +48,15 @@ describe("ProjectStore", () => {
     expect(store.listTasks("p_a").map((t) => t.title)).toEqual(["Riset kompetitor", "Wireframe"]);
     expect(store.listTasks("p_b")).toEqual([]); // scoped per project
     expect(store.listTasks("p_a")[1]!.assignee).toBe("yui-designer");
+
+    // update parsial: status + assignee tak tersentuh bila tak diberikan
+    const up = store.updateTask("t_1", { status: "doing" })!;
+    expect(up.status).toBe("doing");
+    expect(up.assignee).toBeNull();
+    // refs di-APPEND (bukan replace) & bebas duplikat
+    store.updateTask("t_1", { addRefs: ["reports/riset.md", "job_9"] });
+    const dedup = store.updateTask("t_1", { addRefs: ["reports/riset.md"] })!;
+    expect(dedup.refs).toEqual(["reports/riset.md", "job_9"]);
+    expect(store.updateTask("t_nope", { status: "done" })).toBeUndefined();
   });
 });

@@ -17,6 +17,7 @@ import { registerWebTools } from "./tools/web-tools.js";
 import { registerSkillTools } from "./tools/skill-tools.js";
 import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
+import { registerTodoTools } from "./tools/todo-tools.js";
 import { connectMcpFromConfig, type McpRegistry } from "./mcp/client.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { resolvePaths, type YuiPaths } from "./paths.js";
@@ -40,6 +41,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerWebTools();
   registerSkillTools(paths.skillsDir);
   registerRunCommandTool();
+  registerTodoTools({ sessionStore: store, projects: projectStore });
   registerDelegateTool({
     store,
     bus: EventBus,
@@ -138,5 +140,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getProject: (id: string) => projectStore.getProject(id),
     updateProject: (id: string, patch: { name?: string; description?: string; status?: "active" | "archived" }) =>
       projectStore.updateProject(id, patch),
+    // ---- tasklist project (P1-PRJ-4) ----
+    listProjectTasks: (projectId: string) => projectStore.listTasks(projectId),
+    createProjectTask: (projectId: string, title: string, assignee?: string | null) =>
+      projectStore.createTask({ id: `t_${randomUUID().slice(0, 8)}`, projectId, title, assignee: assignee ?? null }),
+    updateProjectTask: (
+      taskId: string,
+      patch: { title?: string; status?: "todo" | "doing" | "review" | "done"; assignee?: string | null; addRefs?: string[] },
+    ) => projectStore.updateTask(taskId, patch),
   };
 }

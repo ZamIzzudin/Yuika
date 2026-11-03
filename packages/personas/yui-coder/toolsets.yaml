@@ -5,3 +5,5 @@ tools:
   - write_file
   - list_files
   - run_command
+  - todo_list
+  - todo_update
