@@ -9,7 +9,9 @@ import { PersonaPicker } from "@/components/PersonaPicker";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
-import type { PersonaInfo, PersonaState, YuiEvent } from "@yui/contracts";
+import { ProjectPanel } from "@/components/ProjectPanel";
+import { TaskDrawer } from "@/components/TaskDrawer";
+import type { PersonaInfo, PersonaState, ProjectInfo, YuiEvent } from "@yui/contracts";
 
 /** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
 const SUGGESTIONS: Record<string, string[]> = {
@@ -39,6 +41,37 @@ export default function Home() {
   const [personaState, setPersonaState] = useState<PersonaState>("idle");
   const [busy, setBusy] = useState(false);
   const lastEventId = useRef(0);
+
+  // Project scope (P1-PRJ-6 shell v0): sesi yang dibuat melekat ke project aktif —
+  // file-ops & tasklist agent otomatis ter-scope (P1-PRJ-2/4).
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
+
+  const loadProjects = useCallback(async () => {
+    try {
+      const r = await fetch("/api/projects");
+      if (!r.ok) return;
+      const d = (await r.json()) as { projects: ProjectInfo[] };
+      setProjects(d.projects);
+      setActiveProjectId((cur) => (cur && d.projects.some((p) => p.id === cur) ? cur : null));
+    } catch {
+      /* biarkan kosong */
+    }
+  }, []);
+
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? window.localStorage.getItem("yui.projectId") : null;
+    if (saved) setActiveProjectId(saved);
+    void loadProjects();
+  }, [loadProjects]);
+
+  useEffect(() => {
+    if (activeProjectId) window.localStorage.setItem("yui.projectId", activeProjectId);
+    else window.localStorage.removeItem("yui.projectId");
+  }, [activeProjectId]);
 
   useEffect(() => {
     fetch("/api/personas")
@@ -85,6 +118,7 @@ export default function Home() {
         break;
       case "tool.call":
         setItems((prev) => [...prev, { kind: "activity", name: e.name, callId: e.callId, detail: short(JSON.stringify(e.args)), done: false }]);
+        if (e.name.startsWith("todo_")) setTaskRev((r) => r + 1); // drawer tasklist refresh
         break;
       case "tool.result":
         setItems((prev) => {
@@ -176,10 +210,21 @@ export default function Home() {
     const res = await fetch("/api/sessions", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ personaId: p.id }),
+      body: JSON.stringify({ personaId: p.id, projectId: activeProjectId ?? null }),
     });
     const d = (await res.json()) as { sessionId: string };
     setSessionId(d.sessionId);
+  }
+
+  /** Ganti scope project → sesi berikutnya dibuat di scope baru; sesi lama ditinggalkan. */
+  function pickProject(id: string | null) {
+    setActiveProjectId(id);
+    setDrawerOpen(false);
+    setActive(null);
+    setSessionId(null);
+    setItems([]);
+    setPersonaState("idle");
+    lastEventId.current = 0;
   }
 
   async function send(text: string) {
@@ -206,17 +251,27 @@ export default function Home() {
         <div className="yui-logo">
           Your-Yui <span className="sub">demo</span>
         </div>
+        <ProjectPanel
+          projects={projects}
+          activeId={activeProjectId}
+          onPick={pickProject}
+          onCreated={loadProjects}
+        />
         <PersonaPicker personas={personas} activeId={active?.id ?? null} onPick={pick} />
       </aside>
       <main className="yui-main">
         {!active ? (
           <div className="empty-state">
-            <div className="portrait-hero"><OrinPortrait state="idle" /></div>
-            <h1>Pilih persona untuk memulai</h1>
+            <div className="portrait-hero">
+              <OrinPortrait state="idle" personaId={activeProject ? undefined : "yui-conductor"} />
+            </div>
+            <h1>{activeProject ? `Proyek: ${activeProject.name}` : "Pilih persona untuk memulai"}</h1>
             <p className="pitch">
-              Conductor mengorkestrasi, Scholar meriset, Scribe menulis, Coder memrogram — saling
-              mendelegasikan pekerjaan lewat satu sesi.
+              {activeProject
+                ? `Semua file & task pada sesi berikutnya terikat ke proyek ini — pilih persona untuk mulai bekerja di scope proyek.`
+                : "Conductor mengorkestrasi, Scholar meriset, Scribe menulis, Coder memrogram — saling mendelegasikan pekerjaan lewat satu sesi."}
             </p>
+            {activeProject?.description ? <p className="pitch">{activeProject.description}</p> : null}
           </div>
         ) : (
           <>
@@ -226,6 +281,11 @@ export default function Home() {
                 <b>{active.name}</b>
                 <span>{active.expertise}</span>
               </div>
+              {activeProject && (
+                <button className="project-chip" onClick={() => setDrawerOpen((v) => !v)} title="Tasklist proyek">
+                  <i /> {activeProject.name}
+                </button>
+              )}
               <span className="state-chip" data-s={personaState}>
                 <i />
                 {STATE_LABEL[personaState]}
@@ -258,6 +318,9 @@ export default function Home() {
           </>
         )}
       </main>
+      {activeProject && (
+        <TaskDrawer project={activeProject} open={drawerOpen} onClose={() => setDrawerOpen(false)} rev={taskRev} />
+      )}
     </div>
   );
 }

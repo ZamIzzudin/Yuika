@@ -511,3 +511,87 @@ html, body {
   .msg-agent, .msg-user, .step-row, .subagent, .approval, .error-row { animation: none; }
   .chat-scroll { scroll-behavior: auto; }
 }
+
+/* ── Project panel (P1-PRJ-6 shell v0) ─────────────────────────── */
+.project-section { display: flex; flex-direction: column; gap: 1px; padding: 0 var(--yui-space-2) var(--yui-space-4); }
+.project-head { display: flex; align-items: center; justify-content: space-between; padding: 0 var(--yui-space-2) var(--yui-space-2); }
+.project-title { font-size: var(--yui-text-sm); letter-spacing: 0.08em; text-transform: uppercase; color: var(--yui-text-dim); }
+.project-add {
+  font: inherit; font-size: var(--yui-text-lg); line-height: 1; color: var(--yui-text-muted);
+  background: none; border: 1px solid var(--yui-border); border-radius: 6px; width: 22px; height: 22px;
+  display: grid; place-items: center; cursor: pointer;
+}
+.project-add:hover { color: var(--yui-text-primary); border-color: var(--yui-border-strong); }
+.project-form { display: flex; flex-direction: column; gap: var(--yui-space-2); padding: var(--yui-space-2); background: var(--yui-bg-inset); border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card, 10px); margin-bottom: var(--yui-space-2); }
+.project-form input {
+  font: inherit; font-size: var(--yui-text-md); color: var(--yui-text-primary);
+  background: var(--yui-bg-canvas); border: 1px solid var(--yui-border-strong); border-radius: 8px;
+  padding: 6px 10px; min-width: 0;
+}
+.project-form input:focus-visible { outline: none; border-color: var(--yui-border-focus); }
+.project-err { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-danger); }
+.project-form-actions { display: flex; justify-content: flex-end; gap: var(--yui-space-2); }
+.project-list { display: flex; flex-direction: column; gap: 1px; }
+.project-row {
+  display: flex; align-items: center; gap: var(--yui-space-2); width: 100%;
+  font: inherit; text-align: left; color: var(--yui-text-secondary);
+  background: none; border: none; border-radius: 8px; padding: 7px var(--yui-space-2); cursor: pointer;
+}
+.project-row b { display: block; font-size: var(--yui-text-md); font-weight: 500; }
+.project-row small { display: block; font-size: var(--yui-text-sm); color: var(--yui-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-row:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
+.project-row[data-active] { background: var(--yui-bg-control-active); color: var(--yui-text-primary); }
+.project-row[data-active] small { color: var(--yui-accent-text); }
+.project-row[data-archived] { opacity: 0.55; }
+.project-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--yui-text-dim); }
+.project-row[data-active] .project-dot { background: var(--yui-accent); }
+
+/* Badge project di chat-header */
+.project-chip {
+  display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+  font: inherit; font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
+  background: var(--yui-bg-surface); border: 1px solid var(--yui-border-strong);
+  border-radius: 999px; padding: 3px 10px; cursor: pointer; max-width: 180px;
+}
+.project-chip i { width: 6px; height: 6px; border-radius: 50%; background: var(--yui-accent); }
+.project-chip span, .project-chip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-chip:hover { border-color: var(--yui-border-focus); color: var(--yui-text-primary); }
+
+/* ── Task drawer (P1-PRJ-4 UI) ─────────────────────────────────── */
+.task-drawer {
+  display: flex; flex-direction: column; flex: 0 0 auto; width: 296px;
+  background: var(--yui-bg-sidebar); border-left: 1px solid var(--yui-border);
+  padding: var(--yui-space-4) var(--yui-space-3); overflow-y: auto;
+}
+.task-drawer-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--yui-space-3); }
+.task-drawer-head b { display: block; font-size: var(--yui-text-md); font-weight: 600; }
+.task-drawer-head small { display: block; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
+.task-close {
+  font: inherit; color: var(--yui-text-muted); background: none; border: none; cursor: pointer;
+  font-size: var(--yui-text-md); padding: 4px; border-radius: 6px;
+}
+.task-close:hover { color: var(--yui-text-primary); background: var(--yui-hover); }
+.task-add { display: flex; gap: var(--yui-space-2); padding-bottom: var(--yui-space-3); }
+.task-add input {
+  flex: 1; min-width: 0; font: inherit; font-size: var(--yui-text-md); color: var(--yui-text-primary);
+  background: var(--yui-bg-inset); border: 1px solid var(--yui-border-strong); border-radius: 8px; padding: 7px 10px;
+}
+.task-add input:focus-visible { outline: none; border-color: var(--yui-border-focus); }
+.task-add-btn { padding: 0 12px; }
+.task-empty { margin: var(--yui-space-2) 0; font-size: var(--yui-text-sm); color: var(--yui-text-muted); line-height: 1.6; }
+.task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.task-row { display: flex; align-items: flex-start; gap: var(--yui-space-2); padding: var(--yui-space-2); border-radius: 8px; }
+.task-row:hover { background: var(--yui-hover); }
+.task-status {
+  flex: none; font: inherit; font-size: var(--yui-text-sm); cursor: pointer;
+  border: 1px solid var(--yui-border-strong); border-radius: 999px; padding: 2px 8px;
+  color: var(--yui-text-muted); background: var(--yui-bg-surface); margin-top: 1px;
+}
+.task-row[data-s="todo"] .task-status { color: var(--yui-text-muted); }
+.task-row[data-s="doing"] .task-status { color: var(--yui-accent-text); border-color: var(--yui-accent); }
+.task-row[data-s="review"] .task-status { color: var(--yui-warning); border-color: var(--yui-warning); }
+.task-row[data-s="done"] .task-status { color: var(--yui-success); border-color: var(--yui-success); }
+.task-row[data-s="done"] .task-title { color: var(--yui-text-dim); text-decoration: line-through; }
+.task-body { display: flex; flex-direction: column; min-width: 0; }
+.task-title { font-size: var(--yui-text-md); color: var(--yui-text-secondary); line-height: 1.45; overflow-wrap: anywhere; }
+.task-assignee { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
