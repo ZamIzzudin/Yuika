@@ -967,3 +967,23 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .skeleton .sk::after { animation: none; }
 }
+
+/* ── Tab Skill (P1-MEM-3) ───────────────────────────────────────── */
+.skill-draft input { margin-bottom: var(--yui-space-2); }
+.skill-desc { color: var(--yui-text-muted); }
+.skill-body {
+  margin: 0; white-space: pre-wrap; font-family: var(--yui-font-mono);
+  font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
+  background: var(--yui-bg-inset); border-radius: var(--yui-radius-md);
+  padding: var(--yui-space-3); max-height: 260px; overflow-y: auto;
+}
+.skill-actions { display: flex; gap: var(--yui-space-2); }
+.skill-active { margin-top: var(--yui-space-4); }
+.skill-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.skill-list li {
+  display: flex; flex-direction: column; gap: 1px; padding: 8px 10px;
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
+}
+.skill-list b { font-size: var(--yui-text-md); font-weight: 600; }
+.skill-list small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
+.skill-chip .noted-icon { filter: none; }

@@ -30,6 +30,8 @@ import { registerMemoryTools } from "./tools/memory-tools.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
 import { findUvx, installUv } from "./mcp/uv.js";
+import { acceptDraft, listDrafts, rejectDraft, updateDraft } from "./skills/manager.js";
+import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
 import { taskTreeFromEvents } from "./project/tasktree.js";
@@ -37,6 +39,14 @@ import { taskTreeFromEvents } from "./project/tasktree.js";
 export interface YuiRuntimeConfig {
   provider: { baseUrl: string; apiKey: string; model: string };
   paths?: Partial<YuiPaths>;
+}
+
+function safeList<T>(fn: () => T[]): T[] {
+  try {
+    return fn();
+  } catch {
+    return [];
+  }
 }
 
 export function createYuiRuntime(cfg: YuiRuntimeConfig) {
@@ -340,6 +350,19 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       }
       return { ok: true, note: "Sesi baru & turn berikutnya memakai config baru (loopCache dikosongkan; .env diperbarui)." };
     },
+    // ---- Skills (P1-MEM-3): draf → validasi → siap pakai ----
+    listSkillsWithDrafts: () => {
+      const drafts = safeList(() => listDrafts(paths.skillsDir));
+      const skills = safeList(() => listSkills(paths.skillsDir));
+      return {
+        drafts: drafts.map((s) => ({ slug: path.basename(s.dir), name: s.name, description: s.description, body: s.body })),
+        skills: skills.map((s) => ({ name: s.name, description: s.description })),
+      };
+    },
+    updateSkillDraft: (input: { slug: string; name: string; description: string; body: string }) =>
+      updateDraft(paths.skillsDir, input.slug, input.name, input.description, input.body),
+    acceptSkillDraft: (slug: string) => acceptDraft(paths.skillsDir, slug),
+    rejectSkillDraft: (slug: string) => rejectDraft(paths.skillsDir, slug),
     mcpAuditRecent: (limit = 50) => mcpAudit.recent(limit),
     // ---- Runtime uv/uvx (server MCP Python) ----
     /** Status uvx: path yang bisa dijalankan ("uvx" bila di PATH) atau null. */

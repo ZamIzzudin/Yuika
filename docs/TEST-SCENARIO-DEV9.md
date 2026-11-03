@@ -78,7 +78,19 @@ USER.md/MEMORY.md isinya persis yang tampil di tab Memori.
 
 ✅ Lolos bila: tanpa restart, sesi baru memakai model baru; `.env` tertata.
 
-## F. Trace performa (2 menit)
+## F. Skill dari pengalaman (3 menit) — P1-MEM-3
+
+1. Di sesi proyek setelah satu alur kerja selesai (mis. landing page barusan), minta:
+   *"Jadikan skill cara kerja barusan — usulkan lewat skill_propose."*
+2. Chip **"🛠 Yui mengusulkan skill"** muncul di chat.
+3. Tab **Skill**: draf tampil (nama, deskripsi, isi) → klik **Edit** → ubah deskripsi → **Simpan**.
+4. Klik **Terima** → draf pindah ke "Siap pakai" (lint lolos).
+5. Sesi baru → tanya agent *"skill apa saja yang kamu punya?"* → skill baru terdaftar via `skills_list`.
+6. Uji duplikat: minta agent usulkan nama yang sama lagi → harus ditolak dengan pesan jelas.
+
+✅ Lolos bila: draf → edit → terima → terlihat agent di sesi baru; tolak menghapus bersih.
+
+## G. Trace performa (2 menit)
 
 Setelah skenario B selesai, salin dari terminal baris-baris `[yui:trace]` terakhir —
 terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu kirimkan
@@ -93,4 +105,5 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
 | C | Approval + Setujui & ingat + file policy | ☐ |
 | D | USER.md/MEMORY.md + memory_append + dedupe + nudge | ☐ |
 | E | Settings swap model panas | ☐ |
-| F | Log trace terkumpul | ☐ |
+| F | Skill dari pengalaman: usul → edit → terima → dipakai agent | ☐ |
+| G | Log trace terkumpul | ☐ |

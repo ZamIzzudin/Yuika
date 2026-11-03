@@ -10,7 +10,7 @@ import type { PersonaState } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
 
 export interface ChatItem {
-  kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted";
+  kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted" | "skill";
   // msg
   role?: "user" | "assistant";
   text?: string;
@@ -188,6 +188,16 @@ export function ChatView({
                   <span className="noted-icon">✎</span>
                   <span className="noted-text">
                     <b>Yui mencatat</b> ({it.scope === "project" ? "memori proyek" : "tentang Anda"}): {it.text}
+                  </span>
+                </div>
+              );
+            }
+            if (it.kind === "skill") {
+              return (
+                <div key={`r${i}`} className="noted-chip skill-chip" title="Usulan skill dari pengalaman — validasi di tab Skill">
+                  <span className="noted-icon">🛠</span>
+                  <span className="noted-text">
+                    <b>Yui mengusulkan skill</b>: {it.text} — validasi di tab <b>Skill</b>
                   </span>
                 </div>
               );

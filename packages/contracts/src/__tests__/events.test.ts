@@ -13,6 +13,7 @@ const samples: YuiEventType[] = [
   { id: 8, ts: 8, sessionId: "s1", type: "approval.requested", requestId: "r1", tool: "write_file", args: {}, reason: "di luar reports/" },
   { id: 9, ts: 9, sessionId: "s1", type: "session.error", message: "oops", recoverable: true },
   { id: 10, ts: 10, sessionId: "s1", type: "memory.noted", turnId: "t1", scope: "user", note: "ringkas saja" },
+  { id: 11, ts: 11, sessionId: "s1", type: "skill.proposed", turnId: "t1", name: "deploy-check", description: "Sebelum deploy cek lint+test" },
 ];
 
 describe("YuiEvent contract", () => {

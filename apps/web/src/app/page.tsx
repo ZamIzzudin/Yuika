@@ -188,6 +188,9 @@ export default function Home() {
       case "memory.noted":
         setItems((prev) => [...prev, { kind: "noted", text: e.note, scope: e.scope }]);
         break;
+      case "skill.proposed":
+        setItems((prev) => [...prev, { kind: "skill", text: `${e.name} — ${e.description}` }]);
+        break;
       case "session.error":
         setItems((prev) => [...prev, { kind: "error", text: e.message }]);
         setBusy(false);
@@ -381,6 +384,7 @@ export default function Home() {
                     { id: "roster", label: "Roster" },
                     { id: "sessions", label: "Sesi" },
                     { id: "memory", label: "Memori" },
+                    { id: "skills", label: "Skill" },
                   ] as const
                 ).map((t) => (
                   <button

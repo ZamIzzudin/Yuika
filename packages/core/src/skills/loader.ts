@@ -51,7 +51,8 @@ export function listSkills(skillsDir: string): Skill[] {
   if (!fs.existsSync(skillsDir)) return [];
   return fs
     .readdirSync(skillsDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !d.name.startsWith("."))
+    // "drafts" = area antrean P1-MEM-3, bukan skill aktif.
+    .filter((d) => d.isDirectory() && !d.name.startsWith(".") && d.name !== "drafts")
     .map((d) => path.join(skillsDir, d.name))
     .map(loadSkill)
     .sort((a, b) => a.name.localeCompare(b.name));

@@ -109,6 +109,14 @@ export const MemoryNotedEvent = EventMeta.extend({
   note: z.string().min(1),
 });
 
+/** P1-MEM-3: agent mengusulkan skill dari pengalaman → draf menunggu validasi user. */
+export const SkillProposedEvent = EventMeta.extend({
+  type: z.literal("skill.proposed"),
+  turnId: z.string(),
+  name: z.string().min(1),
+  description: z.string(),
+});
+
 /** Discriminated union — setiap event punya `type` literal; UI switch-case atas ini. */
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
@@ -122,6 +130,7 @@ export const YuiEvent = z.discriminatedUnion("type", [
   PersonaStateEvent,
   ApprovalRequestedEvent,
   MemoryNotedEvent,
+  SkillProposedEvent,
   ApprovalResolvedEvent,
   SessionErrorEvent,
 ]);

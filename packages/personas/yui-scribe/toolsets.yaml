@@ -7,3 +7,4 @@ tools:
   - todo_list
   - todo_update
   - memory_append
+  - skill_propose
