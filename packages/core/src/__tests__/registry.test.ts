@@ -71,7 +71,7 @@ describe("registry", () => {
     expect(dump).not.toContain('"exclusiveMinimum":true');
     expect(dump).not.toContain('"exclusiveMaximum":true');
     // bentuk angka draft 2020-12 dipertahankan, minimum asli dipindah
-    const n = (registry.toolSchemas()[0].parameters as any).properties.n;
+    const n = (registry.toolSchemas()[0]!.parameters as any).properties.n;
     expect(n.exclusiveMinimum).toBe(0);
     expect(n.minimum).toBeUndefined();
     expect(n.maximum).toBe(100); // .max() inklusif — tetap maximum biasa

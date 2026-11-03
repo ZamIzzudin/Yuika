@@ -13,6 +13,10 @@
 > Putusan lanjutan: **Yui Designer resmi masuk roster** (D9 = 7 persona, §7.4) · Penpot
 > **wajib ter-embed di platform** — bukan app terpisah; scope v0 **ramping tapi flow utuh**
 > (tangga embed §13.9).
+> Putusan maskot: **Orin v4** (docs/Orin v4 – Pilih Maskot) menggantikan rig v2 — lebih
+> sederhana: **satu rig mata untuk semua bentuk** (ekspresi konsisten & simetris),
+> **identitas persona = bentuk** (bola/awan/tetes/kotak/segitiga), siap Rive dengan input
+> `shape` 0–4 (satu file .riv untuk semua persona).
 >
 > **Changelog v0.4:** visi **Studio Proyek multi-agent** (§13): project = entitas first-class
 > (kode+docs+tasklist+struktur agent masing-masing) · workflow deklaratif 7 fase
@@ -533,6 +537,12 @@ Pemetaan state agent → animasi: `thinking` (LLM jalan) · `working` (tool jala
 `awaiting_input` (approval/clarify) · `done` · `error` · `idle` · `celebrating` (task kompleks
 selesai / skill baru dipelajari). Semua state ini sudah ada sebagai event di event bus —
 tinggal dipetakan ke input state machine per persona.
+
+> **Orin v4 (putusan v0.5):** art direction maskot disederhanakan — **satu rig mata dipakai
+> semua bentuk** (ekspresi konsisten & simetris), **identitas persona = bentuk geometris**:
+> Conductor=bola, Scholar=awan, Scribe=tetes, Coder=kotak, Designer=segitiga (+Analyst/
+> Operator nanti memakai ulang bentuk dengan warna berbeda). Migrasi Rive makin murah:
+> SATU file `.riv` dengan input `shape` 0–4 + `mood` 0–5 (dulu: aset per persona).
 
 **Growth gratis (D10).** Usage & skill yang dipelajari → "level" per persona → varian ilustrasi
 terbuka **gratis** untuk semua user — gamifikasi jujur berbasis penggunaan nyata; semua varian

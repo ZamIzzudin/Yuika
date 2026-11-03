@@ -1,83 +1,86 @@
 "use client";
 /**
- * OrinPortrait — maskot serigala Orin sebagai placeholder animasi SVG (W3-B2/W3-C1).
- * Rig & keyframe dipindah 1:1 dari `docs/Orin v2 – Maskot AI Agent.html` (tabel S) —
- * hirarki bone/input sama persis untuk migrasi ke Rive (P1-PER-3), cukup ganti isi
- * komponen ini dengan <Rive src="/orin.riv" stateMachines="Mascot">.
+ * OrinPortrait v4 — maskot Orin bentuk geometris (docs/Orin v4 – Pilih Maskot).
+ * Rig & keyframe dipindah 1:1 dari halaman sumber; SATU rig mata dipakai semua bentuk,
+ * jadi ekspresi konsisten & simetris. Identitas persona = bentuk (orinShapes.tsx).
  *
- * Mapping PersonaState (7) → mood Orin (6): error & awaiting_input berbagi "confused",
- * done & celebrating berbagi "happy" — differensiasi visual penuh menyusul via Rive.
- * Tint per persona: satu art + hue-rotate (DEMO-WEEK-1 §6: placeholder sama, warna beda).
+ * Mapping PersonaState (7) → mood (6):
+ *   idle→idle · thinking→thinking · working→speaking (halo) ·
+ *   awaiting_input→listening (mata besar) · done/celebrating→happy (mata "^") ·
+ *   error→confused. celebrating men-trigger bounce ekstra.
+ *
+ * Siap Rive (P1-PER-2): state machine "Mascot" — mood 0–5, shape 0–4, lookX/lookY,
+ * audioLevel, trigger blink/nod; hirarki identik (Root›Body›Face›EyeL/EyeR›ArcShape).
  */
 import { useEffect, useRef } from "react";
 import type { PersonaState } from "@yui/contracts";
+import { personaShape } from "./orinShapes";
 
 type MoodName = "idle" | "listening" | "thinking" | "speaking" | "happy" | "confused";
 
 const MOOD: Record<PersonaState, MoodName> = {
   idle: "idle",
   thinking: "thinking",
-  working: "listening",
-  awaiting_input: "confused",
+  working: "speaking",
+  awaiting_input: "listening",
   done: "happy",
   celebrating: "happy",
   error: "confused",
 };
 
-/** Tint per persona (derajat hue-rotate; art base biru navy #04235A/#AACBFF). */
-const TINT: Record<string, number> = {
-  "yui-conductor": 0,
-  "yui-scholar": 150,
-  "yui-scribe": 260,
-  "yui-coder": 80,
-};
-
-// rig params — persis B di sumber halaman Orin
-const B = { eL: 0, eR: 0, pw: 13, ph: 18, pr: 1, ps: 1, gx: 0, gy: 0, top: 0, tl: 0, tr: 0, hap: 0, sniff: 0, by: 0, sy: 1, rot: 0, ring: 0, halo: 0, ms: 0.35, mo: 0, mx: 0 };
+// rig params — persis B di halaman sumber v4
+const B = { ew: 24, eh: 60, gap: 36, gx: 0, gy: 0, tilt: 0, hap: 0, by: 0, sy: 1, rot: 0, ring: 0, halo: 0, ey: 0 };
 type Rig = typeof B;
 const mk = (o: Partial<Rig> = {}): Rig => ({ ...B, ...o });
 
-// keyframe per mood — persis S di sumber halaman Orin
+// keyframe per mood — persis S di halaman sumber v4
 const S: Record<MoodName, Rig> = {
   idle: mk(),
-  listening: mk({ eL: -7, eR: -7, pw: 14, ph: 22, ps: 1.06, by: -8, sy: 1.04, rot: 3, ring: 1, ms: 0.1, mo: 0.2 }),
-  thinking: mk({ eL: 8, eR: -4, pw: 12, ph: 15, gx: -0.8, gy: -0.8, top: 0.2, tl: -8, tr: 8, sniff: 1, rot: -5, ms: -0.15, mx: -7 }),
-  speaking: mk({ eL: -2, eR: -2, pw: 13, ph: 19, halo: 1, by: -3, ms: 0.3, mo: 0.3 }),
-  happy: mk({ eL: -10, eR: -10, pw: 15, ph: 17, hap: 1, by: -14, sy: 1.05, rot: 3, ms: 1, mo: 0.5 }),
-  confused: mk({ eL: -12, eR: 24, pw: 11, ph: 16, pr: 1.45, top: 0.28, tl: 14, tr: -4, gx: 0.5, gy: -0.2, rot: 8, ms: -0.6, mx: 6 }),
+  listening: mk({ ew: 26, eh: 74, gap: 38, by: -8, sy: 1.04, ring: 1, ey: -8 }),
+  thinking: mk({ ew: 22, eh: 48, tilt: 14, gx: -0.7, gy: -0.8, rot: -4 }),
+  speaking: mk({ halo: 1, by: -3 }),
+  happy: mk({ ew: 24, eh: 52, gap: 50, hap: 1, by: -14, sy: 1.05, rot: 3, ey: -4 }),
+  confused: mk({ ew: 22, eh: 50, tilt: 22, gx: 0.3, rot: 9 }),
 };
 
+const EYE_INK = "#0B0B0E";
+
 export function OrinPortrait({ state, personaId, size = 190 }: { state: PersonaState; personaId?: string; size?: number }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const bodyRef = useRef<SVGGElement>(null);
+  const faceRef = useRef<SVGGElement>(null);
+  const eLRef = useRef<SVGGElement>(null);
+  const eRRef = useRef<SVGGElement>(null);
+  const cLRef = useRef<SVGRectElement>(null);
+  const cRRef = useRef<SVGRectElement>(null);
+  const aLRef = useRef<SVGPathElement>(null);
+  const aRRef = useRef<SVGPathElement>(null);
+  const r1Ref = useRef<SVGCircleElement>(null);
+  const r2Ref = useRef<SVGCircleElement>(null);
+  const haloRef = useRef<SVGCircleElement>(null);
+
+  const shape = personaShape(personaId);
+
   const tgtRef = useRef<Rig>(S[MOOD[state]]);
-  const nameRef = useRef<MoodName>(MOOD[state]);
+  const moodRef = useRef<MoodName>(MOOD[state]);
+  const overrideUntilRef = useRef(0);
+  const bumpRef = useRef(0);
 
   useEffect(() => {
-    nameRef.current = MOOD[state];
-    tgtRef.current = S[MOOD[state]];
+    moodRef.current = MOOD[state];
+    if (performance.now() > overrideUntilRef.current) tgtRef.current = S[MOOD[state]];
+    if (state === "celebrating") bumpRef.current = 1; // bounce ekstra saat merayakan
   }, [state]);
 
   useEffect(() => {
-    const $ = (id: string) => document.getElementById(id);
     const svg = svgRef.current;
     if (!svg) return;
-    // cache elemen rig sekali (id dipakai lintas-instance aman: 1 portrait per sesi)
-    const E = {
-      body: $("orin-body"), face: $("orin-face"),
-      eo: [...svg.querySelectorAll<SVGElement>(".orin-eo")], ef: [...svg.querySelectorAll<SVGElement>(".orin-ef")], ei: [...svg.querySelectorAll<SVGElement>(".orin-ei")],
-      eL: $("orin-eL"), eR: $("orin-eR"), gL: $("orin-gL"), gR: $("orin-gR"),
-      pL: $("orin-pL"), pR: $("orin-pR"), pbL: $("orin-pbL"), pbR: $("orin-pbR"), lL: $("orin-lL"), lR: $("orin-lR"),
-      nose: $("orin-nose"), mouth: $("orin-mouth"), mopen: $("orin-mopen"), mclip: $("orin-mclip"), tongue: $("orin-tongue"),
-      fgL: $("orin-fgL"), fgR: $("orin-fgR"), dmL: $("orin-dmL"), dmR: $("orin-dmR"),
-      r1: $("orin-r1"), r2: $("orin-r2"), halo: $("orin-halo"), shadow: $("orin-shadow"),
-    };
-    if (!E.body || !E.face) return;
 
     const cur = mk();
+    const sc = { fy: shape.fy, gs: shape.gs, es: shape.es, gr: shape.gr }; // konstan — bentuk statis per instance
     let raf = 0;
     const t0 = performance.now();
-    let last = t0, blink = 0, nextBlink = t0 + 2500, bump = 0, lvl = 0, lvlT = 0, mx = 0, my = 0, sm = 0;
+    let last = t0, blink = 0, nextBlink = t0 + 2500, lvl = 0, lvlT = 0, mx = 0, my = 0, sm = 0;
 
     const onPointer = (e: PointerEvent) => {
       const r = svg.getBoundingClientRect();
@@ -90,7 +93,8 @@ export function OrinPortrait({ state, personaId, size = 190 }: { state: PersonaS
       const dt = Math.min(0.05, (now - last) / 1e3);
       last = now;
       const t = (now - t0) / 1e3, k = 1 - Math.exp(-dt * 9);
-      const tgt = tgtRef.current, name = nameRef.current;
+      const name = moodRef.current;
+      const tgt = now < overrideUntilRef.current ? S.happy : tgtRef.current;
       for (const p in cur) cur[p as keyof Rig] += (tgt[p as keyof Rig] - cur[p as keyof Rig]) * k;
 
       // kedip
@@ -98,96 +102,65 @@ export function OrinPortrait({ state, personaId, size = 190 }: { state: PersonaS
       if (now > nextBlink) { blink = 1; nextBlink = now + 2200 + Math.random() * 3500; }
       if (blink > 0) { blink -= dt / 0.15; bl = blink > 0 ? Math.max(0.1, Math.abs(blink * 2 - 1)) : 1; if (blink <= 0) blink = 0; }
 
-      lvl = 0; // audioLevel: diaktifkan saat integrasi voice (P3) — mood "speaking" tak dipakai Web demo
+      // audioLevel: disimulasikan saat speaking (menyala-nyala halo) — mic asli menyusul voice (P3)
+      if (name === "speaking") {
+        if (now > lvlT) { lvlT = now + 80 + Math.random() * 110; lvl = Math.random() < 0.18 ? 0.05 : 0.35 + Math.random() * 0.65; }
+      } else lvl = 0;
       sm += (lvl - sm) * (1 - Math.exp(-dt * 14));
       const L = sm;
 
       let gx = cur.gx, gy = cur.gy;
       if (name === "thinking") { gx += Math.sin(t * 1.1) * 0.4; gy += Math.sin(t * 0.8) * 0.15; }
       else if (name === "idle" || name === "listening" || name === "happy") { gx += mx * 0.9; gy += my * 0.7; }
-      bump *= Math.exp(-dt * 4);
+      bumpRef.current *= Math.exp(-dt * 4);
 
-      // body: napas + bounce klik
-      const br = Math.sin(t * 1.6), by = cur.by + br * 1.8 - Math.sin(bump * Math.PI) * 16;
-      const sy = cur.sy + br * 0.012 + L * 0.05 + bump * 0.05, sx = 1 + (1 - sy) * 0.7;
-      const rot = cur.rot + Math.sin(t * 0.9) * 0.8 + (name === "speaking" ? Math.sin(t * 5) * L * 2.2 : 0);
-      E.body!.setAttribute("transform", `translate(200 ${206 + by}) rotate(${rot}) scale(${1.2 * sx} ${1.2 * sy})`);
-      E.face!.setAttribute("transform", `translate(${gx * 5} ${gy * 3})`);
-      E.shadow!.setAttribute("rx", String(100 - by * 0.9));
-      E.shadow!.setAttribute("opacity", String(0.8 + by * 0.015));
+      // body: napas + bounce klik/perayaan (squash-stretch)
+      const br = Math.sin(t * 1.6), by = cur.by + br * 2 - Math.sin(bumpRef.current * Math.PI) * 18;
+      const sy = cur.sy + br * 0.012 + L * 0.05 + bumpRef.current * 0.05, sx = 1 + (1 - sy) * 0.7;
+      const rot = cur.rot + Math.sin(t * 0.9) * 0.8 + (name === "speaking" ? Math.sin(t * 5) * L * 2 : 0);
+      bodyRef.current?.setAttribute("transform", `translate(200 ${200 + by}) rotate(${rot}) scale(${sx} ${sy})`);
 
-      // telinga
-      const wig = Math.sin(t * 9) * L * 4;
-      for (const els of [E.eo, E.ef, E.ei]) for (const e of els) {
-        const s = Number(e.dataset.s);
-        const a = (s < 0 ? cur.eL : cur.eR) * s + (s < 0 ? -wig : wig) + Math.sin(t * 0.7 + s) * 0.8;
-        e.setAttribute("transform", `rotate(${a} ${s * 52} -72)`);
+      // wajah: tatapan parallax + offset per bentuk
+      faceRef.current?.setAttribute("transform", `translate(${gx * 34 * sc.gr} ${gy * 26 * sc.gr + cur.ey + sc.fy})`);
+
+      // mata kapsul ↔ arc "^" (happy) cross-fade
+      const hp = Math.min(1, cur.hap), w = cur.ew * sc.es, h = cur.eh * sc.es * (1 + L * 0.3) * bl;
+      const eyes: [SVGGElement | null, SVGRectElement | null, SVGPathElement | null, number][] = [
+        [eLRef.current, cLRef.current, aLRef.current, -1],
+        [eRRef.current, cRRef.current, aRRef.current, 1],
+      ];
+      for (const [g, c, a, d] of eyes) {
+        if (!g || !c || !a) continue;
+        g.setAttribute("transform", `translate(${d * cur.gap * sc.gs} 0) rotate(${d * cur.tilt})`);
+        c.setAttribute("x", String(-w / 2)); c.setAttribute("y", String(-h / 2));
+        c.setAttribute("width", String(w)); c.setAttribute("height", String(h));
+        c.setAttribute("rx", String(w / 2));
+        c.style.opacity = String(1 - hp);
+        const aw = w * 0.8;
+        a.setAttribute("stroke-width", String(w * 0.8));
+        a.setAttribute("d", `M${-aw},6Q0,-12 ${aw},6`);
+        a.style.opacity = String(hp);
       }
 
-      // mata
-      const eyes: ["L" | "R", number, number, number][] = [["L", -1, 1, cur.tl], ["R", 1, cur.pr, cur.tr]];
-      for (const [side, x, m, tl] of eyes) {
-        const eEye = side === "L" ? E.eL : E.eR, g = side === "L" ? E.gL : E.gR;
-        const p = side === "L" ? E.pL : E.pR, pb = side === "L" ? E.pbL : E.pbR;
-        const lid = side === "L" ? E.lL : E.lR;
-        const ph = cur.ph * (1 + L * 0.14), pw = cur.pw * (1 - L * 0.05);
-        eEye!.setAttribute("transform", `translate(${x * 46} 4) scale(${cur.ps})`);
-        g!.setAttribute("transform", `translate(${gx * 14 + x * -3} ${gy * 15})`);
-        p!.setAttribute("rx", String(pw * m));
-        p!.setAttribute("ry", String(Math.max(1.5, ph * m * bl)));
-        const H = ph * m;
-        pb!.setAttribute("ry", String(H * 1.25));
-        pb!.setAttribute("rx", String(pw * m * 2.2));
-        pb!.setAttribute("cy", String(H * 2.3 - cur.hap * H * 1.4));
-        const ye = -42 + cur.top * 84;
-        lid!.setAttribute("height", String(Math.max(0, ye + 60)));
-        lid!.setAttribute("transform", `rotate(${tl} 0 ${ye})`);
+      // ring pulsa (listening) + halo (speaking)
+      const rings: [SVGCircleElement | null, number][] = [[r1Ref.current, 0], [r2Ref.current, 0.5]];
+      for (const [el, ph0] of rings) {
+        if (!el) continue;
+        const ph = ((t * 0.6) + ph0) % 1;
+        el.setAttribute("r", String(135 + ph * 40));
+        el.setAttribute("opacity", String(cur.ring * (1 - ph) * 0.5));
       }
-
-      // mulut (mood keyframe; mo>0 → mulut terbuka)
-      const mo = Math.max(0, Math.min(1, cur.mo)), ms = cur.ms, mw = 22 + ms * 4 - mo * 3, mxx = cur.mx;
-      const mcy = 64 - ms * 1.5 + Math.sin(t * 1.6) * 0.3, ly = mcy - ms * 3 + 1, ry = mcy - ms * 5 - 2;
-      const lx = mxx - mw, rx = mxx + mw, ctx = mxx + 2, cty = mcy + 4 + ms * 6;
-      const up = `M${lx},${ly}Q${ctx},${cty} ${rx},${ry}`;
-      const od = `${up}Q${mxx},${mcy + 4 + mo * 26} ${lx},${ly}Z`, oo = Math.min(1, mo * 6);
-      E.mouth!.setAttribute("d", up); E.mouth!.style.opacity = String(1 - oo);
-      E.mopen!.setAttribute("d", od); E.mopen!.style.opacity = String(oo); E.mclip!.setAttribute("d", od);
-      const tg = E.tongue!;
-      tg.setAttribute("cx", String(mxx)); tg.setAttribute("cy", String(mcy + 4 + mo * 24));
-      tg.setAttribute("rx", String(mw * 0.4)); tg.setAttribute("ry", String(2 + mo * 8)); tg.style.opacity = "0";
-      // taring & dimple (mood happy/speaking)
-      const qp = (u: number): [number, number] => {
-        const a = 1 - u;
-        return [a * a * lx + 2 * a * u * ctx + u * u * rx, a * a * ly + 2 * a * u * cty + u * u * ry];
-      };
-      const f1 = qp(0.25), f2 = qp(0.75), fl = 4 + mo * 4;
-      E.fgL!.setAttribute("d", `M${f1[0] - 3.5},${f1[1] - 0.5}L${f1[0] + 3.5},${f1[1] - 0.5}L${f1[0]},${f1[1] + fl}Z`);
-      E.fgR!.setAttribute("d", `M${f2[0] - 3.5},${f2[1] - 0.5}L${f2[0] + 3.5},${f2[1] - 0.5}L${f2[0]},${f2[1] + fl}Z`);
-      E.fgL!.style.opacity = "0"; E.fgR!.style.opacity = "0";
-      E.dmR!.setAttribute("d", `M${rx + 2},${ry}L${rx + 8},${ry - 4}`);
-      E.dmL!.setAttribute("d", `M${lx - 2},${ly}L${lx - 8},${ly - 4}`);
-      E.dmR!.style.opacity = "0"; E.dmL!.style.opacity = "0";
-
-      // hidung sniff (berpikir)
-      const sn = 1 + Math.sin(t * 14) * 0.07 * cur.sniff;
-      E.nose!.setAttribute("transform", `translate(0 ${26 - cur.sniff * Math.abs(Math.sin(t * 14)) * 1.5}) scale(${sn})`);
-
-      // ring (listening) + halo (speaking)
-      const rings: [HTMLElement | null, number][] = [[E.r1, 0], [E.r2, 0.5]];
-      for (const [el, ph2] of rings) {
-        const ph3 = (t * 0.6 + ph2) % 1;
-        el!.setAttribute("r", String(160 + ph3 * 36));
-        el!.setAttribute("opacity", String(cur.ring * (1 - ph3) * 0.55));
-      }
-      E.halo!.setAttribute("r", String(150 + L * 14));
-      E.halo!.setAttribute("opacity", String(cur.halo * (0.15 + L * 0.55)));
+      haloRef.current?.setAttribute("r", String(134 + L * 14));
+      haloRef.current?.setAttribute("opacity", String(cur.halo * (0.1 + L * 0.4)));
 
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
 
+    // klik: squash + senyum sebentar kalau idle — "hidup"
     const onClick = () => {
-      bump = 1; // squash kecil saat diklik — responsif "hidup"
+      bumpRef.current = 1;
+      if (moodRef.current === "idle") overrideUntilRef.current = performance.now() + 1100;
     };
     svg.addEventListener("click", onClick);
 
@@ -196,50 +169,25 @@ export function OrinPortrait({ state, personaId, size = 190 }: { state: PersonaS
       window.removeEventListener("pointermove", onPointer);
       svg.removeEventListener("click", onClick);
     };
-  }, []);
-
-  const tint = personaId ? (TINT[personaId] ?? 0) : 0;
+  }, [shape]);
 
   return (
-    <div ref={wrapRef} className="orin-wrap" style={{ filter: `hue-rotate(${tint}deg)`, width: size }}>
+    <div className="orin-wrap" style={{ width: size }}>
       <svg ref={svgRef} viewBox="0 0 400 400" role="img" aria-label="Maskot Orin" className="orin-svg">
-        <defs>
-          <path id="orin-head" d="M-52,-88C-26,-98 26,-98 52,-88C84,-68 100,-22 102,26L112,35C115,39 114,44 111,49C86,96 42,120 0,120C-42,120 -86,96 -111,49C-114,44 -115,39 -112,35L-102,26C-100,-22 -84,-68 -52,-88Z" />
-          <path id="orin-earR" d="M12,-82C20,-100 28,-116 42,-118C52,-118 58,-112 66,-104C80,-86 90,-64 92,-40L28,-40Z" />
-          <path id="orin-earL" d="M-12,-82C-20,-100 -28,-116 -42,-118C-52,-118 -58,-112 -66,-104C-80,-86 -90,-64 -92,-40L-28,-40Z" />
-          <clipPath id="orin-cL"><ellipse rx="35" ry="42" /></clipPath>
-          <clipPath id="orin-cR"><ellipse rx="35" ry="42" /></clipPath>
-          <clipPath id="orin-mcc"><path id="orin-mclip" d="M0,0Z" /></clipPath>
-          <mask id="orin-pmL" maskUnits="userSpaceOnUse" x="-40" y="-40" width="80" height="80"><rect x="-40" y="-40" width="80" height="80" fill="#fff" /><ellipse id="orin-pbL" rx="30" ry="14" fill="#000" /></mask>
-          <mask id="orin-pmR" maskUnits="userSpaceOnUse" x="-40" y="-40" width="80" height="80"><rect x="-40" y="-40" width="80" height="80" fill="#fff" /><ellipse id="orin-pbR" rx="30" ry="14" fill="#000" /></mask>
-          <filter id="orin-soft"><feGaussianBlur stdDeviation="10" /></filter>
-          <radialGradient id="orin-sh"><stop offset="0" stopColor="#04235A" stopOpacity=".25" /><stop offset="1" stopColor="#04235A" stopOpacity="0" /></radialGradient>
-        </defs>
-        <ellipse id="orin-shadow" cx="200" cy="368" rx="100" ry="11" fill="url(#orin-sh)" />
-        <circle id="orin-r1" cx="200" cy="200" r="160" fill="none" stroke="#6FA8FF" strokeWidth="2" opacity="0" />
-        <circle id="orin-r2" cx="200" cy="200" r="160" fill="none" stroke="#6FA8FF" strokeWidth="2" opacity="0" />
-        <circle id="orin-halo" cx="200" cy="200" r="150" fill="none" stroke="#6FA8FF" strokeWidth="16" opacity="0" filter="url(#orin-soft)" />
-        <g id="orin-body">
-          <g fill="#04235A" stroke="#04235A" strokeWidth="16" strokeLinejoin="round">
-            <use className="orin-eo" data-s={-1} href="#orin-earL" /><use className="orin-eo" data-s={1} href="#orin-earR" /><use href="#orin-head" />
-          </g>
-          <g fill="#AACBFF">
-            <use className="orin-ef" data-s={-1} href="#orin-earL" /><use className="orin-ef" data-s={1} href="#orin-earR" /><use href="#orin-head" />
-          </g>
-          <path className="orin-ei" data-s={-1} fill="#04235A" d="M-50,-96C-60,-84 -68,-72 -72,-60C-65,-62 -56,-64 -47,-60Z" />
-          <path className="orin-ei" data-s={1} fill="#04235A" d="M50,-96C60,-84 68,-72 72,-60C65,-62 56,-64 47,-60Z" />
-          <g id="orin-face">
-            <path fill="#fff" d="M-88,26L-68,42C-50,70 -26,98 0,100C26,98 50,70 68,42L88,26L64,6L-64,6Z" />
-            <g id="orin-eL"><g clipPath="url(#orin-cL)"><ellipse rx="35" ry="42" fill="#fff" /><g id="orin-gL"><ellipse id="orin-pL" rx="13" ry="18" fill="#04235A" mask="url(#orin-pmL)" /></g><rect id="orin-lL" x="-46" y="-60" width="92" height="20" fill="#AACBFF" /></g></g>
-            <g id="orin-eR"><g clipPath="url(#orin-cR)"><ellipse rx="35" ry="42" fill="#fff" /><g id="orin-gR"><ellipse id="orin-pR" rx="13" ry="18" fill="#04235A" mask="url(#orin-pmR)" /></g><rect id="orin-lR" x="-46" y="-60" width="92" height="20" fill="#AACBFF" /></g></g>
-            <path id="orin-nose" fill="#04235A" d="M-14,-6C-8,-9 8,-9 14,-6C12,0 5,5 0,8C-5,5 -12,0 -14,-6Z" />
-            <path id="orin-mopen" fill="#04235A" stroke="#04235A" strokeWidth="9" strokeLinejoin="round" opacity="0" d="M0,0Z" />
-            <ellipse id="orin-tongue" fill="#FF8FA3" clipPath="url(#orin-mcc)" opacity="0" rx="10" ry="4" cx="0" cy="75" />
-            <path id="orin-mouth" fill="none" stroke="#04235A" strokeWidth="9" strokeLinejoin="round" strokeLinecap="round" d="M-22,64Q2,70 22,60" />
-            <path id="orin-fgL" fill="#fff" opacity="0" d="M0,0" />
-            <path id="orin-fgR" fill="#fff" opacity="0" d="M0,0" />
-            <path id="orin-dmL" fill="none" stroke="#04235A" strokeWidth="3.5" strokeLinecap="round" opacity="0" d="M0,0" />
-            <path id="orin-dmR" fill="none" stroke="#04235A" strokeWidth="3.5" strokeLinecap="round" opacity="0" d="M0,0" />
+        <circle ref={r1Ref} cx={200} cy={200} r={135} fill="none" stroke={shape.color} strokeWidth={2} opacity={0} />
+        <circle ref={r2Ref} cx={200} cy={200} r={135} fill="none" stroke={shape.color} strokeWidth={2} opacity={0} />
+        <g ref={bodyRef}>
+          <circle ref={haloRef} r={130} fill="none" stroke={shape.color} strokeWidth={14} opacity={0} />
+          <g fill={shape.color}>{shape.geom}</g>
+          <g ref={faceRef}>
+            <g ref={eLRef}>
+              <rect ref={cLRef} fill={EYE_INK} />
+              <path ref={aLRef} fill="none" stroke={EYE_INK} strokeLinecap="round" opacity={0} />
+            </g>
+            <g ref={eRRef}>
+              <rect ref={cRRef} fill={EYE_INK} />
+              <path ref={aRRef} fill="none" stroke={EYE_INK} strokeLinecap="round" opacity={0} />
+            </g>
           </g>
         </g>
       </svg>

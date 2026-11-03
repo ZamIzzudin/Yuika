@@ -3,8 +3,9 @@ import type { PersonaState } from "@yui/contracts";
 import { OrinPortrait } from "./OrinPortrait";
 
 /**
- * Portrait persona — Orin SVG animasi (rig final dari docs/Orin v2; .riv menyusul P1-PER-2).
- * compact = wajah kecil di header chat; hero = empty state (pola agent-chat-empty OpenBot).
+ * Portrait persona — Orin v4 (rig geometris, docs/Orin v4; .riv menyusul P1-PER-2
+ * dengan input shape 0–4 + mood 0–5, hirarki identik). compact = wajah kecil header
+ * chat; hero = empty state (pola agent-chat-empty OpenBot).
  */
 export function PersonaPortrait({
   name,

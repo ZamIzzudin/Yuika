@@ -42,6 +42,13 @@
 > viewer** (update live) · v1 = **MCP server resmi** (plugin hidup di sesi embedded —
 > konstrain “tab aktif” terpenuhi otomatis) · render headless via exporter WASM ·
 > OpenAPI spec bawaan (`/api/main/doc`) → client digenerate.
+>
+> **Update sesi dev 7 (maskot v4):** `OrinPortrait` rewrite ke **Orin v4** (docs/Orin v4 —
+> Pilih Maskot): satu rig mata untuk semua bentuk, identitas persona = bentuk —
+> conductor=bola #F2620F, scholar=awan #F5A00A, scribe=tetes #2B8CF0, coder=kotak #12D1A0,
+> designer=segitiga #F0278E (`orinShapes.tsx` dipakai portrait + PersonaFace mini) ·
+> mapping state baru: working→speaking (halo), awaiting_input→listening (mata besar) ·
+> typecheck 3/3, 28 test green, build ✓. Siap Rive: satu .riv, input `shape` 0–4.
 
 ## Peta Fase & Gerbang
 

@@ -1,38 +1,31 @@
 "use client";
 import type { PersonaInfo } from "@yui/contracts";
+import { personaShape } from "./orinShapes";
 
-/** Warna wajah per persona — hue dari palet seri chart OpenBot (tervalidasi kontras di canvas gelap). */
-export const PERSONA_TINT: Record<string, string> = {
-  "yui-conductor": "#42a0ff",
-  "yui-scholar": "#6bc7d9",
-  "yui-scribe": "#d6adf2",
-  "yui-coder": "#61c985",
-};
+export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
 
-/** Monogram kecil untuk wajah persona di list/header (Orin full-rig dipakai di portrait). */
+/**
+ * Wajah kecil persona (list/header) — mini-maskot Orin v4: bentuk + mata kapsul statis,
+ * identik dengan portrait besar (orinShapes). Bentuk = identitas persona.
+ */
 export function PersonaFace({ personaId, size = 22 }: { personaId: string; size?: number }) {
-  const tint = PERSONA_TINT[personaId] ?? "#979797";
-  const initial = personaId.replace("yui-", "")[0]?.toUpperCase() ?? "?";
+  const s = personaShape(personaId);
+  const w = 24 * s.es, h = 46 * s.es, gap = 36 * s.gs;
   return (
-    <span
-      className="face-mark"
+    <svg
+      width={size}
+      height={size}
+      viewBox="-150 -150 300 300"
       aria-hidden
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: size,
-        height: size,
-        borderRadius: size >= 30 ? 8 : 6,
-        background: `color-mix(in srgb, ${tint} 18%, transparent)`,
-        color: tint,
-        fontSize: size >= 30 ? 13 : 11,
-        fontWeight: 600,
-        border: `1px solid color-mix(in srgb, ${tint} 40%, transparent)`,
-      }}
+      focusable="false"
+      style={{ display: "block", flex: "none" }}
     >
-      {initial}
-    </span>
+      <g fill={s.color}>{s.geom}</g>
+      <g transform={`translate(0 ${s.fy})`} fill="#0B0B0E">
+        <rect x={-gap - w / 2} y={-h / 2} width={w} height={h} rx={w / 2} />
+        <rect x={gap - w / 2} y={-h / 2} width={w} height={h} rx={w / 2} />
+      </g>
+    </svg>
   );
 }
 
