@@ -1,12 +1,30 @@
 import type { ReactNode } from "react";
 
 /**
- * Orin v4 — definisi bentuk maskot (docs/Orin v4 – Pilih Maskot).
+ * Orin v4 — definisi bentuk maskot (docs/Orin v4 – Pilih Maskot (1).html).
  * Satu rig mata dipakai semua bentuk; identitas persona = BENTUK (bukan tint lagi).
+ * 15 bentuk (perluasan dev 10) — urutan SHAPE_ORDER = indeks input Rive `shape` 0–14.
  * Parameter per bentuk: fy (offset wajah Y), gs (skala jarak mata), es (skala mata),
  * gr (rentang tatapan) — dipakai OrinPortrait & PersonaFace agar konsisten.
+ * Bentuk stroke-based (star/hex/trap): geom memakai stroke="currentColor" —
+ * parent WAJIB set style={{ color }} selain fill.
  */
-export type OrinShapeKey = "orb" | "cloud" | "blob" | "square" | "tri";
+export type OrinShapeKey =
+  | "orb"
+  | "cloud"
+  | "blob"
+  | "square"
+  | "tri"
+  | "pill"
+  | "bean"
+  | "drop"
+  | "star"
+  | "flower"
+  | "hex"
+  | "trap"
+  | "diamond"
+  | "dome"
+  | "tube";
 
 export interface OrinShape {
   /** Nama bentuk (Bahasa) */
@@ -48,7 +66,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   blob: {
-    name: "Tetes",
+    name: "Telur",
     color: "#2B8CF0",
     fy: 0,
     gs: 1,
@@ -78,9 +96,167 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
       <path d="M0,-128C22,-128 40,-98 70,-42L116,48C132,82 118,112 86,112L-86,112C-118,112 -132,82 -116,48L-70,-42C-40,-98 -22,-128 0,-128Z" />
     ),
   },
+  pill: {
+    name: "Kapsul",
+    color: "#2BC4D8",
+    fy: 0,
+    gs: 1.25,
+    es: 0.95,
+    gr: 1.2,
+    geom: (
+      <g transform="rotate(-6)">
+        <rect x={-135} y={-80} width={270} height={160} rx={80} />
+      </g>
+    ),
+  },
+  bean: {
+    name: "Kacang",
+    color: "#A653C8",
+    fy: -20,
+    gs: 0.95,
+    es: 0.9,
+    gr: 0.8,
+    geom: (
+      <path d="M-70,-112C-20,-132 55,-125 88,-80C115,-42 100,-5 72,20C50,40 48,62 62,80C82,105 70,130 35,135C-30,142 -105,100 -118,28C-126,-30 -108,-92 -70,-112Z" />
+    ),
+  },
+  drop: {
+    name: "Tetes",
+    color: "#FF7662",
+    fy: 30,
+    gs: 0.8,
+    es: 0.85,
+    gr: 0.6,
+    geom: (
+      <path d="M0,-132C20,-100 98,-30 108,30C118,92 70,128 0,128C-70,128 -118,92 -108,30C-98,-30 -20,-100 0,-132Z" />
+    ),
+  },
+  star: {
+    name: "Bintang",
+    color: "#8FDB6F",
+    fy: 6,
+    gs: 0.72,
+    es: 0.75,
+    gr: 0.5,
+    geom: (
+      <polygon
+        points="0,-108 30.6,-42.1 102.7,-33.4 49.5,16.1 63.5,87.4 0,52 -63.5,87.4 -49.5,16.1 -102.7,-33.4 -30.6,-42.1"
+        stroke="currentColor"
+        strokeWidth={26}
+        strokeLinejoin="round"
+      />
+    ),
+  },
+  flower: {
+    name: "Bunga",
+    color: "#C48DEB",
+    fy: 0,
+    gs: 1,
+    es: 0.95,
+    gr: 0.9,
+    geom: (
+      <>
+        <circle r={82} />
+        <circle cx={78} cy={0} r={48} />
+        <circle cx={55} cy={55} r={48} />
+        <circle cx={0} cy={78} r={48} />
+        <circle cx={-55} cy={55} r={48} />
+        <circle cx={-78} cy={0} r={48} />
+        <circle cx={-55} cy={-55} r={48} />
+        <circle cx={0} cy={-78} r={48} />
+        <circle cx={55} cy={-55} r={48} />
+      </>
+    ),
+  },
+  hex: {
+    name: "Segi enam",
+    color: "#A8D83E",
+    fy: 0,
+    gs: 1,
+    es: 0.95,
+    gr: 0.85,
+    geom: (
+      <polygon
+        points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50"
+        stroke="currentColor"
+        strokeWidth={30}
+        strokeLinejoin="round"
+      />
+    ),
+  },
+  trap: {
+    name: "Trapesium",
+    color: "#E8503A",
+    fy: 8,
+    gs: 0.95,
+    es: 0.9,
+    gr: 0.8,
+    geom: (
+      <polygon
+        points="-52,-96 52,-96 100,98 -100,98"
+        stroke="currentColor"
+        strokeWidth={30}
+        strokeLinejoin="round"
+      />
+    ),
+  },
+  diamond: {
+    name: "Berlian",
+    color: "#3A4FB0",
+    fy: 0,
+    gs: 0.8,
+    es: 0.85,
+    gr: 0.6,
+    geom: (
+      <g transform="rotate(45)">
+        <rect x={-88} y={-88} width={176} height={176} rx={40} />
+      </g>
+    ),
+  },
+  dome: {
+    name: "Kubah",
+    color: "#E6DC3A",
+    fy: 6,
+    gs: 1.05,
+    es: 0.95,
+    gr: 0.9,
+    geom: (
+      <path d="M-125,95C-125,-60 -70,-125 0,-125C70,-125 125,-60 125,95Q125,120 100,120L-100,120Q-125,120 -125,95Z" />
+    ),
+  },
+  tube: {
+    name: "Tabung",
+    color: "#1F9A9A",
+    fy: -18,
+    gs: 0.75,
+    es: 0.95,
+    gr: 0.6,
+    geom: <rect x={-75} y={-125} width={150} height={250} rx={75} />,
+  },
 };
 
-/** Bentuk per persona — identitas visual maskot (Orin v4). Designer menempati segitiga. */
+/** Urutan resmi = indeks input Rive `shape` 0–14 (docs: state machine "Mascot"). */
+export const SHAPE_ORDER: OrinShapeKey[] = [
+  "orb",
+  "cloud",
+  "blob",
+  "square",
+  "tri",
+  "pill",
+  "bean",
+  "drop",
+  "star",
+  "flower",
+  "hex",
+  "trap",
+  "diamond",
+  "dome",
+  "tube",
+];
+
+/** Bentuk per persona — identitas visual maskot (Orin v4).
+ *  Bentuk bebas untuk persona mendatang (Analyst/Operator — P1-PER-6, dst.):
+ *  pill, bean, drop, star, flower, hex, trap, diamond, dome, tube. */
 export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
   "yui-conductor": "orb",
   "yui-scholar": "cloud",

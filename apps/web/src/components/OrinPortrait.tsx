@@ -178,7 +178,10 @@ export function OrinPortrait({ state, personaId, size = 190 }: { state: PersonaS
         <circle ref={r2Ref} cx={200} cy={200} r={135} fill="none" stroke={shape.color} strokeWidth={2} opacity={0} />
         <g ref={bodyRef}>
           <circle ref={haloRef} r={130} fill="none" stroke={shape.color} strokeWidth={14} opacity={0} />
-          <g fill={shape.color}>{shape.geom}</g>
+          {/* stroke-based shapes (star/hex/trap) memakai currentColor → set color juga */}
+          <g fill={shape.color} style={{ color: shape.color }}>
+            {shape.geom}
+          </g>
           <g ref={faceRef}>
             <g ref={eLRef}>
               <rect ref={cLRef} fill={EYE_INK} />

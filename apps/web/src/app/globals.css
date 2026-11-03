@@ -1023,3 +1023,17 @@ html, body {
   font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
 }
 .skill-usage { margin-left: 8px; color: var(--yui-text-dim); font-weight: 400; font-size: 11px; }
+
+/* ── Galeri 15 bentuk Orin (dev 10) ──────────────────────────────── */
+.shape-toggle { margin-top: var(--yui-space-3); }
+.shape-gallery {
+  display: flex; flex-wrap: wrap; gap: var(--yui-space-2); justify-content: center;
+  max-width: 720px; margin-top: var(--yui-space-3);
+}
+.shape-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
+  padding: var(--yui-space-2) var(--yui-space-2) 4px; cursor: default;
+}
+.shape-cell[data-owned] { border-color: var(--yui-accent); }
+.shape-cell small { color: var(--yui-text-dim); font-size: 11px; }

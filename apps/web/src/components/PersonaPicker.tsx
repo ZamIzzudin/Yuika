@@ -1,6 +1,7 @@
 "use client";
+import { useState } from "react";
 import type { PersonaInfo } from "@yui/contracts";
-import { personaShape } from "./orinShapes";
+import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
 
 export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
 
@@ -20,7 +21,9 @@ export function PersonaFace({ personaId, size = 22 }: { personaId: string; size?
       focusable="false"
       style={{ display: "block", flex: "none" }}
     >
-      <g fill={s.color}>{s.geom}</g>
+      <g fill={s.color} style={{ color: s.color }}>
+        {s.geom}
+      </g>
       <g transform={`translate(0 ${s.fy})`} fill="#0B0B0E">
         <rect x={-gap - w / 2} y={-h / 2} width={w} height={h} rx={w / 2} />
         <rect x={gap - w / 2} y={-h / 2} width={w} height={h} rx={w / 2} />
@@ -32,16 +35,50 @@ export function PersonaFace({ personaId, size = 22 }: { personaId: string; size?
 /** Kartu persona besar untuk pemilihan di tengah layar (scope Workspace). */
 export function PersonaGrid({ personas, onPick }: { personas: PersonaInfo[]; onPick: (p: PersonaInfo) => void }) {
   return (
-    <div className="persona-grid">
-      {personas.map((p) => (
-        <button key={p.id} className="persona-card" onClick={() => onPick(p)}>
-          <span className="face">
-            <PersonaFace personaId={p.id} size={44} />
-          </span>
-          <b>{p.name}</b>
-          <p>{p.description}</p>
-        </button>
-      ))}
+    <>
+      <div className="persona-grid">
+        {personas.map((p) => (
+          <button key={p.id} className="persona-card" onClick={() => onPick(p)}>
+            <span className="face">
+              <PersonaFace personaId={p.id} size={44} />
+            </span>
+            <b>{p.name}</b>
+            <p>{p.description}</p>
+          </button>
+        ))}
+      </div>
+      <ShapeGallery />
+    </>
+  );
+}
+
+/** Galeri 15 bentuk Orin (dev 10) — verifikasi render + referensi pilihan
+ *  identitas persona mendatang (Analyst, Operator, dst.). Klik = tidak beraksi
+ *  (pemetaan persona di PERSONA_SHAPE; pemilihan bebas user menyusul). */
+function ShapeGallery() {
+  const [open, setOpen] = useState(false);
+  if (!open)
+    return (
+      <button className="btn secondary shape-toggle" onClick={() => setOpen(true)}>
+        Lihat 15 bentuk Orin
+      </button>
+    );
+  return (
+    <div className="shape-gallery" aria-label="Galeri bentuk maskot Orin">
+      {SHAPE_ORDER.map((k) => {
+        const s = SHAPES[k];
+        const owner = Object.entries(PERSONA_SHAPE).find(([, v]) => v === k)?.[0];
+        return (
+          <div key={k} className="shape-cell" data-owned={owner ? "" : undefined} title={owner ? `${s.name} — dipakai ${owner}` : `${s.name} (bebas)`}>
+            <svg width={54} height={54} viewBox="-150 -150 300 300" aria-hidden focusable="false">
+              <g fill={s.color} style={{ color: s.color }}>
+                {s.geom}
+              </g>
+            </svg>
+            <small>{s.name}</small>
+          </div>
+        );
+      })}
     </div>
   );
 }
