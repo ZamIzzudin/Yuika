@@ -17,6 +17,12 @@
 >
 > **Update sesi dev 2 (branch `dev/w5-polish`):** Orin SVG animasi jadi portrait (W3-B2/C1/B3),
 > USER.md stub (W5-C2), test prompt stack frozen (W2-C2) — total 24+3 test green.
+>
+> **Update sesi dev 3:** UI overhaul penuh ala OpenBot (design token netral + aksen tunggal,
+> chat tanpa-bubble agent / bubble terang user, steps lipat, empty state per-persona, tab-ready) ·
+> fix provider GLM 400/1210 (normalisasi `exclusiveMinimum` boolean di tool schema) ·
+> **PLAN v0.4: pilar Studio Proyek** (§13 — D14–D17) → task baru di **P1-PRJ**, **P2-FLOW**,
+> **P2-STU**. Referensi: `D:\projects\openbot`; pen.dev menyusul di-clone (P2-STU-6).
 
 ## Peta Fase & Gerbang
 
@@ -28,6 +34,9 @@
 | **P2** | Mobile · desktop+relay · curator · cron · kanban · KB · vault · billing v2 | ±10 minggu | **G-BETA — SIAP TESTING #2 (closed beta)** |
 | **P3** | Marketplace · teams · voice · self-host | ±3–4 bulan | G-P3 |
 | **P4** | Workflow builder · eval · enterprise | berkelanjutan | — |
+
+> **Track Studio (v0.4, PLAN §13):** P1-PRJ (project entity) numpang di P1; P2-FLOW + P2-STU
+> numpang di P2. Gerbang tambahan masuk G-BETA. UI hasil sesi dev 3 sudah tab-ready.
 
 ---
 
@@ -229,6 +238,15 @@
 - [ ] **P1-INF-4** Observability: trace view per turn (pino + tabel DB) · *B · 2d*
 - [ ] **P1-INF-5** Deploy staging (VPS/Fly) + domain + TLS · *B · 1d*
 
+### P1-PRJ — Project entity v0 (Studio §13.2; D14)
+
+- [ ] **P1-PRJ-1** Kontrak `Project*` di `@yui/contracts` (ProjectInfo, TaskItem, roster, binding) + tabel DB + CRUD REST `/api/projects` · *A+B · 2d* → create/list/get project; semua tipe dari contracts
+- [ ] **P1-PRJ-2** Isolasi root per project `workspace/projects/<id>/{code,docs,reports}` — file tools & path policy menghormati scope project · *A · 1d · dep P1-PRJ-1* → test: project A tidak bisa baca path project B
+- [ ] **P1-PRJ-3** Roster agent per project (`project.yaml`: persona + peran + fase) — loader + validasi + tampil di UI · *C · 2d · dep P1-PRJ-1* → assign 3 persona ke project demo; roster ter-replay
+- [ ] **P1-PRJ-4** Tasklist per project (CRUD + status todo/doing/review/done + assignee persona) + tool `todo` agent melihat/menambah task · *C · 1d · dep P1-PRJ-1* → agent menandai task selesai dari turn
+- [ ] **P1-PRJ-5** Binding MCP project×persona (D17): koneksi server di level project, tool `mcp__<srv>__*` hanya muncul di toolset persona yang di-bind · *C · 2d · dep P1-MCP-3* → test: persona tanpa binding tidak melihat tool MCP
+- [ ] **P1-PRJ-6** UI: project picker + project home (shell v0: chat + roster sidebar) — sesi melekat ke project · *B · 2d · dep P1-PRJ-3* → buka project → sesi persona di scope project
+
 ### G-ALPHA — SIAP TESTING #1 (internal alpha)
 
 - [ ] Smoke E2E (P0-QA-1) + skenario persona blind test green di staging
@@ -270,6 +288,25 @@
 - [ ] **P2-GROW-1** Desain skin/event/achievement (D10) — spec + mockup, tanpa implement · *S · 2d*
 - [ ] **P2-GROW-2** Growth timeline UI penuh (level, varian unlock, riwayat skill) · *C+B · 3d*
 
+### P2-FLOW — Workflow engine & monitoring (Studio §13.3; D15)
+
+- [ ] **P2-FLOW-1** Format `workflow.yaml` deklaratif (fase, mode sequential/parallel, steps {persona,task,depends_on}, gate default ON) + validator zod di contracts + template 7 fase (planning→riset→desain→develop→testing→dokumentasi→deliverable) · *C+A · 2d · dep P1-PRJ-3* → template valid parse & lint
+- [ ] **P2-FLOW-2** Engine v0: run = DAG → job graph di queue; fase sequential satu-per-satu, fase parallel N delegation anak (cap per project) · *A · 4d · dep P0-DEL-1* → run template di project demo jalan E2E
+- [ ] **P2-FLOW-3** Human gate antar fase (reuse approval engine: "fase X selesai — lanjut?") + resume run pasca-restart via replay event · *A · 2d · dep P2-FLOW-2* → kill server mid-run → restart → run lanjut dari fase terakhir
+- [ ] **P2-FLOW-4** Event `workflow.started/phase.entered/phase.done/step.started/step.done/workflow.done` (aditif ke YuiEvent) + replay `?since=` · *A · 1d · dep P2-FLOW-2* → board di-refresh → state run utuh
+- [ ] **P2-FLOW-5** Monitoring board UI: kolom fase, kartu agent jalan (sequential satu kolom / paralel berdampingan), progress persona, hasil per langkah — live via SSE · *B · 3d · dep P2-FLOW-4* → 2 persona paralel terlihat jalan bersamaan + hasil terkumpul
+- [ ] **P2-FLOW-6** Steering mid-run: pause/stop step, reassign ke persona lain, suntik instruksi (pola OpenBot Stop/Resume/Reassign) · *B · 2d · dep P2-FLOW-5* → reassign mid-run tercatat di event & audit
+
+### P2-STU — Workbench multi-tab & surface (Studio §13.5; D16)
+
+- [ ] **P2-STU-1** Tab shell v0: tab chat/file/board/monitor dalam project home (state per tab; layout kolom desktop) · *B · 2d · dep P1-PRJ-6* → pindah tab tanpa kehilangan state chat
+- [ ] **P2-STU-2** Terminal tab: `xterm.js` ↔ PTY di sandbox (generalisasi `run_command`); user & agent share sesi terminal; approval untuk perintah berisiko · *A+B · 4d · dep P0-SEC-1* → agent menjalankan CLI & output muncul di tab yang user lihat
+- [ ] **P2-STU-3** File tab: tree + viewer + diff hasil edit agent (di atas file tools) · *B · 2d · dep P1-PRJ-2* → diff write_file agent terlihat
+- [ ] **P2-STU-4** Browser tab v0 read-only: server-side proxy + render (screenshot/DOM), domain allowlist per project, **security review = gerbang** (risiko §11) · *A · 4d · dep P0-SEC-1* → agent membuka URL riset & user melihat halaman yang sama
+- [ ] **P2-STU-5** MCP Figma connector (OAuth P1-MCP-2; bind ke persona design — D17) · *C · 2d · dep P1-PRJ-5* → persona design membaca frame Figma di fase desain
+- [ ] **P2-STU-6** Eksplorasi **pen.dev** (repo di-clone) → laporan: konsep yang relevan (browser/MCP/agent UX) + rekomendasi adopsi · *C · 1d* → doc `docs/refs/pen-dev.md`
+- [ ] **P2-STU-7** Docs tab: viewer/editor markdown deliverable + ringkasan run · *B · 1d · dep P1-PRJ-6* → laporan run terbuka sebagai doc
+
 ### G-BETA — SIAP TESTING #2 (closed beta)
 
 - [ ] Mobile TestFlight/Play internal track terdistribusi ke 20 tester
@@ -279,6 +316,8 @@
 - [ ] Support channel + feedback widget + triage SLA internal
 - [ ] Analytics dasar (activation, retention, cost per workspace)
 - [ ] Load: 100 sesi paralel, p95 turn-start < 2 dtk
+- [ ] **(Studio)** Run workflow 7-fase template E2E di project demo (≥2 fase paralel) — monitoring board live, resume mid-run lulus
+- [ ] **(Studio)** Terminal & browser tab: security review lulus (path, egress, SSRF, allowlist) · binding MCP Figma bekerja di satu persona saja
 
 ---
 
@@ -308,6 +347,10 @@
 | Scope creep | OUT list DEMO-WEEK-1 §3.2; reviewer tolak PR di luar scope |
 | SSE race / resume | W4-B2 + W5-A1; replay `?since=` adalah kontrak, bukan bonus |
 | Utang demo menumpuk | P0 = fase membayar `DEMO-SHORTCUT`; grep rutin; G-P0 tidak boleh dilewati |
+| Workflow engine scope creep | D15: DAG deklaratif template dulu; builder visual = P4; gate antar fase default ON; state hanya lewat event |
+| Browser embed = permukaan serangan | D16: proxy server-side default-deny, allowlist per project; review = gerbang P2-STU-4 |
+| Paralel = biaya & race | Cap concurrency per project; metering per step; replay untuk debug race (event = sumber kebenaran tunggal) |
+| Studio menggeser kernel | Urutan P1-PRJ → P2-FLOW → P2-STU; kernel tidak boleh tahu UI (contract-first) |
 
 ## Konvensi Task Baru
 

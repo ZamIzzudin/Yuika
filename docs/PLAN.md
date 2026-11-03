@@ -1,8 +1,16 @@
 # YOUR-YUI — Blueprint Platform Agent Multi-Platform
 
-> Dokumen perencanaan **v0.3** — diperbarui setelah putaran keputusan kedua (lihat §2).
+> Dokumen perencanaan **v0.4** — diperbarui setelah putaran keputusan kedua (lihat §2) dan
+> perluasan visi Studio Proyek (lihat §13).
 > Disusun dari pembelajaran mendalam `hermes-agent` (Nous Research) + brainstorming
 > konsep dari ekosistem tools lain. Status: draft aktif — eksekusi demo dimulai.
+>
+> **Changelog v0.4:** visi **Studio Proyek multi-agent** (§13): project = entitas first-class
+> (kode+docs+tasklist+struktur agent masing-masing) · workflow deklaratif 7 fase
+> (planning→riset→desain→develop→testing→dokumentasi→deliverable) dengan mode
+> sequential/paralel per fase · monitoring board · workbench multi-tab (terminal, browser,
+> file, board) · MCP binding granular project×persona (Figma, pen.dev) · referensi baru:
+> OpenBot (`D:\projects\openbot`) untuk pola UX rich desktop · keputusan D14–D17.
 >
 > **Changelog v0.3:** Pure TypeScript dikunci (D7) · ekspresi persona = animasi Rive (D8) ·
 > roster 6 persona disetujui (D9) · growth gratis + skin berbayar kosmetik/event/achievement
@@ -31,6 +39,7 @@
 10. [Roadmap Bertahap (di-prioritas ulang)](#10-roadmap-bertahap-di-prioritas-ulas)
 11. [Risiko & Mitigasi](#11-risiko--mitigasi)
 12. [Pertanyaan Terbuka Berikutnya](#12-pertanyaan-terbuka-berikutnya)
+13. [Studio Proyek: Multi-Project Agent OS (pilar baru v0.4)](#13-studio-proyek-multi-project-agent-os-pilar-baru-v04)
 
 ---
 
@@ -89,6 +98,10 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D11 | Self-host = **lisensi berbayar + wajib akun premium**; premium = entitlement akun lintas platform (sekali premium → web+mobile+desktop) | Butuh license/entitlement service + validasi saat start + grace offline (§8.3) |
 | D12 | Model = **kunci provider langsung, OpenAI-compatible saja** untuk sekarang | Tetap di belakang interface `ProviderAdapter`; adapter lain (Anthropic native, dll.) menunggu Fase 1 |
 | D13 | **Demo internal: 1 minggu** | Vertical slice terkompresi dari Fase 0; rencana harian 3 dev: `DEMO-WEEK-1.md` |
+| D14 | **Project = entitas first-class** di atas workspace: kode + docs + tasklist + struktur agent + histori + binding MCP sendiri (§13) | Layer data & kontrak baru (bukan folder biasa); isolasi path per project; semua sesi/delegation/run melekat pada project |
+| D15 | **Workflow = DAG deklaratif per fase** (bukan free-form graph): template 7 fase bawaan; mode `sequential`/`parallel` per fase; human gate antar fase default | Engine di atas job queue (P0-DEL-1 diperluas); builder visual node-graph menyusul Fase 3; kontrak event `workflow.*` aditif |
+| D16 | **Terminal & browser = permukaan (surface) dari tool yang sudah ada**, bukan sistem paralel: terminal = PTY di sandbox (`run_command` generalisasi), browser = server-side proxy dari `web_fetch`/browser tool | Workbench multi-tab web/desktop; pola OpenBot (browser persisten + agent control) jadi referensi; keamanan = review wajib |
+| D17 | **MCP binding granular: project × persona × tool** — koneksi sekali (OAuth, vault), turunannya di-scope per persona di project tertentu | Pain point utama user: MCP semacam Figma “menempel” sebagai skill persona yang punya tanggung jawab; audit log per binding |
 
 ---
 
@@ -683,7 +696,9 @@ khusus pipeline itu, bukan pindah core.
 **Demo keluar:** chat di web, Yui membaca skill, eksekusi kode di sandbox, minta approval,
 resume setelah refresh.
 
-### Fase 1 — Tiga prioritas + persona v1 + credits v1 (± 8–10 minggu)
+### Fase 1 — Tiga prioritas + persona v1 + credits v1 + project entity (± 8–10 minggu)
+- [ ] **P1-PRJ (v0.4): project entity** — CRUD + isolasi workspace per project + roster agent
+      per project + tasklist + binding MCP per persona (detail §13.2; task di TASKS.md)
 - [ ] **MCP**: client multi-transport + katalog kurasi ±20 + OAuth web + MCP worker tersandbox
 - [ ] **Memory learning-loop**: USER.md/MEMORY.md + nudge persist + skill-create-from-experience
       + per-domain persona memory (dasar §7.5) + `session_search`
@@ -699,7 +714,11 @@ resume setelah refresh.
 koneksi MCP Notion) → skill baru tercatat di domain persona → semua terlihat dari web dengan
 expression states; burn-rate credit terukur per turn."
 
-### Fase 2 — Multi-platform UX penuh (± 10–12 minggu)
+### Fase 2 — Multi-platform UX penuh + Studio v0 (± 10–12 minggu)
+- [ ] **P2-FLOW (v0.4): workflow engine** — DAG fase deklaratif (template 7 fase),
+           sequential/paralel per fase, human gate, monitoring board live (§13.3)
+- [ ] **P2-STU (v0.4): workbench multi-tab** — tab shell, terminal (PTY sandbox),
+      file explorer, browser embed read-only, board, docs; Figma MCP (§13.5)
 - [ ] Mobile (Expo): chat, push approval, mission control, persona picker
 - [ ] Desktop (Tauri) + device relay worker
 - [ ] Persona UX penuh: expression per state, growth timeline, varian ilustrasi unlock
@@ -736,6 +755,10 @@ expression states; burn-rate credit terukur per turn."
 | Ekosistem tertutup = FOMO integrasi (user minta WhatsApp dll.) | Churn | Posisikan sebagai *privacy-first feature*; push notification kelas satu; tetap buka opsi nanti bila data user menuntut (keputusan bisnis bisa berubah) |
 | Tim kecil memelihara 3 klien + core | Burnout | Satu kontrak → semua klien (codegen); klien dirilis berurutan; Hindari fitur klien yang tak ada di kontrak |
 | Dependensi satu provider LLM | Harga/stabilitas | Router + failover sejak Fase 1 |
+| Workflow engine scope creep (jadi workflow-builder penuh terlalu dini) | Jalan tanpa rilis studio | D15: DAG deklaratif 7 fase template dulu; builder visual Fase 3; setiap fase punya acceptance test + human gate; engine tidak bisa menulis state bebas — hanya lewat event |
+| Embedded browser = permukaan serangan (SSRF, XSS, session leak) | Keamanan | D16: server-side proxy default-deny, domain allowlist per project, sandbox render terpisah, security review gerbang (P2-STU-4) |
+| Eksekusi paralel agent = biaya & race meledak | Biaya & correctness | Cap concurrency per project (plan); metering per-step (§8); event sourcing = sumber kebenaran tunggal; replay untuk debugging race |
+| Piringan berat studio (terminal/browser/monitor) menggeser kernel | Kualitas inti | Urutan: P1-PRJ (data) → P2-FLOW (engine+monitoring) → P2-STU (tab kaya); kernel tidak boleh tahu UI |
 
 ---
 
@@ -765,6 +788,133 @@ expression states; burn-rate credit terukur per turn."
    di Fase 2 — jangan sekarang, demo tidak butuh.)
 9. **Expiring credits?** (belum terjawab dari v0.2 — 12 bulan vs non-expiring).
 10. **Nama:** "Your-Yui" final? Cek domain/trademark sebelum branding jalan jauh.
+11. **pen.dev (v0.4):** eksplorasi repo (akan di-clone user) — komponen mana yang relevan untuk browser-embed/MCP? Catat di §13.5 setelah ditelusuri; jangan asumsi sebelum baca sumbernya.
+12. **Isolasi kode project (v0.4):** folder `workspace/projects/<id>/` vs git worktree vs repo penuh per project? (Usulan: folder dulu, worktree saat fitur git masuk.)
+13. **Human gate antar fase workflow (v0.4):** default selalu ada (approve sebelum fase berikut), atau per-fase opt-out? (Usulan: default ON; fase otomatis hanya untuk run unattended berjenjang kepercayaan.)
+14. **Browser embed scope (v0.4):** screenshot+DOM read-only dulu, atau interaktif penuh (klik/scroll via CDP) sejak awal? (Usulan: read-only v0 — interaktif menyusul bersama sandbox render.)
+
+---
+
+## 13. Studio Proyek: Multi-Project Agent OS (pilar baru v0.4)
+
+> Keputusan D14–D17. Visi: Your-Yui bukan sekadar "chat dengan persona", melainkan
+> **studio tempat banyak project hidup** — tiap project membawa kode, dokumentasi, tasklist,
+> dan **struktur agent-nya sendiri**; struktur itu berjalan sebagai workflow berfase
+> (sequential/paralel) yang bisa dimonitor; dan seluruhnya dibuka lewat **workbench
+> multi-tab** (chat, terminal, browser, file, board). Referensi hidup konsep ini:
+> **OpenBot** (`D:\projects\openbot` — desktop agent workspace dengan browser embed,
+> queue, threads, subagents) dan **pen.dev** (eksplorasi menyusul — §12.11).
+
+### 13.1 Konsep inti
+
+| Konsep | Definisi | Fondasi yang sudah ada |
+|---|---|---|
+| **Project** | Kontainer first-class: repo kode + docs + tasklist + struktur agent + histori sesi/run + binding MCP | Workspace scope (PLAN §3.5); session store; path policy file-tools |
+| **Struktur agent** | Roster persona yang *di-assign* ke project, dengan peran & fase kerja masing-masing ("agent A,B,C,D untuk tugas tertentu") | Persona package (§7); delegation (`delegate_task(persona=…)`) |
+| **Workflow** | DAG deklaratif per fase: planning → perencanaan → riset → desain → develop → testing → dokumentasi → deliverable; tiap fase `sequential`/`parallel`; langkah = (persona, task) | Job queue delegation (P0-DEL-1); approval engine (human gate); event bus |
+| **Monitoring** | Board live: agent mana sedang jalan, di fase apa, paralel/sequential, progres & hasil | Event sourcing + `delegation.progress` + SSE replay — tinggal diperluas `workflow.*` |
+| **Workbench multi-tab** | Tab chat / terminal / browser / file / board / monitoring dalam satu project (web & desktop; mobile fokus monitoring+approval) | Tool sandbox `run_command`, `web_fetch`, file tools — diangkat jadi *surface* (D16) |
+| **MCP sebagai skill persona** | Koneksi MCP (mis. Figma, pen.dev) di-bind ke persona tertentu di project tertentu — "skill yang menempel pada agent yang bertanggung jawab" (D17) | MCP client + katalog + OAuth (P1-MCP); persona toolset binding |
+
+### 13.2 Model data (aditif terhadap skema §6)
+
+```
+project
+├── id, name, description, status (active/paused/archived)
+├── root            # path terisolasi: workspace/projects/<id>/{code,docs,reports}
+├── tasklist[]      # task: id, title, status (todo/doing/review/done), assignee (persona)
+├── agent_roster[]  # persona yang di-assign + peran (mis. "lead", "research", "design")
+├── workflows[]     # workflow_def (di bawah); template 7 fase dipakai sebagai default
+├── mcp_bindings[]  # { server, persona, tools[], granted_by, ts }  ← D17
+└── sessions[]/runs[]  # histori (relasi ke tabel yang sudah ada)
+
+workflow_def        # file `workflow.yaml` per project (deklaratif, di-version-control)
+├── phases[]
+│     ├── id, name  # planning | research | design | develop | test | docs | deliverable
+│     ├── mode      # sequential | parallel
+│     ├── steps[]   # { persona, task/goal, depends_on[] (opsional), max_concurrent }
+│     └── gate      # human-approval sebelum fase berikut (default ON — §12.13)
+
+run                 # satu eksekusi workflow
+├── id, project_id, workflow_id, status (queued/running/awaiting_gate/done/failed)
+├── phase_states[]  # { phase, status, started_at, finished_at }
+└── agent_jobs[]    # delegation job yang sudah ada + referensi (run, phase, step)
+```
+
+Aturan: `workflow.yaml` deklaratif & tervalidasi zod di `@yui/contracts`; engine tidak
+pernah menulis state bebas — semua transisi lewat event (append-only). Resume run =
+replay event + lanjut dari fase terakhir yang belum selesai.
+
+### 13.3 Eksekusi & monitoring workflow
+
+```
+workflow.run ──► Engine (DAG → job graph)
+                    │  fase sequential: job satu-per-satu (output fase = konteks fase berikut)
+                    │  fase parallel  : N job delegation paralel (cap per project)
+                    │  gate          : approval.requested "fase X selesai — lanjut?"
+                    ▼
+              Job Queue (P0-DEL-1 diperluas: run_id, phase_id di job)
+                    │  tiap job = delegation persona (loop anak yang sudah ada)
+                    ▼
+              events: workflow.started / phase.entered / phase.done /
+                      step.started / step.done / workflow.done  ← kontrak aditif
+                    │
+                    ▼
+        Monitoring board (SSE): kolom fase, kartu agent jalan (sequential rapi
+        satu kolom / paralel berdampingan), progress ring persona, hasil per langkah
+```
+
+- **Agent yang sama tetap bisa diajak chat langsung** — tab chat per project membuka sesi
+  dengan persona roster; Conductor project = pemegang kendali workflow.
+- **Steering mid-run** (pola OpenBot): pause/stop satu step, reassign task ke persona lain,
+  atau suntik instruksi tambahan — semua lewat kontrak, tercatat di event.
+- **Deliverable** = fase akhir mengumpulkan artefak (`reports/`, docs) + ringkasan run.
+
+### 13.4 MCP sebagai kapabilitas persona (jawaban pain point)
+
+Alur yang dituju (contoh Figma):
+
+1. Project menghubungkan server MCP **sekali** di level project (OAuth web — P1-MCP-2,
+   token di vault). Contoh: `figma`.
+2. Binding men-scope turunannya: `figma → yui-designer (persona), tools: [get_file,
+   export_frame]` — hanya persona itu yang melihat `mcp__figma__*` di toolset-nya,
+   hanya di project ini (D17).
+3. Persona memakainya sebagai **skill kerja**: desainer membaca frame Figma di fase `design`,
+   mengerjakan, menulis hasil ke docs project.
+4. Semua panggilan tercatat di audit log per binding (siapa, kapan, tool apa, hasil).
+
+Katalog + custom server menyusul dari P1-MCP; yang baru hanya model binding granular.
+
+### 13.5 Workbench multi-tab (surface)
+
+| Tab | Isi | Implementasi v0 |
+|---|---|---|
+| **Chat** | Sesi persona project (yang sekarang) | Sudah ada |
+| **Terminal** | CLI di root project — agent & user share sesi terminal yang sama | `xterm.js` ↔ PTY di sandbox (generalisasi `run_command`; approval untuk perintah berisiko) |
+| **Browser** | Halaman yang sedang diriset/didesain — agent bisa buka & inspeksi, user melihat | Server-side proxy + render read-only (screenshot/DOM) — D16; interaktif penuh menyusul (§12.14) |
+| **File** | Tree kode/docs project + viewer + diff hasil kerja agent | Di atas file tools yang sudah ada |
+| **Board** | Tasklist project (kolom todo/doing/review/done) + run workflow aktif | P1-PRJ tasklist + P2-FLOW monitoring |
+| **Docs** | Markdown deliverable, laporan run | Viewer/editor sederhana |
+
+Desktop (Tauri, P2-DTL) membungkus semua tab ini native + relay eksekusi lokal; mobile
+fokus monitoring board, chat, dan approval push. Pola referensi: OpenBot (browser
+persisten + agent control, queue FIFO, thread tabs, dynamic island status).
+
+### 13.6 Kenapa ini mungkin (feasibility)
+
+- **Monitoring = gratis dari event sourcing**: board hanyalah proyeksi UI dari event stream
+  yang sudah append-only + replayable — tidak ada sinkronisasi state kedua.
+- **Paralel = perluasan yang sudah direncanakan**: delegation in-process hari ini → job
+  queue (P0-DEL-1) → DAG executor tinggal menambah `run/phase/step` metadata.
+- **Persona per project = config, bukan kode**: sistem persona package sudah deklaratif;
+  roster project hanya lapisan assignment di atasnya.
+- **Terminal/browser = surface dari tool**: eksekusi sandbox & fetch sudah ada — mengangkat
+  jadi tab adalah pekerjaan transport (PTY stream, proxy), bukan mesin baru.
+- **Bukti keberadaan**: OpenBot menjalankan kombinasi yang sama (browser embed + CLI agent
+  + multi-agent + desktop) sebagai produk nyata — risikonya execution, bukan kemustahilan.
+
+Yang paling berat (jujur): keamanan browser embed, correctness DAG engine (resume/gate),
+dan biaya eksekusi paralel — ketiganya sudah masuk tabel risiko §11.
 
 ---
 
