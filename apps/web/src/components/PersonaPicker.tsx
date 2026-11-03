@@ -29,6 +29,23 @@ export function PersonaFace({ personaId, size = 22 }: { personaId: string; size?
   );
 }
 
+/** Kartu persona besar untuk pemilihan di tengah layar (scope Workspace). */
+export function PersonaGrid({ personas, onPick }: { personas: PersonaInfo[]; onPick: (p: PersonaInfo) => void }) {
+  return (
+    <div className="persona-grid">
+      {personas.map((p) => (
+        <button key={p.id} className="persona-card" onClick={() => onPick(p)}>
+          <span className="face">
+            <PersonaFace personaId={p.id} size={44} />
+          </span>
+          <b>{p.name}</b>
+          <p>{p.description}</p>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function PersonaPicker({
   personas,
   activeId,

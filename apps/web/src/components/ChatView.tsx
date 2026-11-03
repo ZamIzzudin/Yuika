@@ -5,7 +5,7 @@
  * tool = langkah senyap yang bisa dilipat; delegasi = baris subagent; approval = kartu tenang.
  * Logika event tetap dari page.tsx (semua tipe @yui/contracts).
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PersonaState } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
 
@@ -68,12 +68,15 @@ export function ChatView({
   onSend,
   onApprove,
   busy,
+  emptySlot,
 }: {
   items: ChatItem[];
   personaState: PersonaState;
   personaId: string;
   personaName: string;
   onSend: (text: string) => void;
+  /** Konten state kosong (hero + saran) — composer tetap tampil, user bisa langsung menulis. */
+  emptySlot?: ReactNode;
   onApprove: (requestId: string, approved: boolean) => void;
   busy: boolean;
 }) {
@@ -113,6 +116,9 @@ export function ChatView({
     <>
       <div className="chat-scroll" ref={scrollRef}>
         <div className="chat-col">
+          {items.length === 0 && emptySlot ? (
+            <div className="chat-empty">{emptySlot}</div>
+          ) : null}
           {rest.map((it, i) => {
             if (it.kind === "msg" && it.role === "user") {
               return (

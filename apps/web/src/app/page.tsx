@@ -5,7 +5,7 @@
  * SEMUA tipe dari @yui/contracts (dilarang tipe tangan — PLAN §6.3).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PersonaPicker } from "@/components/PersonaPicker";
+import { PersonaGrid, PersonaFace } from "@/components/PersonaPicker";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
@@ -202,30 +202,50 @@ export default function Home() {
     return () => es.close();
   }, [sessionId, applyEvent]);
 
-  async function pick(p: PersonaInfo) {
+  async function pick(p: PersonaInfo, projectIdOverride?: string | null) {
     setActive(p);
     setItems([]);
     setPersonaState("idle");
     openAssistant.current = null;
     lastEventId.current = 0;
+    const projectId = projectIdOverride !== undefined ? projectIdOverride : activeProjectId;
     const res = await fetch("/api/sessions", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ personaId: p.id, projectId: activeProjectId ?? null }),
+      body: JSON.stringify({ personaId: p.id, projectId: projectId ?? null }),
     });
     const d = (await res.json()) as { sessionId: string };
     setSessionId(d.sessionId);
   }
 
-  /** Ganti scope project → sesi berikutnya dibuat di scope baru; sesi lama ditinggalkan. */
+  /** Ganti scope project → project = sesi langsung dengan PROJECT LEAD (Conductor):
+   *  user tak pernah memilih persona manual di scope project — sebutkan tugasnya,
+   *  Conductor mendelegasikan ke spesialis sesuai keahlian (delegate_task). */
   function pickProject(id: string | null) {
     setActiveProjectId(id);
     setDrawerOpen(false);
+    if (!id) {
+      // Workspace global: persona dipilih dari kartu di tengah layar
+      resetSession();
+      return;
+    }
+    const lead = personas.find((p) => p.id === "yui-conductor") ?? personas[0];
+    if (lead) void pick(lead, id);
+  }
+
+  function resetSession() {
     setActive(null);
     setSessionId(null);
     setItems([]);
     setPersonaState("idle");
     lastEventId.current = 0;
+    openAssistant.current = null;
+  }
+
+  /** Ganti persona di tengah project (mis. bicara langsung ke spesialis) → sesi baru. */
+  async function switchPersona(p: PersonaInfo) {
+    if (p.id === active?.id) return;
+    await pick(p);
   }
 
   async function send(text: string) {
@@ -258,7 +278,6 @@ export default function Home() {
           onPick={pickProject}
           onCreated={loadProjects}
         />
-        <PersonaPicker personas={personas} activeId={active?.id ?? null} onPick={pick} />
         <McpPanel />
       </aside>
       <main className="yui-main">
@@ -267,22 +286,42 @@ export default function Home() {
             <div className="portrait-hero">
               <OrinPortrait state="idle" personaId={activeProject ? undefined : "yui-conductor"} />
             </div>
-            <h1>{activeProject ? `Proyek: ${activeProject.name}` : "Pilih persona untuk memulai"}</h1>
-            <p className="pitch">
-              {activeProject
-                ? `Semua file & task pada sesi berikutnya terikat ke proyek ini — pilih persona untuk mulai bekerja di scope proyek.`
-                : "Conductor mengorkestrasi, Scholar meriset, Scribe menulis, Coder memrogram — saling mendelegasikan pekerjaan lewat satu sesi."}
-            </p>
-            {activeProject?.description ? <p className="pitch">{activeProject.description}</p> : null}
+            {activeProject ? (
+              <>
+                <h1>Menyiapkan {activeProject.name}…</h1>
+                <p className="pitch">Conductor sebagai project lead sedang dibuka.</p>
+              </>
+            ) : (
+              <>
+                <h1>Pilih partner untuk sesi Workspace</h1>
+                <p className="pitch">
+                  Scope Workspace bebas — atau pilih project di kiri untuk langsung dipandu Conductor.
+                </p>
+                <PersonaGrid personas={personas} onPick={(p) => void pick(p)} />
+              </>
+            )}
           </div>
         ) : (
           <>
             <header className="chat-header">
-              <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="compact" />
-              <div className="who">
-                <b>{active.name}</b>
-                <span>{active.expertise}</span>
-              </div>
+              <details className="persona-switch">
+                <summary>
+                  <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="compact" />
+                  <span className="who">
+                    <b>{active.name}</b>
+                    <span>{active.expertise}</span>
+                  </span>
+                </summary>
+                <div className="persona-menu">
+                  {personas.map((p) => (
+                    <button key={p.id} data-active={p.id === active.id ? "" : undefined} onClick={() => void switchPersona(p)}>
+                      <PersonaFace personaId={p.id} size={20} />
+                      <span>{p.name}</span>
+                      {activeProjectId && <small>{activeProjectId ? "sesi baru di project ini" : ""}</small>}
+                    </button>
+                  ))}
+                </div>
+              </details>
               {activeProject && (
                 <button className="project-chip" onClick={() => setDrawerOpen((v) => !v)} title="Tasklist proyek">
                   <i /> {activeProject.name}
@@ -294,18 +333,35 @@ export default function Home() {
               </span>
             </header>
             {items.length === 0 ? (
-              <div className="empty-state">
-                <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="hero" />
-                <h1>{active.name} siap</h1>
-                <p className="pitch">{active.description}</p>
-                <div className="suggest-row">
-                  {(SUGGESTIONS[active.id] ?? []).map((s) => (
-                    <button key={s} className="suggest" onClick={() => send(s)}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <ChatView
+                items={items}
+                personaState={personaState}
+                personaId={active.id}
+                personaName={active.name}
+                onSend={send}
+                onApprove={approve}
+                busy={busy}
+                emptySlot={
+                  <>
+                    <div className="portrait-hero">
+                      <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="hero" />
+                    </div>
+                    <h1>{activeProject ? `${active.name} memimpin ${activeProject.name}` : `${active.name} siap`}</h1>
+                    <p className="pitch">
+                      {activeProject
+                        ? `Sebutkan tugasnya — ${active.name} akan mengerjakan atau mendelegasikan ke spesialis sesuai keahlian. Semua file & task terikat ke project ini.`
+                        : active.description}
+                    </p>
+                    <div className="suggest-row">
+                      {(SUGGESTIONS[active.id] ?? []).map((s) => (
+                        <button key={s} className="suggest" onClick={() => send(s)}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                }
+              />
             ) : (
               <ChatView
                 items={items}

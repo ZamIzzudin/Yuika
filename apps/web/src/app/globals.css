@@ -173,7 +173,7 @@ html, body {
   align-items: center;
   gap: var(--yui-space-3);
   border-bottom: 1px solid var(--yui-border);
-  padding: 0 var(--yui-space-6);
+  padding: var(--yui-space-6);
 }
 .chat-header .who { display: flex; flex-direction: column; min-width: 0; }
 .chat-header .who b { font-size: var(--yui-text-md); font-weight: 600; }
@@ -631,3 +631,41 @@ html, body {
 .mcp-audit li { font-size: var(--yui-text-sm); color: var(--yui-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mcp-audit li[data-ok] { color: var(--yui-text-muted); }
 .roster-mcp { color: var(--yui-accent-text); }
+
+/* State kosong di dalam chat-scroll: hero + saran + composer aktif di bawahnya */
+.chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--yui-space-3); padding: var(--yui-space-8) var(--yui-space-6); min-height: 100%; text-align: center; }
+.chat-empty h1 { margin: 0; }
+.chat-empty .suggest-row { margin-top: var(--yui-space-2); }
+
+/* ── Pemilihan persona di tengah layar (scope Workspace) ───────── */
+.persona-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--yui-space-3); width: 100%; max-width: 720px; margin-top: var(--yui-space-4); }
+.persona-card {
+  display: flex; flex-direction: column; align-items: center; gap: var(--yui-space-2); text-align: center;
+  font: inherit; color: var(--yui-text-secondary); cursor: pointer;
+  background: var(--yui-bg-surface); border: 1px solid var(--yui-border); border-radius: 14px;
+  padding: var(--yui-space-5) var(--yui-space-4);
+}
+.persona-card:hover { border-color: var(--yui-border-strong); background: var(--yui-bg-surface-raised); color: var(--yui-text-primary); }
+.persona-card b { font-size: var(--yui-text-lg); font-weight: 600; }
+.persona-card p { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim); line-height: 1.5; }
+
+/* ── Switcher persona di chat-header (dropdown) ────────────────── */
+.persona-switch { position: relative; }
+.persona-switch summary { display: flex; align-items: center; gap: var(--yui-space-2); list-style: none; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+.persona-switch summary::-webkit-details-marker { display: none; }
+.persona-switch summary:hover { background: var(--yui-hover); }
+.persona-switch[open] summary { background: var(--yui-hover); }
+.persona-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 230px;
+  display: flex; flex-direction: column; gap: 1px; padding: 4px;
+  background: var(--yui-bg-surface-raised); border: 1px solid var(--yui-border-strong); border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.persona-menu button {
+  display: flex; align-items: center; gap: var(--yui-space-2); font: inherit; font-size: var(--yui-text-md);
+  color: var(--yui-text-secondary); background: none; border: none; border-radius: 8px;
+  padding: 7px 8px; cursor: pointer; text-align: left;
+}
+.persona-menu button:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
+.persona-menu button[data-active] { color: var(--yui-text-primary); background: var(--yui-bg-control-active); }
+.persona-menu small { margin-left: auto; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
