@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, RosterEntry, TaskItem, TaskNode, TaskStatus } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
+import { Skeleton } from "./Skeleton";
 
 /** Status cycle: klik chip = maju satu langkah. */
 const NEXT: Record<TaskStatus, TaskStatus> = { todo: "doing", doing: "review", review: "done", done: "todo" };
@@ -142,6 +143,7 @@ export function ProjectTabs({
   const [userMd, setUserMd] = useState("");
   const [projMd, setProjMd] = useState("");
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false); // skeleton hanya untuk load pertama
 
   const refresh = useCallback(async () => {
     try {
@@ -156,6 +158,7 @@ export function ProjectTabs({
         setMcpServers(
           ((await m.json()) as { servers: { name: string; declared: boolean }[] }).servers.filter((s) => s.declared),
         );
+      setLoaded(true);
     } catch {
       /* refresh berikutnya */
     }
@@ -299,7 +302,8 @@ export function ProjectTabs({
 
   return (
     <div className="pane-scroll">
-      {activeTab === "sessions" && (
+      {!loaded && <Skeleton lines={6} />}
+      {loaded && activeTab === "sessions" && (
         <section aria-label="Sesi project">
           <button className="btn secondary session-new" onClick={onNewSession}>
             + Sesi baru (Conductor)
@@ -322,7 +326,7 @@ export function ProjectTabs({
         </section>
       )}
 
-      {activeTab === "roster" && (
+      {loaded && activeTab === "roster" && (
         <section aria-label="Roster proyek">
           <p className="pane-hint">
             {done}/{tasks.length} task selesai · roster tersimpan deklaratif di <code>project.yaml</code>
@@ -395,7 +399,7 @@ export function ProjectTabs({
         </section>
       )}
 
-      {activeTab === "board" && (
+      {loaded && activeTab === "board" && (
         <section aria-label="Papan kanban task">
           <p className="pane-hint">Seret kartu antar kolom untuk mengubah status — sinkron dengan tasklist agent & TaskTree.</p>
           <div className="board">
@@ -443,7 +447,7 @@ export function ProjectTabs({
         </section>
       )}
 
-      {activeTab === "memory" && (
+      {loaded && activeTab === "memory" && (
         <section aria-label="Memori — apa yang Yui ketahui">
           <p className="pane-hint">
             Catatan ini dibaca agent di setiap <b>sesi baru</b> (frozen per sesi). Agent menambah catatan lewat tool
@@ -472,7 +476,7 @@ export function ProjectTabs({
         </section>
       )}
 
-      {activeTab === "tree" && (
+      {loaded && activeTab === "tree" && (
         <section aria-label="Pohon task (TaskTree)">
           {tree.length === 0 ? (
             <p className="task-empty">
@@ -489,7 +493,7 @@ export function ProjectTabs({
         </section>
       )}
 
-      {activeTab === "team" && (
+      {loaded && activeTab === "team" && (
         <section aria-label="Tim — struktur delegasi live">
           {live.parentPersonaId ? (
             <div className="org-chart">

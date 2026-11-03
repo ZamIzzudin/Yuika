@@ -933,3 +933,37 @@ html, body {
 .uv-status[data-ok] { border-style: solid; border-color: var(--yui-ok); }
 .uv-status small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 .uv-status code { font-family: var(--yui-font-mono, ui-monospace, monospace); font-size: 11px; }
+
+/* ── Skeleton (loader konten — satu bahasa visual) ──────────────── */
+.skeleton {
+  display: flex; flex-direction: column; gap: var(--yui-space-2);
+  padding: var(--yui-space-2) 0;
+}
+.skeleton .sk {
+  position: relative; display: block; height: 10px;
+  border-radius: var(--yui-radius-pill);
+  background: var(--yui-hover);
+  overflow: hidden;
+}
+.skeleton .sk::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  transform: translateX(-100%);
+  animation: yui-shimmer 1.6s var(--yui-ease-in-out) infinite;
+}
+@keyframes yui-shimmer { to { transform: translateX(100%); } }
+.skeleton.rows { gap: 6px; }
+.skeleton .sk.row {
+  height: 30px; border-radius: var(--yui-radius-md);
+  display: flex; align-items: center; gap: var(--yui-space-2);
+  padding: 0 var(--yui-space-2);
+}
+.skeleton .sk.row > i {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  background: var(--yui-hover);
+}
+.skeleton .sk.row .sk-line { height: 8px; border-radius: var(--yui-radius-pill); background: var(--yui-hover); }
+.skeleton .sk.row::after { border-radius: var(--yui-radius-md); }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton .sk::after { animation: none; }
+}

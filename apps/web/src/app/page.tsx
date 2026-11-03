@@ -12,6 +12,7 @@ import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ProjectTabs, type LiveDelegation, type WorkspaceTab } from "@/components/TaskDrawer";
+import { Skeleton } from "@/components/Skeleton";
 import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, YuiEvent } from "@yui/contracts";
 
 /** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
@@ -50,6 +51,7 @@ export default function Home() {
   const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
   const [mainTab, setMainTab] = useState<WorkspaceTab>("chat");
   const [projSessions, setProjSessions] = useState<ProjectSessionSummary[]>([]);
+  const [booted, setBooted] = useState(false); // skeleton hanya selama fetch awal
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
   const loadProjects = useCallback(async () => {
@@ -61,6 +63,8 @@ export default function Home() {
       setActiveProjectId((cur) => (cur && d.projects.some((p) => p.id === cur) ? cur : null));
     } catch {
       /* biarkan kosong */
+    } finally {
+      setBooted(true);
     }
   }, []);
 
@@ -315,6 +319,7 @@ export default function Home() {
         </div>
         <ProjectPanel
           projects={projects}
+          booted={booted}
           activeId={activeProjectId}
           onPick={pickProject}
           onCreated={loadProjects}
@@ -343,7 +348,15 @@ export default function Home() {
                 <p className="pitch">
                   Scope Workspace bebas — atau pilih project di kiri untuk langsung dipandu Conductor.
                 </p>
-                <PersonaGrid personas={personas} onPick={(p) => void pick(p)} />
+                {personas.length === 0 ? (
+                  <div className="persona-grid">
+                    {Array.from({ length: 4 }, (_, i) => (
+                      <Skeleton key={i} lines={3} />
+                    ))}
+                  </div>
+                ) : (
+                  <PersonaGrid personas={personas} onPick={(p) => void pick(p)} />
+                )}
               </>
             )}
           </div>

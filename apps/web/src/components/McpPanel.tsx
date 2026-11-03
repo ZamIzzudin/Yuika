@@ -4,6 +4,7 @@
 // install TIDAK menghubungkan — user harus Trust dulu (toggle di atas).
 import { useCallback, useEffect, useState } from "react";
 import type { McpAuditEntry, McpCatalogEntry, McpServerStatus } from "@yui/contracts";
+import { Skeleton, SkeletonRows } from "./Skeleton";
 
 const RISK_LABEL: Record<string, string> = { rendah: "aman", sedang: "hati-hati", tinggi: "akses akun" };
 
@@ -112,6 +113,7 @@ export function McpPanel() {
   }
 
   const declared = new Set(servers.filter((s) => s.declared).map((s) => s.name));
+  const booting = servers.length === 0 && catalog.length === 0 && !err;
   const q = query.trim().toLowerCase();
   const shown = catalog.filter(
     (c) => !q || c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q) || c.category.includes(q),
@@ -125,8 +127,12 @@ export function McpPanel() {
           ↻
         </button>
       </div>
-      {servers.length === 0 && <p className="task-empty">Tidak ada server MCP dideklarasikan — pasang dari katalog di bawah.</p>}
-      <ul className="mcp-list">
+      {booting ? (
+        <SkeletonRows rows={3} />
+      ) : (
+        <>
+          {servers.length === 0 && <p className="task-empty">Tidak ada server MCP dideklarasikan — pasang dari katalog di bawah.</p>}
+          <ul className="mcp-list">
         {servers.map((s) => (
           <li key={s.name} className="mcp-row" data-trusted={s.trusted || undefined}>
             <span className="mcp-dot" data-on={s.connected || undefined} />
@@ -162,7 +168,7 @@ export function McpPanel() {
 
       <div className="mcp-catalog">
         <div className="project-head">
-          <span className="project-title">Katalog ({catalog.length})</span>
+          <span className="project-title">Katalog {booting ? "" : `(${catalog.length})`}</span>
         </div>
         <div className="uv-status" data-ok={uvx && uvx !== "loading" ? "" : undefined}>
           {uvx === "loading" ? (
@@ -202,6 +208,9 @@ export function McpPanel() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        {booting ? (
+          <SkeletonRows rows={5} />
+        ) : (
         <ul className="catalog-list">
           {shown.map((c) => {
             const isInstalled = declared.has(c.id);
@@ -272,7 +281,10 @@ export function McpPanel() {
             );
           })}
         </ul>
+        )}
       </div>
+      </>
+      )}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { ProjectInfo } from "@yui/contracts";
+import { SkeletonRows } from "./Skeleton";
 
 /**
  * Panel Proyek (sidebar) — project = entitas first-class di atas workspace (D14).
@@ -9,11 +10,14 @@ import type { ProjectInfo } from "@yui/contracts";
  */
 export function ProjectPanel({
   projects,
+  booted = true,
   activeId,
   onPick,
   onCreated,
 }: {
   projects: ProjectInfo[];
+  /** false = masih fetch awal → tampil skeleton, bukan "0 proyek". */
+  booted?: boolean;
   activeId: string | null;
   onPick: (id: string | null) => void;
   onCreated: () => void;
@@ -85,6 +89,7 @@ export function ProjectPanel({
       )}
 
       <div className="project-list">
+        {!booted && <SkeletonRows rows={2} />}
         <button className="project-row" data-active={activeId === null ? "" : undefined} onClick={() => onPick(null)}>
           <i className="project-dot" />
           <span>

@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ProviderSettings } from "@yui/contracts";
 import { McpPanel } from "./McpPanel";
+import { Skeleton } from "./Skeleton";
 
 type Section = "provider" | "mcp";
 
@@ -102,6 +103,10 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           <div className="settings-content">
             {section === "provider" && (
               <section aria-label="Provider dan model">
+                {cfg === null ? (
+                  <Skeleton lines={5} />
+                ) : (
+                  <>
                 {cfg && (
                   <p className="pane-hint">
                     Key tersimpan: <code>{cfg.hasApiKey ? cfg.keyPreview : "belum ada"}</code> · aktif:{" "}
@@ -131,6 +136,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   {flash && <small className="ok">{flash}</small>}
                   {err && <small className="project-err">{err}</small>}
                 </div>
+                  </>
+                )}
               </section>
             )}
             {section === "mcp" && (
