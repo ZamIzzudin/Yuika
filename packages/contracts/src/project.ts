@@ -55,10 +55,64 @@ export const ProjectManifest = z.object({
 });
 export type ProjectManifest = z.infer<typeof ProjectManifest>;
 
-// Tasklist per project (P1-PRJ-4 memakai kontrak ini; TaskTree = D19 menyusul).
+// ---- TaskTree (P1-PRJ-7, PLAN §13.7/D19) — hierarki pemantauan delegasi ----
+
 export const TaskStatus = z.enum(["todo", "doing", "review", "done"]);
 export type TaskStatus = z.infer<typeof TaskStatus>;
 
+/** Node tree: task → subtask → step → job agent. Diproyeksikan DARI event (replay gratis). */
+export interface TaskNode {
+  id: string;
+  /** null = root task (kartu TaskList level atas). */
+  parent: string | null;
+  title: string;
+  status: TaskStatus;
+  assignee: string | null;
+  /** Referensi pekerjaan: delegation job id / step / path. */
+  refs: string[];
+  /** Artefak nyata yang dihasilkan node (path file, link). */
+  artefak: string[];
+  children: TaskNode[];
+}
+
+export const TaskNode: z.ZodType<TaskNode> = z.object({
+  id: z.string(),
+  parent: z.string().nullable(),
+  title: z.string(),
+  status: TaskStatus,
+  assignee: z.string().nullable(),
+  refs: z.array(z.string()),
+  artefak: z.array(z.string()),
+  children: z.array(z.lazy(() => TaskNode)),
+});
+
+/** Event stream project (tabel project_events) — sumber TaskTree; semua transisi task lewat sini. */
+export const ProjectEvent = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("task.node.created"),
+    projectId: z.string(),
+    taskId: z.string(),
+    parent: z.string().nullable(),
+    title: z.string(),
+    assignee: z.string().nullable(),
+    ts: z.number(),
+  }),
+  z.object({
+    type: z.literal("task.node.updated"),
+    projectId: z.string(),
+    taskId: z.string(),
+    title: z.string().optional(),
+    status: TaskStatus.optional(),
+    assignee: z.string().nullable().optional(),
+    addRefs: z.array(z.string()).optional(),
+    addArtefak: z.array(z.string()).optional(),
+    ts: z.number(),
+  }),
+]);
+export type ProjectEvent = z.infer<typeof ProjectEvent>;
+
+// Tasklist per project (P1-PRJ-4 memakai kontrak ini; TaskTree = D19 menyusul).
+// TaskList flat (P1-PRJ-4) — row di project_tasks.
 export const TaskItem = z.object({
   id: z.string().regex(/^t_[a-z0-9-]+$/),
   projectId: z.string(),

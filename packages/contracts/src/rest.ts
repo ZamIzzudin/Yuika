@@ -58,6 +58,8 @@ export const UpdateProjectRequest = z.object({
 export const CreateTaskRequest = z.object({
   title: z.string().min(1).max(140),
   assignee: z.string().nullish(),
+  /** Parent task id — null = root (P1-PRJ-7 TaskTree). */
+  parentId: z.string().nullish(),
 });
 
 // PATCH /api/projects/:id/tasks/:taskId
@@ -66,6 +68,8 @@ export const UpdateTaskRequest = z.object({
   status: TaskStatus.optional(),
   assignee: z.string().nullable().optional(),
   addRefs: z.array(z.string()).optional(),
+  /** Artefak node (masuk event TaskTree; P1-PRJ-7). */
+  addArtefak: z.array(z.string()).optional(),
 });
 
 // GET/PUT /api/projects/:id/roster (P1-PRJ-3) — sumber: project.yaml di root project

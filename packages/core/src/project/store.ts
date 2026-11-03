@@ -4,7 +4,9 @@
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import { ProjectInfo, type TaskItem } from "@yui/contracts";
+import { ProjectEvent, ProjectInfo, type TaskItem } from "@yui/contracts";
+
+type ProjectEventType = ProjectEvent["type"];
 
 type ProjectRow = {
   id: string;
@@ -44,6 +46,14 @@ export class ProjectStore {
         updated_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_project_tasks_project ON project_tasks(project_id);
+      CREATE TABLE IF NOT EXISTS project_events (
+        seq INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        ts INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_project_events_project ON project_events(project_id, seq);
     `);
   }
 
@@ -87,15 +97,22 @@ export class ProjectStore {
     return { ...cur, ...next };
   }
 
-  // ---- tasks (P1-PRJ-4) ----
+  // ---- tasks (P1-PRJ-4) + event task.node.* (P1-PRJ-7, PLAN §13.7) ----
+  // Setiap mutasi task menulis event DI TRANSAKSI YANG SAMA — ProjectStore adalah
+  // satu-satunya penulis → TaskTree (proyeksi event) tak bisa drift dari tabel.
 
-  createTask(input: { id: string; projectId: string; title: string; assignee?: string | null }): TaskItem {
+  createTask(input: { id: string; projectId: string; title: string; assignee?: string | null; parentId?: string | null }): TaskItem {
     const now = Date.now();
-    this.db
-      .prepare(
-        "INSERT INTO project_tasks (id, project_id, title, status, assignee, refs, created_at, updated_at) VALUES (?, ?, ?, 'todo', ?, '[]', ?, ?)",
-      )
-      .run(input.id, input.projectId, input.title, input.assignee ?? null, now, now);
+    const parent = input.parentId ?? null;
+    const emit = this.db.transaction(() => {
+      this.db
+        .prepare(
+          "INSERT INTO project_tasks (id, project_id, title, status, assignee, refs, created_at, updated_at) VALUES (?, ?, ?, 'todo', ?, '[]', ?, ?)",
+        )
+        .run(input.id, input.projectId, input.title, input.assignee ?? null, now, now);
+      this.appendEvent("task.node.created", { projectId: input.projectId, taskId: input.id, parent, title: input.title, assignee: input.assignee ?? null }, now);
+    });
+    emit();
     return { id: input.id, projectId: input.projectId, title: input.title, status: "todo", assignee: input.assignee ?? null, refs: [], createdAt: now, updatedAt: now };
   }
 
@@ -132,24 +149,50 @@ export class ProjectStore {
     };
   }
 
-  /** Update parsial (title/status/assignee); refs di-append (bukan replace). */
+  /** Update parsial (title/status/assignee); refs di-append (bukan replace). `addArtefak` hanya masuk event (TaskTree). */
   updateTask(
     id: string,
-    patch: { title?: string; status?: TaskItem["status"]; assignee?: string | null; addRefs?: string[] },
+    patch: { title?: string; status?: TaskItem["status"]; assignee?: string | null; addRefs?: string[]; addArtefak?: string[] },
   ): TaskItem | undefined {
     const cur = this.getTask(id);
     if (!cur) return undefined;
+    const now = Date.now();
     const next = {
       title: patch.title ?? cur.title,
       status: patch.status ?? cur.status,
       assignee: patch.assignee === undefined ? cur.assignee : patch.assignee,
       refs: patch.addRefs?.length ? [...new Set([...cur.refs, ...patch.addRefs])] : cur.refs,
-      updatedAt: Date.now(),
+      updatedAt: now,
     };
-    this.db
-      .prepare("UPDATE project_tasks SET title = ?, status = ?, assignee = ?, refs = ?, updated_at = ? WHERE id = ?")
-      .run(next.title, next.status, next.assignee, JSON.stringify(next.refs), next.updatedAt, id);
+    const emit = this.db.transaction(() => {
+      this.db
+        .prepare("UPDATE project_tasks SET title = ?, status = ?, assignee = ?, refs = ?, updated_at = ? WHERE id = ?")
+        .run(next.title, next.status, next.assignee, JSON.stringify(next.refs), next.updatedAt, id);
+      const ev: Record<string, unknown> = { projectId: cur.projectId, taskId: id };
+      if (patch.title !== undefined) ev.title = patch.title;
+      if (patch.status !== undefined) ev.status = patch.status;
+      if (patch.assignee !== undefined) ev.assignee = patch.assignee;
+      if (patch.addRefs?.length) ev.addRefs = patch.addRefs;
+      if (patch.addArtefak?.length) ev.addArtefak = patch.addArtefak;
+      this.appendEvent("task.node.updated", ev, now);
+    });
+    emit();
     return { ...cur, ...next };
+  }
+
+  /** Tambah event project (payload tanpa field type; projectId wajib ada). */
+  appendEvent(type: ProjectEventType, payload: Record<string, unknown>, ts = Date.now()): void {
+    this.db
+      .prepare("INSERT INTO project_events (project_id, type, payload, ts) VALUES (?, ?, ?, ?)")
+      .run(payload.projectId as string, type, JSON.stringify({ ...payload, ts }), ts);
+  }
+
+  /** Event stream project urut seq ASC — sumber replay TaskTree. */
+  listEvents(projectId: string): ProjectEvent[] {
+    const rows = this.db
+      .prepare("SELECT type, payload FROM project_events WHERE project_id = ? ORDER BY seq ASC")
+      .all(projectId) as { type: string; payload: string }[];
+    return rows.map((r) => ProjectEvent.parse({ ...JSON.parse(r.payload), type: r.type }));
   }
 
   close(): void {

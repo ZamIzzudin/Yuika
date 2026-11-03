@@ -14,6 +14,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   if (!getRuntime().getProject(id)) return NextResponse.json({ error: "project tidak ditemukan" }, { status: 404 });
   const body = CreateTaskRequest.parse(await req.json());
-  const task = getRuntime().createProjectTask(id, body.title, body.assignee ?? null);
+  const task = getRuntime().createProjectTask(id, body.title, body.assignee ?? null, body.parentId ?? null);
   return NextResponse.json({ task }, { status: 201 });
 }

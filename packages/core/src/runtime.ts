@@ -23,6 +23,7 @@ import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { resolvePaths, type YuiPaths } from "./paths.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
+import { taskTreeFromEvents } from "./project/tasktree.js";
 
 export interface YuiRuntimeConfig {
   provider: { baseUrl: string; apiKey: string; model: string };
@@ -150,12 +151,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       projectStore.updateProject(id, patch),
     // ---- tasklist project (P1-PRJ-4) ----
     listProjectTasks: (projectId: string) => projectStore.listTasks(projectId),
-    createProjectTask: (projectId: string, title: string, assignee?: string | null) =>
-      projectStore.createTask({ id: `t_${randomUUID().slice(0, 8)}`, projectId, title, assignee: assignee ?? null }),
+    createProjectTask: (projectId: string, title: string, assignee?: string | null, parentId?: string | null) =>
+      projectStore.createTask({ id: `t_${randomUUID().slice(0, 8)}`, projectId, title, assignee: assignee ?? null, parentId: parentId ?? null }),
     updateProjectTask: (
       taskId: string,
-      patch: { title?: string; status?: "todo" | "doing" | "review" | "done"; assignee?: string | null; addRefs?: string[] },
+      patch: { title?: string; status?: "todo" | "doing" | "review" | "done"; assignee?: string | null; addRefs?: string[]; addArtefak?: string[] },
     ) => projectStore.updateTask(taskId, patch),
+    /** TaskTree (P1-PRJ-7): pohon utuh dari replay event project — tanpa state kedua. */
+    getTaskTree: (projectId: string) => taskTreeFromEvents(projectStore.listEvents(projectId)),
     // ---- roster project (P1-PRJ-3) ----
     getProjectRoster: (projectId: string) => loadRoster(projectRoot(projectId)),
     saveProjectRoster: (projectId: string, roster: RosterEntryIn[]): RosterEntryIn[] => {
