@@ -16,4 +16,5 @@ export { buildSystemPrompt, CORE_SYSTEM_PROMPT } from "./prompt/builder.js";
 export { connectMcpServer, connectMcpFromConfig, type McpServerConfig, type McpRegistry } from "./mcp/client.js";
 export { createYuiRuntime, type YuiRuntimeConfig } from "./runtime.js";
 export { resolvePaths, resolveRepoRoot } from "./paths.js";
+export { appendUserPreferenceNote, userMdPath } from "./memory/usermd.js";
 export { runChildPersona, type DelegationDeps } from "./delegation/runner.js";

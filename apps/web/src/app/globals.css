@@ -52,15 +52,8 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
 .composer input { flex: 1; background: var(--panel-2); border: 1px solid #2a2f44; color: var(--text); border-radius: 10px; padding: 10px 14px; font-size: 14px; outline: none; }
 .composer input:focus { border-color: var(--accent); }
 
-/* PersonaPortrait: fallback CSS (D8: diganti .riv Rive saat asset siap) */
-.portrait { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 44px; background: var(--panel-2); border: 2px solid var(--muted); margin: 8px auto; user-select: none; }
-.portrait[data-state="idle"] { border-color: var(--muted); }
-.portrait[data-state="thinking"] { border-color: #6ca8f0; animation: pulse 1.6s infinite; }
-.portrait[data-state="working"] { border-color: var(--warn); animation: pulse 1.1s infinite; }
-.portrait[data-state="awaiting_input"] { border-color: #c56cf0; animation: pulse 2.2s infinite; }
-.portrait[data-state="done"] { border-color: var(--good); }
-.portrait[data-state="error"] { border-color: var(--bad); }
-.portrait[data-state="celebrating"] { border-color: #f0d76c; animation: bounce .9s infinite; }
-@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
-@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+/* PersonaPortrait — wrapper Orin SVG (D8: .riv Rive saat asset P1 siap; rig sudah final) */
+.portrait-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 6px; }
+.orin-wrap { width: 190px; }
+.orin-svg { display: block; width: 100%; cursor: pointer; touch-action: manipulation; }
 .state-label { text-align: center; font-size: 11px; color: var(--muted); margin-top: 4px; }

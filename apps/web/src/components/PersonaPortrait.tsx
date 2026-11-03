@@ -1,29 +1,29 @@
 "use client";
 import type { PersonaState } from "@yui/contracts";
+import { OrinPortrait } from "./OrinPortrait";
 
-const EMOJI: Record<PersonaState, string> = {
-  idle: "😴",
-  thinking: "💭",
-  working: "🔧",
-  awaiting_input: "🙋",
-  done: "✅",
-  error: "⚠️",
-  celebrating: "🎉",
+const STATE_COLOR: Record<PersonaState, string> = {
+  idle: "var(--muted)",
+  thinking: "#6ca8f0",
+  working: "var(--warn)",
+  awaiting_input: "#c56cf0",
+  done: "var(--good)",
+  error: "var(--bad)",
+  celebrating: "#f0d76c",
 };
 
 /**
- * Placeholder CSS portrait — mapping event → state SUDAH final (kontrak persona.state).
- * D8 (PLAN §7.6): ganti isi komponen ini dengan <Rive> saat file .riv siap; ABI-nya
- * sudah disiapkan (props personaId + state). Timebox demo: 3 jam, lalu tetap fallback ini.
+ * Portrait persona — W3-B2/W3-C1: placeholder animasi Orin (SVG, rig siap Rive).
+ * Keputusan demo: fallback SVG animasi dipakai (bukan .riv komunitas) karena rig &
+ * keyframe Orin sudah final di docs/ — asset .riv dibangun di P1-PER-2 dengan
+ * hirarki bone yang sama. Mapping event→state tetap dari kontrak `persona.state`.
  */
-export function PersonaPortrait({ name, state }: { name: string; state: PersonaState }) {
+export function PersonaPortrait({ name, state, personaId }: { name: string; state: PersonaState; personaId?: string }) {
   return (
-    <div>
-      <div className="portrait" data-state={state} aria-label={`${name} ${state}`}>
-        {EMOJI[state]}
-      </div>
+    <div className="portrait-wrap" data-state={state}>
+      <OrinPortrait state={state} personaId={personaId} />
       <div className="state-label">
-        {name} · {state}
+        {name} · <span style={{ color: STATE_COLOR[state] }}>{state}</span>
       </div>
     </div>
   );

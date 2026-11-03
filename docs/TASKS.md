@@ -14,6 +14,9 @@
 > file-tools, store, delegation, run-command, registry) · fix: SSE dedupe, forwarding approval
 > delegation, path-escape prefix bug, bug skillsDir runner, EventDraft distributive, extensionAlias
 > webpack, zod v3 API. Yang belum: verifikasi model ASLI (W1-A1/A2 butuh API key) & dry run W4-S1.
+>
+> **Update sesi dev 2 (branch `dev/w5-polish`):** Orin SVG animasi jadi portrait (W3-B2/C1/B3),
+> USER.md stub (W5-C2), test prompt stack frozen (W2-C2) — total 24+3 test green.
 
 ## Peta Fase & Gerbang
 
@@ -61,7 +64,7 @@
 - [ ] **W2-B1** Tool activity feed UI (tool.call/result inline) · *B · 0.5d · dep W1-B3* → tiap call terlihat real-time
 - [x] **W2-B2** Session store append-only + replay `?since=` + events route · *B · 1d* → refresh → feed ter-replay — *verif: `store.test.ts` (id monotonic, since eksklusif, frozen prompt); SSE route kini dedupe by id*
 - [ ] **W2-C1** `skills_list`/`skill_view` tools · *C · 0.5d* → agent bisa memuat skill web-research
-- [ ] **W2-C2** Prompt stack frozen per sesi ([core][persona][skills index]) · *C · 0.5d · dep W1-C1* → system_prompt tersimpan di sessions; test: prompt tidak berubah saat config berubah
+- [x] **W2-C2** Prompt stack frozen per sesi ([core][persona][skills index]) · *C · 0.5d · dep W1-C1* → system_prompt tersimpan di sessions; test: prompt tidak berubah saat config berubah — *verif: `prompt-stack.test.ts` (frozen + sesi baru baca config baru)*
 
 ## W3 (Rabu) — Approval + ekspresi + persona UX
 
@@ -70,9 +73,9 @@
 - [x] **W3-A1** Approval engine wiring loop (pause/resume turn) + approvalPolicy file tools · *A · 1d* → write di luar reports/ mem-pause turn sampai user jawab — *verif: `delegation.test.ts` (approve → file jadi; deny → dibatalkan)*
 - [x] **W3-A2** `run_command` allowlist + selalu approval · *A · 0.5d* → `node -v` jalan setelah approve; tolak = tool error — *verif: `run-command.test.ts`*
 - [ ] **W3-B1** ApprovalCard UI (setujui/tolak → POST) · *B · 0.5d · dep W3-A1* → klik setujui melanjutkan turn
-- [ ] **W3-B2** `PersonaPortrait` mapping `persona.state` (fallback CSS scaffold) · *B · 0.5d* → 7 state visual berbeda & reaktif
-- [ ] **W3-B3** Persona picker → sesi baru bersih (reset state client) · *B · 0.25d*
-- [ ] **W3-C1** Integrasi Rive placeholder (file komunitas / blob) — **timebox 3 jam** · *C · 0.5d* → `.riv` termuat via `@rive-app/react-canvas` ATAU fallback CSS tetap (keputusan tercatat)
+- [x] **W3-B2** `PersonaPortrait` mapping `persona.state` (fallback CSS scaffold) · *B · 0.5d* → 7 state visual berbeda & reaktif — *verif: Orin SVG animasi (rig dari docs/Orin v2); tint per persona; Rive menyusul P1-PER-2*
+- [x] **W3-B3** Persona picker → sesi baru bersih (reset state client) · *B · 0.25d* — *verif: `pick()` reset items/personaState/lastEventId/openAssistant*
+- [x] **W3-C1** Integrasi Rive placeholder (file komunitas / blob) — **timebox 3 jam** · *C · 0.5d* → `.riv` termuat via `@rive-app/react-canvas` ATAU fallback CSS tetap (keputusan tercatat) — *keputusan: fallback = Orin SVG animasi (rig & keyframe final dari `docs/Orin v2`); .riv dibangun di P1-PER-2 dengan hirarki bone identik*
 - [ ] **W3-C2** Persona.yaml final 4 persona + deskripsi UX (≤60 char) · *C · 0.25d*
 
 ## W4 (Kamis) — Delegation & MCP
@@ -95,7 +98,7 @@
 - [ ] **W5-A1** Fix P0 core (race SSE→store, error provider → session.error bersih) · *A · 1d*
 - [ ] **W5-B1** Polish UI (dark theme konsisten, empty/error state, layout) · *B · 1d*
 - [ ] **W5-C1** **Prompt iteration Conductor** (3 varian, uji blind 5 prompt beda) · *C · 1d* → dekomposisi+delegasi konsisten ≥4/5
-- [ ] **W5-C2** USER.md stub (append 1 catatan preferensi per sesi — label preview) · *C · 0.25d*
+- [x] **W5-C2** USER.md stub (append 1 catatan preferensi per sesi — label preview) · *C · 0.25d* — *verif: `prompt-stack.test.ts` + smoke API; loop belajar sungguhan = P1-MEM*
 
 ## W6 (Sabtu) — Dry run & rekam
 

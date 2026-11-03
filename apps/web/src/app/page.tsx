@@ -188,7 +188,7 @@ export default function Home() {
       <main className="yui-main">
         {active ? (
           <>
-            <PersonaPortrait name={active.name} state={personaState} />
+            <PersonaPortrait name={active.name} state={personaState} personaId={active.id} />
             <ChatView items={items} personaState={personaState} onSend={send} onApprove={approve} busy={busy} />
           </>
         ) : (

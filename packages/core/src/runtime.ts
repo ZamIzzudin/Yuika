@@ -17,6 +17,7 @@ import { registerSkillTools } from "./tools/skill-tools.js";
 import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
 import { connectMcpFromConfig, type McpRegistry } from "./mcp/client.js";
+import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { resolvePaths, type YuiPaths } from "./paths.js";
 
 export interface YuiRuntimeConfig {
@@ -72,6 +73,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     const sessionId = `s_${randomUUID()}`;
     // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline)
     createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir);
+    // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru — learning-loop P1
+    appendUserPreferenceNote(paths.workspacePath, persona.manifest.name);
     const info = listPersonaInfos().find((p) => p.id === personaId)!;
     return { sessionId, persona: info };
   }
