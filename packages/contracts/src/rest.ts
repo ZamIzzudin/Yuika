@@ -15,10 +15,15 @@ export const PersonaInfo = z.object({
 export type PersonaInfo = z.infer<typeof PersonaInfo>;
 
 // POST /api/sessions
-export const CreateSessionRequest = z.object({ personaId: z.string().min(1) });
+export const CreateSessionRequest = z.object({
+  personaId: z.string().min(1),
+  /** Sesi melekat ke project (P1-PRJ-2) — opsional: null = sesi workspace global. */
+  projectId: z.string().min(1).nullish(),
+});
 export const CreateSessionResponse = z.object({
   sessionId: z.string(),
   persona: PersonaInfo,
+  projectId: z.string().nullable(),
 });
 
 // POST /api/sessions/:id/message

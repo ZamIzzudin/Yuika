@@ -18,8 +18,10 @@ export function registerDelegateTool(deps: DelegationDeps): void {
       "Kembalikan ringkasan hasil anak. Gunakan untuk tugas yang butuh keahlian domain.",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
+      // P1-PRJ-2: anak mewarisi scope workspace sesi pemanggil (project root bila
+      // sesi parent melekat ke project) — bukan workspace global proses.
       const handle: ChildRunHandle = runChildPersona(
-        deps,
+        { ...deps, workspacePath: ctx.workspacePath },
         { sessionId: ctx.sessionId, turnId: ctx.turnId },
         args.persona,
         args.goal,

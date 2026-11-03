@@ -43,7 +43,7 @@
 > konstrain “tab aktif” terpenuhi otomatis) · render headless via exporter WASM ·
 > OpenAPI spec bawaan (`/api/main/doc`) → client digenerate.
 >
-> **P1-PRJ-1 selesai (sesi dev 7):** project jadi entitas first-class — kontrak `Project*`, ProjectStore (SQLite), REST `/api/projects` CRUD, root `workspace/projects/<id>/` dibuat saat create. Lanjut: P1-PRJ-2 (isolasi path) → P1-PRJ-3 (roster) → P1-PRJ-4 (tasklist+tool todo).
+> **P1-PRJ-1 + P1-PRJ-2 selesai (sesi dev 7):** project jadi entitas first-class — kontrak `Project*`, ProjectStore (SQLite), REST `/api/projects` CRUD, root `workspace/projects/<id>/` dibuat saat create; sesi bisa melekat ke project (`project_id`, migrasi idempotent) → semua file-ops & delegation anak otomatis scoped ke root project (smoke live terverifikasi). Lanjut: P1-PRJ-3 (roster) → P1-PRJ-4 (tasklist+tool todo).
 >
 > **Update sesi dev 7 (maskot v4):** `OrinPortrait` rewrite ke **Orin v4** (docs/Orin v4 —
 > Pilih Maskot): satu rig mata untuk semua bentuk, identitas persona = bentuk —
@@ -271,7 +271,7 @@
 ### P1-PRJ — Project entity v0 (Studio §13.2; D14)
 
 - [x] **P1-PRJ-1** Kontrak `Project*` di `@yui/contracts` (ProjectInfo, TaskItem, roster, binding) + tabel DB + CRUD REST `/api/projects` · *A+B · 2d* → create/list/get project; semua tipe dari contracts — ✅ sesi dev 7: `contracts/project.ts` (ProjectInfo/TaskItem/RosterEntry/McpToolBinding + WORKFLOW_PHASES), `core/project/store.ts` (tabel projects+project_tasks), runtime `createProject` (mkdir `workspace/projects/<id>/{code,docs,reports}`), REST GET/POST `/api/projects` + GET/PATCH `/api/projects/[id]`; +5 test contracts, +3 test core; smoke live: create→201, list, patch archive, 404
-- [ ] **P1-PRJ-2** Isolasi root per project `workspace/projects/<id>/{code,docs,reports}` — file tools & path policy menghormati scope project · *A · 1d · dep P1-PRJ-1* → test: project A tidak bisa baca path project B
+- [x] **P1-PRJ-2** Isolasi root per project `workspace/projects/<id>/{code,docs,reports}` — file tools & path policy menghormati scope project · *A · 1d · dep P1-PRJ-1* → test: project A tidak bisa baca path project B — ✅ sesi dev 7: kolom `sessions.project_id` (migrasi idempotent db lama) + `CreateSessionRequest.projectId`; loop dibuat dengan workspace efektif per sesi (`effectiveWorkspace`) → semua file-ops + delegation anak otomatis scoped; smoke live: agent tulis `reports/halo.md` → mendarat di root project, workspace global kosong
 - [ ] **P1-PRJ-3** Roster agent per project (`project.yaml`: persona + peran + fase) — loader + validasi + tampil di UI · *C · 2d · dep P1-PRJ-1* → assign 3 persona ke project demo; roster ter-replay
 - [ ] **P1-PRJ-4** Tasklist per project (CRUD + status todo/doing/review/done + assignee persona) + tool `todo` agent melihat/menambah task · *C · 1d · dep P1-PRJ-1* → agent menandai task selesai dari turn
 - [ ] **P1-PRJ-5** Binding MCP project×persona (D17): koneksi server di level project, tool `mcp__<srv>__*` hanya muncul di toolset persona yang di-bind · *C · 2d · dep P1-MCP-3* → test: persona tanpa binding tidak melihat tool MCP

@@ -13,6 +13,8 @@ export interface SessionRow {
   systemPrompt: string;
   toolsets: string[]; // frozen saat create
   createdAt: number;
+  /** Project tempat sesi melekat (P1-PRJ-2/6); null = sesi workspace global. */
+  projectId: string | null;
 }
 
 export class SessionStore {
@@ -49,13 +51,18 @@ export class SessionStore {
       );
       CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, id);
     `);
+    // Migration ringan (idempotent): kolom project_id untuk sesi yang melekat ke project
+    const cols = this.db.prepare("PRAGMA table_info(sessions)").all() as { name: string }[];
+    if (!cols.some((c) => c.name === "project_id")) {
+      this.db.exec("ALTER TABLE sessions ADD COLUMN project_id TEXT");
+    }
   }
 
-  createSession(id: string, personaId: string, systemPrompt: string, toolsets: string[]): SessionRow {
+  createSession(id: string, personaId: string, systemPrompt: string, toolsets: string[], projectId?: string | null): SessionRow {
     this.db
-      .prepare("INSERT INTO sessions (id, persona_id, system_prompt, toolsets, created_at) VALUES (?, ?, ?, ?, ?)")
-      .run(id, personaId, systemPrompt, JSON.stringify(toolsets), Date.now());
-    return { id, personaId, systemPrompt, toolsets, createdAt: Date.now() };
+      .prepare("INSERT INTO sessions (id, persona_id, system_prompt, toolsets, created_at, project_id) VALUES (?, ?, ?, ?, ?, ?)")
+      .run(id, personaId, systemPrompt, JSON.stringify(toolsets), Date.now(), projectId ?? null);
+    return { id, personaId, systemPrompt, toolsets, createdAt: Date.now(), projectId: projectId ?? null };
   }
 
   getSession(id: string): SessionRow | undefined {
@@ -69,6 +76,7 @@ export class SessionStore {
       systemPrompt: row.system_prompt,
       toolsets: JSON.parse(row.toolsets) as string[],
       createdAt: row.created_at,
+      projectId: (row as { project_id?: string | null }).project_id ?? null,
     };
   }
 

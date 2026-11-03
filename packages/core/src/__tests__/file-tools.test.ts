@@ -72,3 +72,32 @@ describe("file tools — path safety", () => {
     expect(approvalAsked).toBe(true);
   });
 });
+
+describe("file tools — isolasi project (P1-PRJ-2)", () => {
+  beforeEach(() => {
+    resetRegistryForTests();
+    registerFileTools();
+  });
+
+  it("project A TIDAK bisa baca/tulis path project B via ../", async () => {
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), "yui-workspace-"));
+    const rootA = path.join(ws, "projects", "p_a");
+    const rootB = path.join(ws, "projects", "p_b");
+    for (const r of [rootA, rootB]) fs.mkdirSync(path.join(r, "reports"), { recursive: true });
+    fs.writeFileSync(path.join(rootB, "reports", "secret.txt"), "rahasia B");
+
+    ctx.workspacePath = rootA; // sesi melekat ke project A
+    const rel = path.join("..", "p_b", "reports", "secret.txt");
+    const read = await tool("read_file")({ path: rel });
+    expect(read.isError).toBe(true); // safeResolve menolak keluar root project A
+
+    const write = await tool("write_file")({ path: path.join("..", "p_b", "reports", "steal.txt"), content: "x" });
+    expect(write.isError).toBe(true);
+    expect(fs.existsSync(path.join(rootB, "reports", "steal.txt"))).toBe(false);
+
+    // di dalam root project A sendiri tetap lancar (path relatif terhadap root project)
+    const ok = await tool("write_file")({ path: "reports/a.md", content: "isi A" });
+    expect(ok.isError).toBeFalsy();
+    expect(fs.existsSync(path.join(rootA, "reports", "a.md"))).toBe(true);
+  });
+});

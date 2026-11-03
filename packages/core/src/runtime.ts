@@ -70,16 +70,32 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     }));
   }
 
-  function createSession(personaId: string): { sessionId: string; persona: PersonaInfo } {
+  function createSession(
+    personaId: string,
+    projectId?: string | null,
+  ): { sessionId: string; persona: PersonaInfo; projectId: string | null } {
     const persona = listPersonas(paths.personasDir).find((p) => p.manifest.id === personaId);
     if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
+    if (projectId && !projectStore.getProject(projectId)) {
+      throw new Error(`project tidak ditemukan: ${projectId}`);
+    }
     const sessionId = `s_${randomUUID()}`;
     // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline)
-    createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir);
+    createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null);
     // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru — learning-loop P1
     appendUserPreferenceNote(paths.workspacePath, persona.manifest.name);
     const info = listPersonaInfos().find((p) => p.id === personaId)!;
-    return { sessionId, persona: info };
+    return { sessionId, persona: info, projectId: projectId ?? null };
+  }
+
+  /** P1-PRJ-2: root file-ops efektif sesi — project root bila melekat, workspace bila tidak. */
+  function effectiveWorkspace(sessionId: string): string {
+    const session = store.getSession(sessionId);
+    if (!session) throw new Error(`session ${sessionId} tidak ditemukan`);
+    if (!session.projectId) return paths.workspacePath;
+    const project = projectStore.getProject(session.projectId);
+    if (!project) throw new Error(`project ${session.projectId} tidak ditemukan (dihapus?)`);
+    return path.join(paths.workspacePath, project.rootPath);
   }
 
   function makeLoopFor(sessionId: string): AgentLoop {
@@ -89,7 +105,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       store,
       provider,
       model: cfg.provider.model,
-      workspacePath: paths.workspacePath,
+      workspacePath: effectiveWorkspace(sessionId), // P1-PRJ-2: scope per sesi
       approvals,
       emit,
     });

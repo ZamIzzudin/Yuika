@@ -53,4 +53,25 @@ describe("SessionStore", () => {
     expect(msgs[2]!.toolCallId).toBe("c1");
     store.close();
   });
+
+  it("P1-PRJ-2: projectId melekat di sesi (nullable); migrasi db lama jalan", () => {
+    const store = makeStore();
+    store.createSession("s_free", "yui-scholar", "SYS", []);
+    store.createSession("s_prj", "yui-coder", "SYS", [], "p_demo123");
+    expect(store.getSession("s_free")!.projectId).toBeNull();
+    expect(store.getSession("s_prj")!.projectId).toBe("p_demo123");
+    store.close();
+
+    // db dibuat dengan schema v0 (tanpa kolom project_id) → dibuka ulang → kolom ditambah
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-store-old-"));
+    const dbPath = path.join(dir, "old.db");
+    const Database = require("better-sqlite3") as typeof import("better-sqlite3");
+    const raw = new Database(dbPath);
+    raw.exec("CREATE TABLE sessions (id TEXT PRIMARY KEY, persona_id TEXT NOT NULL, system_prompt TEXT NOT NULL, toolsets TEXT NOT NULL, created_at INTEGER NOT NULL)");
+    raw.prepare("INSERT INTO sessions VALUES ('s_old','yui-scholar','SYS','[]',1)").run();
+    raw.close();
+    const reopened = new SessionStore(dbPath); // tidak boleh throw
+    expect(reopened.getSession("s_old")!.projectId).toBeNull();
+    reopened.close();
+  });
 });

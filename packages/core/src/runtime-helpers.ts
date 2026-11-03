@@ -13,13 +13,14 @@ export function createSessionWithPrompt(
   sessionId: string,
   tools: string[],
   skillsDir: string,
+  projectId?: string | null,
 ): void {
   // Skills index = skill global + skill bundled persona (progressive disclosure: nama+deskripsi saja)
   const all = listSkills(skillsDir);
   const globalSkill = all.find((s) => s.frontmatter.metadata?.yui?.personas === undefined);
   const bundledNames = new Set(persona.manifest.skills.bundled);
   const index = all.filter((s) => bundledNames.has(s.name) || s.name === globalSkill?.name);
-  store.createSession(sessionId, persona.manifest.id, buildSystemPrompt(persona, index), tools);
+  store.createSession(sessionId, persona.manifest.id, buildSystemPrompt(persona, index), tools, projectId);
 }
 
 export function makeApprovalEngineForSession(emit: Emit): ApprovalEngine {
