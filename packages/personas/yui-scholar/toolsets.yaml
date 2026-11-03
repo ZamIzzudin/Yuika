@@ -8,3 +8,4 @@ tools:
   - mcp__*
   - todo_list
   - todo_update
+  - memory_append

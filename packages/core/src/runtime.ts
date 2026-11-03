@@ -25,6 +25,8 @@ import { installFromCatalog, uninstallFromConfig } from "./mcp/install.js";
 import { McpAuditStore } from "./mcp/audit.js";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
+import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js";
+import { registerMemoryTools } from "./tools/memory-tools.js";
 import { resolvePaths, type YuiPaths } from "./paths.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
@@ -49,6 +51,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerSkillTools(paths.skillsDir);
   registerRunCommandTool();
   registerTodoTools({ sessionStore: store, projects: projectStore });
+  registerMemoryTools({ sessionStore: store, projects: projectStore, workspacePath: paths.workspacePath });
   registerDelegateTool({
     store,
     bus: EventBus,
@@ -57,6 +60,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     personasDir: paths.personasDir,
     skillsDir: paths.skillsDir,
     workspacePath: paths.workspacePath,
+    workspaceGlobalPath: paths.workspacePath, // USER.md selalu global walau delegasi menimpa workspacePath
     mcpAllowlistFor, // P1-PRJ-5: anak mewarisi binding MCP sesuai roster persona anak
   });
 
@@ -148,8 +152,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       throw new Error(`project tidak ditemukan: ${projectId}`);
     }
     const sessionId = `s_${randomUUID()}`;
-    // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline)
-    createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null);
+    // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline).
+    // P1-MEM-1: USER.md + MEMORY.md project di-inject saat sesi dibuat (frozen).
+    const memExtra = memoryPromptSection(
+      paths.workspacePath,
+      projectId ? projectRoot(projectId) : null,
+    );
+    createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null, memExtra);
     // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru — learning-loop P1
     appendUserPreferenceNote(paths.workspacePath, persona.manifest.name);
     const info = listPersonaInfos().find((p) => p.id === personaId)!;
@@ -276,6 +285,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return trustOf(trustConfig(), input.server)!;
     },
     mcpAuditRecent: (limit = 50) => mcpAudit.recent(limit),
+    // ---- Memory manager (P1-MEM-1) ----
+    /** Baca dokumen memori (header dibuat bila belum ada). */
+    readMemory: (scope: "user" | "project", projectId?: string | null) =>
+      readMemory(paths.workspacePath, scope, projectId ? projectRoot(projectId) : null, projectId ? projectStore.getProject(projectId)?.name ?? "" : ""),
+    /** Simpan utuh dari editor user. */
+    saveMemory: (scope: "user" | "project", content: string, projectId?: string | null) => {
+      if (scope === "project") {
+        if (!projectId) throw new Error("scope project butuh projectId");
+        projectRoot(projectId); // validasi project ada
+      }
+      saveMemory(paths.workspacePath, scope, content, scope === "project" && projectId ? projectRoot(projectId) : null);
+    },
     // ---- Katalog & install (P1-MCP-1) ----
     /** Katalog kurasi untuk UI panel MCP. */
     mcpCatalog: () => MCP_CATALOG,

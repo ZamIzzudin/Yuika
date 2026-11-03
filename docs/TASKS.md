@@ -231,7 +231,7 @@
 
 ### P1-MEM (prioritas #2 — learning loop)
 
-- [ ] **P1-MEM-1** `USER.md`/`MEMORY.md` manager (append dengan curasi, editable user, halaman "What Yui knows") · *C+B · 3d*
+- [x] **P1-MEM-1** `USER.md`/`MEMORY.md` manager (append dengan curasi, editable user, halaman "What Yui knows") · *C+B · 3d* — ✅ sesi dev 9: `memory/manager.ts` (read/save penuh dari editor + **appendCurated** dedupe inti catatan + guard + header transparan; USER.md workspace global, MEMORY.md per project), **tool `memory_append`** (scope user|project, tanpa approval — catatan additive milik user; scope project hanya sesi project) di 4 toolset persona, **inject ke system prompt saat sesi dibuat** (frozen, cache discipline — `memoryPromptSection` di runtime & delegasi anak; anak kini mewarisi projectId parent → binding roster anak jalan), REST `GET/PUT /api/memory`, UI **tab "Memori"** (editor dua dokumen + tombol Simpan + flash tersimpan); USER.md yang dulu ditulis-tak-dibaca kini benar-benar dibaca agent; +10 test (manager 6 + tool 4)
 - [ ] **P1-MEM-2** Nudge pasca-task (prompt learn ringan, aux model) → usul skill/catatan · *C · 2d*
 - [ ] **P1-MEM-3** Skill-create-from-experience: flow penuh (draft → validasi lint → simpan ke domain persona) · *C+A · 3d*
 - [ ] **P1-MEM-4** Usage tracking per skill (use/view/patch; `.usage.json` per home) · *C · 1d*

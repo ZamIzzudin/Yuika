@@ -808,3 +808,16 @@ html, body {
 .catalog-risk[data-r="sedang"] { color: var(--yui-warn, #d9a441); border-color: var(--yui-warn, #d9a441); }
 .catalog-form { display: flex; flex-direction: column; gap: 4px; width: 100%; }
 .catalog-form input { width: 100%; font-size: var(--yui-text-sm); }
+
+/* ── Memori (P1-MEM-1) ──────────────────────────────────────────── */
+.memory-doc { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--yui-space-4); }
+.memory-doc > header { display: flex; align-items: center; justify-content: space-between; }
+.memory-doc > header b { font-size: var(--yui-text-md); font-weight: 600; }
+.memory-doc textarea {
+  width: 100%; resize: vertical; min-height: 120px;
+  font-family: var(--yui-font-mono, ui-monospace, monospace); font-size: var(--yui-text-sm);
+  line-height: 1.55; padding: var(--yui-space-3); border-radius: 10px;
+  background: var(--yui-bg-inset, rgba(255, 255, 255, 0.03)); border: 1px solid var(--yui-border);
+  color: var(--yui-text-primary);
+}
+.memory-doc small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }

@@ -357,6 +357,7 @@ export default function Home() {
                     { id: "tree", label: "Pohon" },
                     { id: "roster", label: "Roster" },
                     { id: "sessions", label: "Sesi" },
+                    { id: "memory", label: "Memori" },
                   ] as const
                 ).map((t) => (
                   <button

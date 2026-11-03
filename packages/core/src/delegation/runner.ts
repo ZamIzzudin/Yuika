@@ -9,6 +9,7 @@ import type { EventBus } from "../bus.js";
 import type { ProviderAdapter } from "../provider/adapter.js";
 import { AgentLoop } from "../loop.js";
 import { makeApprovalEngineForSession, createSessionWithPrompt } from "../runtime-helpers.js";
+import { memoryPromptSection } from "../memory/manager.js";
 import { listPersonas } from "../personas/loader.js";
 
 export interface DelegationDeps {
@@ -18,7 +19,9 @@ export interface DelegationDeps {
   model: string;
   personasDir: string;
   skillsDir: string;
-  workspacePath: string;
+  workspacePath: string,
+  /** Workspace GLOBAL (USER.md) — delegasi menimpa workspacePath jadi project root. */
+  workspaceGlobalPath?: string;
   /** P1-PRJ-5: allowlist MCP sesi anak (binding roster persona anak; null = tanpa). */
   mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
 }
@@ -50,9 +53,15 @@ export function runChildPersona(
   const childSessionId = `s_${randomUUID()}`;
   // Toolset anak = toolset persona MINUS delegate_task (kedalaman 1 utk demo) — TODO(P1): depth policy
   const childTools = persona.manifest.tools.filter((t) => t !== "delegate_task");
+  // P1-MEM-1: anak mewarisi projectId parent (binding roster MCP anak jalan;
+  // tool memory_append scope project valid). USER.md di-inject ke prompt anak
+  // (frozen). MEMORY.md project untuk anak menyusul bersama projectRootFor di deps.
+  const parentSession = deps.store.getSession(parent.sessionId);
+  const childProjectId = parentSession?.projectId ?? null;
+  const memExtra = memoryPromptSection(deps.workspaceGlobalPath ?? deps.workspacePath, null);
 
   // Reuse pembuatan sesi dari AgentLoop factory (prompt frozen, skills index persona anak)
-  createSessionWithPrompt(deps.store, persona, childSessionId, childTools, deps.skillsDir);
+  createSessionWithPrompt(deps.store, persona, childSessionId, childTools, deps.skillsDir, childProjectId, memExtra);
 
   parentEmit({ type: "delegation.started", turnId: parent.turnId, childSessionId, personaId, goal });
   activeChildren++;

@@ -6,3 +6,4 @@ tools:
   - list_files
   - todo_list
   - todo_update
+  - memory_append

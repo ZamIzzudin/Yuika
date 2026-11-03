@@ -8,7 +8,7 @@ const NEXT: Record<TaskStatus, TaskStatus> = { todo: "doing", doing: "review", r
 const LABEL: Record<TaskStatus, string> = { todo: "Belum", doing: "Kerja", review: "Reviu", done: "Selesai" };
 const DOT: Record<TaskStatus, string> = { todo: "○", doing: "◐", review: "◑", done: "●" };
 
-export type WorkspaceTab = "chat" | "team" | "board" | "tree" | "roster" | "sessions";
+export type WorkspaceTab = "chat" | "team" | "board" | "tree" | "roster" | "sessions" | "memory";
 
 /** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
 export interface LiveDelegation {
@@ -139,6 +139,9 @@ export function ProjectTabs({
   const [mcpServer, setMcpServer] = useState("");
   const [mcpServers, setMcpServers] = useState<{ name: string; declared: boolean }[]>([]);
   const [busy, setBusy] = useState(false);
+  const [userMd, setUserMd] = useState("");
+  const [projMd, setProjMd] = useState("");
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -190,6 +193,35 @@ export function ProjectTabs({
   useEffect(() => {
     if (activeTab === "tree" || activeTab === "board") void refreshTree();
   }, [activeTab, rev, refreshTree]);
+
+  useEffect(() => {
+    if (activeTab !== "memory") return;
+    void (async () => {
+      try {
+        const [u, p] = await Promise.all([
+          fetch("/api/memory?scope=user"),
+          fetch(`/api/memory?scope=project&projectId=${project.id}`),
+        ]);
+        if (u.ok) setUserMd(((await u.json()) as { content: string }).content);
+        if (p.ok) setProjMd(((await p.json()) as { content: string }).content);
+      } catch {
+        /* coba lagi saat buka tab */
+      }
+    })();
+  }, [activeTab, project.id]);
+
+  /** Simpan dokumen memori (PUT /api/memory). */
+  async function saveMemoryDoc(scope: "user" | "project") {
+    const res = await fetch("/api/memory", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ scope, projectId: scope === "project" ? project.id : null, content: scope === "user" ? userMd : projMd }),
+    });
+    if (res.ok) {
+      setSavedFlash(scope);
+      setTimeout(() => setSavedFlash(null), 1500);
+    }
+  }
 
   async function add() {
     if (!title.trim() || busy) return;
@@ -407,6 +439,35 @@ export function ProjectTabs({
                 </div>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {activeTab === "memory" && (
+        <section aria-label="Memori — apa yang Yui ketahui">
+          <p className="pane-hint">
+            Catatan ini dibaca agent di setiap <b>sesi baru</b> (frozen per sesi). Agent menambah catatan lewat tool
+            <code> memory_append</code> (dedupe otomatis); Anda bebas mengedit langsung.
+          </p>
+          <div className="memory-doc">
+            <header>
+              <b>Tentang Anda — USER.md</b>
+              <button className="btn" onClick={() => void saveMemoryDoc("user")}>
+                {savedFlash === "user" ? "✓ Tersimpan" : "Simpan"}
+              </button>
+            </header>
+            <textarea value={userMd} onChange={(e) => setUserMd(e.target.value)} rows={9} spellCheck={false} />
+            <small>Lintas proyek: preferensi gaya, bahasa, batasan.</small>
+          </div>
+          <div className="memory-doc">
+            <header>
+              <b>Proyek ini — MEMORY.md</b>
+              <button className="btn" onClick={() => void saveMemoryDoc("project")}>
+                {savedFlash === "project" ? "✓ Tersimpan" : "Simpan"}
+              </button>
+            </header>
+            <textarea value={projMd} onChange={(e) => setProjMd(e.target.value)} rows={9} spellCheck={false} />
+            <small>Keputusan, pelajaran, konteks yang berlaku di {project.name}.</small>
           </div>
         </section>
       )}

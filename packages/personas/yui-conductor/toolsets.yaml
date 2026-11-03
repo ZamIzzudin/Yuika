@@ -11,3 +11,4 @@ tools:
   - todo_add
   - todo_update
   - "mcp__*"
+  - memory_append
