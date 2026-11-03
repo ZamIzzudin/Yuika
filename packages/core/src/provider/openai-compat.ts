@@ -55,7 +55,14 @@ export class OpenAICompatProvider implements ProviderAdapter {
   private client: OpenAI;
 
   constructor(cfg: OpenAICompatConfig) {
-    this.client = new OpenAI({ baseURL: cfg.baseUrl, apiKey: cfg.apiKey });
+    this.client = new OpenAI({
+      baseURL: cfg.baseUrl,
+      apiKey: cfg.apiKey,
+      // P0-CORE-2 (parsial): panggilan provider bisa menggantung menit-lamanya
+      // (di test: 139 dtk dan 35 dtk) — timeout per request + retry transien.
+      timeout: Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? 120_000),
+      maxRetries: 2,
+    });
   }
 
   async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {

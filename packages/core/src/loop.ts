@@ -10,7 +10,8 @@ import type { SessionStore } from "./session/store.js";
 import type { Emit } from "./session/emit.js";
 import type { ApprovalEngine } from "./approval/engine.js";
 
-const MAX_ITERATIONS = 12;
+// Budget iterasi per turn: env override untuk use case panjang (multi-delegasi).
+const MAX_ITERATIONS = Number(process.env.YUI_MAX_ITER ?? 16);
 
 /** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0) — jawaban untuk
  *  "kenapa lambat": pisahkan waktu provider vs tool vs menunggu approval. */
@@ -70,6 +71,10 @@ export class AgentLoop {
 
     let usedDelegation = false;
     let usedTools = false; // P1-MEM-2: turn yang melibatkan tool = kandidat nudge belajar
+    // Repetition guard: tool round identik 3× berturut → injek nudge agar agent
+    // keluar dari loop verifikasi tanpa progres (diamati di test: todo_list/read_file berulang).
+    let lastRoundSig = "";
+    let repeatRounds = 0;
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       // 3) api phase
@@ -135,6 +140,19 @@ export class AgentLoop {
           store.appendMessage(sessionId, toolMsg);
         }
         emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
+        const sig = JSON.stringify(done.toolCalls.map((c) => [c.name, c.args]));
+        if (sig === lastRoundSig) repeatRounds++;
+        else {
+          lastRoundSig = sig;
+          repeatRounds = 0;
+        }
+        if (repeatRounds >= 2) {
+          const nudge =
+            "[sistem] Kamu memanggil tool yang sama berulang kali dengan argumen identik. Evaluasi hasil sebelumnya — lanjut dengan langkah BERBEDA atau berikan jawaban final sekarang.";
+          messages.push({ role: "user", content: nudge });
+          store.appendMessage(sessionId, { role: "user", content: nudge });
+          repeatRounds = 0;
+        }
         continue;
       }
 
@@ -176,8 +194,17 @@ export class AgentLoop {
       return;
     }
 
-    emit({ type: "session.error", message: "iteration budget habis", recoverable: true });
-    emit({ type: "persona.state", personaId: session.personaId, state: "error" });
-    trace(`turn=${turnId.slice(0, 10)} GAGAL budget habis total=${Date.now() - t0}ms`);
+    // Budget habis → akhiri GRACEFUL (dulu: error mentah; agent GLM kadang butuh
+    // iterasi tambahan pasca-coding untuk verifikasi artefak). Progres & file
+    // tersimpan; user tinggal bilang "lanjutkan" untuk resume turn.
+    const budgetMsg =
+      "Iterasi untuk turn ini mencapai batas atas sebelum jawaban final. Semua progres & file sudah tersimpan — ketik **lanjutkan** dan aku lanjut dari titik ini.";
+    messages.push({ role: "assistant", content: budgetMsg });
+    store.appendMessage(sessionId, { role: "assistant", content: budgetMsg });
+    emit({ type: "message.delta", turnId, delta: budgetMsg });
+    emit({ type: "message.done", turnId });
+    emit({ type: "session.error", message: "iteration budget habis — progres tersimpan, ketik 'lanjutkan'", recoverable: true });
+    emit({ type: "persona.state", personaId: session.personaId, state: "done" });
+    trace(`turn=${turnId.slice(0, 10)} BUDGET-HABIS (graceful) total=${Date.now() - t0}ms`);
   }
 }

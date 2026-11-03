@@ -15,6 +15,13 @@ function safeResolve(workspace: string, rel: string): string {
 
 const readSchema = z.object({ path: z.string().min(1) });
 const writeSchema = z.object({ path: z.string().min(1), content: z.string() });
+
+/** Ekstensi artefak KODE — wajib mendarat di code/, bukan reports/ (routing otomatis). */
+const CODE_EXT = new Set([
+  ".html", ".htm", ".css", ".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".py",
+  ".vue", ".svelte", ".php", ".rb", ".go", ".rs", ".java", ".kt", ".swift",
+  ".c", ".cpp", ".h", ".hpp", ".sh", ".sql",
+]);
 const listSchema = z.object({ dir: z.string().default(".") });
 
 export function registerFileTools(): void {
@@ -31,13 +38,28 @@ export function registerFileTools(): void {
 
   registry.register({
     name: "write_file",
-    description: "Tulis file di workspace (relative path). Buat direktori bila perlu.",
+    description:
+      "Tulis file di workspace (relative path). Buat direktori bila perlu. File kode (.html/.css/.js/.ts/dll) yang ditulis di reports/ otomatis dipindahkan ke code/.",
     parameters: writeSchema,
     handler: async (args: z.infer<typeof writeSchema>, ctx) => {
-      const p = safeResolve(ctx.workspacePath, args.path);
+      // Routing jenis artefak (fix test user: landing page .html mendarat di reports/):
+      // ekstensi kode di bawah reports/ → code/<rel>; hasil balikkan path asli agar
+      // agent tahu lokasi final dan tidak bingung di tool-call berikutnya.
+      const requested = args.path.replace(/\\/g, "/");
+      let target = requested;
+      if (requested.startsWith("reports/") && CODE_EXT.has(path.posix.extname(requested).toLowerCase())) {
+        target = `code/${requested.slice("reports/".length)}`;
+      }
+      const p = safeResolve(ctx.workspacePath, target);
       await fs.mkdir(path.dirname(p), { recursive: true });
       await fs.writeFile(p, args.content, "utf-8");
-      return { result: { path: args.path, bytes: args.content.length } };
+      return {
+        result: {
+          path: target,
+          bytes: args.content.length,
+          ...(target !== requested ? { redirectedFrom: requested, note: `file kode dipindahkan ke ${target} — folder reports/ khusus laporan/markdown` } : {}),
+        },
+      };
     },
     // Policy P1: direktori kerja standar (code/docs/reports) bebas-approval;
     // di luar itu (root, config, dst.) tetap minta persetujuan.

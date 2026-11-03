@@ -38,6 +38,24 @@ describe("file tools — path safety", () => {
     if (!ls.isError) expect((ls.result as { entries: { name: string }[] }).entries[0]!.name).toBe("laporan.md");
   });
 
+  it("routing artefak kode: .html di reports/ → mendarat di code/ (fix test user)", async () => {
+    const r = await tool("write_file")({ path: "reports/florist-landing/index.html", content: "<h1>hi</h1>" });
+    expect(r.isError).toBeFalsy();
+    const out = r.result as { path: string; redirectedFrom?: string; note?: string };
+    expect(out.path).toBe("code/florist-landing/index.html");
+    expect(out.redirectedFrom).toBe("reports/florist-landing/index.html");
+    // file fisik ada di code/, bukan reports/
+    expect(fs.existsSync(path.join(ctx.workspacePath, "code", "florist-landing", "index.html"))).toBe(true);
+    expect(fs.existsSync(path.join(ctx.workspacePath, "reports", "florist-landing"))).toBe(false);
+  });
+
+  it("routing tidak menyentuh laporan markdown di reports/", async () => {
+    const r = await tool("write_file")({ path: "reports/design-notes.md", content: "ok" });
+    const out = r.result as { path: string; redirectedFrom?: string };
+    expect(out.path).toBe("reports/design-notes.md");
+    expect(out.redirectedFrom).toBeUndefined();
+  });
+
   it("path escape ../ DITOLAK", async () => {
     const res = await tool("read_file")({ path: "../../etc/passwd" });
     expect(res.isError).toBe(true);
