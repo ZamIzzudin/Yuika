@@ -20,6 +20,8 @@ import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
 import { registerTodoTools } from "./tools/todo-tools.js";
 import { connectMcpFromConfig, connectMcpServer, type McpCallInfo, type McpRegistry } from "./mcp/client.js";
+import { MCP_CATALOG } from "./mcp/catalog.js";
+import { installFromCatalog, uninstallFromConfig } from "./mcp/install.js";
 import { McpAuditStore } from "./mcp/audit.js";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
@@ -67,16 +69,37 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const mcpAudit = new McpAuditStore(paths.dbPath);
   const onMcpCall = (info: McpCallInfo) => mcpAudit.log(info);
   let mcpConfig: McpRegistry | null = null;
-  if (paths.mcpConfigPath && fs.existsSync(paths.mcpConfigPath)) {
-    mcpConfig = JSON.parse(fs.readFileSync(paths.mcpConfigPath, "utf-8")) as McpRegistry;
-    for (const cfg of Object.values(mcpConfig.mcpServers)) {
+  const reloadMcpConfig = (): McpRegistry | null => {
+    if (!paths.mcpConfigPath || !fs.existsSync(paths.mcpConfigPath)) return null;
+    const raw = JSON.parse(fs.readFileSync(paths.mcpConfigPath, "utf-8")) as McpRegistry;
+    for (const cfg of Object.values(raw.mcpServers)) {
       cfg.args = cfg.args?.map((a) => a.replaceAll("{workspace}", paths.workspacePath));
     }
-  }
+    return raw;
+  };
+  mcpConfig = reloadMcpConfig();
   const mcpConns = new Map<string, { close: () => Promise<void>; toolNames: string[] }>();
 
   function trustConfig() {
     return loadTrust(paths.workspacePath);
+  }
+
+  function serverStatuses(): McpServerStatus[] {
+    const trust = trustConfig();
+    const names = new Set([...Object.keys(mcpConfig?.mcpServers ?? {}), ...trust.servers.map((s) => s.server)]);
+    return [...names].sort().map((name) => {
+      const entry = trustOf(trust, name);
+      const conn = mcpConns.get(name);
+      return {
+        name,
+        declared: Boolean(mcpConfig?.mcpServers[name]),
+        trusted: entry?.trusted ?? false,
+        denyTools: entry?.denyTools ?? [],
+        connected: Boolean(conn),
+        toolCount: conn?.toolNames.length ?? 0,
+        tools: conn?.toolNames.map((t) => t.replace(`mcp__${name}__`, "")) ?? [],
+      };
+    });
   }
 
   async function disconnectMcp(name: string): Promise<void> {
@@ -241,23 +264,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getTaskTree: (projectId: string) => taskTreeFromEvents(projectStore.listEvents(projectId)),
     // ---- MCP trust/audit (P1-MCP-3) ----
     /** Status semua server: deklarasi mcp.json + trust workspace + koneksi live. */
-    mcpServerStatuses: (): McpServerStatus[] => {
-      const trust = trustConfig();
-      const names = new Set([...Object.keys(mcpConfig?.mcpServers ?? {}), ...trust.servers.map((s) => s.server)]);
-      return [...names].sort().map((name) => {
-        const entry = trustOf(trust, name);
-        const conn = mcpConns.get(name);
-        return {
-          name,
-          declared: Boolean(mcpConfig?.mcpServers[name]),
-          trusted: entry?.trusted ?? false,
-          denyTools: entry?.denyTools ?? [],
-          connected: Boolean(conn),
-          toolCount: conn?.toolNames.length ?? 0,
-          tools: conn?.toolNames.map((t) => t.replace(`mcp__${name}__`, "")) ?? [],
-        };
-      });
-    },
+    mcpServerStatuses: serverStatuses,
     /** Ubah trust (upsert file) → connect/disconnect/re-register handler deny baru. */
     setMcpTrust: async (input: { server: string; trusted: boolean; denyTools: string[] }) => {
       if (input.trusted && !mcpConfig?.mcpServers[input.server]) {
@@ -269,6 +276,25 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return trustOf(trustConfig(), input.server)!;
     },
     mcpAuditRecent: (limit = 50) => mcpAudit.recent(limit),
+    // ---- Katalog & install (P1-MCP-1) ----
+    /** Katalog kurasi untuk UI panel MCP. */
+    mcpCatalog: () => MCP_CATALOG,
+    /** Pasang dari katalog → tulis mcp.json + reload in-memory. TIDAK auto-connect
+     *  (fail-closed): user harus Trust di panel setelah ini. */
+    installMcpServer: (catalogId: string, env: Record<string, string>) => {
+      if (!paths.mcpConfigPath) throw new Error("mcp.json tidak dikonfigurasi (YUI_MCP_CONFIG)");
+      const { name } = installFromCatalog(paths.mcpConfigPath, catalogId, env);
+      mcpConfig = reloadMcpConfig();
+      return { name, statuses: serverStatuses() };
+    },
+    /** Lepas server: putuskan koneksi (bila ada) + hapus dari mcp.json. */
+    uninstallMcpServer: async (name: string) => {
+      if (!paths.mcpConfigPath) throw new Error("mcp.json tidak dikonfigurasi (YUI_MCP_CONFIG)");
+      await disconnectMcp(name);
+      const removed = uninstallFromConfig(paths.mcpConfigPath, name);
+      mcpConfig = reloadMcpConfig();
+      return { removed, statuses: serverStatuses() };
+    },
     // ---- roster project (P1-PRJ-3) ----
     getProjectRoster: (projectId: string) => loadRoster(projectRoot(projectId)),
     saveProjectRoster: (projectId: string, roster: RosterEntryIn[]): RosterEntryIn[] => {

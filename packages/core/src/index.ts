@@ -14,6 +14,8 @@ export { listPersonas, loadPersona, type Persona } from "./personas/loader.js";
 export { listSkills, loadSkill, type Skill, type SkillIndexEntry } from "./skills/loader.js";
 export { buildSystemPrompt, CORE_SYSTEM_PROMPT } from "./prompt/builder.js";
 export { connectMcpServer, connectMcpFromConfig, type McpServerConfig, type McpRegistry } from "./mcp/client.js";
+export { MCP_CATALOG, catalogById } from "./mcp/catalog.js";
+export { installFromCatalog, uninstallFromConfig, readMcpConfig } from "./mcp/install.js";
 export { createYuiRuntime, type YuiRuntimeConfig } from "./runtime.js";
 export { resolvePaths, resolveRepoRoot } from "./paths.js";
 export { appendUserPreferenceNote, userMdPath } from "./memory/usermd.js";

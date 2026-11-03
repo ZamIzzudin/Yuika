@@ -47,3 +47,35 @@ export const SetMcpTrustRequest = z.object({
   trusted: z.boolean(),
   denyTools: z.array(z.string()).default([]),
 });
+
+// ── Katalog MCP (P1-MCP-1) ─────────────────────────────────────────
+/** Satu env key yang diminta server katalog (label untuk UI form). */
+export const McpCatalogEnvKey = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  required: z.boolean().default(false),
+});
+export type McpCatalogEnvKey = z.infer<typeof McpCatalogEnvKey>;
+
+/** Entri katalog server MCP kurasi (install = tulis deklarasi ke mcp.json). */
+export const McpCatalogEntry = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  category: z.string().min(1),
+  /** Risiko akses: rendah = lokal/aman, sedang = data luar, tinggi = tulis akun pihak ketiga. */
+  risk: z.enum(["rendah", "sedang", "tinggi"]),
+  command: z.string().min(1),
+  args: z.array(z.string()),
+  envKeys: z.array(McpCatalogEnvKey),
+  docsUrl: z.string().optional(),
+});
+export type McpCatalogEntry = z.infer<typeof McpCatalogEntry>;
+
+// POST /api/mcp/install
+export const InstallMcpRequest = z.object({
+  catalogId: z.string().min(1),
+  /** Nilai env dari form UI — hanya value non-kosong yang ditulis ke mcp.json. */
+  env: z.record(z.string()).default({}),
+});
+export type InstallMcpRequest = z.infer<typeof InstallMcpRequest>;
