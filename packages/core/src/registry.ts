@@ -28,6 +28,29 @@ export interface ToolDefinition {
 
 const tools = new Map<string, ToolDefinition>();
 
+/**
+ * Normalisasi JSON Schema untuk kompatibilitas provider OpenAI-compatible.
+ * zodToJsonSchema memancarkan `exclusiveMinimum/Maximum: true|false` (bentuk boolean
+ * draft-04) — sebagian provider (mis. GLM, kode error 1210) memvalidasi draft 2020-12
+ * yang mensyaratkan bentuk angka. Konversi: boolean true → ambil nilai minimum/maximum,
+ * lalu hapus field aslinya; false → hapus (tidak bermakna di draft baru).
+ */
+export function normalizeToolSchema(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(normalizeToolSchema);
+  if (!node || typeof node !== "object") return node;
+  const n = node as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(n)) {
+    if (k === "exclusiveMinimum" && v === true) out.exclusiveMinimum = n.minimum;
+    else if (k === "exclusiveMaximum" && v === true) out.exclusiveMaximum = n.maximum;
+    else if (k === "exclusiveMinimum" || k === "exclusiveMaximum") continue; // false → hapus
+    else if (k === "minimum" && n.exclusiveMinimum === true) continue; // pindah ke exclusive
+    else if (k === "maximum" && n.exclusiveMaximum === true) continue;
+    else out[k] = normalizeToolSchema(v);
+  }
+  return out;
+}
+
 export const registry = {
   register(def: ToolDefinition): void {
     if (tools.has(def.name)) throw new Error(`tool duplikat: ${def.name}`);
@@ -50,7 +73,9 @@ export const registry = {
       .map((t) => ({
         name: t.name,
         description: t.description,
-        parameters: zodToJsonSchema(t.parameters, { target: "openApi3" }) as Record<string, unknown>,
+        parameters: normalizeToolSchema(
+          zodToJsonSchema(t.parameters, { target: "openApi3" }),
+        ) as Record<string, unknown>,
       }));
   },
   async dispatch(name: string, rawArgs: unknown, ctx: ToolContext): Promise<ToolResult> {
