@@ -136,3 +136,21 @@ export const TaskItem = z.object({
   updatedAt: z.number().int(),
 });
 export type TaskItem = z.infer<typeof TaskItem>;
+
+/** P2-STU-3 v0: tab File — node tree (relPath pakai "/" lintas OS). */
+export interface FileNode {
+  name: string;
+  relPath: string;
+  dir: boolean;
+  size: number;
+  children?: FileNode[];
+}
+export const FileNode: z.ZodType<FileNode> = z.lazy(() =>
+  z.object({
+    name: z.string(),
+    relPath: z.string(),
+    dir: z.boolean(),
+    size: z.number().int(),
+    children: z.array(FileNode).optional(),
+  }),
+);

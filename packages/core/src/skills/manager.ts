@@ -3,6 +3,7 @@
 // (metadata.yui.status: draft) → user validasi di tab Skill (edit bebas) →
 // Terima = lint (parse ulang frontmatter) + pindah ke <skillsDir>/<slug>/ =
 // siap dipakai agent via skills_list/skill_view. Tolak = hapus.
+// P1-MEM-4: usage tracking (`.usage.json` per skill: views/patches/used).
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
@@ -64,6 +65,7 @@ export function updateDraft(skillsDir: string, slug: string, name: string, descr
   const dir = path.join(draftsDir(skillsDir), slug);
   if (!fs.existsSync(dir)) throw new Error(`draft '${slug}' tidak ditemukan`);
   fs.writeFileSync(path.join(dir, "SKILL.md"), skillMd(name, description, body, "draft"), "utf-8");
+  bumpUsage(dir, "patches"); // P1-MEM-4
 }
 
 /** Terima draft: lint (parse ulang) + pindah keluar drafts/ → siap dipakai. */
@@ -73,6 +75,7 @@ export function acceptDraft(skillsDir: string, slug: string): { name: string } {
   const skill = loadSkill(from); // lint v0: frontmatter valid (throw → route 400)
   const to = path.join(skillsDir, slugify(skill.name));
   if (fs.existsSync(to)) throw new Error(`skill aktif '${slugify(skill.name)}' sudah ada`);
+  bumpUsage(from, "patches"); // accept = patch final (P1-MEM-4) — ikut pindah folder
   fs.renameSync(from, to);
   // tulis ulang tanpa status draft (siap pakai murni)
   const fm = { ...skill.frontmatter };
@@ -87,6 +90,35 @@ export function acceptDraft(skillsDir: string, slug: string): { name: string } {
 /** Tolak draft: hapus foldernya. */
 export function rejectDraft(skillsDir: string, slug: string): void {
   fs.rmSync(path.join(draftsDir(skillsDir), slug), { recursive: true, force: true });
+}
+
+// ---- P1-MEM-4: usage tracking per skill (`.usage.json` di folder skill) ----
+export interface SkillUsage {
+  views: number;
+  patches: number;
+  used: number;
+  updatedAt?: number;
+}
+
+function usageFile(dir: string): string {
+  return path.join(dir, ".usage.json");
+}
+
+export function readUsage(dir: string): SkillUsage {
+  try {
+    const u = JSON.parse(fs.readFileSync(usageFile(dir), "utf-8")) as Partial<SkillUsage>;
+    return { views: u.views ?? 0, patches: u.patches ?? 0, used: u.used ?? 0, updatedAt: u.updatedAt };
+  } catch {
+    return { views: 0, patches: 0, used: 0 };
+  }
+}
+
+export function bumpUsage(dir: string, kind: "views" | "patches" | "used"): SkillUsage {
+  const u = readUsage(dir);
+  u[kind] += 1;
+  u.updatedAt = Date.now();
+  fs.writeFileSync(usageFile(dir), JSON.stringify(u), "utf-8");
+  return u;
 }
 
 function toYaml(fm: Record<string, unknown>): string {

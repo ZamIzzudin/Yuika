@@ -5,7 +5,7 @@
 import { z } from "zod";
 import { registry } from "../registry.js";
 import { listSkills } from "../skills/loader.js";
-import { proposeSkill } from "../skills/manager.js";
+import { bumpUsage, proposeSkill } from "../skills/manager.js";
 
 export function registerSkillTools(skillsDir: string): void {
   registry.register({
@@ -25,6 +25,7 @@ export function registerSkillTools(skillsDir: string): void {
     handler: async (args: { name: string }) => {
       const skill = listSkills(skillsDir).find((s) => s.name === args.name);
       if (!skill) return { result: { error: `skill tidak ditemukan: ${args.name}` }, isError: true };
+      bumpUsage(skill.dir, "views"); // P1-MEM-4
       return { result: { name: skill.name, content: skill.body } };
     },
   });

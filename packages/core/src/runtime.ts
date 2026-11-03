@@ -31,7 +31,8 @@ import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
 import { findUvx, installUv } from "./mcp/uv.js";
 import { buildModelRouter, loadModelOverrides, saveModelOverride } from "./model-router.js";
-import { acceptDraft, listDrafts, rejectDraft, updateDraft } from "./skills/manager.js";
+import { acceptDraft, listDrafts, readUsage, rejectDraft, updateDraft } from "./skills/manager.js";
+import { buildFileTree, readProjectFile } from "./project/files.js";
 import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
@@ -297,6 +298,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     listProjects: () => projectStore.listProjects(),
     getProject: (id: string) => projectStore.getProject(id),
+    // P2-STU-3 v0: tab File — tree + baca file, scoped dir project (anti traversal).
+    listProjectFiles: (id: string) => {
+      const p = projectStore.getProject(id);
+      if (!p) throw new Error("project tidak ditemukan");
+      return buildFileTree(p.rootPath);
+    },
+    readProjectFile: (id: string, relPath: string) => {
+      const p = projectStore.getProject(id);
+      if (!p) throw new Error("project tidak ditemukan");
+      return readProjectFile(p.rootPath, relPath);
+    },
     updateProject: (id: string, patch: { name?: string; description?: string; status?: "active" | "archived" }) =>
       projectStore.updateProject(id, patch),
     // ---- tasklist project (P1-PRJ-4) ----
@@ -385,8 +397,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const drafts = safeList(() => listDrafts(paths.skillsDir));
       const skills = safeList(() => listSkills(paths.skillsDir));
       return {
-        drafts: drafts.map((s) => ({ slug: path.basename(s.dir), name: s.name, description: s.description, body: s.body })),
-        skills: skills.map((s) => ({ name: s.name, description: s.description })),
+        drafts: drafts.map((s) => ({ slug: path.basename(s.dir), name: s.name, description: s.description, body: s.body, usage: readUsage(s.dir) })),
+        skills: skills.map((s) => ({ name: s.name, description: s.description, usage: readUsage(s.dir) })),
       };
     },
     updateSkillDraft: (input: { slug: string; name: string; description: string; body: string }) =>

@@ -999,3 +999,27 @@ html, body {
 .model-table td { padding: 2px 0 2px 6px; }
 .model-table input { min-width: 150px; }
 .model-table tr[data-dirty] th { color: var(--yui-accent); }
+
+/* ── Tab File (P2-STU-3 v0) ─────────────────────────────────────── */
+.file-split { display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: var(--yui-space-3); min-height: 320px; }
+.file-tree, .file-view {
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
+  background: var(--yui-bg-inset); padding: var(--yui-space-2); overflow-y: auto; max-height: 60vh;
+}
+.file-row {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  background: none; border: none; cursor: pointer; color: var(--yui-text-secondary);
+  font: inherit; font-size: var(--yui-text-sm); padding: 3px 6px; border-radius: var(--yui-radius-sm);
+}
+.file-row:hover { background: var(--yui-hover); color: var(--yui-text); }
+.file-row[data-sel] { background: var(--yui-hover); color: var(--yui-text); font-weight: 600; }
+.file-row .file-ico { opacity: 0.5; width: 12px; flex: none; }
+.file-row .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-row .file-size { margin-left: auto; color: var(--yui-text-dim); font-size: 11px; flex: none; }
+.file-view-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 2px 4px 8px; }
+.file-view-head small { color: var(--yui-text-dim); }
+.file-pre {
+  margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--yui-font-mono);
+  font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
+}
+.skill-usage { margin-left: 8px; color: var(--yui-text-dim); font-weight: 400; font-size: 11px; }

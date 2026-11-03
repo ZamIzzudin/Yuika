@@ -13,6 +13,7 @@ interface DraftRow {
 interface SkillRow {
   name: string;
   description: string;
+  usage?: { views: number; patches: number; used: number };
 }
 
 export function SkillsTab() {
@@ -156,7 +157,14 @@ export function SkillsTab() {
           <ul className="skill-list">
             {skills.map((s) => (
               <li key={s.name}>
-                <b>{s.name}</b>
+                <b>
+                  {s.name}
+                  {s.usage && (
+                    <small className="skill-usage" title="dilihat · diedit · dipakai">
+                      👁 {s.usage.views} · ✎ {s.usage.patches} · ⚑ {s.usage.used}
+                    </small>
+                  )}
+                </b>
                 <small>{s.description}</small>
               </li>
             ))}

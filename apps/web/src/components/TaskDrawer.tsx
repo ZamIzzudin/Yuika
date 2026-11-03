@@ -4,13 +4,14 @@ import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, Ros
 import { PersonaFace } from "./PersonaPicker";
 import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
+import { FileTab } from "./FileTab";
 
 /** Status cycle: klik chip = maju satu langkah. */
 const NEXT: Record<TaskStatus, TaskStatus> = { todo: "doing", doing: "review", review: "done", done: "todo" };
 const LABEL: Record<TaskStatus, string> = { todo: "Belum", doing: "Kerja", review: "Reviu", done: "Selesai" };
 const DOT: Record<TaskStatus, string> = { todo: "○", doing: "◐", review: "◑", done: "●" };
 
-export type WorkspaceTab = "chat" | "team" | "board" | "tree" | "roster" | "sessions" | "memory" | "skills";
+export type WorkspaceTab = "chat" | "team" | "files" | "board" | "tree" | "roster" | "sessions" | "memory" | "skills";
 
 /** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
 export interface LiveDelegation {
@@ -476,6 +477,8 @@ export function ProjectTabs({
           </div>
         </section>
       )}
+
+      {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
 
       {loaded && activeTab === "skills" && <SkillsTab />}
 

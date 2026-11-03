@@ -379,6 +379,7 @@ export default function Home() {
                 (
                   [
                     { id: "team", label: "Tim" },
+                    { id: "files", label: "File" },
                     { id: "board", label: "Papan" },
                     { id: "tree", label: "Pohon" },
                     { id: "roster", label: "Roster" },
