@@ -11,7 +11,7 @@ import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { McpPanel } from "@/components/McpPanel";
-import { TaskDrawer } from "@/components/TaskDrawer";
+import { ProjectTabs, type LiveDelegation, type WorkspaceTab } from "@/components/TaskDrawer";
 import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, YuiEvent } from "@yui/contracts";
 
 /** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
@@ -48,7 +48,7 @@ export default function Home() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mainTab, setMainTab] = useState<WorkspaceTab>("chat");
   const [projSessions, setProjSessions] = useState<ProjectSessionSummary[]>([]);
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
@@ -226,7 +226,7 @@ export default function Home() {
    *  Resume: bila project sudah punya sesi, sesi TERBARU dibuka kembali (replay SSE). */
   async function pickProject(id: string | null) {
     setActiveProjectId(id);
-    setDrawerOpen(!!id);
+    setMainTab("chat");
     if (!id) {
       // Workspace global: persona dipilih dari kartu di tengah layar
       resetSession();
@@ -317,7 +317,6 @@ export default function Home() {
         <McpPanel />
       </aside>
       <main className="yui-main">
-        <div className="chat-pane">
         {!active ? (
           <div className="empty-state">
             <div className="portrait-hero">
@@ -339,8 +338,44 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <>
-            <header className="chat-header">
+          <div className="workspace">
+            <nav className="main-tabs" role="tablist">
+              <button
+                role="tab"
+                aria-selected={mainTab === "chat"}
+                data-active={mainTab === "chat" ? "" : undefined}
+                onClick={() => setMainTab("chat")}
+              >
+                <PersonaFace personaId={active.id} size={16} /> Chat
+                {busy && <span className="tab-dot" title="agent bekerja" />}
+              </button>
+              {activeProject &&
+                (
+                  [
+                    { id: "team", label: "Tim" },
+                    { id: "tree", label: "Pohon" },
+                    { id: "roster", label: "Roster" },
+                    { id: "sessions", label: "Sesi" },
+                  ] as const
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    aria-selected={mainTab === t.id}
+                    data-active={mainTab === t.id ? "" : undefined}
+                    onClick={() => setMainTab(t.id)}
+                  >
+                    {t.label}
+                    {t.id === "team" && items.some((it) => it.kind === "delegation" && !it.text) && (
+                      <span className="tab-dot" title="delegasi berjalan" />
+                    )}
+                  </button>
+                ))}
+            </nav>
+            <div className="workspace-body">
+              {mainTab === "chat" && (
+                <>
+                  <header className="chat-header">
               <details className="persona-switch">
                 <summary>
                   <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="compact" />
@@ -360,7 +395,7 @@ export default function Home() {
                 </div>
               </details>
               {activeProject && (
-                <button className="project-chip" onClick={() => setDrawerOpen((v) => !v)} title="Tasklist proyek">
+                <button className="project-chip" onClick={() => setMainTab("team")} title="Buka tab Tim (struktur delegasi)">
                   <i /> {activeProject.name}
                 </button>
               )}
@@ -410,34 +445,37 @@ export default function Home() {
                 busy={busy}
               />
             )}
-          </>
-        )}
-        </div>
-        {activeProject && (
-          <TaskDrawer
-            project={activeProject}
-            sessions={projSessions}
-            activeSessionId={sessionId}
-            onOpenSession={openSession}
-            onNewSession={() => void newProjectSession()}
-            personas={personas}
-            open={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            rev={taskRev}
-            live={{
-              parentPersonaId: active?.id ?? null,
-              parentState: personaState,
-              delegations: items
-                .filter((it) => it.kind === "delegation")
-                .map((it) => ({
-                  personaId: it.personaId ?? "yui-scholar",
-                  childSessionId: it.childSessionId ?? "",
-                  goal: it.goal ?? "",
-                  childState: it.childState,
-                  summary: it.text,
-                })),
-            }}
-          />
+                </>
+              )}
+              {activeProject && mainTab !== "chat" && (
+                <ProjectTabs
+                  project={activeProject}
+                  sessions={projSessions}
+                  activeSessionId={sessionId}
+                  onOpenSession={openSession}
+                  onNewSession={() => void newProjectSession()}
+                  personas={personas}
+                  activeTab={mainTab}
+                  rev={taskRev}
+                  live={{
+                    parentPersonaId: active.id,
+                    parentState: personaState,
+                    delegations: items
+                      .filter((it) => it.kind === "delegation")
+                      .map(
+                        (it): LiveDelegation => ({
+                          personaId: it.personaId ?? "yui-scholar",
+                          childSessionId: it.childSessionId ?? "",
+                          goal: it.goal ?? "",
+                          childState: it.childState,
+                          summary: it.text,
+                        }),
+                      ),
+                  }}
+                />
+              )}
+            </div>
+          </div>
         )}
       </main>
     </div>

@@ -121,14 +121,37 @@ html, body {
 .yui-main {
   flex: 1;
   min-width: 0;
-  position: relative;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
-.chat-pane {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column;
+
+/* ── Workspace: satu area konten + tab bar (Chat juga tab) ────── */
+.workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.main-tabs {
+  display: flex; gap: 2px; padding: var(--yui-space-2) var(--yui-space-4) 0;
+  border-bottom: 1px solid var(--yui-border); flex: none; overflow-x: auto;
 }
+.main-tabs button {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: inherit; font-size: var(--yui-text-md); font-weight: 500;
+  color: var(--yui-text-dim); background: none; border: none;
+  border-bottom: 2px solid transparent; padding: 8px 14px; cursor: pointer;
+  white-space: nowrap;
+}
+.main-tabs button:hover { color: var(--yui-text-secondary); }
+.main-tabs button[data-active] { color: var(--yui-text-primary); border-bottom-color: var(--yui-text-primary); }
+.tab-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--yui-accent, #7c9cff);
+  animation: yui-pulse 1.4s ease-in-out infinite;
+}
+@keyframes yui-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.workspace-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pane-scroll {
+  flex: 1; min-height: 0; overflow-y: auto;
+  width: 100%; max-width: 880px; margin: 0 auto;
+  padding: var(--yui-space-5) var(--yui-space-6);
+}
+.pane-hint { margin: 0 0 var(--yui-space-3); color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 
 /* ── Persona list (pola agent-row OpenBot) ─────────────────────── */
 .persona-list { display: flex; flex-direction: column; gap: 1px; }
@@ -563,36 +586,6 @@ html, body {
 .project-chip:hover { border-color: var(--yui-border-focus); color: var(--yui-text-primary); }
 
 /* ── Task drawer (P1-PRJ-4 UI) ─────────────────────────────────── */
-/* Panel proyek = bagian utama shell (pola IDE: sidebar | chat | panel) */
-.project-pane {
-  display: flex; flex-direction: column; flex: 0 0 auto; width: 520px; min-width: 360px; max-width: 60%;
-  background: var(--yui-bg-sidebar); border-left: 1px solid var(--yui-border);
-  padding: var(--yui-space-4) var(--yui-space-4); overflow-y: auto;
-}
-/* Layar penuh: panel memenuhi area utama (fondasi kanban/penpot/web view) */
-.project-pane[data-full] {
-  position: absolute; inset: 0; z-index: 40; width: auto; max-width: none; min-width: 0;
-  background: var(--yui-bg); padding: var(--yui-space-6) var(--yui-space-8);
-}
-.task-drawer-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--yui-space-3); }
-.task-drawer-head b { display: block; font-size: var(--yui-text-md); font-weight: 600; }
-.task-drawer-head small { display: block; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
-.head-actions { display: flex; gap: 2px; }
-
-/* ── Tab panel proyek ─────────────────────────────────────────── */
-.drawer-tabs {
-  display: flex; gap: 2px; padding: 3px; margin-bottom: var(--yui-space-3);
-  background: var(--yui-bg-inset, rgba(255, 255, 255, 0.04)); border-radius: 10px;
-}
-.drawer-tabs button {
-  flex: 1; font: inherit; font-size: var(--yui-text-md); font-weight: 500;
-  color: var(--yui-text-dim); background: none; border: none; border-radius: 8px;
-  padding: 6px 10px; cursor: pointer;
-}
-.drawer-tabs button:hover { color: var(--yui-text-secondary); }
-.drawer-tabs button[data-active] { color: var(--yui-text-primary); background: var(--yui-bg-surface-raised); }
-.drawer-body { flex: 1; min-height: 0; overflow-y: auto; }
-
 /* ── Org-chart Tim (struktur delegasi live) ───────────────────── */
 .org-chart { display: flex; flex-direction: column; align-items: center; gap: 0; }
 .org-card {
