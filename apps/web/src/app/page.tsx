@@ -10,7 +10,7 @@ import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
-import { McpPanel } from "@/components/McpPanel";
+import { SettingsModal } from "@/components/SettingsModal";
 import { ProjectTabs, type LiveDelegation, type WorkspaceTab } from "@/components/TaskDrawer";
 import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, YuiEvent } from "@yui/contracts";
 
@@ -297,6 +297,8 @@ export default function Home() {
     });
   }
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   async function approve(requestId: string, approved: boolean, remember = false) {
     await fetch(`/api/approvals/${requestId}`, {
       method: "POST",
@@ -317,8 +319,13 @@ export default function Home() {
           onPick={pickProject}
           onCreated={loadProjects}
         />
-        <McpPanel />
+        <div className="side-foot">
+          <button className="side-settings" onClick={() => setSettingsOpen(true)}>
+            ⚙ Pengaturan
+          </button>
+        </div>
       </aside>
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <main className="yui-main">
         {!active ? (
           <div className="empty-state">

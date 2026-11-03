@@ -27,7 +27,8 @@ import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js";
 import { registerMemoryTools } from "./tools/memory-tools.js";
-import { resolvePaths, type YuiPaths } from "./paths.js";
+import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
+import { updateEnvFile } from "./env-file.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
 import { taskTreeFromEvents } from "./project/tasktree.js";
@@ -43,7 +44,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
 
   const store = new SessionStore(paths.dbPath);
   const projectStore = new ProjectStore(paths.dbPath);
-  const provider = new OpenAICompatProvider({ baseUrl: cfg.provider.baseUrl, apiKey: cfg.provider.apiKey });
+  // Settings: provider & model bisa di-swap panas (updateProviderSettings) —
+  // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
+  // sama dimutasi propertinya agar delegasi ikut provider baru.
+  let provider = new OpenAICompatProvider({ baseUrl: cfg.provider.baseUrl, apiKey: cfg.provider.apiKey });
+  let providerBaseUrl = cfg.provider.baseUrl;
+  let model = cfg.provider.model;
 
   // tools core (sekali per proses)
   registerFileTools();
@@ -52,17 +58,23 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerRunCommandTool();
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({ sessionStore: store, projects: projectStore, workspacePath: paths.workspacePath });
-  registerDelegateTool({
+  // Objek deps delegasi DI-MUTASI saat provider swap (spread terjadi di call time).
+  const delegateDeps: Parameters<typeof registerDelegateTool>[0] = {
     store,
     bus: EventBus,
-    provider,
-    model: cfg.provider.model,
+    get provider() {
+      return provider;
+    },
+    get model() {
+      return model;
+    },
     personasDir: paths.personasDir,
     skillsDir: paths.skillsDir,
     workspacePath: paths.workspacePath,
     workspaceGlobalPath: paths.workspacePath, // USER.md selalu global walau delegasi menimpa workspacePath
     mcpAllowlistFor, // P1-PRJ-5: anak mewarisi binding MCP sesuai roster persona anak
-  });
+  };
+  registerDelegateTool(delegateDeps);
 
   // MCP dari config (demo: best-effort, lanjut jika gagal).
   // Placeholder {workspace} di-substitusi path absolut — path relatif salah resolve
@@ -222,7 +234,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     const loop = new AgentLoop({
       store,
       provider,
-      model: cfg.provider.model,
+      model,
       workspacePath: effectiveWorkspace(sessionId), // P1-PRJ-2: scope per sesi
       approvals,
       emit,
@@ -283,6 +295,49 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       await disconnectMcp(input.server); // untrust / deny baru → re-register handler
       if (input.trusted) await connectMcp(input.server);
       return trustOf(trustConfig(), input.server)!;
+    },
+    // ---- Settings: provider & model (swap panas) ----
+    /** Config provider aktif (key disamarkan — jangan pernah balas key penuh). */
+    getProviderSettings: () => ({
+      baseUrl: providerBaseUrl,
+      model,
+      hasApiKey: Boolean(process.env.YUI_API_KEY),
+      keyPreview: process.env.YUI_API_KEY ? `…${process.env.YUI_API_KEY.slice(-4)}` : "",
+    }),
+    /** Update provider/model: swap in-memory (sesi baru langsung pakai; loopCache
+     *  dikosongkan) + persist ke .env agar bertahan restart. apiKey kosong = keep. */
+    updateProviderSettings: (input: { baseUrl?: string; apiKey?: string; model?: string; fallbackModel?: string | null }) => {
+      const envFile = path.join(resolveRepoRoot(), ".env");
+      const toWrite: Record<string, string> = {};
+      if (input.baseUrl?.trim()) {
+        providerBaseUrl = input.baseUrl.trim();
+        provider = new OpenAICompatProvider({ baseUrl: providerBaseUrl, apiKey: process.env.YUI_API_KEY ?? cfg.provider.apiKey });
+        toWrite.YUI_BASE_URL = providerBaseUrl;
+        process.env.YUI_BASE_URL = providerBaseUrl;
+      }
+      if (input.apiKey?.trim()) {
+        provider = new OpenAICompatProvider({ baseUrl: providerBaseUrl, apiKey: input.apiKey.trim() });
+        toWrite.YUI_API_KEY = input.apiKey.trim();
+        process.env.YUI_API_KEY = input.apiKey.trim();
+      }
+      if (input.model?.trim()) {
+        model = input.model.trim();
+        toWrite.YUI_MODEL = model;
+        process.env.YUI_MODEL = model;
+      }
+      if (input.fallbackModel !== undefined) {
+        if (input.fallbackModel?.trim()) {
+          toWrite.YUI_MODEL_FALLBACK = input.fallbackModel.trim();
+          process.env.YUI_MODEL_FALLBACK = input.fallbackModel.trim();
+        } else {
+          delete process.env.YUI_MODEL_FALLBACK;
+        }
+      }
+      if (Object.keys(toWrite).length > 0) {
+        updateEnvFile(envFile, toWrite);
+        loopCache.clear(); // sesi berikutnya memakai provider/model baru
+      }
+      return { ok: true, note: "Sesi baru & turn berikutnya memakai config baru (loopCache dikosongkan; .env diperbarui)." };
     },
     mcpAuditRecent: (limit = 50) => mcpAudit.recent(limit),
     // ---- Memory manager (P1-MEM-1) ----
