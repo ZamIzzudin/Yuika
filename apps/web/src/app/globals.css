@@ -58,6 +58,7 @@
   --yui-space-2: 8px;
   --yui-space-3: 12px;
   --yui-space-4: 16px;
+  --yui-space-5: 20px;
   --yui-space-6: 24px;
   --yui-space-8: 32px;
   --yui-radius-sm: 6px;
@@ -74,6 +75,11 @@
   --yui-dur-fast: 120ms;
   --yui-dur-normal: 160ms;
   --yui-dur-slow: 200ms;
+
+  /* Glass (menu ala macOS): panel modal & dropdown */
+  --yui-glass: rgba(24, 24, 24, 0.72);
+  --yui-glass-border: rgba(255, 255, 255, 0.08);
+  --yui-glass-blur: blur(24px) saturate(150%);
 }
 
 * { box-sizing: border-box; }
@@ -492,6 +498,29 @@ html, body {
 .btn.secondary:hover:not(:disabled) { background: var(--yui-bg-control-hover); }
 .btn:disabled { opacity: 0.45; cursor: default; }
 
+/* ── Form kit: SEMUA input/select/textarea seirama composer ──────
+ * Satu DNA: surface bg, border 0.5px, radius-md, fokus border menyala.
+ * Composer textarea punya styling sendiri dan dikecualikan. */
+.yui-shell :where(input:is([type="text"], [type="password"], [type="search"], [type="number"], [type="email"], [type="url"], :not([type])), select, textarea):not(.composer textarea) {
+  border: 0.5px solid var(--yui-border-strong);
+  border-radius: var(--yui-radius-md);
+  background: var(--yui-bg-surface);
+  color: var(--yui-text-primary);
+  font: inherit;
+  font-size: var(--yui-text-md);
+  line-height: 1.5;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color var(--yui-dur-normal) var(--yui-ease-out), background var(--yui-dur-normal) var(--yui-ease-out);
+}
+.yui-shell :where(input, select, textarea):not(.composer textarea):focus-visible {
+  border-color: var(--yui-border-focus);
+}
+.yui-shell :where(input, textarea):not(.composer textarea)::placeholder {
+  color: var(--yui-text-dim);
+}
+.yui-shell :where(select):not(.composer select) { cursor: pointer; }
+
 /* ── Empty state (pola agent-chat-empty) ───────────────────────── */
 .empty-state {
   flex: 1;
@@ -551,12 +580,7 @@ html, body {
 }
 .project-add:hover { color: var(--yui-text-primary); border-color: var(--yui-border-strong); }
 .project-form { display: flex; flex-direction: column; gap: var(--yui-space-2); padding: var(--yui-space-2); background: var(--yui-bg-inset); border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card, 10px); margin-bottom: var(--yui-space-2); }
-.project-form input {
-  font: inherit; font-size: var(--yui-text-md); color: var(--yui-text-primary);
-  background: var(--yui-bg-canvas); border: 1px solid var(--yui-border-strong); border-radius: 8px;
-  padding: 6px 10px; min-width: 0;
-}
-.project-form input:focus-visible { outline: none; border-color: var(--yui-border-focus); }
+.project-form input { width: 100%; }
 .project-err { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-danger); }
 .project-form-actions { display: flex; justify-content: flex-end; gap: var(--yui-space-2); }
 .project-list { display: flex; flex-direction: column; gap: 1px; }
@@ -642,11 +666,7 @@ html, body {
 }
 .task-close:hover { color: var(--yui-text-primary); background: var(--yui-hover); }
 .task-add { display: flex; gap: var(--yui-space-2); padding-bottom: var(--yui-space-3); }
-.task-add input {
-  flex: 1; min-width: 0; font: inherit; font-size: var(--yui-text-md); color: var(--yui-text-primary);
-  background: var(--yui-bg-inset); border: 1px solid var(--yui-border-strong); border-radius: 8px; padding: 7px 10px;
-}
-.task-add input:focus-visible { outline: none; border-color: var(--yui-border-focus); }
+.task-add input { min-width: 0; flex: 1; }
 .task-add-btn { padding: 0 12px; }
 .task-empty { margin: var(--yui-space-2) 0; font-size: var(--yui-text-sm); color: var(--yui-text-muted); line-height: 1.6; }
 .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -677,12 +697,7 @@ html, body {
 .roster-body small { font-size: var(--yui-text-sm); color: var(--yui-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .roster-body em { font-size: var(--yui-text-sm); font-style: normal; color: var(--yui-accent-text); }
 .roster-assign { display: flex; flex-direction: column; gap: var(--yui-space-2); }
-.roster-assign select, .roster-assign input {
-  font: inherit; font-size: var(--yui-text-md); color: var(--yui-text-primary);
-  background: var(--yui-bg-inset); border: 1px solid var(--yui-border-strong); border-radius: 8px;
-  padding: 6px 10px; min-width: 0;
-}
-.roster-assign select:focus-visible, .roster-assign input:focus-visible { outline: none; border-color: var(--yui-border-focus); }
+.roster-assign select, .roster-assign input { min-width: 0; }
 .roster-assign .btn { align-self: flex-end; }
 
 /* ── Panel MCP (P1-MCP-3, sidebar) ─────────────────────────────── */
@@ -728,7 +743,9 @@ html, body {
 .persona-menu {
   position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 230px;
   display: flex; flex-direction: column; gap: 1px; padding: 4px;
-  background: var(--yui-bg-surface-raised); border: 1px solid var(--yui-border-strong); border-radius: 12px;
+  background: var(--yui-glass); backdrop-filter: var(--yui-glass-blur);
+  -webkit-backdrop-filter: var(--yui-glass-blur);
+  border: 1px solid var(--yui-glass-border); border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 .persona-menu button {
@@ -848,15 +865,20 @@ html, body {
 
 .settings-overlay {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center;
-  padding: var(--yui-space-5);
+  padding: var(--yui-space-6);
 }
 .settings-modal {
   width: min(940px, 94vw); height: min(640px, 88vh);
   display: flex; flex-direction: column;
-  background: var(--yui-bg); border: 1px solid var(--yui-border-strong);
-  border-radius: 16px; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  /* Glass ala menu macOS (disetujui user): bg semi-transparan + blur di belakang */
+  background: var(--yui-glass);
+  backdrop-filter: var(--yui-glass-blur);
+  -webkit-backdrop-filter: var(--yui-glass-blur);
+  border: 1px solid var(--yui-glass-border);
+  border-radius: var(--yui-radius-xl);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
 }
 .settings-head {
