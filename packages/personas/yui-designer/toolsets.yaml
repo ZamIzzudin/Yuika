@@ -1,0 +1,11 @@
+tools:
+  - skills_list
+  - skill_view
+  - skill_propose
+  - read_file
+  - write_file
+  - list_files
+  - todo_list
+  - todo_update
+  - memory_append
+  - "mcp__*"

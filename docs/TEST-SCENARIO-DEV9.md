@@ -107,3 +107,37 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
 | E | Settings swap model panas | ☐ |
 | F | Skill dari pengalaman: usul → edit → terima → dipakai agent | ☐ |
 | G | Log trace terkumpul | ☐ |
+
+## H. Multi-model per persona + fallback (5 menit) — P1-MDL-1 / P0-CORE-2
+
+*Prasyarat: restart dev server (semua fitur sesi dev 10 aktif setelah restart).*
+
+1. ⚙ Pengaturan → seksi Provider & Model → tabel **Model per persona**:
+   set `Yui Coder` → model `glm/glm-5` (blur = simpan; kosongkan = kembali default).
+2. Model fallback global: isi "Model fallback" `glm/glm-5` → Simpan.
+3. Sesi baru Coder → kerjakan sesuatu → trace (konsol) menampilkan model
+   `glm/glm-5` untuk sesi Coder, sementara sesi Conductor tetap `glm/glm-5.1`.
+4. Delegasi dari Conductor ke Coder → anak memakai model Coder (cek trace).
+5. (Fallback) sementara set model utama ke nama model yang TIDAK ada (mis.
+   `glm/tidak-ada`) di Settings → jadikan default → turn baru: harus otomatis
+   jatuh ke fallback (`FALLBACK AKTIF` di trace) dan tetap menghasilkan jawaban.
+   Kembalikan seperti semula. (Cooldown 5 mnt — model sekarat tak dicoba ulang.)
+
+✅ Lolos bila: dua model beda terlihat di trace dalam satu run delegasi; model
+   mati → fallback mulus tanpa error di chat.
+
+## I. Tab File + persona Designer (5 menit) — P2-STU-3 v0 / P1-PER-7
+
+1. Persona picker → **Yui Designer** muncul (roster ke-7, bentuk segitiga Orin).
+2. Sesi project (Conductor) → delegasikan "buatkan mockup landing sederhana" ke
+   **Yui Designer** → artefak mendarat di `code/`.
+3. Tab **File** → tree memperlihatkan `code/` & `reports/` → klik file mockup →
+   isinya tampil di viewer.
+4. (Negatif) URL manual `/api/projects/<id>/files?path=../.env` → ditolak
+   "path di luar project".
+5. Designer bisa memuat skill seed-nya: tanya "skill apa yang kamu punya?" →
+   `design-system-basics` & `design-to-code-handoff` terlihat; setelah dipakai,
+   tab Skill menunjukkan 👁 naik.
+
+✅ Lolos bila: mockup Designer terbaca di tab File tanpa keluar app; traversal
+   ditolak; usage tracking naik.
