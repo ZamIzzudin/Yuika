@@ -11,6 +11,13 @@ import type { ApprovalEngine } from "./approval/engine.js";
 
 const MAX_ITERATIONS = 12;
 
+/** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0) — jawaban untuk
+ *  "kenapa lambat": pisahkan waktu provider vs tool vs menunggu approval. */
+const TRACE = process.env.YUI_TRACE !== "0";
+function trace(msg: string): void {
+  if (TRACE) console.log(`[yui:trace] ${msg}`);
+}
+
 /** P1-PRJ-5 (D17): terapkan binding MCP pada daftar tool sesi — tool `mcp__*`
  *  hanya lolos bila ada di allowlist (prefix `...__*` atau nama persis). null = blokir semua. */
 export function applyMcpBinding<T extends { name: string }>(
@@ -40,6 +47,7 @@ export class AgentLoop {
   constructor(private deps: LoopDeps) {}
 
   async runTurn(sessionId: string, userText: string): Promise<void> {
+    const t0 = Date.now();
     const { store, provider, model, emit } = this.deps;
     const session = store.getSession(sessionId);
     if (!session) throw new Error(`session ${sessionId} tidak ditemukan`);
@@ -64,6 +72,7 @@ export class AgentLoop {
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       // 3) api phase
       let done;
+      const tProvider = Date.now();
       try {
         done = await provider.chatStream({ model, messages, tools }, (chunk) => {
           if (chunk.type === "text_delta") emit({ type: "message.delta", turnId, delta: chunk.delta });
@@ -78,6 +87,7 @@ export class AgentLoop {
         emit({ type: "persona.state", personaId: session.personaId, state: "error" });
         return;
       }
+      trace(`turn=${turnId.slice(0, 10)} sesi=${sessionId.slice(0, 10)} persona=${session.personaId} iter=${i} provider=${Date.now() - tProvider}ms (msgs=${messages.length}, tools=${tools.length}, finish=${done.finishReason})`);
 
       // 4) tool round
       if (done.finishReason === "tool_calls" && done.toolCalls.length) {
@@ -94,6 +104,8 @@ export class AgentLoop {
           emit({ type: "persona.state", personaId: session.personaId, state: "working" });
           if (call.name === "delegate_task") usedDelegation = true;
 
+          const tTool = Date.now();
+          let tApproval = 0;
           const res = await registry.dispatch(call.name, call.args, {
             sessionId,
             turnId,
@@ -101,9 +113,14 @@ export class AgentLoop {
             emit,
             requestApproval: (tool, args, reason) => {
               emit({ type: "persona.state", personaId: session.personaId, state: "awaiting_input" });
-              return this.deps.approvals.request(tool, args, reason);
+              tApproval = Date.now();
+              return this.deps.approvals.request(tool, args, reason).then((v) => {
+                trace(`  approval ${tool}: ${Date.now() - tApproval}ms → ${v ? "disetujui" : "ditolak"}`);
+                return v;
+              });
             },
           });
+          trace(`  tool ${call.name}: total=${Date.now() - tTool}ms${tApproval ? ` (menunggu user ${Date.now() - tApproval}ms)` : ""}`);
 
           emit({ type: "tool.result", turnId, callId: call.id, result: res.result, isError: !!res.isError });
           const toolMsg: InternalMessage = {
@@ -121,6 +138,7 @@ export class AgentLoop {
       // 5) finalizer
       store.appendMessage(sessionId, { role: "assistant", content: done.text });
       emit({ type: "message.done", turnId });
+      trace(`turn=${turnId.slice(0, 10)} SELESAI total=${Date.now() - t0}ms iter=${i + 1}`);
       // celebrating bila turn ini melibatkan delegation (P1: juga saat skill baru dibuat)
       emit({
         type: "persona.state",
@@ -132,5 +150,6 @@ export class AgentLoop {
 
     emit({ type: "session.error", message: "iteration budget habis", recoverable: true });
     emit({ type: "persona.state", personaId: session.personaId, state: "error" });
+    trace(`turn=${turnId.slice(0, 10)} GAGAL budget habis total=${Date.now() - t0}ms`);
   }
 }

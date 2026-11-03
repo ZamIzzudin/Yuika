@@ -31,7 +31,11 @@ export const SendMessageRequest = z.object({ text: z.string().min(1) });
 export const SendMessageResponse = z.object({ accepted: z.literal(true) });
 
 // POST /api/approvals/:id
-export const ApprovalDecisionRequest = z.object({ approved: z.boolean() });
+export const ApprovalDecisionRequest = z.object({
+  approved: z.boolean(),
+  /** "Setujui & ingat": tool bebas-approval untuk sisa sesi (mengurangi round-trip user). */
+  remember: z.boolean().optional(),
+});
 export const ApprovalDecisionResponse = z.object({ ok: z.literal(true) });
 
 // GET /api/sessions/:id/events?since=<id>

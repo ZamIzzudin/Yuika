@@ -77,7 +77,7 @@ export function ChatView({
   onSend: (text: string) => void;
   /** Konten state kosong (hero + saran) — composer tetap tampil, user bisa langsung menulis. */
   emptySlot?: ReactNode;
-  onApprove: (requestId: string, approved: boolean) => void;
+  onApprove: (requestId: string, approved: boolean, remember?: boolean) => void;
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
@@ -170,6 +170,9 @@ export function ChatView({
                     ) : (
                       <div className="actions">
                         <button className="btn" onClick={() => onApprove(it.requestId!, true)}>Setujui</button>
+                        <button className="btn secondary" onClick={() => onApprove(it.requestId!, true, true)} title="Tool ini bebas-approval untuk sisa sesi">
+                          Setujui &amp; ingat
+                        </button>
                         <button className="btn secondary" onClick={() => onApprove(it.requestId!, false)}>Tolak</button>
                       </div>
                     )}

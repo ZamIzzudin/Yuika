@@ -294,11 +294,11 @@ export default function Home() {
     });
   }
 
-  async function approve(requestId: string, approved: boolean) {
+  async function approve(requestId: string, approved: boolean, remember = false) {
     await fetch(`/api/approvals/${requestId}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ approved }),
+      body: JSON.stringify({ approved, remember }),
     });
   }
 

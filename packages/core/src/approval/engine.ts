@@ -10,35 +10,43 @@ import type { Emit } from "../session/emit.js";
  */
 const pendingEngines = new Map<string, ApprovalEngine>();
 
-export function resolvePendingApproval(requestId: string, approved: boolean): boolean {
+export function resolvePendingApproval(requestId: string, approved: boolean, remember = false): boolean {
   const engine = pendingEngines.get(requestId);
   if (!engine) return false;
-  return engine.resolve(requestId, approved);
+  return engine.resolve(requestId, approved, remember);
 }
 
 export class ApprovalEngine {
-  private pending = new Map<string, (approved: boolean) => void>();
+  private pending = new Map<string, { tool: string; resolve: (approved: boolean) => void }>();
+  /** Tool yang di-approve + "ingat" — skip approval sesi ini (mengurangi round-trip user). */
+  private remembered = new Set<string>();
 
   constructor(private emit: Emit) {}
 
   request(tool: string, args: Record<string, unknown>, reason: string): Promise<boolean> {
+    if (this.remembered.has(tool)) {
+      this.emit({ type: "approval.resolved", requestId: `apr_remembered_${tool}`, tool, approved: true });
+      return Promise.resolve(true);
+    }
     const requestId = `apr_${randomUUID()}`;
     this.emit({ type: "approval.requested", requestId, tool, args, reason });
     pendingEngines.set(requestId, this);
     return new Promise<boolean>((resolve) => {
-      this.pending.set(requestId, resolve);
+      this.pending.set(requestId, { tool, resolve });
       // DEMO-SHORTCUT: tanpa deadline. P0: timeout + auto-deny per policy.
     });
   }
 
-  /** Dipanggil dari POST /api/approvals/:id */
-  resolve(requestId: string, approved: boolean): boolean {
-    const resolve = this.pending.get(requestId);
-    if (!resolve) return false;
+  /** Dipanggil dari POST /api/approvals/:id — `remember` menandai tool bebas-approval
+   *  untuk sisa sesi engine ini (kartu "Setujui & ingat"). */
+  resolve(requestId: string, approved: boolean, remember = false): boolean {
+    const entry = this.pending.get(requestId);
+    if (!entry) return false;
     this.pending.delete(requestId);
     pendingEngines.delete(requestId);
-    this.emit({ type: "approval.resolved", requestId, approved });
-    resolve(approved);
+    if (approved && remember) this.remembered.add(entry.tool);
+    this.emit({ type: "approval.resolved", requestId, tool: entry.tool, approved });
+    entry.resolve(approved);
     return true;
   }
 

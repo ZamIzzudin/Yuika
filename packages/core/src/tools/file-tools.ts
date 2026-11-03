@@ -39,9 +39,13 @@ export function registerFileTools(): void {
       await fs.writeFile(p, args.content, "utf-8");
       return { result: { path: args.path, bytes: args.content.length } };
     },
-    // Demo policy: tulis di luar reports/ minta approval (momen UX di skenario demo)
-    approvalPolicy: (args: z.infer<typeof writeSchema>) =>
-      !args.path.replace(/\\/g, "/").startsWith("reports/") ? "Menulis file di luar direktori reports/" : null,
+    // Policy P1: direktori kerja standar (code/docs/reports) bebas-approval;
+    // di luar itu (root, config, dst.) tetap minta persetujuan.
+    approvalPolicy: (args: z.infer<typeof writeSchema>) => {
+      const rel = args.path.replace(/\\/g, "/");
+      const ok = ["code/", "docs/", "reports/"].some((p) => rel.startsWith(p));
+      return ok ? null : `Menulis file di luar code|docs|reports (${rel.split("/")[0] ?? "root"})`;
+    },
   });
 
   registry.register({

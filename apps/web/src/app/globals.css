@@ -559,13 +559,56 @@ html, body {
 
 /* ── Task drawer (P1-PRJ-4 UI) ─────────────────────────────────── */
 .task-drawer {
-  display: flex; flex-direction: column; flex: 0 0 auto; width: 296px;
+  display: flex; flex-direction: column; flex: 0 0 auto; width: 440px; min-width: 340px;
   background: var(--yui-bg-sidebar); border-left: 1px solid var(--yui-border);
-  padding: var(--yui-space-4) var(--yui-space-3); overflow-y: auto;
+  padding: var(--yui-space-4) var(--yui-space-4); overflow-y: auto;
+}
+/* Layar penuh: panel menutupi area utama (fondasi kanban/penpot/web view) */
+.task-drawer[data-full] {
+  position: fixed; inset: var(--yui-space-3); z-index: 60; width: auto; min-width: 0;
+  border: 1px solid var(--yui-border-strong); border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
 .task-drawer-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--yui-space-3); }
 .task-drawer-head b { display: block; font-size: var(--yui-text-md); font-weight: 600; }
 .task-drawer-head small { display: block; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
+.head-actions { display: flex; gap: 2px; }
+
+/* ── Tab panel proyek ─────────────────────────────────────────── */
+.drawer-tabs {
+  display: flex; gap: 2px; padding: 3px; margin-bottom: var(--yui-space-3);
+  background: var(--yui-bg-inset, rgba(255, 255, 255, 0.04)); border-radius: 10px;
+}
+.drawer-tabs button {
+  flex: 1; font: inherit; font-size: var(--yui-text-md); font-weight: 500;
+  color: var(--yui-text-dim); background: none; border: none; border-radius: 8px;
+  padding: 6px 10px; cursor: pointer;
+}
+.drawer-tabs button:hover { color: var(--yui-text-secondary); }
+.drawer-tabs button[data-active] { color: var(--yui-text-primary); background: var(--yui-bg-surface-raised); }
+.drawer-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* ── TaskTree (tab Pohon) ─────────────────────────────────────── */
+.tree-root, .tree-children { list-style: none; margin: 0; padding: 0; }
+.tree-node {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--yui-space-2);
+  padding: 6px 8px; border-radius: 8px;
+}
+.tree-node:hover { background: var(--yui-hover); }
+.tree-dot { width: 1.2em; text-align: center; color: var(--yui-text-dim); }
+.tree-node[data-s="done"] .tree-dot { color: var(--yui-ok, #4caf7d); }
+.tree-node[data-s="doing"] .tree-dot, .tree-node[data-s="review"] .tree-dot { color: var(--yui-warn, #d9a441); }
+.tree-title { font-size: var(--yui-text-md); }
+.tree-node[data-s="done"] .tree-title { color: var(--yui-text-dim); text-decoration: line-through; }
+.tree-assignee {
+  font-size: var(--yui-text-sm); color: var(--yui-text-muted);
+  padding: 1px 8px; border: 1px solid var(--yui-border); border-radius: 999px;
+}
+.tree-artefak {
+  font-size: var(--yui-text-sm); color: var(--yui-text-dim); max-width: 180px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  padding: 1px 8px; background: var(--yui-bg-inset, rgba(255, 255, 255, 0.04)); border-radius: 999px;
+}
 .task-close {
   font: inherit; color: var(--yui-text-muted); background: none; border: none; cursor: pointer;
   font-size: var(--yui-text-md); padding: 4px; border-radius: 6px;

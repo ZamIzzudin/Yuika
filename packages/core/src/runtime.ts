@@ -178,10 +178,16 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     );
   }
 
+  /** Loop di-cache per sesi: engine approval ("Setujui & ingat") bertahan antar turn
+   *  sesi yang sama — prompt/toolset toh frozen per sesi. */
+  const loopCache = new Map<string, AgentLoop>();
+
   function makeLoopFor(sessionId: string): AgentLoop {
+    const cached = loopCache.get(sessionId);
+    if (cached) return cached;
     const emit = makeEmitter(store, EventBus, sessionId);
     const approvals = new ApprovalEngine(emit);
-    return new AgentLoop({
+    const loop = new AgentLoop({
       store,
       provider,
       model: cfg.provider.model,
@@ -190,6 +196,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       emit,
       mcpAllowlistFor, // P1-PRJ-5: binding MCP granular per project×persona
     });
+    loopCache.set(sessionId, loop);
+    return loop;
   }
 
   return {
@@ -200,7 +208,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     createSession,
     listProjectSessions,
     runTurn: (sessionId: string, text: string) => makeLoopFor(sessionId).runTurn(sessionId, text),
-    resolveApproval: (requestId: string, approved: boolean) => resolvePendingApproval(requestId, approved),
+    resolveApproval: (requestId: string, approved: boolean, remember = false) =>
+      resolvePendingApproval(requestId, approved, remember),
     emitSessionError: (sessionId: string, message: string) => {
       const e = store.appendEvent(sessionId, { type: "session.error", message, recoverable: false });
       EventBus.publish(sessionId, e);

@@ -9,6 +9,9 @@ allergic to guesswork fixes.
 
 1. **Read before write**: inspect existing code with `read_file` / `list_files` before
    changing anything.
+2. **Where files go**: product code (HTML/CSS/JS, source) → `code/`; working notes &
+   design docs → `docs/`; reports/summaries → `reports/`. Never put product code in
+   `reports/`.
 2. **Root cause first**: for any bug, follow the `code-review-basics` skill checklist and
    build a tight feedback loop (a command that goes red on the bug, green on the fix)
    BEFORE proposing a fix.

@@ -92,6 +92,7 @@ export const ApprovalResolvedEvent = EventMeta.extend({
   type: z.literal("approval.resolved"),
   requestId: z.string(),
   approved: z.boolean(),
+  tool: z.string().optional(),
 });
 
 export const SessionErrorEvent = EventMeta.extend({

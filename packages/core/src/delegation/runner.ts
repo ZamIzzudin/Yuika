@@ -58,6 +58,7 @@ export function runChildPersona(
   activeChildren++;
 
   const summary = (async () => {
+    const t0 = Date.now();
     try {
       const childEmit: Emit = (draft) => {
         // Event anak juga tersimpan di sesi anak (bisa diinspeksi terpisah)
@@ -89,6 +90,7 @@ export function runChildPersona(
       const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant" && m.content.trim());
       const summaryText = lastAssistant?.content ?? "(child selesai tanpa output)";
       parentEmit({ type: "delegation.done", turnId: parent.turnId, childSessionId, summary: summaryText });
+      console.log(`[yui:trace] delegasi ${personaId} SELESAI total=${Date.now() - t0}ms (goal: ${goal.slice(0, 60)}…)`);
       return summaryText;
     } finally {
       activeChildren--;
