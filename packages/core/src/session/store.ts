@@ -80,6 +80,18 @@ export class SessionStore {
     };
   }
 
+  /** Sesi sebuah project terurut terbaru-dulu (untuk riwayat/resume) — berdasar event terakhir tiap sesi. */
+  listProjectSessions(projectId: string): Array<{ id: string; personaId: string; createdAt: number; lastEventAt: number; lastEventId: number }> {
+    const rows = this.db
+      .prepare(
+        `SELECT s.id, s.persona_id, s.created_at, COALESCE(MAX(e.id), 0) AS last_event_id, COALESCE(MAX(e.ts), s.created_at) AS last_event_at
+         FROM sessions s LEFT JOIN events e ON e.session_id = s.id
+         WHERE s.project_id = ? GROUP BY s.id ORDER BY last_event_at DESC`
+      )
+      .all(projectId) as Array<{ id: string; persona_id: string; created_at: number; last_event_id: number; last_event_at: number }>;
+    return rows.map((r) => ({ id: r.id, personaId: r.persona_id, createdAt: r.created_at, lastEventAt: r.last_event_at, lastEventId: r.last_event_id }));
+  }
+
   appendMessage(sessionId: string, msg: InternalMessage): void {
     this.db
       .prepare("INSERT INTO messages (session_id, role, content, tool_calls, tool_call_id, created_at) VALUES (?, ?, ?, ?, ?, ?)")

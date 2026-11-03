@@ -669,3 +669,16 @@ html, body {
 .persona-menu button:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
 .persona-menu button[data-active] { color: var(--yui-text-primary); background: var(--yui-bg-control-active); }
 .persona-menu small { margin-left: auto; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
+
+/* ── Riwayat sesi project (drawer) ─────────────────────────────── */
+.session-new { width: 100%; margin-bottom: var(--yui-space-2); }
+.session-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.session-list button {
+  display: flex; align-items: center; gap: var(--yui-space-2); font: inherit; font-size: var(--yui-text-md);
+  color: var(--yui-text-secondary); background: none; border: none; border-radius: 8px;
+  padding: 6px 8px; cursor: pointer; text-align: left;
+}
+.session-list button:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
+.session-list button[data-active] { background: var(--yui-bg-control-active); color: var(--yui-text-primary); }
+.session-list .who { font-weight: 500; }
+.session-list .when { margin-left: auto; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }

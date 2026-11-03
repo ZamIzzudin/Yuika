@@ -7,6 +7,16 @@ import { z } from "zod";
 export const ProjectStatus = z.enum(["active", "archived"]);
 export type ProjectStatus = z.infer<typeof ProjectStatus>;
 
+/** Ringkasan sesi untuk riwayat/resume percakapan project (P1-PRJ-6 UX). */
+export const ProjectSessionSummary = z.object({
+  sessionId: z.string(),
+  personaId: z.string(),
+  personaName: z.string(),
+  createdAt: z.number(),
+  lastEventAt: z.number(),
+});
+export type ProjectSessionSummary = z.infer<typeof ProjectSessionSummary>;
+
 export const ProjectInfo = z.object({
   id: z.string().regex(/^p_[a-z0-9-]+$/, "project id: prefix p_ + lowercase/angka/strip"),
   name: z.string().min(1).max(80),

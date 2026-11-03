@@ -133,6 +133,23 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return { sessionId, persona: info, projectId: projectId ?? null };
   }
 
+  /** Riwayat sesi sebuah project (terbaru dulu) — untuk resume percakapan lintas kunjungan. */
+  function listProjectSessions(projectId: string): Array<{
+    sessionId: string;
+    personaId: string;
+    personaName: string;
+    createdAt: number;
+    lastEventAt: number;
+  }> {
+    return store.listProjectSessions(projectId).map((s) => ({
+      sessionId: s.id,
+      personaId: s.personaId,
+      personaName: listPersonaInfos().find((p) => p.id === s.personaId)?.name ?? s.personaId,
+      createdAt: s.createdAt,
+      lastEventAt: s.lastEventAt,
+    }));
+  }
+
   /** P1-PRJ-2: root file-ops efektif sesi — project root bila melekat, workspace bila tidak. */
   function effectiveWorkspace(sessionId: string): string {
     const session = store.getSession(sessionId);
@@ -181,6 +198,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     bus: EventBus,
     listPersonas: listPersonaInfos,
     createSession,
+    listProjectSessions,
     runTurn: (sessionId: string, text: string) => makeLoopFor(sessionId).runTurn(sessionId, text),
     resolveApproval: (requestId: string, approved: boolean) => resolvePendingApproval(requestId, approved),
     emitSessionError: (sessionId: string, message: string) => {

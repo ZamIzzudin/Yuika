@@ -1,11 +1,20 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { PersonaInfo, ProjectInfo, RosterEntry, TaskItem, TaskStatus } from "@yui/contracts";
+import type { PersonaInfo, ProjectInfo, ProjectSessionSummary, RosterEntry, TaskItem, TaskStatus } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
 
 /** Status cycle: klik chip = maju satu langkah. */
 const NEXT: Record<TaskStatus, TaskStatus> = { todo: "doing", doing: "review", review: "done", done: "todo" };
 const LABEL: Record<TaskStatus, string> = { todo: "Belum", doing: "Kerja", review: "Reviu", done: "Selesai" };
+
+/** Waktu relatif pendek untuk daftar sesi. */
+function relTime(ts: number): string {
+  const s = Math.max(1, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return `${s} dtk lalu`;
+  if (s < 3600) return `${Math.round(s / 60)} mnt lalu`;
+  if (s < 86400) return `${Math.round(s / 3600)} jam lalu`;
+  return new Date(ts).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
 
 /**
  * Drawer tasklist project (P1-PRJ-4 UI). Data via REST /api/projects/:id/tasks;
@@ -18,12 +27,21 @@ export function TaskDrawer({
   open,
   onClose,
   rev,
+  sessions,
+  activeSessionId,
+  onOpenSession,
+  onNewSession,
 }: {
   project: ProjectInfo;
   personas: PersonaInfo[];
   open: boolean;
   onClose: () => void;
   rev: number;
+  /** Riwayat sesi project (terbaru dulu) — pintu resume percakapan. */
+  sessions: ProjectSessionSummary[];
+  activeSessionId: string | null;
+  onOpenSession: (s: ProjectSessionSummary) => void;
+  onNewSession: () => void;
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
@@ -132,6 +150,25 @@ export function TaskDrawer({
         </button>
       </header>
 
+      <section className="roster-section" aria-label="Sesi project">
+        <h4>Sesi</h4>
+        <button className="btn secondary session-new" onClick={onNewSession}>
+          + Sesi baru (Conductor)
+        </button>
+        {sessions.length === 0 ? <p className="dim">Belum ada sesi.</p> : (
+          <ul className="session-list">
+            {sessions.map((s) => (
+              <li key={s.sessionId}>
+                <button data-active={s.sessionId === activeSessionId ? "" : undefined} onClick={() => onOpenSession(s)}>
+                  <PersonaFace personaId={s.personaId} size={18} />
+                  <span className="who">{s.personaName}</span>
+                  <span className="when">{relTime(s.lastEventAt)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <section className="roster-section" aria-label="Roster proyek">
         <span className="project-title">Roster</span>
         {roster.length === 0 ? (

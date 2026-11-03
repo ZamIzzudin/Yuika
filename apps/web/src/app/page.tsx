@@ -12,7 +12,7 @@ import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { McpPanel } from "@/components/McpPanel";
 import { TaskDrawer } from "@/components/TaskDrawer";
-import type { PersonaInfo, PersonaState, ProjectInfo, YuiEvent } from "@yui/contracts";
+import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, YuiEvent } from "@yui/contracts";
 
 /** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
 const SUGGESTIONS: Record<string, string[]> = {
@@ -49,6 +49,7 @@ export default function Home() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [projSessions, setProjSessions] = useState<ProjectSessionSummary[]>([]);
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
   const loadProjects = useCallback(async () => {
@@ -216,21 +217,56 @@ export default function Home() {
     });
     const d = (await res.json()) as { sessionId: string };
     setSessionId(d.sessionId);
+    if (projectId) void loadProjectSessions(projectId);
   }
 
   /** Ganti scope project → project = sesi langsung dengan PROJECT LEAD (Conductor):
    *  user tak pernah memilih persona manual di scope project — sebutkan tugasnya,
-   *  Conductor mendelegasikan ke spesialis sesuai keahlian (delegate_task). */
-  function pickProject(id: string | null) {
+   *  Conductor mendelegasikan ke spesialis sesuai keahlian (delegate_task).
+   *  Resume: bila project sudah punya sesi, sesi TERBARU dibuka kembali (replay SSE). */
+  async function pickProject(id: string | null) {
     setActiveProjectId(id);
-    setDrawerOpen(false);
+    setDrawerOpen(!!id);
     if (!id) {
       // Workspace global: persona dipilih dari kartu di tengah layar
       resetSession();
+      setProjSessions([]);
       return;
     }
+    const list = await loadProjectSessions(id);
+    if (list.length > 0) {
+      openSession(list[0]!);
+    } else {
+      const lead = personas.find((p) => p.id === "yui-conductor") ?? personas[0];
+      if (lead) void pick(lead, id);
+    }
+  }
+
+  async function loadProjectSessions(projectId: string): Promise<ProjectSessionSummary[]> {
+    const res = await fetch(`/api/sessions?projectId=${projectId}`);
+    const d = (await res.json()) as { sessions: ProjectSessionSummary[] };
+    setProjSessions(d.sessions);
+    return d.sessions;
+  }
+
+  /** Buka kembali sesi lama: SSE replay sejak event 0 → percakapan penuh kembali,
+   *  turn berikutnya melanjutkan context (history append-only di store). */
+  function openSession(s: ProjectSessionSummary) {
+    const p = personas.find((x) => x.id === s.personaId) ?? null;
+    setActive(p);
+    setItems([]);
+    setPersonaState("idle");
+    openAssistant.current = null;
+    lastEventId.current = 0;
+    setSessionId(s.sessionId);
+    setBusy(false);
+  }
+
+  /** Sesi baru di project aktif (Conductor lead). */
+  async function newProjectSession() {
+    if (!activeProjectId) return;
     const lead = personas.find((p) => p.id === "yui-conductor") ?? personas[0];
-    if (lead) void pick(lead, id);
+    if (lead) await pick(lead, activeProjectId);
   }
 
   function resetSession() {
@@ -379,6 +415,10 @@ export default function Home() {
       {activeProject && (
         <TaskDrawer
           project={activeProject}
+          sessions={projSessions}
+          activeSessionId={sessionId}
+          onOpenSession={openSession}
+          onNewSession={() => void newProjectSession()}
           personas={personas}
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
