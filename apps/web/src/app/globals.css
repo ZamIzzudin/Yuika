@@ -893,3 +893,8 @@ html, body {
 .settings-field input { max-width: 420px; font-family: var(--yui-font-mono, ui-monospace, monospace); }
 .settings-actions { display: flex; align-items: center; gap: 10px; }
 .settings-actions .ok { color: var(--yui-ok, #4caf7d); font-size: var(--yui-text-sm); }
+.catalog-runtime {
+  font-size: 10px; color: #d29922; border: 1px solid #d29922;
+  border-radius: 999px; padding: 1px 6px; margin-left: 4px; white-space: nowrap;
+}
+.catalog-note { color: var(--yui-text-dim); font-size: 11px; }

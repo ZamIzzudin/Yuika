@@ -16,7 +16,7 @@ describe("install MCP dari katalog (P1-MCP-1)", () => {
     expect(name).toBe("fetch");
     expect(decl.command).toBe("npx");
     const cfg = readMcpConfig(file);
-    expect(cfg.mcpServers.fetch?.args).toContain("@modelcontextprotocol/server-fetch");
+    expect(cfg.mcpServers.fetch?.args).toContain("@kazuph/mcp-fetch");
   });
 
   it("env required kosong → error; terisi → tertulis (tanpa nilai kosong)", () => {

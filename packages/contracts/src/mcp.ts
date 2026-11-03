@@ -69,6 +69,10 @@ export const McpCatalogEntry = z.object({
   args: z.array(z.string()),
   envKeys: z.array(McpCatalogEnvKey),
   docsUrl: z.string().optional(),
+  /** Runtime proses: node (npx) atau python (uvx — butuh uv terpasang). */
+  runtime: z.enum(["node", "python"]).optional(),
+  /** Hint pemasangan bila ada prasyarat (mis. uv). Ditampilkan UI sebelum install. */
+  setupNote: z.string().optional(),
 });
 export type McpCatalogEntry = z.infer<typeof McpCatalogEntry>;
 

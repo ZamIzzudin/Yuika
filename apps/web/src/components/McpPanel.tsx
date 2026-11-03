@@ -151,8 +151,16 @@ export function McpPanel() {
                 <span className="catalog-body">
                   <b>
                     {c.name} <small className="catalog-risk" data-r={c.risk}>{RISK_LABEL[c.risk]}</small>
+                    {c.runtime === "python" && (
+                      <small className="catalog-runtime" title={c.setupNote ?? "Server ini berbasis Python (uvx)"}>
+                        Python/uvx
+                      </small>
+                    )}
                   </b>
                   <small>{c.description}</small>
+                  {c.runtime === "python" && c.setupNote && (
+                    <small className="catalog-note">⚠ {c.setupNote}</small>
+                  )}
                 </span>
                 {isInstalled ? (
                   <button className="btn mcp-toggle" onClick={() => void uninstall(c)} disabled={busy === c.id} title="Lepas dari mcp.json (putuskan koneksi)">
