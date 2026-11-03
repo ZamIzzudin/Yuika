@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { PersonaInfo, ProjectInfo, ProjectSessionSummary, RosterEntry, TaskItem, TaskNode, TaskStatus } from "@yui/contracts";
+import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, RosterEntry, TaskItem, TaskNode, TaskStatus } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
 
 /** Status cycle: klik chip = maju satu langkah. */
@@ -8,13 +8,23 @@ const NEXT: Record<TaskStatus, TaskStatus> = { todo: "doing", doing: "review", r
 const LABEL: Record<TaskStatus, string> = { todo: "Belum", doing: "Kerja", review: "Reviu", done: "Selesai" };
 const DOT: Record<TaskStatus, string> = { todo: "○", doing: "◐", review: "◑", done: "●" };
 
-type Tab = "tasks" | "tree" | "roster" | "sessions";
+type Tab = "tasks" | "team" | "tree" | "roster" | "sessions";
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "tasks", label: "Tasklist" },
+  { id: "team", label: "Tim" },
   { id: "tree", label: "Pohon" },
   { id: "roster", label: "Roster" },
   { id: "sessions", label: "Sesi" },
 ];
+
+/** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
+export interface LiveDelegation {
+  personaId: string;
+  childSessionId: string;
+  goal: string;
+  childState?: PersonaState;
+  summary?: string;
+};
 
 /** Waktu relatif pendek untuk daftar sesi. */
 function relTime(ts: number): string {
@@ -46,9 +56,64 @@ function TreeNode({ node, depth }: { node: TaskNode; depth: number }) {
   );
 }
 
+/** Org-chart Tim: kartu persona + state chip. */
+function OrgCard({
+  personaId,
+  subtitle,
+  state,
+  goal,
+  summary,
+  root,
+}: {
+  personaId: string;
+  subtitle?: string;
+  state?: PersonaState | "done";
+  goal?: string;
+  summary?: string;
+  root?: boolean;
+}) {
+  const label =
+    state === "done"
+      ? "selesai"
+      : state
+        ? STATE_LABEL[state as PersonaState]
+        : "menunggu";
+  return (
+    <div className={"org-card" + (root ? " org-root" : "")} data-s={state ?? "idle"}>
+      <span className="face"><PersonaFace personaId={personaId} size={root ? 34 : 26} /></span>
+      <div className="org-body">\n        <b>{PERSONA_NAME[personaId] ?? personaId.replace("yui-", "")}</b>
+        {subtitle && <small>{subtitle}</small>}
+        {goal && <p className="org-goal">{goal}</p>}
+        {summary && <p className="org-summary">{summary}</p>}
+      </div>
+      <span className="state-chip" data-s={state ?? "idle"}>
+        <i />
+        {label}
+      </span>
+    </div>
+  );
+}
+
+const PERSONA_NAME: Record<string, string> = {
+  "yui-conductor": "Yui Conductor",
+  "yui-scholar": "Yui Scholar",
+  "yui-scribe": "Yui Scribe",
+  "yui-coder": "Yui Coder",
+};
+const STATE_LABEL: Record<string, string> = {
+  idle: "siaga",
+  thinking: "berpikir",
+  working: "bekerja",
+  awaiting_input: "menunggu Anda",
+  celebrating: "merayakan",
+  done: "selesai",
+  error: "error",
+};
+
 /**
- * Panel proyek (P1-PRJ-4/6/7 UI): tab Tasklist | Pohon (TaskTree) | Roster | Sesi.
- * Toggle "layar penuh" untuk konten lega — fondasi tab masa depan (kanban, penpot, web view).
+ * Panel proyek (P1-PRJ-4/6/7 UI): tab Tasklist | Tim (org-chart live) | Pohon | Roster | Sesi.
+ * Duduk di area utama shell (pola IDE: sidebar | chat | panel), toggle layar penuh
+ * untuk konten lega — fondasi tab masa depan (kanban, penpot, web view).
  */
 export function TaskDrawer({
   project,
@@ -60,6 +125,7 @@ export function TaskDrawer({
   activeSessionId,
   onOpenSession,
   onNewSession,
+  live,
 }: {
   project: ProjectInfo;
   personas: PersonaInfo[];
@@ -71,6 +137,8 @@ export function TaskDrawer({
   activeSessionId: string | null;
   onOpenSession: (s: ProjectSessionSummary) => void;
   onNewSession: () => void;
+  /** Org-chart Tim: persona lead sesi + delegasi live dari SSE. */
+  live: { parentPersonaId: string | null; parentState: PersonaState; delegations: LiveDelegation[] };
 }) {
   const [tab, setTab] = useState<Tab>("tasks");
   const [full, setFull] = useState(false);
@@ -181,9 +249,11 @@ export function TaskDrawer({
   if (!open) return null;
   const done = tasks.filter((t) => t.status === "done").length;
   const flatCount = (nodes: TaskNode[]): number => nodes.reduce((n, x) => n + 1 + flatCount(x.children), 0);
+  const runningIds = new Set(live.delegations.map((d) => d.personaId));
+  const bench = roster.filter((r) => !runningIds.has(r.personaId));
 
   return (
-    <aside className="task-drawer" data-full={full ? "" : undefined} aria-label={`Panel proyek ${project.name}`}>
+    <section className="project-pane" data-full={full ? "" : undefined} aria-label={`Panel proyek ${project.name}`}>
       <header className="task-drawer-head">
         <div>
           <b>{project.name}</b>
@@ -216,6 +286,49 @@ export function TaskDrawer({
       </nav>
 
       <div className="drawer-body">
+        {tab === "team" && (
+          <section aria-label="Tim — struktur delegasi live">
+            {live.parentPersonaId ? (
+              <div className="org-chart">
+                <OrgCard
+                  personaId={live.parentPersonaId}
+                  subtitle="lead sesi ini"
+                  state={live.parentState}
+                  root
+                />
+                {live.delegations.length > 0 && <div className="org-connector" aria-hidden />}
+                <ul className="org-children">
+                  {live.delegations.map((d) => (
+                    <li key={d.childSessionId}>
+                      <OrgCard
+                        personaId={d.personaId}
+                        state={d.childState ?? (d.summary ? "done" : "idle")}
+                        goal={d.goal.length > 90 ? d.goal.slice(0, 90) + "…" : d.goal}
+                        summary={d.summary ? (d.summary.length > 140 ? d.summary.slice(0, 140) + "…" : d.summary) : undefined}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                {bench.length > 0 && (
+                  <div className="org-bench">
+                    <small>Siaga (di roster, belum didelegasi):</small>
+                    <div className="bench-row">
+                      {bench.map((r) => (
+                        <span key={r.personaId} className="bench-chip" title={r.role}>
+                          <PersonaFace personaId={r.personaId} size={16} />
+                          {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ?? r.personaId.replace("yui-", "")}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="task-empty">Buka sesi untuk melihat struktur delegasi live.</p>
+            )}
+          </section>
+        )}
+
         {tab === "sessions" && (
           <section aria-label="Sesi project">
             <button className="btn secondary session-new" onClick={onNewSession}>
@@ -361,6 +474,6 @@ export function TaskDrawer({
           </section>
         )}
       </div>
-    </aside>
+    </section>
   );
 }

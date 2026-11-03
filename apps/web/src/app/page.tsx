@@ -317,6 +317,7 @@ export default function Home() {
         <McpPanel />
       </aside>
       <main className="yui-main">
+        <div className="chat-pane">
         {!active ? (
           <div className="empty-state">
             <div className="portrait-hero">
@@ -411,20 +412,34 @@ export default function Home() {
             )}
           </>
         )}
+        </div>
+        {activeProject && (
+          <TaskDrawer
+            project={activeProject}
+            sessions={projSessions}
+            activeSessionId={sessionId}
+            onOpenSession={openSession}
+            onNewSession={() => void newProjectSession()}
+            personas={personas}
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            rev={taskRev}
+            live={{
+              parentPersonaId: active?.id ?? null,
+              parentState: personaState,
+              delegations: items
+                .filter((it) => it.kind === "delegation")
+                .map((it) => ({
+                  personaId: it.personaId ?? "yui-scholar",
+                  childSessionId: it.childSessionId ?? "",
+                  goal: it.goal ?? "",
+                  childState: it.childState,
+                  summary: it.text,
+                })),
+            }}
+          />
+        )}
       </main>
-      {activeProject && (
-        <TaskDrawer
-          project={activeProject}
-          sessions={projSessions}
-          activeSessionId={sessionId}
-          onOpenSession={openSession}
-          onNewSession={() => void newProjectSession()}
-          personas={personas}
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          rev={taskRev}
-        />
-      )}
     </div>
   );
 }

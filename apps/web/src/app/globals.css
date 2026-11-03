@@ -121,8 +121,13 @@ html, body {
 .yui-main {
   flex: 1;
   min-width: 0;
+  position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+}
+.chat-pane {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
 }
 
 /* ── Persona list (pola agent-row OpenBot) ─────────────────────── */
@@ -558,16 +563,16 @@ html, body {
 .project-chip:hover { border-color: var(--yui-border-focus); color: var(--yui-text-primary); }
 
 /* ── Task drawer (P1-PRJ-4 UI) ─────────────────────────────────── */
-.task-drawer {
-  display: flex; flex-direction: column; flex: 0 0 auto; width: 440px; min-width: 340px;
+/* Panel proyek = bagian utama shell (pola IDE: sidebar | chat | panel) */
+.project-pane {
+  display: flex; flex-direction: column; flex: 0 0 auto; width: 520px; min-width: 360px; max-width: 60%;
   background: var(--yui-bg-sidebar); border-left: 1px solid var(--yui-border);
   padding: var(--yui-space-4) var(--yui-space-4); overflow-y: auto;
 }
-/* Layar penuh: panel menutupi area utama (fondasi kanban/penpot/web view) */
-.task-drawer[data-full] {
-  position: fixed; inset: var(--yui-space-3); z-index: 60; width: auto; min-width: 0;
-  border: 1px solid var(--yui-border-strong); border-radius: 16px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+/* Layar penuh: panel memenuhi area utama (fondasi kanban/penpot/web view) */
+.project-pane[data-full] {
+  position: absolute; inset: 0; z-index: 40; width: auto; max-width: none; min-width: 0;
+  background: var(--yui-bg); padding: var(--yui-space-6) var(--yui-space-8);
 }
 .task-drawer-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--yui-space-3); }
 .task-drawer-head b { display: block; font-size: var(--yui-text-md); font-weight: 600; }
@@ -587,6 +592,35 @@ html, body {
 .drawer-tabs button:hover { color: var(--yui-text-secondary); }
 .drawer-tabs button[data-active] { color: var(--yui-text-primary); background: var(--yui-bg-surface-raised); }
 .drawer-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* ── Org-chart Tim (struktur delegasi live) ───────────────────── */
+.org-chart { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.org-card {
+  display: flex; align-items: flex-start; gap: var(--yui-space-3);
+  width: 100%; max-width: 460px;
+  background: var(--yui-bg-surface); border: 1px solid var(--yui-border); border-radius: 12px;
+  padding: var(--yui-space-3) var(--yui-space-4);
+}
+.org-card.org-root { border-color: var(--yui-border-strong); background: var(--yui-bg-surface-raised); }
+.org-body { flex: 1; min-width: 0; }
+.org-body b { font-size: var(--yui-text-md); font-weight: 600; display: block; }
+.org-body small { color: var(--yui-text-dim); }
+.org-goal { margin: var(--yui-space-1) 0 0; font-size: var(--yui-text-sm); color: var(--yui-text-secondary); }
+.org-summary { margin: var(--yui-space-1) 0 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim); border-top: 1px dashed var(--yui-border); padding-top: var(--yui-space-1); }
+.org-connector { width: 2px; height: 20px; background: var(--yui-border-strong); }
+.org-children {
+  list-style: none; margin: 0; padding: var(--yui-space-3) 0 0; display: flex; flex-direction: column; gap: var(--yui-space-2);
+  width: 100%; align-items: center; position: relative;
+}
+.org-children::before { content: ""; position: absolute; top: 0; left: 50%; width: 2px; height: 12px; background: var(--yui-border-strong); }
+.org-card .state-chip { flex: none; margin-top: 2px; }
+.org-bench { margin-top: var(--yui-space-4); width: 100%; max-width: 460px; }
+.org-bench > small { color: var(--yui-text-dim); display: block; margin-bottom: var(--yui-space-2); }
+.bench-row { display: flex; flex-wrap: wrap; gap: var(--yui-space-2); }
+.bench-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: var(--yui-text-sm); color: var(--yui-text-muted);
+  border: 1px dashed var(--yui-border); border-radius: 999px; padding: 3px 10px;
+}
 
 /* ── TaskTree (tab Pohon) ─────────────────────────────────────── */
 .tree-root, .tree-children { list-style: none; margin: 0; padding: 0; }
