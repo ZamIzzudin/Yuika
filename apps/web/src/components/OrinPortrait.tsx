@@ -47,7 +47,7 @@ const S: Record<MoodName, Rig> = {
   confused: mk({ eL: -12, eR: 24, pw: 11, ph: 16, pr: 1.45, top: 0.28, tl: 14, tr: -4, gx: 0.5, gy: -0.2, rot: 8, ms: -0.6, mx: 6 }),
 };
 
-export function OrinPortrait({ state, personaId }: { state: PersonaState; personaId?: string }) {
+export function OrinPortrait({ state, personaId, size = 190 }: { state: PersonaState; personaId?: string; size?: number }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const tgtRef = useRef<Rig>(S[MOOD[state]]);
@@ -201,7 +201,7 @@ export function OrinPortrait({ state, personaId }: { state: PersonaState; person
   const tint = personaId ? (TINT[personaId] ?? 0) : 0;
 
   return (
-    <div ref={wrapRef} className="orin-wrap" style={{ filter: `hue-rotate(${tint}deg)` }}>
+    <div ref={wrapRef} className="orin-wrap" style={{ filter: `hue-rotate(${tint}deg)`, width: size }}>
       <svg ref={svgRef} viewBox="0 0 400 400" role="img" aria-label="Maskot Orin" className="orin-svg">
         <defs>
           <path id="orin-head" d="M-52,-88C-26,-98 26,-98 52,-88C84,-68 100,-22 102,26L112,35C115,39 114,44 111,49C86,96 42,120 0,120C-42,120 -86,96 -111,49C-114,44 -115,39 -112,35L-102,26C-100,-22 -84,-68 -52,-88Z" />

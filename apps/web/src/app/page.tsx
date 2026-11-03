@@ -7,8 +7,29 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaPicker } from "@/components/PersonaPicker";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
-import { ChatView, type ChatItem } from "@/components/ChatView";
+import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
+import { OrinPortrait } from "@/components/OrinPortrait";
 import type { PersonaInfo, PersonaState, YuiEvent } from "@yui/contracts";
+
+/** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
+const SUGGESTIONS: Record<string, string[]> = {
+  "yui-conductor": [
+    "Riset 3 framework JS paling populer, bandingkan singkat, tulis laporan markdown ke reports/",
+    "Susun rencana riset kompetitor aplikasi notes, lalu delegasikan",
+  ],
+  "yui-scholar": [
+    "Riset tren AI agent 2025 dari web, tulis poin-poin dengan sumber",
+    "Bandingkan SQLite vs Postgres untuk aplikasi lokal-first",
+  ],
+  "yui-scribe": [
+    "Tulis draf laporan mingguan tim (markdown) ke reports/",
+    "Ringkas hasil kerja sesi ini jadi memo satu halaman",
+  ],
+  "yui-coder": [
+    "Review packages/core/src/loop.ts dan beri catatan perhatian",
+    "Buat skrip kecil untuk memeriksa kontrak event lalu jelaskan",
+  ],
+};
 
 export default function Home() {
   const [personas, setPersonas] = useState<PersonaInfo[]>([]);
@@ -63,7 +84,7 @@ export default function Home() {
         });
         break;
       case "tool.call":
-        setItems((prev) => [...prev, { kind: "activity", name: e.name, callId: e.callId, detail: short(JSON.stringify(e.args)) }]);
+        setItems((prev) => [...prev, { kind: "activity", name: e.name, callId: e.callId, detail: short(JSON.stringify(e.args)), done: false }]);
         break;
       case "tool.result":
         setItems((prev) => {
@@ -71,7 +92,7 @@ export default function Home() {
           const next = [...prev];
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i]!.kind === "activity" && next[i]!.callId === e.callId) {
-              next[i] = { ...next[i]!, detail: short(JSON.stringify(e.result)), isError: e.isError };
+              next[i] = { ...next[i]!, detail: short(JSON.stringify(e.result)), isError: e.isError, done: true };
               return next;
             }
           }
@@ -182,21 +203,59 @@ export default function Home() {
   return (
     <div className="yui-shell">
       <aside className="yui-side">
-        <div className="yui-title">Your-Yui <span className="yui-sub">demo</span></div>
+        <div className="yui-logo">
+          Your-Yui <span className="sub">demo</span>
+        </div>
         <PersonaPicker personas={personas} activeId={active?.id ?? null} onPick={pick} />
       </aside>
       <main className="yui-main">
-        {active ? (
-          <>
-            <PersonaPortrait name={active.name} state={personaState} personaId={active.id} />
-            <ChatView items={items} personaState={personaState} onSend={send} onApprove={approve} busy={busy} />
-          </>
-        ) : (
-          <div style={{ margin: "auto", textAlign: "center" }}>
-            <div style={{ fontSize: 40 }}>🎀</div>
-            <p>Pilih persona Yui untuk memulai sesi…</p>
-            <p className="yui-sub">Conductor = orkestrator; Scholar = riset; Scribe = menulis; Coder = kode.</p>
+        {!active ? (
+          <div className="empty-state">
+            <div className="portrait-hero"><OrinPortrait state="idle" /></div>
+            <h1>Pilih persona untuk memulai</h1>
+            <p className="pitch">
+              Conductor mengorkestrasi, Scholar meriset, Scribe menulis, Coder memrogram — saling
+              mendelegasikan pekerjaan lewat satu sesi.
+            </p>
           </div>
+        ) : (
+          <>
+            <header className="chat-header">
+              <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="compact" />
+              <div className="who">
+                <b>{active.name}</b>
+                <span>{active.expertise}</span>
+              </div>
+              <span className="state-chip" data-s={personaState}>
+                <i />
+                {STATE_LABEL[personaState]}
+              </span>
+            </header>
+            {items.length === 0 ? (
+              <div className="empty-state">
+                <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="hero" />
+                <h1>{active.name} siap</h1>
+                <p className="pitch">{active.description}</p>
+                <div className="suggest-row">
+                  {(SUGGESTIONS[active.id] ?? []).map((s) => (
+                    <button key={s} className="suggest" onClick={() => send(s)}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <ChatView
+                items={items}
+                personaState={personaState}
+                personaId={active.id}
+                personaName={active.name}
+                onSend={send}
+                onApprove={approve}
+                busy={busy}
+              />
+            )}
+          </>
         )}
       </main>
     </div>

@@ -1,59 +1,513 @@
-/* Your-Yui demo theme — dark, minimal (P2: design system proper) */
+/*
+ * Your-Yui — design tokens & shell.
+ * Sistem token diturunkan dari OpenBot (D:\projects\openbot, packages/brand/tokens.css):
+ * palet netral monokrom, satu aksen hue-210, border super-samar, ukuran teks kecil rapat.
+ * Semua nilai UI lewat token --yui-*; komponen tidak menulis warna sendiri.
+ */
 :root {
-  --bg: #0e0f13;
-  --panel: #171923;
-  --panel-2: #1e2130;
-  --text: #e8eaf2;
-  --muted: #9aa1b5;
-  --accent: #7c6cf0;
-  --good: #3ecf8e;
-  --warn: #f0b761;
-  --bad: #f06c6c;
+  color-scheme: dark;
+
+  /* Netral */
+  --yui-bg-canvas: #1a1a1a;
+  --yui-bg-frame: #0d0d0d;
+  --yui-bg-sidebar: #1a1a1a;
+  --yui-bg-surface: #212121;
+  --yui-bg-surface-raised: #242424;
+  --yui-bg-control: #212121;
+  --yui-bg-control-hover: #242424;
+  --yui-bg-control-active: #2a2a2a;
+  --yui-bg-inset: #101010;
+
+  /* Border: nyaris tak terlihat sampai di-hover (prinsip OpenBot) */
+  --yui-border: rgba(255, 255, 255, 0.035);
+  --yui-border-strong: rgba(255, 255, 255, 0.045);
+  --yui-border-focus: var(--yui-text-muted);
+  --yui-hover: rgba(255, 255, 255, 0.06);
+
+  /* Teks */
+  --yui-text-primary: #ffffff;
+  --yui-text-secondary: #dcdcdc;
+  --yui-text-muted: #979797;
+  --yui-text-dim: #6a6a6a;
+  --yui-text-on-light: #141414;
+  --yui-surface-light: #f0f0f0;
+
+  /* Satu aksen (hue 210) + status */
+  --yui-accent: #007cf7;
+  --yui-accent-hover: #1f8fff;
+  --yui-accent-text: #42a0ff;
+  --yui-accent-soft: rgba(0, 124, 247, 0.16);
+  --yui-success: #31cf76;
+  --yui-success-soft: rgba(49, 207, 118, 0.12);
+  --yui-warning: #ff9412;
+  --yui-warning-soft: rgba(255, 148, 18, 0.12);
+  --yui-danger: #ff6069;
+  --yui-danger-soft: rgba(255, 96, 105, 0.12);
+
+  /* Tipografi: kecil, rapat, presisi */
+  --yui-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --yui-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  --yui-text-sm: 12px;
+  --yui-text-md: 13px;
+  --yui-text-lg: 14px;
+  --yui-text-xl: 16px;
+  --yui-text-2xl: 18px;
+
+  /* Spasi & radius */
+  --yui-space-1: 4px;
+  --yui-space-2: 8px;
+  --yui-space-3: 12px;
+  --yui-space-4: 16px;
+  --yui-space-6: 24px;
+  --yui-space-8: 32px;
+  --yui-radius-sm: 6px;
+  --yui-radius-md: 8px;
+  --yui-radius-lg: 12px;
+  --yui-radius-card: 14px;
+  --yui-radius-xl: 20px;
+  --yui-radius-bubble: 22px;
+  --yui-radius-pill: 999px;
+
+  /* Gerak */
+  --yui-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --yui-ease-in-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --yui-dur-fast: 120ms;
+  --yui-dur-normal: 160ms;
+  --yui-dur-slow: 200ms;
 }
+
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; height: 100%; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--yui-bg-frame);
+  color: var(--yui-text-primary);
+  font-family: var(--yui-font-sans);
+  font-size: var(--yui-text-lg);
+  line-height: 1.55;
+  text-rendering: geometricPrecision;
+}
 #__next, main { height: 100%; }
 
-.yui-shell { display: flex; height: 100vh; }
-.yui-side { width: 300px; background: var(--panel); padding: 16px; overflow-y: auto; border-right: 1px solid #262a3a; }
-.yui-main { flex: 1; display: flex; flex-direction: column; }
+/* ── Shell ─────────────────────────────────────────────────────── */
+.yui-shell {
+  display: flex;
+  height: 100vh;
+  background: var(--yui-bg-canvas);
+}
 
-.yui-title { font-size: 18px; font-weight: 700; margin: 4px 0 16px; }
-.yui-sub { color: var(--muted); font-size: 12px; }
+.yui-side {
+  display: flex;
+  flex-direction: column;
+  width: 272px;
+  flex: 0 0 auto;
+  background: var(--yui-bg-sidebar);
+  border-right: 1px solid var(--yui-border);
+  padding: var(--yui-space-3) var(--yui-space-2);
+  overflow-y: auto;
+}
+.yui-logo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--yui-space-2);
+  padding: var(--yui-space-2) var(--yui-space-2) var(--yui-space-4);
+  font-size: var(--yui-text-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.yui-logo .sub { color: var(--yui-text-dim); font-weight: 400; font-size: var(--yui-text-sm); }
 
-.persona-grid { display: grid; gap: 10px; }
-.persona-card { background: var(--panel-2); border: 1px solid #2a2f44; border-radius: 12px; padding: 12px; cursor: pointer; text-align: left; color: var(--text); transition: border-color .15s; }
-.persona-card:hover { border-color: var(--accent); }
-.persona-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.persona-card h3 { margin: 0 0 4px; font-size: 14px; }
-.persona-card p { margin: 0; font-size: 12px; color: var(--muted); }
+.yui-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 
-.chat-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; }
-.msg { margin-bottom: 14px; max-width: 760px; white-space: pre-wrap; line-height: 1.55; }
-.msg.user { margin-left: auto; background: var(--panel-2); padding: 10px 14px; border-radius: 12px 12px 2px 12px; }
-.msg.assistant {}
-.msg-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+/* ── Persona list (pola agent-row OpenBot) ─────────────────────── */
+.persona-list { display: flex; flex-direction: column; gap: 1px; }
+.persona-row {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  column-gap: var(--yui-space-3);
+  align-items: center;
+  width: 100%;
+  border: 0;
+  border-radius: var(--yui-radius-md);
+  background: transparent;
+  padding: var(--yui-space-2) var(--yui-space-2);
+  color: var(--yui-text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--yui-dur-fast) ease, color var(--yui-dur-fast) ease;
+}
+.persona-row:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
+.persona-row[data-active] { background: var(--yui-bg-control-active); color: var(--yui-text-primary); }
+.persona-row .face {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--yui-radius-md);
+  background: var(--yui-bg-surface-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.persona-row h3 { margin: 0; font-size: var(--yui-text-md); font-weight: 500; }
+.persona-row p {
+  margin: 0;
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-dim);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
 
-.activity { font-size: 12px; color: var(--muted); margin: 6px 0; max-width: 760px; }
-.activity .ok { color: var(--good); }
-.activity .err { color: var(--bad); }
+/* ── Header percakapan ─────────────────────────────────────────── */
+.chat-header {
+  display: flex;
+  min-height: 52px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--yui-space-3);
+  border-bottom: 1px solid var(--yui-border);
+  padding: 0 var(--yui-space-6);
+}
+.chat-header .who { display: flex; flex-direction: column; min-width: 0; }
+.chat-header .who b { font-size: var(--yui-text-md); font-weight: 600; }
+.chat-header .who span { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
+.state-chip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--yui-radius-pill);
+  background: var(--yui-bg-surface);
+  padding: 3px 10px;
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-muted);
+}
+.state-chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--yui-radius-pill);
+  background: var(--yui-text-dim);
+}
+.state-chip[data-s="thinking"] i, .state-chip[data-s="working"] i { background: var(--yui-accent); animation: chip-pulse 1.2s ease-in-out infinite; }
+.state-chip[data-s="awaiting_input"] i { background: var(--yui-warning); }
+.state-chip[data-s="done"] i, .state-chip[data-s="celebrating"] i { background: var(--yui-success); }
+.state-chip[data-s="error"] i { background: var(--yui-danger); }
+@keyframes chip-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-.delegation-card { background: var(--panel-2); border: 1px solid #2a2f44; border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px; margin: 10px 0; max-width: 760px; font-size: 13px; }
-.delegation-card .goal { color: var(--muted); font-size: 12px; margin-top: 2px; }
+/* ── Timeline pesan ────────────────────────────────────────────── */
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--yui-space-4) var(--yui-space-6) var(--yui-space-6);
+  scroll-behavior: smooth;
+}
+.chat-col { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--yui-space-3); }
 
-.approval-card { background: #241d33; border: 1px solid var(--accent); border-radius: 10px; padding: 12px; margin: 12px 0; max-width: 760px; }
-.approval-card button { margin-right: 8px; }
+/* Agent: teks polos, gutter avatar, nama muted (pola message-entry-with-author) */
+.msg-agent {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: var(--yui-space-3);
+  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
+}
+.msg-agent .author {
+  grid-column: 2;
+  color: var(--yui-text-muted);
+  font-size: var(--yui-text-sm);
+  padding: 0 var(--yui-space-3);
+}
+.msg-agent .face { grid-column: 1; align-self: end; }
+.msg-agent .body {
+  grid-column: 2;
+  padding: 0 var(--yui-space-3);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--yui-text-primary);
+  line-height: 1.625;
+}
+.msg-agent .body .caret {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  translate: 2px 3px;
+  background: var(--yui-text-muted);
+  animation: chip-pulse 0.9s steps(1) infinite;
+}
 
-.btn { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
-.btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid #2a2f44; }
-.btn:disabled { opacity: .5; cursor: default; }
+/* User: bubble terang rata kanan (pola ui-bubble default OpenBot) */
+.msg-user {
+  display: flex;
+  justify-content: flex-end;
+  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
+}
+.msg-user .body {
+  max-width: 80%;
+  border-radius: var(--yui-radius-bubble);
+  background: var(--yui-surface-light);
+  color: var(--yui-text-on-light);
+  padding: 8px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.625;
+}
+@keyframes message-in {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
 
-.composer { display: flex; gap: 8px; padding: 14px 24px; border-top: 1px solid #262a3a; background: var(--panel); }
-.composer input { flex: 1; background: var(--panel-2); border: 1px solid #2a2f44; color: var(--text); border-radius: 10px; padding: 10px 14px; font-size: 14px; outline: none; }
-.composer input:focus { border-color: var(--accent); }
+/* Typing dots (pola team-typing-dots) */
+.typing-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: var(--yui-space-3);
+  align-items: center;
+}
+.typing-row .dots { display: flex; gap: 3px; padding: 0 var(--yui-space-3); }
+.typing-row .dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--yui-radius-pill);
+  background: var(--yui-success);
+  animation: typing-dot 900ms ease-in-out infinite;
+}
+.typing-row .dots i:nth-child(2) { animation-delay: 140ms; }
+.typing-row .dots i:nth-child(3) { animation-delay: 280ms; }
+@keyframes typing-dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 
-/* PersonaPortrait — wrapper Orin SVG (D8: .riv Rive saat asset P1 siap; rig sudah final) */
-.portrait-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 6px; }
-.orin-wrap { width: 190px; }
-.orin-svg { display: block; width: 100%; cursor: pointer; touch-action: manipulation; }
-.state-label { text-align: center; font-size: 11px; color: var(--muted); margin-top: 4px; }
+/* Langkah tool: senyap, mono, lipat (pola agent-steps) */
+.steps { display: flex; flex-direction: column; gap: 2px; }
+.step-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--yui-space-2);
+  border: 0;
+  border-radius: var(--yui-radius-sm);
+  background: transparent;
+  padding: var(--yui-space-1) var(--yui-space-2);
+  color: var(--yui-text-muted);
+  font-size: var(--yui-text-sm);
+  cursor: pointer;
+  align-self: flex-start;
+}
+.step-toggle:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
+.step-toggle svg { transition: rotate var(--yui-dur-fast) var(--yui-ease-out); }
+.step-toggle[aria-expanded="true"] svg { rotate: 180deg; }
+.step-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: var(--yui-space-6);
+  border-left: 1px solid var(--yui-border-strong);
+  padding-left: var(--yui-space-3);
+}
+.step-row {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--yui-space-2);
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-muted);
+  animation: message-in var(--yui-dur-normal) var(--yui-ease-in-out) both;
+}
+.step-row code {
+  font-family: var(--yui-font-mono);
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-secondary);
+}
+.step-row .detail {
+  min-width: 0;
+  flex: 1;
+  color: var(--yui-text-dim);
+  font-family: var(--yui-font-mono);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.step-row .st { flex: 0 0 auto; color: var(--yui-text-dim); }
+.step-row[data-ok="1"] .st { color: var(--yui-success); }
+.step-row[data-err="1"] .st, .step-row[data-err="1"] code { color: var(--yui-danger); }
+
+/* Delegation: baris subagent (pola subagents) */
+.subagent {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: var(--yui-space-3);
+  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
+}
+.subagent .face { grid-column: 1; align-self: start; padding-top: var(--yui-space-1); }
+.subagent .card {
+  grid-column: 2;
+  border: 1px solid var(--yui-border-strong);
+  border-radius: var(--yui-radius-card);
+  background: var(--yui-bg-surface);
+  padding: var(--yui-space-3);
+  min-width: 0;
+}
+.subagent .card .head { display: flex; align-items: center; gap: var(--yui-space-2); }
+.subagent .card .head b { font-size: var(--yui-text-md); font-weight: 600; }
+.subagent .card .goal { margin: 2px 0 0; color: var(--yui-text-muted); font-size: var(--yui-text-md); }
+.subagent .card .summary {
+  margin: var(--yui-space-2) 0 0;
+  padding-top: var(--yui-space-2);
+  border-top: 1px solid var(--yui-border);
+  color: var(--yui-text-secondary);
+  font-size: var(--yui-text-md);
+  white-space: pre-wrap;
+}
+
+/* Approval: kartu tenang, outline + aksen lembut (pola bubble tinted) */
+.approval {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: var(--yui-space-3);
+  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
+}
+.approval .card {
+  grid-column: 2;
+  border: 1px solid var(--yui-border-strong);
+  border-left: 2px solid var(--yui-warning);
+  border-radius: var(--yui-radius-card);
+  background: var(--yui-warning-soft);
+  padding: var(--yui-space-3) var(--yui-space-4);
+}
+.approval .card b { font-size: var(--yui-text-md); font-weight: 500; }
+.approval .card code { font-family: var(--yui-font-mono); font-size: var(--yui-text-sm); }
+.approval .why { margin: 2px 0 0; color: var(--yui-text-muted); font-size: var(--yui-text-sm); }
+.approval .verdict { margin-top: var(--yui-space-2); font-size: var(--yui-text-sm); color: var(--yui-text-muted); }
+.approval .actions { display: flex; gap: var(--yui-space-2); margin-top: var(--yui-space-3); }
+
+/* Error sesi */
+.error-row {
+  border: 1px solid var(--yui-border-strong);
+  border-left: 2px solid var(--yui-danger);
+  border-radius: var(--yui-radius-card);
+  background: var(--yui-danger-soft);
+  padding: var(--yui-space-3) var(--yui-space-4);
+  color: var(--yui-text-secondary);
+  font-size: var(--yui-text-md);
+  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
+}
+
+/* ── Composer (pola .composer OpenBot) ─────────────────────────── */
+.composer-wrap { flex: 0 0 auto; padding: 0 var(--yui-space-6) var(--yui-space-4); }
+.composer {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--yui-space-2);
+  border: 0.5px solid var(--yui-border);
+  border-radius: var(--yui-radius-lg);
+  background: var(--yui-bg-surface);
+  padding: var(--yui-space-2);
+  transition: border-color var(--yui-dur-normal) var(--yui-ease-out);
+}
+.composer:focus-within { border-color: var(--yui-border-strong); }
+.composer textarea {
+  flex: 1;
+  min-height: 40px;
+  max-height: 160px;
+  border: 0;
+  background: transparent;
+  color: var(--yui-text-primary);
+  font: inherit;
+  line-height: 1.5;
+  padding: var(--yui-space-2) var(--yui-space-2);
+  outline: none;
+  resize: none;
+}
+.composer textarea::placeholder { color: var(--yui-text-dim); }
+.send-btn {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--yui-radius-md);
+  background: var(--yui-accent);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--yui-dur-fast) ease;
+}
+.send-btn:hover:not(:disabled) { background: var(--yui-accent-hover); }
+.send-btn:disabled { background: var(--yui-bg-control-active); color: var(--yui-text-dim); cursor: default; }
+
+/* Tombol umum */
+.btn {
+  border: 0;
+  border-radius: var(--yui-radius-md);
+  background: var(--yui-accent);
+  color: #fff;
+  padding: 6px 14px;
+  font-size: var(--yui-text-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--yui-dur-fast) ease;
+}
+.btn:hover:not(:disabled) { background: var(--yui-accent-hover); }
+.btn.secondary {
+  background: var(--yui-bg-control);
+  color: var(--yui-text-primary);
+  border: 1px solid var(--yui-border-strong);
+}
+.btn.secondary:hover:not(:disabled) { background: var(--yui-bg-control-hover); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+/* ── Empty state (pola agent-chat-empty) ───────────────────────── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--yui-space-2);
+  padding: var(--yui-space-8);
+  text-align: center;
+}
+.empty-state .portrait-hero { width: 220px; }
+.empty-state h1 { margin: var(--yui-space-4) 0 0; font-size: var(--yui-text-2xl); font-weight: 600; }
+.empty-state .pitch { margin: 0; color: var(--yui-text-muted); font-size: var(--yui-text-md); max-width: 420px; }
+.suggest-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--yui-space-2); margin-top: var(--yui-space-4); max-width: 560px; }
+.suggest {
+  border: 1px solid var(--yui-border-strong);
+  border-radius: var(--yui-radius-card);
+  background: var(--yui-bg-surface);
+  color: var(--yui-text-secondary);
+  padding: var(--yui-space-2) var(--yui-space-4);
+  font-size: var(--yui-text-md);
+  cursor: pointer;
+  transition: border-color var(--yui-dur-fast) ease, background var(--yui-dur-fast) ease, color var(--yui-dur-fast) ease;
+}
+.suggest:hover { border-color: var(--yui-border-focus); background: var(--yui-bg-surface-raised); color: var(--yui-text-primary); }
+
+/* ── Portrait ──────────────────────────────────────────────────── */
+.portrait-face { display: block; }
+.portrait-face.compact { width: 36px; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.face-mark { user-select: none; }
+.portrait-hero-wrap { display: flex; justify-content: center; }
+.portrait-hero { width: 220px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-agent, .msg-user, .step-row, .subagent, .approval, .error-row { animation: none; }
+  .chat-scroll { scroll-behavior: auto; }
+}
