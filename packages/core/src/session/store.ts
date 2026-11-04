@@ -105,6 +105,39 @@ export class SessionStore {
       );
   }
 
+  /** P1-MEM-5: agent menelusuri riwayat sesinya sendiri (v0: LIKE + recency;
+   *  hanya role user/assistant, snippet di sekitar kecocokan pertama). */
+  searchMessages(q: {
+    query: string;
+    projectId?: string | null; // null = semua sesi (scope "all")
+    limit?: number;
+  }): { sessionId: string; personaId: string; role: string; snippet: string; createdAt: number }[] {
+    const needle = q.query.toLowerCase();
+    const like = `%${q.query}%`;
+    const rows = (
+      this.db
+        .prepare(
+          `SELECT m.session_id AS sid, s.persona_id AS pid, m.role AS role, m.content AS content, m.created_at AS ts
+           FROM messages m JOIN sessions s ON s.id = m.session_id
+           WHERE m.role IN ('user','assistant') AND m.content LIKE ?
+             ${q.projectId ? "AND s.project_id = ?" : ""}
+           ORDER BY m.created_at DESC LIMIT ?`,
+        )
+        .all(...(q.projectId ? [like, q.projectId] : [like]), q.limit ?? 8) as { sid: string; pid: string; role: string; content: string; ts: number }[]
+    ).map((r) => {
+      const idx = r.content.toLowerCase().indexOf(needle);
+      const from = Math.max(0, idx - 60);
+      return {
+        sessionId: r.sid,
+        personaId: r.pid,
+        role: r.role,
+        snippet: (from > 0 ? "…" : "") + r.content.slice(from, from + 180) + (from + 180 < r.content.length ? "…" : ""),
+        createdAt: r.ts,
+      };
+    });
+    return rows;
+  }
+
   getMessages(sessionId: string): InternalMessage[] {
     const rows = this.db
       .prepare("SELECT * FROM messages WHERE session_id = ? ORDER BY seq ASC")

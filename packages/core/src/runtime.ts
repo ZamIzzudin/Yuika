@@ -27,6 +27,7 @@ import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js";
 import { registerMemoryTools } from "./tools/memory-tools.js";
+import { registerSessionSearchTools } from "./tools/session-search.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
 import { findUvx, installUv } from "./mcp/uv.js";
@@ -72,6 +73,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerFileTools(fileRevisions);
   registerWebTools();
   registerSkillTools(paths.skillsDir);
+  registerSessionSearchTools(store); // P1-MEM-5: riwayat sesi bisa ditelusuri agent
   registerRunCommandTool();
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({ sessionStore: store, projects: projectStore, workspacePath: paths.workspacePath });

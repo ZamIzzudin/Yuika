@@ -12,4 +12,5 @@ tools:
   - todo_update
   - "mcp__*"
   - memory_append
+  - session_search
   - skill_propose

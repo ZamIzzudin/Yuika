@@ -8,4 +8,5 @@ tools:
   - todo_list
   - todo_update
   - memory_append
+  - session_search
   - "mcp__*"

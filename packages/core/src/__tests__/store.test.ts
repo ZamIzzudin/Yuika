@@ -75,3 +75,27 @@ describe("SessionStore", () => {
     reopened.close();
   });
 });
+
+// P1-MEM-5: session_search — scope project vs all, snippet, exclude tool role.
+describe("SessionStore.searchMessages (P1-MEM-5)", () => {
+  it("cari lintas sesi: scope project memfilter, all menembus; tool role dikecualikan", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-ss-"));
+    const s = new SessionStore(path.join(dir, "t.db"));
+    s.createSession("sA", "yui-scholar", "SYS", [], "p1");
+    s.createSession("sB", "yui-coder", "SYS", [], "p2");
+    s.appendMessage("sA", { role: "user", content: "kita pakai palet monokrom ya" });
+    s.appendMessage("sB", { role: "user", content: "palet warna toko bunga pink" });
+    s.appendMessage("sB", { role: "tool", content: "palet palet palet" }); // harus dikecualikan
+
+    const inProject = s.searchMessages({ query: "palet", projectId: "p1" });
+    expect(inProject).toHaveLength(1);
+    expect(inProject[0]!.sessionId).toBe("sA");
+    expect(inProject[0]!.snippet).toContain("monokrom");
+
+    const all = s.searchMessages({ query: "palet", projectId: null });
+    expect(all).toHaveLength(2); // user sA + user sB (tool B tidak ikut)
+
+    expect(s.searchMessages({ query: "tak-ada", projectId: null })).toHaveLength(0);
+    s.close();
+  });
+});

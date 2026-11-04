@@ -141,3 +141,19 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
 
 ✅ Lolos bila: mockup Designer terbaca di tab File tanpa keluar app; traversal
    ditolak; usage tracking naik.
+
+## J. Stop turn + diff file + riwayat sesi (7 menit) — P0-CORE-1 / P2-STU-3 / P1-MEM-5
+
+1. **Stop**: kirim tugas besar (mis. "buat landing page lengkap") → saat agent
+   bekerja, klik tombol **■** di samping tombol kirim → turn berhenti < 1 dtk,
+   chip "turn dibatalkan — progres & parsial tersimpan", TIDAK ada error merah.
+   Ketik "lanjutkan" → agent lanjut dari konteks yang tersimpan.
+2. **Diff**: tab File → file `code/…` yang sudah ditulis agent → dropdown
+   "revisi…" muncul bila agent menimpa file ≥2× → pilih revisi → diff +/− baris
+   berwarna. (Negatif) file yang tak pernah ditimpa → tanpa dropdown.)
+3. **session_search**: sesi baru di proyek yang sama → tanya "keputusan apa saja
+   yang pernah kita ambil soal X?" → agent memanggil `session_search` dan
+   menemukan diskusi sesi sebelumnya (cek chip tool call di chat).
+
+✅ Lolos bila: stop tanpa error + lanjut mulus; diff akurat; riwayat ditemukan
+   lintas sesi dalam proyek yang sama.
