@@ -490,6 +490,9 @@ export default function Home() {
                 onClick={() => setMainTab("chat")}
               >
                 <PersonaFace personaId={active.id} size={16} /> Chat
+                {items.some((it) => it.kind === "approval" && !it.resolved) && (
+                  <span className="tab-dot warn" title="menunggu persetujuan Anda" />
+                )}
                 {busy && <span className="tab-dot" title="agent bekerja" />}
               </button>
               {activeProject &&

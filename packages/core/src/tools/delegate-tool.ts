@@ -14,7 +14,7 @@ export function registerDelegateTool(deps: DelegationDeps): void {
   registry.register({
     name: "delegate_task",
     description:
-      "Delegasikan sub-tugas ke persona spesialis (mis. riset → yui-scholar, menulis → yui-scribe, desain → yui-designer). " +
+      "Delegasikan sub-tugas ke persona spesialis (riset → yui-scholar, dokumen/laporan → yui-scribe, kode → yui-coder, desain → yui-designer). " +
       "Kembalikan ringkasan hasil anak. Gunakan untuk tugas yang butuh keahlian domain.",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {

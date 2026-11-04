@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PersonaState } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
+import { Markdown } from "./Markdown";
 
 export interface ChatItem {
   kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted" | "skill";
@@ -90,12 +91,12 @@ export function ChatView({
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll ke bawah saat ada item/streaming baru (pola chat timeline)
+  // Auto-scroll: MOUNT/switch sesi → selalu ke bawah; setelah itu hanya bila user
+  // memang di dekat bawah (tidak mencuri scroll saat user membaca ke atas).
+  const stickRef = useRef(true);
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 160;
-    if (nearBottom) el.scrollTop = el.scrollHeight;
+    if (el && stickRef.current) el.scrollTop = el.scrollHeight;
   }, [items, personaState]);
 
   // Textarea auto-grow
@@ -119,7 +120,14 @@ export function ChatView({
 
   return (
     <>
-      <div className="chat-scroll" ref={scrollRef}>
+      <div
+        className="chat-scroll"
+        ref={scrollRef}
+        onScroll={() => {
+          const el = scrollRef.current;
+          if (el) stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 160;
+        }}
+      >
         <div className="chat-col">
           {items.length === 0 && emptySlot ? (
             <div className="chat-empty">{emptySlot}</div>
@@ -138,7 +146,7 @@ export function ChatView({
                   <span className="face"><PersonaFace personaId={personaId} size={28} /></span>
                   <div className="author">{personaName}</div>
                   <div className="body">
-                    {it.text}
+                    <Markdown text={it.text ?? ""} />
                     {it.streaming ? <span className="caret" /> : null}
                   </div>
                 </div>
@@ -159,7 +167,11 @@ export function ChatView({
                       ) : null}
                     </div>
                     {it.goal ? <p className="goal">{it.goal}</p> : null}
-                    {it.text ? <p className="summary">{it.text}</p> : null}
+                    {it.text ? (
+                      <div className="summary">
+                        <Markdown text={it.text} />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               );

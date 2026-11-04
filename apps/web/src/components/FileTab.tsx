@@ -70,7 +70,20 @@ export function FileTab({ projectId }: { projectId: string }) {
     } catch {
       setErr("gagal menghubungi server");
     }
-  }, [projectId]);
+    // sinkronkan file yang sedang dibuka bila ditimpa agent di background
+    if (sel) {
+      try {
+        const [c, rv] = await Promise.all([
+          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`),
+          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`),
+        ]);
+        if (c.ok) setContent((await c.json()) as Content);
+        if (rv.ok) setRevisions(((await rv.json()) as { revisions: Revision[] }).revisions);
+      } catch {
+        /* biarkan state lama */
+      }
+    }
+  }, [projectId, sel]);
 
   useEffect(() => {
     setTree(null);
@@ -79,6 +92,18 @@ export function FileTab({ projectId }: { projectId: string }) {
     setRevisions([]);
     setDiff(null);
     void loadTree();
+  }, [loadTree]);
+
+  // FIX test user: file baru hasil agent tidak muncul — refresh berkala saat tab
+  // terbuka + saat jendela kembali fokus (write_file bisa terjadi di background).
+  useEffect(() => {
+    const poll = setInterval(() => void loadTree(), 5_000);
+    const onFocus = () => void loadTree();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(poll);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [loadTree]);
 
   async function pick(n: FileNode) {
@@ -119,8 +144,13 @@ export function FileTab({ projectId }: { projectId: string }) {
 
   return (
     <section className="file-tab" aria-label="File project">
+      <div className="file-toolbar">
+        <button className="btn secondary" onClick={() => void loadTree()} title="Muat ulang daftar file">
+          ↻ Segarkan
+        </button>
+      </div>
       <p className="pane-hint">
-        Artefak sesi di <code>reports/</code> dan <code>code/</code>. Klik folder untuk buka/tutup; klik file untuk melihat isinya.
+        Artefak sesi di <code>reports/</code> dan <code>code/</code>. Klik folder untuk buka/tutup; klik file untuk melihat isinya. Daftar menyegarkan otomatis tiap 5 detik.
       </p>
       <div className="file-split">
         <div className="file-tree" role="tree">

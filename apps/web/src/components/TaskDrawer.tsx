@@ -499,23 +499,43 @@ export function ProjectTabs({
         </section>
       )}
 
-      {loaded && activeTab === "team" && (
-        <section aria-label="Tim — struktur delegasi live">
+      {loaded && activeTab === "team" && (() => {
+        // FIX test user: Tim = kartu per PERSONA (agregat status + daftar tugasnya),
+        // bukan kartu per tugas — detail status tugas ada di Papan/Pohon.
+        const byPersona = new Map<string, LiveDelegation[]>();
+        for (const d of live.delegations) {
+          const arr = byPersona.get(d.personaId) ?? [];
+          arr.push(d);
+          byPersona.set(d.personaId, arr);
+        }
+        const groups = [...byPersona.entries()].map(([personaId, ds]) => {
+          const working = ds.some((d) => d.childState === "thinking" || d.childState === "working");
+          const doneCount = ds.filter((d) => d.summary).length;
+          const state: PersonaState | "done" = working ? "working" : doneCount === ds.length ? "done" : "idle";
+          return { personaId, ds, working, doneCount, state };
+        });
+        return (
+        <section aria-label="Tim — persona & status pengerjaan">
           {live.parentPersonaId ? (
             <div className="org-chart">
               <OrgCard personaId={live.parentPersonaId} subtitle="lead sesi ini" state={live.parentState} root />
-              {live.delegations.length > 0 && <div className="org-connector" aria-hidden />}
+              {groups.length > 0 && <div className="org-connector" aria-hidden />}
               <ul className="org-children">
-                {live.delegations.map((d) => (
-                  <li key={d.childSessionId}>
+                {groups.map(({ personaId, ds, working, doneCount, state }) => (
+                  <li key={personaId}>
                     <OrgCard
-                      personaId={d.personaId}
-                      state={d.childState ?? (d.summary ? "done" : "idle")}
-                      goal={d.goal.length > 90 ? d.goal.slice(0, 90) + "…" : d.goal}
-                      summary={
-                        d.summary ? (d.summary.length > 140 ? d.summary.slice(0, 140) + "…" : d.summary) : undefined
-                      }
+                      personaId={personaId}
+                      subtitle={ds.length > 1 ? `${ds.length} tugas · ${doneCount} selesai` : ds.length === 1 ? "1 tugas" : undefined}
+                      state={state}
                     />
+                    <div className="org-tasks">
+                      {ds.map((d, j) => (
+                        <span key={d.childSessionId ?? j} className="org-task" title={d.goal}>
+                          <span className="dot">{working && !d.summary && d.childState === "working" || d.childState === "thinking" ? "◐" : d.summary ? "✓" : "○"}</span>
+                          <span>{d.goal.length > 70 ? d.goal.slice(0, 70) + "…" : d.goal}</span>
+                        </span>
+                      ))}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -537,7 +557,8 @@ export function ProjectTabs({
             <p className="task-empty">Buka sesi untuk melihat struktur delegasi live.</p>
           )}
         </section>
-      )}
+        );
+      })()}
     </div>
   );
 }
