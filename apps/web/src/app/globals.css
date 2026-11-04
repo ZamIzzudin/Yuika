@@ -1415,3 +1415,39 @@ details.reasoning pre {
 }
 .dungeon-form-body { overflow-y: auto; padding: var(--yui-space-3) var(--yui-space-4); }
 .dungeon-form-body .dungeon-create { border: none; padding: 0; }
+
+/* Dungeon: tab Mapping Skill (attach/detach manual skill → persona) */
+.skill-mapping { display: flex; flex-direction: column; gap: var(--yui-space-3); }
+.sm-personas { display: flex; flex-wrap: wrap; gap: var(--yui-space-2); }
+.sm-personas button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px 5px 6px; border-radius: 999px;
+  border: 1px solid var(--yui-border); background: transparent;
+  color: var(--yui-text-secondary); cursor: pointer; font-size: var(--yui-text-sm);
+}
+.sm-personas button[data-active] {
+  border-color: var(--yui-accent); color: var(--yui-accent);
+  background: color-mix(in oklab, var(--yui-accent) 10%, transparent);
+}
+.sm-personas .sm-count {
+  min-width: 18px; text-align: center; border-radius: 999px;
+  background: var(--yui-hover); color: var(--yui-text-muted); font-size: 11px; padding: 1px 5px;
+}
+.sm-skills { display: flex; flex-direction: column; gap: var(--yui-space-2); }
+.sm-skill-row {
+  display: flex; align-items: center; gap: var(--yui-space-3);
+  padding: var(--yui-space-2) var(--yui-space-3);
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card);
+  background: var(--yui-bg-surface);
+}
+.sm-skill-row[data-on] { border-color: color-mix(in oklab, var(--yui-accent) 45%, var(--yui-border)); }
+.sm-skill-row .sm-skill-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sm-skill-row .sm-skill-main small { color: var(--yui-text-muted); }
+.sm-native {
+  font-size: 10px; font-weight: 500; margin-left: 6px; padding: 1px 6px;
+  border-radius: 999px; background: var(--yui-hover); color: var(--yui-text-muted);
+}
+.sm-skill-row button[data-on] {
+  border-color: var(--yui-accent); color: var(--yui-accent);
+  background: color-mix(in oklab, var(--yui-accent) 10%, transparent);
+}

@@ -54,3 +54,16 @@
    "Buka sesi →" membuka ruangan latihan sebagai workspace (chat + artefak).
 5. Form "Buat latihan baru" kini tombol yang membuka **popup modal** (ESC/klik
    luar menutup) — daftar misi tetap terlihat di belakang.
+
+### M19 (P1) — Mapping Skill manual (Dungeon → tab "Mapping Skill")
+1. Menu ⚔ Dungeon → tab **Mapping Skill**: daftar persona (chip + counter skill
+   efektif). Pilih satu persona → daftar semua skill siap pakai.
+2. Klik **Pasang** pada skill (mis. `web-research` ke Yui Coder) → jadi
+   **Terpasang ✓** (aksen). Restart dev server → tetap terpasang (persist
+   `skill-bindings.json`).
+3. Skill **bawaan** (label "bawaan", mis. code-review-basics di coder) bisa
+   dilepas (klik Terpasang ✓ → kembali "Pasang") dan dipasang lagi.
+4. Buat **sesi baru** persona itu → agent kenal skill terpasang di prompt-nya
+   (cek: minta ia sebut skills-nya, atau lihat system prompt sesi di DB).
+   Sesi LAMA tidak berubah (prompt beku by design) — skill tetap bisa dibaca
+   via `skills_list`.

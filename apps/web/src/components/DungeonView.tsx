@@ -35,6 +35,129 @@ const DEFAULT_ACC: Record<"research" | "documents", string[]> = {
   ],
 };
 
+/** Tab "Mapping Skill" (feedback user dev-10): pilih persona → toggle skill
+ *  yang sudah ada (attach/detach manual, termasuk lepas bawaan). Persist di
+ *  skill-bindings.json — berlaku untuk SESI BARU (prompt sesi beku by design). */
+interface BindingPersona {
+  id: string;
+  name: string;
+  bundled: string[];
+  attached: string[];
+  detached: string[];
+  effective: string[];
+}
+interface BindingsPayload {
+  skills: { name: string; description: string; status: string }[];
+  personas: BindingPersona[];
+}
+
+function SkillMapping() {
+  const [data, setData] = useState<BindingsPayload | null>(null);
+  const [sel, setSel] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch("/api/skills/bindings");
+      if (r.ok) setData(await r.json());
+    } catch {
+      /* coba lagi nanti */
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const persona = data?.personas.find((p) => p.id === sel) ?? data?.personas[0];
+
+  async function toggle(personaId: string, skill: string, action: "attach" | "detach") {
+    // optimistic — PUT persist; gagal → reload (state server yang benar)
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            personas: prev.personas.map((p) =>
+              p.id === personaId
+                ? {
+                    ...p,
+                    attached: action === "attach" ? [...new Set([...p.attached, skill])] : p.attached.filter((s) => s !== skill),
+                    detached: action === "detach" ? [...new Set([...p.detached, skill])] : p.detached.filter((s) => s !== skill),
+                    effective:
+                      action === "attach"
+                        ? [...new Set([...p.effective, skill])]
+                        : p.effective.filter((s) => s !== skill),
+                  }
+                : p,
+            ),
+          }
+        : prev,
+    );
+    try {
+      const res = await fetch("/api/skills/bindings", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ personaId, skill, action }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "gagal");
+      setErr(null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "gagal menyimpan");
+      void load();
+    }
+  }
+
+  if (!data) return <Skeleton lines={4} />;
+  return (
+    <div className="skill-mapping">
+      <p className="dim">
+        Pasang skill yang sudah ada ke persona — otomatis masuk <b>index prompt sesi baru</b> persona itu (sesi berjalan tidak berubah; skill tetap bisa dibaca via <code>skills_list</code>). "Bawaan" = skills.yaml persona (bisa dilepas). Draf skill harus diterima dulu di tab Skill sebelum bisa dipasang.
+      </p>
+      {err && <p className="project-err">{err}</p>}
+      <div className="sm-personas" role="tablist">
+        {data.personas.map((p) => (
+          <button
+            key={p.id}
+            role="tab"
+            aria-selected={persona?.id === p.id}
+            data-active={persona?.id === p.id ? "" : undefined}
+            onClick={() => setSel(p.id)}
+            title={`${p.effective.length} skill efektif`}
+          >
+            <PersonaFace personaId={p.id} size={22} /> {p.name.replace("Yui ", "")}
+            <span className="sm-count">{p.effective.length}</span>
+          </button>
+        ))}
+      </div>
+      {persona ? (
+        <div className="sm-skills">
+          {data.skills.length === 0 ? (
+            <p className="dim">Belum ada skill siap pasang — latih persona di tab Misi atau terima draf di tab Skill.</p>
+          ) : (
+            data.skills.map((s) => {
+              const on = persona.effective.includes(s.name);
+              const native = persona.bundled.includes(s.name);
+              return (
+                <div key={s.name} className="sm-skill-row" data-on={on ? "" : undefined}>
+                  <div className="sm-skill-main">
+                    <b>
+                      {s.name} {native && on ? <span className="sm-native">bawaan</span> : null}
+                    </b>
+                    <small className="dim">{s.description}</small>
+                  </div>
+                  <button className="btn secondary" data-on={on ? "" : undefined} onClick={() => void toggle(persona.id, s.name, on ? "detach" : "attach")}>
+                    {on ? "Terpasang ✓" : "Pasang"}
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function DungeonView({ personas, onBack, onOpenProject }: { personas: PersonaInfo[]; onBack: () => void; onOpenProject?: (projectId: string) => void }) {
   const [dungeons, setDungeons] = useState<DungeonRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -44,7 +167,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
   const uploadFor = useRef<string | null>(null);
   // Fix dev-10 (user): sesi latihan TIDAK lagi tampil sebagai card project (scope
   // beda) — daftar semua run latihan bisa dibuka dari sini (tab Riwayat).
-  const [view, setView] = useState<"misi" | "riwayat">("misi");
+  const [view, setView] = useState<"misi" | "riwayat" | "mapping">("misi");
   const [formOpen, setFormOpen] = useState(false);
 
   // ---- form buat latihan ----
@@ -248,6 +371,9 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
           <button role="tab" aria-selected={view === "riwayat"} data-active={view === "riwayat" ? "" : undefined} onClick={() => setView("riwayat")}>
             Riwayat sesi latihan ({allRuns.length})
           </button>
+          <button role="tab" aria-selected={view === "mapping"} data-active={view === "mapping" ? "" : undefined} onClick={() => setView("mapping")}>
+            Mapping Skill
+          </button>
         </div>
       </header>
 
@@ -279,6 +405,8 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
             ))
           )}
         </div>
+      ) : view === "mapping" ? (
+        <SkillMapping />
       ) : (
         <>
       <div className="dungeon-create-actions">

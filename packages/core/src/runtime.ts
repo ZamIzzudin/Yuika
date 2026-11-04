@@ -17,6 +17,7 @@ import { ApprovalEngine, resolvePendingApproval, getApprovalMode, setApprovalMod
 import { listPersonas } from "./personas/loader.js";
 import { buildPersonaGrowth } from "./personas/growth.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
+import { loadSkillBindings, saveSkillBindings, applyBindingAction, effectiveSkillNames, type SkillBinding, type SkillBindingsFile } from "./skills/bindings.js";
 import { registerFileTools } from "./tools/file-tools.js";
 import { registerWebTools } from "./tools/web-tools.js";
 import { registerSkillTools } from "./tools/skill-tools.js";
@@ -153,6 +154,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   } catch {
     setApprovalMode("ask"); // belum ada / rusak → default aman
   }
+  // Mapping manual skill → persona (menu Dungeon): file data/skill-bindings.json.
+  // Baca ulang tiap akses (hot path kecil — satu file JSON) supai editan via UI
+  // langsung berlaku untuk SESI BARU tanpa restart runtime.
+  const skillBindingsPath = path.join(path.dirname(paths.dbPath), "skill-bindings.json");
+  function skillBindingsFile(): SkillBindingsFile {
+    return loadSkillBindings(skillBindingsPath);
+  }
 
   // tools core (sekali per proses)
   const fileRevisions = new FileRevisionStore(paths.dbPath);
@@ -194,6 +202,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     workspaceGlobalPath: paths.workspacePath, // USER.md selalu global walau delegasi menimpa workspacePath
     routeModel: routeModelFor, // P1-MDL-1: anak resolve model persona-nya sendiri
     mcpAllowlistFor, // P1-PRJ-5: anak mewarisi binding MCP sesuai roster persona anak
+    skillBindingsFor: (personaId) => skillBindingsFile()[personaId], // mapping manual Dungeon
     recordUsage: (u) => { usageLedger.record(u); admission.noteUsage(); }, // CRED-1 meter + CRED-2 saldo cache invalidate
     maxChildren: () => admission.maxChildren(), // CRED-3: cap delegasi dinamis
   };
@@ -393,7 +402,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       projectId ? projectRoot(projectId) : null,
       persona.manifest.memory?.domain ?? null,
     );
-    createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null, memExtra);
+    createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null, memExtra, skillBindingsFile()[persona.manifest.id]);
     // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru — learning-loop P1
     appendUserPreferenceNote(paths.workspacePath, persona.manifest.name);
     const info = listPersonaInfos().find((p) => p.id === personaId)!;
@@ -788,6 +797,35 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       setApprovalMode(mode);
       fs.mkdirSync(path.dirname(approvalModeFile), { recursive: true });
       fs.writeFileSync(approvalModeFile, JSON.stringify({ mode }, null, 2), "utf-8");
+    },
+    // Mapping manual skill → persona (menu Dungeon): payload UI + toggle persist.
+    getSkillBindings: () => {
+      const bindings = skillBindingsFile();
+      const skills = listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description, status: s.status }));
+      const personas = listPersonas(paths.personasDir).map((p) => {
+        const bundled = p.manifest.skills.bundled;
+        const b = bindings[p.manifest.id];
+        const effective = effectiveSkillNames(bundled, b, undefined);
+        return {
+          id: p.manifest.id,
+          name: p.manifest.name,
+          bundled,
+          attached: b?.attached ?? [],
+          detached: b?.detached ?? [],
+          effective: [...effective],
+        };
+      });
+      return { skills, personas };
+    },
+    setSkillBinding: (personaId: string, skill: string, action: "attach" | "detach") => {
+      const personas = listPersonas(paths.personasDir);
+      const persona = personas.find((p) => p.manifest.id === personaId);
+      if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
+      if (!listSkills(paths.skillsDir).some((s) => s.name === skill)) throw new Error(`skill tidak ditemukan: ${skill}`);
+      const data = skillBindingsFile();
+      data[personaId] = applyBindingAction(data[personaId], skill, persona.manifest.skills.bundled, action);
+      saveSkillBindings(skillBindingsPath, data);
+      return data[personaId]!;
     },
     updateModelPrice: (model: string, price: ModelPrice) => saveModelPrice(modelPricesFile, model, price),
     // P1-CRED-2/3/4: budget & admission + attribution matrix.

@@ -5,6 +5,7 @@ import { buildSystemPrompt } from "./prompt/builder.js";
 import type { SessionStore } from "./session/store.js";
 import { ApprovalEngine } from "./approval/engine.js";
 import type { Emit } from "./session/emit.js";
+import { effectiveSkillNames, type SkillBinding } from "./skills/bindings.js";
 
 /** Buat sesi dengan system prompt FROZEN (cache discipline) + toolset persona. */
 export function createSessionWithPrompt(
@@ -15,12 +16,15 @@ export function createSessionWithPrompt(
   skillsDir: string,
   projectId?: string | null,
   extraPrompt = "",
+  /** Mapping manual skill → persona (menu Dungeon; skill-bindings.json). */
+  skillBindings?: SkillBinding,
 ): void {
-  // Skills index = skill global + skill bundled persona (progressive disclosure: nama+deskripsi saja)
+  // Skills index = bawaan skills.yaml ∪ lampiran manual user ∪ skill global
+  // (progressive disclosure: nama+deskripsi saja; isi via skill_view).
   const all = listSkills(skillsDir);
   const globalSkill = all.find((s) => s.frontmatter.metadata?.yui?.personas === undefined);
-  const bundledNames = new Set(persona.manifest.skills.bundled);
-  const index = all.filter((s) => bundledNames.has(s.name) || s.name === globalSkill?.name);
+  const names = effectiveSkillNames(persona.manifest.skills.bundled, skillBindings, globalSkill?.name);
+  const index = all.filter((s) => names.has(s.name));
   store.createSession(sessionId, persona.manifest.id, buildSystemPrompt(persona, index) + extraPrompt, tools, projectId);
 }
 

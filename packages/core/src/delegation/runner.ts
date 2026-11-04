@@ -10,6 +10,7 @@ import type { ProviderAdapter } from "../provider/adapter.js";
 import { AgentLoop, type LoopDeps } from "../loop.js";
 import { makeApprovalEngineForSession, createSessionWithPrompt } from "../runtime-helpers.js";
 import { memoryPromptSection } from "../memory/manager.js";
+import type { SkillBinding } from "../skills/bindings.js";
 import { listPersonas } from "../personas/loader.js";
 
 export interface DelegationDeps {
@@ -26,6 +27,8 @@ export interface DelegationDeps {
   workspaceGlobalPath?: string;
   /** P1-PRJ-5: allowlist MCP sesi anak (binding roster persona anak; null = tanpa). */
   mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
+  /** Mapping manual skill → persona anak (menu Dungeon; skill-bindings.json). */
+  skillBindingsFor?: (personaId: string) => SkillBinding | undefined;
   /** P1-CRED-1: metering loop anak juga tercatat (persona anak + model anak). */
   recordUsage?: LoopDeps["recordUsage"];
   /** P1-CRED-3: cap delegasi paralel dinamis (budget workspace); default 2. */
@@ -72,8 +75,18 @@ export function runChildPersona(
     persona.manifest.memory?.domain ?? null,
   );
 
-  // Reuse pembuatan sesi dari AgentLoop factory (prompt frozen, skills index persona anak)
-  createSessionWithPrompt(deps.store, persona, childSessionId, childTools, deps.skillsDir, childProjectId, memExtra);
+  // Reuse pembuatan sesi dari AgentLoop factory (prompt frozen, skills index persona anak
+  // + mapping manual Dungeon)
+  createSessionWithPrompt(
+    deps.store,
+    persona,
+    childSessionId,
+    childTools,
+    deps.skillsDir,
+    childProjectId,
+    memExtra,
+    deps.skillBindingsFor?.(persona.manifest.id),
+  );
 
   parentEmit({ type: "delegation.started", turnId: parent.turnId, childSessionId, personaId, goal });
   activeChildren++;
