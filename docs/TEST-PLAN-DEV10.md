@@ -21,3 +21,21 @@
 > module-local jadi kosong di copy route approvals. Fix: map di-cache
 > globalThis (pola bus emitter) + kegagalan resolve kini TAMPIL sebagai item
 > error di chat (tidak diam). Regresi: `approval-hmr.test.ts`.
+
+### M17 (P0) — Performa & realtime (fix dev-10: "task sederhana 30 menit")
+1. Minta persona menulis file besar (landing page). Saat agent bekerja:
+  - ✅ Muncul blok **💭 Berpikir…** yang STREAMING (bukan chat diam total) —
+     pikiran model GLM kini terlihat; klik untuk kolaps/expand.
+  - ✅ Kalau via delegasi: kartu delegasi menampilkan **feed live** (dot
+     berdenyut: teks/pikiran/aktivitas tool anak) — bukan kartu statis
+     sampai selesai.
+2. Setelah beberapa iterasi menulis/membaca file, cek tab Trace:
+  - ✅ Tabel trace update **realtime** (tanpa delay 3 dtk polling) — tab
+     refetch saat event baru tiba.
+3. Sesi panjang (banyak file): durasi per iterasi TIDAK memburuk linear —
+     prompt lama "diet" (isi file lama diarsipkan di view, `+arsip n chars`).
+     Verifikasi cepat: `curl /api/sessions/<id>/trace` → kolom token per turn
+     stabil, tidak 30k+.
+4. Total waktu tugas sederhana target: menit-an pertama terasa "hidup"
+     (streaming reasoning), meskipun model berpikir lama — itu properti model
+     (glm-5 reasoning besar), bukan UI/orkestrasi.

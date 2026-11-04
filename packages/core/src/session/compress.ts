@@ -43,6 +43,57 @@ export interface CompressResult {
   messagesSummarized: number;
   estTokensBefore: number;
   estTokensAfter: number;
+  /** Karakter payload tool lama yang diarsipkan (diet prompt). */
+  archivedChars: number;
+}
+
+export interface SlimOptions {
+  /** Pesan terakhir yang SELALU utuh (tak diarsipkan). Default 8. */
+  keepRecent: number;
+  /** Payload tool melebihi ini (karakter) → diarsipkan. Default 2500. */
+  maxToolChars: number;
+}
+
+export const DEFAULT_SLIM: SlimOptions = { keepRecent: 8, maxToolChars: 2_500 };
+
+/** Diet prompt (fix dev-10: "task sederhana 30 menit" — prompt membengkak
+ *  4.7k→3 0k token karena isi file terkirim ulang tiap iterasi): di VIEW
+ *  (tabel messages tak pernah diubah), payload tool LAMA diarsipkan —
+ *  hasil read_file panjang → potong head+tail; args write_file (isi file)
+ *  → placeholder. Pesan terbaru selalu utuh; model bisa re-read bila butuh.
+ *  Sama seperti kompresi: langkah ini FAIL-SAFE & view-only. */
+export function slimHistory(view: InternalMessage[], opts: SlimOptions = DEFAULT_SLIM): { messages: InternalMessage[]; archivedChars: number } {
+  const keep = Math.max(1, opts.keepRecent);
+  if (view.length <= keep) return { messages: view, archivedChars: 0 };
+  const cut = view.length - keep;
+  let archivedChars = 0;
+  const messages = view.map((m, i): InternalMessage => {
+    if (i >= cut) return m; // pesan terbaru utuh
+    if (m.role === "tool" && typeof m.content === "string" && m.content.length > opts.maxToolChars) {
+      const head = m.content.slice(0, 400);
+      const tail = m.content.slice(-200);
+      const repl = `${head}\n…[arsip ${m.content.length} chars — read_file/search_files bila butuh detail]…\n${tail}`;
+      archivedChars += m.content.length - repl.length;
+      return { ...m, content: repl };
+    }
+    if (m.role === "assistant" && m.toolCalls?.length) {
+      let changed = false;
+      const toolCalls = m.toolCalls.map((c) => {
+        const args = c.args as Record<string, unknown>;
+        const s = typeof args.content === "string" ? args.content : null;
+        if (s && s.length > opts.maxToolChars) {
+          changed = true;
+          archivedChars += s.length;
+          const p = typeof args.path === "string" ? args.path : "?";
+          return { ...c, args: { ...args, content: `[arsip: isi file ${p} (${s.length} chars) sudah ditulis ke workspace — read_file bila perlu]` } };
+        }
+        return c;
+      });
+      return changed ? { ...m, toolCalls } : m;
+    }
+    return m;
+  });
+  return { messages, archivedChars };
 }
 
 /** Susun view konteks sesi; kompresi bila estimasi token melewati ambang. */
@@ -78,9 +129,15 @@ export async function buildContextMessages(
   const budget = Math.floor(opts.contextTokens * opts.threshold);
   const before = estimateTokens(current);
 
+  // Diet prompt SELALU jalan (view-only) — payload tool lama diarsipkan
+  // sebelum keputusan kompresi; ini yang meredam pertumbuhan prompt tiap
+  // iterasi walau jendela konteks masih jauh.
+  const slimmed = slimHistory(current);
+  current = slimmed.messages;
+
   // Belum layak/butuh kompresi → view apa adanya.
   if (before <= budget || all.length < opts.minMessages) {
-    return { messages: current, compressed: false, messagesSummarized: 0, estTokensBefore: before, estTokensAfter: before };
+    return { messages: current, compressed: false, messagesSummarized: 0, estTokensBefore: before, estTokensAfter: estimateTokens(current), archivedChars: slimmed.archivedChars };
   }
 
   // Batas potong AMAN: pesan ke-(len-keepRecent), digeser maju sampai berada
@@ -93,7 +150,7 @@ export async function buildContextMessages(
   // Tak ada titik potong aman (semua sisa = satu blok) atau tidak ada yang baru
   // untuk diringkas → tunda kompresi ke turn berikutnya.
   if (cut <= alreadySummarized || cut >= all.length) {
-    return { messages: current, compressed: false, messagesSummarized: 0, estTokensBefore: before, estTokensAfter: before };
+    return { messages: current, compressed: false, messagesSummarized: 0, estTokensBefore: before, estTokensAfter: estimateTokens(current), archivedChars: slimmed.archivedChars };
   }
 
   const toSummarize = all.slice(0, cut);
@@ -116,12 +173,13 @@ export async function buildContextMessages(
     }
   } catch {
     // Fail-soft: tanpa kompresi — jangan ganggu turn user.
-    return { messages: current, compressed: false, messagesSummarized: 0, estTokensBefore: before, estTokensAfter: before };
+    return { messages: current, compressed: false, messagesSummarized: 0, estTokensBefore: before, estTokensAfter: estimateTokens(current), archivedChars: slimmed.archivedChars };
   }
 
   store.saveContextCheckpoint(sessionId, toSummarize[toSummarize.length - 1]!.seq, summary, model);
   checkpoint = store.latestContextCheckpoint(sessionId); // refresh — closure view() membaca variable ini
-  current = view(); // rebuild dari checkpoint baru
+  const post = slimHistory(view()); // rebuild dari checkpoint baru + diet ulang
+  current = post.messages;
   const after = estimateTokens(current);
-  return { messages: current, compressed: true, messagesSummarized: toSummarize.length, estTokensBefore: before, estTokensAfter: after };
+  return { messages: current, compressed: true, messagesSummarized: toSummarize.length, estTokensBefore: before, estTokensAfter: after, archivedChars: slimmed.archivedChars + post.archivedChars };
 }

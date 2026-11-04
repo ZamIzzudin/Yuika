@@ -32,6 +32,16 @@ export const MessageDeltaEvent = EventMeta.extend({
   delta: z.string(),
 });
 
+/** Streaming pikiran model (reasoning_content GLM / reasoning) — ditampilkan
+ *  kolaps-able di UI supaya menit-menit berpikir TIDAK terasa mati (fix
+ *  performa dev-10: 42k token reasoning dibuang diam-diam oleh adapter). */
+export const ReasoningDeltaEvent = EventMeta.extend({
+  type: z.literal("reasoning.delta"),
+  turnId: z.string(),
+  delta: z.string(),
+  personaId: z.string().optional(),
+});
+
 export const MessageDoneEvent = EventMeta.extend({
   type: z.literal("message.done"),
   turnId: z.string(),
@@ -65,6 +75,17 @@ export const DelegationProgressEvent = EventMeta.extend({
   type: z.literal("delegation.progress"),
   childSessionId: z.string(),
   state: PersonaState,
+});
+
+/** Live feed delegasi (fix dev-10 "kartu delegasi statis menit-lamanya"):
+ *  delta teks/pikiran/aktivitas tool anak diteruskan ke sesi parent supaya
+ *  UI parent streaming saat anak bekerja — bukan diam menunggu done. */
+export const DelegationDeltaEvent = EventMeta.extend({
+  type: z.literal("delegation.delta"),
+  childSessionId: z.string(),
+  personaId: z.string(),
+  kind: z.enum(["text", "reasoning", "tool"]),
+  delta: z.string(),
 });
 
 export const DelegationDoneEvent = EventMeta.extend({
@@ -146,11 +167,13 @@ export const ContextCompressedEvent = EventMeta.extend({
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
   MessageDeltaEvent,
+  ReasoningDeltaEvent,
   MessageDoneEvent,
   ToolCallEvent,
   ToolResultEvent,
   DelegationStartedEvent,
   DelegationProgressEvent,
+  DelegationDeltaEvent,
   DelegationDoneEvent,
   PersonaStateEvent,
   ApprovalRequestedEvent,

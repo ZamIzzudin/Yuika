@@ -29,6 +29,7 @@ export interface TokenUsage {
 
 export type ProviderChunk =
   | { type: "text_delta"; delta: string }
+  | { type: "reasoning_delta"; delta: string }
   | {
       type: "done";
       finishReason: "stop" | "tool_calls" | "length" | "error";

@@ -11,11 +11,13 @@ import { PersonaFace } from "./PersonaPicker";
 import { Markdown } from "./Markdown";
 
 export interface ChatItem {
-  kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted" | "skill" | "compressed";
+  kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted" | "skill" | "compressed" | "reasoning";
   // msg
   role?: "user" | "assistant";
   text?: string;
   streaming?: boolean;
+  // reasoning (fix dev-10: pikiran model streaming — kolaps-able)
+  reasoningOpen?: boolean;
   // activity (tool)
   name?: string;
   callId?: string;
@@ -27,6 +29,9 @@ export interface ChatItem {
   childSessionId?: string;
   goal?: string;
   childState?: PersonaState;
+  /** Feed live anak (delegation.delta) — streaming saat delegasi berjalan. */
+  liveText?: string;
+  liveKind?: "text" | "reasoning" | "tool";
   // approval
   requestId?: string;
   reason?: string;
@@ -171,6 +176,12 @@ export function ChatView({
                       ) : null}
                     </div>
                     {it.goal ? <p className="goal">{it.goal}</p> : null}
+                    {it.liveText && !it.text ? (
+                      <div className="delegation-live" data-kind={it.liveKind}>
+                        <span className="live-dot" aria-hidden />
+                        <span className="live-text">{it.liveText}</span>
+                      </div>
+                    ) : null}
                     {it.text ? (
                       <div className="summary">
                         <Markdown text={it.text} />
@@ -178,6 +189,22 @@ export function ChatView({
                     ) : null}
                   </div>
                 </div>
+              );
+            }
+            if (it.kind === "reasoning") {
+              // Fix dev-10: pikiran model streaming (reasoning_content GLM) —
+              // panggilan 2–9 menit kini "hidup". Kolaps-able; tampilkan ekor
+              // (pikiran terbaru) supaya DOM ringan walau reasoning panjang.
+              const full = it.text ?? "";
+              const shown = full.length > 2000 ? `… ${full.slice(-2000)}` : full;
+              return (
+                <details key={`r${i}`} className="reasoning" open={it.streaming}>
+                  <summary>
+                    💭 Berpikir{it.streaming ? "…" : ""}{" "}
+                    <span className="dim">({full.length.toLocaleString("id-ID")} chars)</span>
+                  </summary>
+                  <pre>{shown}</pre>
+                </details>
               );
             }
             if (it.kind === "approval") {

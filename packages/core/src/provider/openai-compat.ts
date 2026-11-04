@@ -88,6 +88,13 @@ export class OpenAICompatProvider implements ProviderAdapter {
       const choice = part.choices?.[0];
       if (!choice) continue;
       const delta = choice.delta;
+      // GLM/Anthropic-compat mengirim pikiran model di reasoning_content.
+      // Fix dev-10: JANGAN dibuang — streaming "thinking" inilah yang membuat
+      // panggilan menit-lamanya terasa hidup di UI (42k token reasoning pernah
+      // hilang diam-diam → UI seolah hang).
+      if ((delta as { reasoning_content?: string } | undefined)?.reasoning_content) {
+        onChunk({ type: "reasoning_delta", delta: (delta as unknown as { reasoning_content: string }).reasoning_content });
+      }
       if (delta?.content) {
         text += delta.content;
         onChunk({ type: "text_delta", delta: delta.content });

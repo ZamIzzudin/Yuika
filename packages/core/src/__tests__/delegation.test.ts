@@ -195,3 +195,42 @@ describe("delegation runner", () => {
     store.close();
   });
 });
+
+// Fix dev-10 ("kartu delegasi statis menit-lamanya"): delta teks/pikiran/aktivitas
+// tool anak diteruskan LIVE ke parent sebagai delegation.delta — bukan hanya
+// persona.state + done. Ini yang membuat provider call anak 2–9 menit terasa hidup.
+describe("delegation.delta — live feed anak → parent", () => {
+  it("text/reasoning/tool anak muncul sebagai delegation.delta di sesi parent", async () => {
+    class DeltaProvider implements ProviderAdapter {
+      readonly id = "delta-fake";
+      private step = 0;
+      async chatStream(_req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
+        if (this.step++ === 0) {
+          onChunk({ type: "reasoning_delta", delta: "memikirkan struktur…" });
+          onChunk({ type: "text_delta", delta: "Aku mulai menulis." });
+          return { type: "done", finishReason: "tool_calls", text: "", toolCalls: [{ id: "cd1", name: "write_file", args: { path: "code/a.txt", content: "isi" } }] };
+        }
+        return { type: "done", finishReason: "stop", text: "selesai menulis a.txt", toolCalls: [] };
+      }
+    }
+    const deps = makeDeps(new DeltaProvider());
+    const handle = runChildPersona(
+      deps,
+      { sessionId: parentSession, turnId: "t1" },
+      "yui-coder",
+      "tulis code/a.txt",
+      null,
+      makeEmit(),
+    );
+    const done = await handle.summary;
+    expect(done).toContain("selesai");
+
+    const feed = parentEvents.filter((e) => e.type === "delegation.delta") as unknown as { kind: string; delta: string }[];
+    const kinds = feed.map((f) => f.kind);
+    expect(kinds).toContain("reasoning"); // pikiran anak streaming ke parent
+    expect(kinds).toContain("text"); // narasi anak streaming ke parent
+    expect(kinds).toContain("tool"); // aktivitas tool anak (write_file)
+    const toolFeed = feed.find((f) => f.kind === "tool");
+    expect(toolFeed?.delta).toContain("write_file");
+  });
+});

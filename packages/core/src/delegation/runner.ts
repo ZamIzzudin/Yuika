@@ -104,6 +104,18 @@ export function runChildPersona(
         if (draft.type === "persona.state") {
           parentEmit({ type: "delegation.progress", childSessionId, state: draft.state as PersonaState });
         }
+        // Fix dev-10 ("kartu delegasi statis menit-lamanya"): delta teks/pikiran/
+        // aktivitas tool anak diteruskan LIVE ke parent — UI parent streaming
+        // "si anak sedang apa" selama provider call 2–9 menit, bukan diam.
+        if (draft.type === "message.delta") {
+          parentEmit({ type: "delegation.delta", childSessionId, personaId, kind: "text", delta: draft.delta });
+        }
+        if (draft.type === "reasoning.delta") {
+          parentEmit({ type: "delegation.delta", childSessionId, personaId, kind: "reasoning", delta: draft.delta });
+        }
+        if (draft.type === "tool.call") {
+          parentEmit({ type: "delegation.delta", childSessionId, personaId, kind: "tool", delta: `${draft.name}(${Object.keys(draft.args ?? {}).slice(0, 3).join(", ")})` });
+        }
         // Approval yang diminta anak HARUS terlihat di parent — kalau tidak, turn parent
         // menggantung selamanya (UI parent hanya subscribe sesi parent). Kartu approval
         // tetap match by requestId (resolvePendingApproval global).

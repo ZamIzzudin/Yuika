@@ -158,6 +158,12 @@ export class AgentLoop {
               streamedText += chunk.delta; // P0-CORE-1: simpan parsial untuk jalur cancel
               emit({ type: "message.delta", turnId, delta: chunk.delta });
             }
+            if (chunk.type === "reasoning_delta") {
+              // Pikiran model streaming ke UI (kolaps-able) — fix dev-10: panggilan
+              // menit-lamanya kini hidup, bukan diam. Tidak masuk history (bukan
+              // konteks — hemat token & jaga invariant view-only).
+              emit({ type: "reasoning.delta", turnId, delta: chunk.delta, personaId: session.personaId });
+            }
           });
           // P1-CRED-1: metering — HANYA dari usage provider (tanpa estimasi).
           if (done.usage) {

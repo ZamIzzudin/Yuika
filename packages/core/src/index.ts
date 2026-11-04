@@ -7,7 +7,7 @@ export { OpenAICompatProvider } from "./provider/openai-compat.js";
 export { registry, resetRegistryForTests } from "./registry.js";
 export { EventBus } from "./bus.js";
 export { SessionStore } from "./session/store.js";
-export { buildContextMessages, DEFAULT_COMPRESS, type CompressOptions, type CompressResult } from "./session/compress.js";
+export { buildContextMessages, slimHistory, DEFAULT_COMPRESS, DEFAULT_SLIM, type CompressOptions, type CompressResult, type SlimOptions } from "./session/compress.js";
 export { estimateTokens } from "./session/tokens.js";
 export { env as coreEnv } from "./env.js";
 export { makeEmitter, type Emit } from "./session/emit.js";

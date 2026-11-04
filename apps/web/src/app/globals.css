@@ -402,6 +402,64 @@ html, body {
   font-size: var(--yui-text-md);
   white-space: pre-wrap;
 }
+/* Feed live delegasi (fix dev-10 "kartu delegasi statis menit-lamanya") */
+.subagent .card .delegation-live {
+  display: flex;
+  gap: var(--yui-space-2);
+  align-items: flex-start;
+  margin: var(--yui-space-2) 0 0;
+  padding: var(--yui-space-2);
+  border-radius: var(--yui-radius-card);
+  background: color-mix(in oklab, var(--yui-accent) 8%, transparent);
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-secondary);
+}
+.subagent .card .delegation-live .live-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--yui-accent);
+  flex: none;
+  animation: yui-pulse 1.2s ease-in-out infinite;
+}
+.subagent .card .delegation-live .live-text {
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 7.5em;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent, black 1.6em);
+}
+.subagent .card .delegation-live[data-kind="tool"] .live-text { font-family: var(--yui-mono); font-size: var(--yui-text-xs); }
+.subagent .card .delegation-live[data-kind="reasoning"] { opacity: 0.85; font-style: italic; }
+
+/* Reasoning stream (fix dev-10: pikiran model GLM kini terlihat — kolaps-able) */
+details.reasoning {
+  margin: 2px 0;
+  border-left: 2px solid var(--yui-border-strong);
+  padding-left: var(--yui-space-2);
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-muted);
+}
+details.reasoning > summary {
+  cursor: pointer;
+  user-select: none;
+  color: var(--yui-text-secondary);
+  list-style: none;
+}
+details.reasoning > summary::before { content: "▸ "; }
+details.reasoning[open] > summary::before { content: "▾ "; }
+details.reasoning .dim { color: var(--yui-text-muted); font-size: var(--yui-text-xs); }
+details.reasoning pre {
+  margin: var(--yui-space-1) 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--yui-mono);
+  font-size: var(--yui-text-xs);
+  max-height: 300px;
+  overflow: auto;
+}
 
 /* Approval: kartu tenang, outline + aksen lembut (pola bubble tinted) */
 .approval {

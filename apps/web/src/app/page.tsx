@@ -108,12 +108,17 @@ export default function Home() {
 
   // Assistant streaming: delta ditumpuk ke item terakhir; id item disimpan di sini.
   const openAssistant = useRef<number | null>(null);
+  // Reasoning streaming (fix dev-10): item sendiri, kolaps-able.
+  const openReasoning = useRef<number | null>(null);
 
   const applyEvent = useCallback((e: YuiEvent) => {
     // Dedupe: SSE replay+live bisa overlap saat reconnect (safety net — server sudah
     // dedupe by id; id monotonic per sesi).
     if (e.id <= lastEventId.current) return;
     lastEventId.current = Math.max(lastEventId.current, e.id);
+    if (e.type !== "message.delta" && e.type !== "reasoning.delta" && e.type !== "delegation.delta") {
+      setTraceTick((t) => t + 1); // delta streaming tak mengubah struktur trace
+    }
     switch (e.type) {
       case "turn.started":
         setBusy(true);
@@ -140,12 +145,32 @@ export default function Home() {
         setItems((prev) => {
           const idx = openAssistant.current;
           openAssistant.current = null;
+          // reasoning stream juga selesai saat jawaban final mulai
+          const rIdx = openReasoning.current;
+          openReasoning.current = null;
+          let next = prev;
+          if (rIdx !== null && prev[rIdx]?.kind === "reasoning" && prev[rIdx]?.streaming) {
+            next = [...prev];
+            next[rIdx] = { ...next[rIdx]!, streaming: false };
+          }
           if (idx !== null && prev[idx]?.kind === "msg") {
-            const next = [...prev];
+            if (next === prev) next = [...prev];
             next[idx] = { ...next[idx]!, streaming: false };
             return next;
           }
-          return prev;
+          return next;
+        });
+        break;
+      case "reasoning.delta":
+        setItems((prev) => {
+          const idx = openReasoning.current;
+          if (idx !== null && prev[idx]?.kind === "reasoning") {
+            const next = [...prev];
+            next[idx] = { ...next[idx]!, text: (next[idx]!.text ?? "") + e.delta };
+            return next;
+          }
+          openReasoning.current = prev.length;
+          return [...prev, { kind: "reasoning", text: e.delta, streaming: true }];
         });
         break;
       case "tool.call":
@@ -185,6 +210,22 @@ export default function Home() {
               isError: e.isError,
             },
           ];
+        });
+        break;
+      case "delegation.delta":
+        // Fix dev-10: feed live anak → streaming di kartu delegasi (bukan diam).
+        setItems((prev) => {
+          const next = [...prev];
+          for (let i = next.length - 1; i >= 0; i--) {
+            if (next[i]!.kind === "delegation" && next[i]!.childSessionId === e.childSessionId && !next[i]!.text) {
+              const buf = next[i]!.liveKind === e.kind ? (next[i]!.liveText ?? "") : "";
+              let live = (buf + e.delta);
+              if (live.length > 600) live = live.slice(-600); // ekor saja — ringan
+              next[i] = { ...next[i]!, liveText: live, liveKind: e.kind, childState: "working" };
+              break;
+            }
+          }
+          return next;
         });
         break;
       case "delegation.started":
@@ -485,6 +526,9 @@ export default function Home() {
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Trace realtime (fix dev-10): naik tiap event SSE — TracePanel refetch
+  // trace terstruktur saat itu (debounce), BUKAN polling 3 dtk buta.
+  const [traceTick, setTraceTick] = useState(0);
 
   async function approve(
     requestId: string,
@@ -771,6 +815,7 @@ export default function Home() {
                   {mainTab === "trace" && (
                     <TracePanel
                       sessionId={sessionId}
+                      live={traceTick}
                       onBack={() => setMainTab("chat")}
                     />
                   )}

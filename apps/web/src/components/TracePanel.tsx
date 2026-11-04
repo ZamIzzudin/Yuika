@@ -29,9 +29,12 @@ const STATUS_LABEL: Record<string, string> = {
 
 export function TracePanel({
   sessionId,
+  live,
   onBack,
 }: {
   sessionId: string | null;
+  /** Naik tiap event SSE baru (realtime) — refetch debounce, bukan polling buta. */
+  live?: number;
   onBack: () => void;
 }) {
   const [trace, setTrace] = useState<SessionTrace | null>(null);
@@ -54,9 +57,15 @@ export function TracePanel({
 
   useEffect(() => {
     void load();
-    const t = setInterval(() => void load(), 3_000);
-    return () => clearInterval(t);
   }, [load]);
+
+  // Fix dev-10: REALTIME via SSE (prop `live` naik per event) — debounce 400ms
+  // supaya burst delta tidak menghujani endpoint; menggantikan polling 3 dtk.
+  useEffect(() => {
+    if (!live) return; // 0 saat mount — initial load sudah dilakukan di atas
+    const t = setTimeout(() => void load(), 400);
+    return () => clearTimeout(t);
+  }, [live, load]);
 
   const fmtTime = (ts: number) =>
     new Date(ts).toLocaleTimeString("id-ID", { hour12: false });
