@@ -110,9 +110,16 @@ export function PersonaOrbit({
   const n = personas.length;
   const active = personas[Math.min(focus, n - 1)] ?? null;
   const cardBase =
-    "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui hover:animate-none";
+    "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui hover:animate-none hover:shadow-pop";
   return (
     <div className="relative mt-2 h-[460px] w-full max-w-[720px] sm:h-[500px]">
+      {/* dekorasi: lintasan orbit (elips putus-putus tepat di jalur kartu) +
+          ring dalam + glow lembut di belakang maskot — anti "terlalu sepi" */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute top-1/2 left-1/2 h-[80%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
+        <div className="absolute top-1/2 left-1/2 h-[52%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/40" />
+        <div className="absolute top-1/2 left-1/2 size-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--yui-accent)_9%,transparent),transparent)]" />
+      </div>
       {/* pusat: maskot INTERAKTIF persona terpilih + deskripsi (muncul saat hover
           kartu — mata mengikuti kursor & bisa diklik, OrinPortrait v4) */}
       {active && (
@@ -121,10 +128,8 @@ export function PersonaOrbit({
           aria-live="polite"
           className="msg-in absolute inset-0 flex flex-col items-center justify-center gap-2 px-16 text-center sm:px-20"
         >
-          <OrinPortrait state="idle" personaId={active.id} size={200} />
-          <b className="text-title font-semibold text-primary border">
-            {active.name}
-          </b>
+          <OrinPortrait state="idle" personaId={active.id} size={180} />
+          <b className="text-title font-semibold text-primary">{active.name}</b>
           <p className="max-w-[320px] text-body leading-6 text-muted">
             {active.description}
           </p>
