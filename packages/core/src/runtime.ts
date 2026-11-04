@@ -8,6 +8,9 @@ import { SessionStore } from "./session/store.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
 import { OpenAICompatProvider } from "./provider/openai-compat.js";
+import { AnthropicProvider } from "./provider/anthropic.js";
+import { GeminiProvider } from "./provider/gemini.js";
+import type { ProviderKind } from "./provider/index.js";
 import { AgentLoop } from "./loop.js";
 import { registry } from "./registry.js";
 import { ApprovalEngine, resolvePendingApproval } from "./approval/engine.js";
@@ -54,7 +57,7 @@ import { createSkillEvaluator, missionForSkill, readEval } from "./dungeon/eval.
 import { setSkillStatus } from "./skills/manager.js";
 
 export interface YuiRuntimeConfig {
-  provider: { baseUrl: string; apiKey: string; model: string };
+  provider: { baseUrl: string; apiKey: string; model: string; kind?: string };
   paths?: Partial<YuiPaths>;
 }
 
@@ -123,8 +126,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // Settings: provider & model bisa di-swap panas (updateProviderSettings) —
   // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
   // sama dimutasi propertinya agar delegasi ikut provider baru.
-  let provider = new OpenAICompatProvider({ baseUrl: cfg.provider.baseUrl, apiKey: cfg.provider.apiKey });
+  let providerKind: ProviderKind = (cfg.provider.kind as ProviderKind | undefined) ?? "openai-compat";
+  let provider = makeProvider(cfg.provider.baseUrl, cfg.provider.apiKey);
   let providerBaseUrl = cfg.provider.baseUrl;
+
+  /** P1-INF-2: satu titik pembuatan provider — adapter per kind. */
+  function makeProvider(baseUrl: string, apiKey: string) {
+    return providerKind === "anthropic"
+      ? new AnthropicProvider({ baseUrl, apiKey })
+      : providerKind === "gemini"
+        ? new GeminiProvider({ baseUrl, apiKey })
+        : new OpenAICompatProvider({ baseUrl, apiKey });
+  }
   let model = cfg.provider.model;
   // P1-MDL-1: override per persona (diedit di Settings) — file JSON di samping DB.
   const modelOverridesFile = path.join(path.dirname(paths.dbPath), "model-overrides.json");
@@ -671,6 +684,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // ---- Settings: provider & model (swap panas) ----
     /** Config provider aktif (key disamarkan — jangan pernah balas key penuh). */
     getProviderSettings: () => ({
+      kind: providerKind,
       baseUrl: providerBaseUrl,
       model,
       fallbackModel: process.env.YUI_MODEL_FALLBACK ?? "",
@@ -703,17 +717,23 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     /** Update provider/model: swap in-memory (sesi baru langsung pakai; loopCache
      *  dikosongkan) + persist ke .env agar bertahan restart. apiKey kosong = keep. */
-    updateProviderSettings: (input: { baseUrl?: string; apiKey?: string; model?: string; fallbackModel?: string | null }) => {
+    updateProviderSettings: (input: { kind?: string; baseUrl?: string; apiKey?: string; model?: string; fallbackModel?: string | null }) => {
       const envFile = path.join(resolveRepoRoot(), ".env");
       const toWrite: Record<string, string> = {};
+      if (input.kind && (input.kind === "openai-compat" || input.kind === "anthropic" || input.kind === "gemini") && input.kind !== providerKind) {
+        providerKind = input.kind;
+        provider = makeProvider(providerBaseUrl, process.env.YUI_API_KEY ?? cfg.provider.apiKey);
+        toWrite.YUI_PROVIDER_KIND = providerKind;
+        process.env.YUI_PROVIDER_KIND = providerKind;
+      }
       if (input.baseUrl?.trim()) {
         providerBaseUrl = input.baseUrl.trim();
-        provider = new OpenAICompatProvider({ baseUrl: providerBaseUrl, apiKey: process.env.YUI_API_KEY ?? cfg.provider.apiKey });
+        provider = makeProvider(providerBaseUrl, process.env.YUI_API_KEY ?? cfg.provider.apiKey);
         toWrite.YUI_BASE_URL = providerBaseUrl;
         process.env.YUI_BASE_URL = providerBaseUrl;
       }
       if (input.apiKey?.trim()) {
-        provider = new OpenAICompatProvider({ baseUrl: providerBaseUrl, apiKey: input.apiKey.trim() });
+        provider = makeProvider(providerBaseUrl, input.apiKey.trim());
         toWrite.YUI_API_KEY = input.apiKey.trim();
         process.env.YUI_API_KEY = input.apiKey.trim();
       }

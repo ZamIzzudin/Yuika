@@ -20,6 +20,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const [section, setSection] = useState<Section>("provider");
   const [cfg, setCfg] = useState<ProviderSettings | null>(null);
   const [baseUrl, setBaseUrl] = useState("");
+  const [kind, setKind] = useState<"openai-compat" | "anthropic" | "gemini">("openai-compat");
   const [model, setModel] = useState("");
   const [fallback, setFallback] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -35,6 +36,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         setBaseUrl(c.baseUrl);
         setModel(c.model);
         setFallback(c.fallbackModel ?? "");
+        setKind(c.kind ?? "openai-compat");
       }
     } catch {
       /* coba lagi saat buka */ 
@@ -59,6 +61,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          ...(kind !== (cfg?.kind ?? "openai-compat") ? { kind } : {}),
           ...(baseUrl.trim() && baseUrl !== cfg?.baseUrl ? { baseUrl: baseUrl.trim() } : {}),
           ...(model.trim() && model !== cfg?.model ? { model: model.trim() } : {}),
           ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
@@ -78,6 +81,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   }
 
   const dirty = Boolean(
+    kind !== (cfg?.kind ?? "openai-compat") ||
     (baseUrl.trim() && baseUrl !== cfg?.baseUrl) ||
       (model.trim() && model !== cfg?.model) ||
       apiKey.trim() ||
@@ -116,8 +120,16 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   </p>
                 )}
                 <label className="settings-field">
-                  <span>Base URL (OpenAI-compatible)</span>
-                  <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://api.…/v1" spellCheck={false} />
+                  <span>Jenis provider (P1-INF-2)</span>
+                  <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+                    <option value="openai-compat">OpenAI-compatible (GLM / OpenRouter / …)</option>
+                    <option value="anthropic">Anthropic (Claude)</option>
+                    <option value="gemini">Google Gemini</option>
+                  </select>
+                </label>
+                <label className="settings-field">
+                  <span>Base URL ({kind === "anthropic" ? "default: https://api.anthropic.com" : kind === "gemini" ? "default: https://generativelanguage.googleapis.com" : "OpenAI-compatible"})</span>
+                  <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={kind === "anthropic" ? "https://api.anthropic.com" : kind === "gemini" ? "https://generativelanguage.googleapis.com" : "https://api.…/v1"} spellCheck={false} />
                 </label>
                 <label className="settings-field">
                   <span>API key {cfg?.hasApiKey ? "(kosongkan untuk keep)" : ""}</span>

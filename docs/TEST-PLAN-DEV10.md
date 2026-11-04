@@ -328,3 +328,24 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
   - ✅ Tabel "Attribution biaya (persona × model)" muncul: baris per kombinasi,
      token & est. biaya; model tanpa harga = "—".
 8. Refresh halaman → semua setting budget tetap (data/budget.json).
+
+### M8.1 (P2) — Multi-provider: adapter Anthropic & Gemini (P1-INF-2)
+> Tanpa key Anthropic/Gemini pun bisa diverifikasi sebagian (UI & persist);
+> bagian streaming butuh key masing-masing (opsional).
+
+1. Settings → Provider & Model → dropdown **Jenis provider** muncul
+   (OpenAI-compatible / Anthropic / Gemini) — saat ini "OpenAI-compatible".
+  - ✅ Ganti ke "Anthropic" → placeholder Base URL berubah
+     (https://api.anthropic.com) → tombol Simpan aktif → simpan.
+  - ✅ Buka Settings lagi / refresh → jenis tetap "Anthropic" (.env:
+     YUI_PROVIDER_KIND).
+  - ✅ Terminal tidak error; smoke test model jalan (gagal = wajar bila key
+     bukan Anthropic — pastikan pesan gagal rapi, lalu kembalikan ke
+     OpenAI-compatible + baseUrl GLM & model glm-5.1 → simpan → smoke hijau
+     kembali, chat normal).
+2. (Opsional, butuh key Anthropic) jenis Anthropic + key `sk-ant-…` + model
+   `claude-sonnet-4-5` → kirim chat:
+  - ✅ Streaming jawaban jalan; minta persona memakai tool (mis. tulis file) →
+     tool-call dieksekusi; Metering mencatat token (usage Anthropic terparse).
+3. (Opsional, butuh key Gemini) jenis Gemini + key AI Studio + model
+   `gemini-2.5-flash` → sama seperti langkah 2 (tool-call + metering).

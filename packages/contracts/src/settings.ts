@@ -3,7 +3,11 @@
 import { z } from "zod";
 
 /** GET /api/settings/provider — config aktif (key TIDAK pernah dikirim penuh). */
+export const ProviderKindSchema = z.enum(["openai-compat", "anthropic", "gemini"]);
+export type ProviderKind = z.infer<typeof ProviderKindSchema>;
+
 export const ProviderSettings = z.object({
+  kind: ProviderKindSchema.default("openai-compat"),
   baseUrl: z.string(),
   model: z.string(),
   fallbackModel: z.string().default(""),
@@ -14,6 +18,7 @@ export type ProviderSettings = z.infer<typeof ProviderSettings>;
 
 /** PUT /api/settings/provider — field kosong/undefined = tidak diubah. */
 export const UpdateProviderSettingsRequest = z.object({
+  kind: ProviderKindSchema.optional(),
   baseUrl: z.string().url().optional(),
   apiKey: z.string().min(8).optional(),
   model: z.string().min(1).optional(),

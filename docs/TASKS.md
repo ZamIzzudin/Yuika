@@ -268,7 +268,7 @@
 ### P1-INF
 
 - [ ] **P1-INF-1** Auth (email+password → magic link) + workspace + tenant scope middleware · *B · 3d*
-- [ ] **P1-INF-2** Adapter Anthropic + Gemini + router kualitas/biaya · *A · 2d*
+- [x] **P1-INF-2** Adapter Anthropic + Gemini + router kualitas/biaya · *A · 2d* — ✅ v0 dev-10: `provider/anthropic.ts` (Messages API SSE via fetch: system terpisah, tool_use/tool_result block, input_json_delta terakumulasi, stop_reason & usage terpetakan) + `provider/gemini.ts` (streamGenerateContent alt=sse: functionCall TANPA id → id sintetis, tool result → functionResponse role user via mapping id→nama, usageMetadata) — keduanya tanpa SDK baru (fetch + parser SSE generik `parseSse`); factory `makeProvider` satu titik di runtime; kind provider jadi kontrak (`ProviderSettings.kind` + `UpdateProviderSettingsRequest.kind`, env `YUI_PROVIDER_KIND`, persist .env, swap panas + smoke ulang); UI Settings → Provider: dropdown jenis provider + placeholder base URL per kind; +6 test (konversi pesan kedua format, stream tool-call, usage/finishReason, HTTP error, tool-result non-JSON Gemini). Router kualitas/biaya penuh menyusul bersama multi-key (butuh ≥2 provider aktif — catatan CRED/billing)
 - [ ] **P1-INF-3** Aux routing (title/compression/skill-extract → model murah) · *A · 1d*
 - [ ] **P1-INF-4** Observability: trace view per turn (pino + tabel DB) · *B · 2d*
 - [ ] **P1-INF-5** Deploy staging (VPS/Fly) + domain + TLS · *B · 1d*

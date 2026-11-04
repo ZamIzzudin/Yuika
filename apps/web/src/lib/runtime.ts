@@ -24,7 +24,7 @@ export function getRuntime(): YuiRuntime {
     if (!baseUrl || !apiKey || !model) {
       throw new Error("Env belum lengkap: YUI_OPENAI_BASE_URL / YUI_OPENAI_API_KEY / YUI_MODEL (lihat .env.example)");
     }
-    g.__yuiRuntime = createYuiRuntime({ provider: { baseUrl, apiKey, model } });
+    g.__yuiRuntime = createYuiRuntime({ provider: { baseUrl, apiKey, model, kind: process.env.YUI_PROVIDER_KIND } });
     g.__yuiRuntimeOwner = OWNER;
   }
   return g.__yuiRuntime;
