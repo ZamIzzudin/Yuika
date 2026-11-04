@@ -51,7 +51,6 @@ export default function Home() {
   const [personas, setPersonas] = useState<PersonaInfo[]>([]);
   /** P1-DUN-4: halaman Dungeon (arena latihan persona) — view terpisah di main. */
   const [dungeonOpen, setDungeonOpen] = useState(false);
-  const [traceOpen, setTraceOpen] = useState(false);
   const [active, setActive] = useState<PersonaInfo | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [items, setItems] = useState<ChatItem[]>([]);
@@ -398,7 +397,6 @@ export default function Home() {
     setActiveProjectId(id);
     setMainTab("chat");
     setDungeonOpen(false); // pilih project = keluar dari halaman Dungeon
-    setTraceOpen(false); // …dan dari halaman Trace — sesi berganti, trace lama menyesatkan
     if (!id) {
       // Workspace global: persona dipilih dari kartu di tengah layar
       resetSession();
@@ -516,22 +514,9 @@ export default function Home() {
           <button
             className="side-settings"
             data-active={dungeonOpen ? "" : undefined}
-            onClick={() => {
-              setTraceOpen(false); // buka Dungeon = tutup Trace (mutual exclusive)
-              setDungeonOpen((v) => !v);
-            }}
+            onClick={() => setDungeonOpen((v) => !v)}
           >
             Dungeon
-          </button>
-          <button
-            className="side-settings"
-            data-active={traceOpen ? "" : undefined}
-            onClick={() => {
-              setDungeonOpen(false); // buka Trace = tutup Dungeon (mutual exclusive)
-              setTraceOpen((v) => !v);
-            }}
-          >
-            Trace
           </button>
           <button
             className="side-settings"
@@ -543,9 +528,7 @@ export default function Home() {
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <main className="yui-main">
-        {traceOpen ? (
-          <TracePanel sessionId={sessionId} onBack={() => setTraceOpen(false)} />
-        ) : dungeonOpen ? (
+        {dungeonOpen ? (
           <DungeonView
             personas={personas}
             onBack={() => setDungeonOpen(false)}
@@ -604,6 +587,16 @@ export default function Home() {
                       />
                     )}
                     {busy && <span className="tab-dot" title="agent bekerja" />}
+                  </button>
+                  <button
+                    role="tab"
+                    aria-selected={mainTab === "trace"}
+                    data-active={mainTab === "trace" ? "" : undefined}
+                    onClick={() => setMainTab("trace")}
+                    title={sessionId ? "Jejak langkah per turn sesi aktif" : "Mulai sesi dulu untuk melihat trace"}
+                  >
+                    🧭 Trace
+                    {sessionId && busy && <span className="tab-dot" title="turn berjalan — trace ikut live" />}
                   </button>
                   {activeProject &&
                     (
@@ -740,7 +733,10 @@ export default function Home() {
                       )}
                     </>
                   )}
-                  {activeProject && mainTab !== "chat" && (
+                  {mainTab === "trace" && (
+                    <TracePanel sessionId={sessionId} onBack={() => setMainTab("chat")} />
+                  )}
+                  {activeProject && mainTab !== "chat" && mainTab !== "trace" && (
                     <ProjectTabs
                       project={activeProject}
                       sessions={projSessions}

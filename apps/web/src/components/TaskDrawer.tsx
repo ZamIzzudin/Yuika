@@ -38,6 +38,7 @@ const DOT: Record<TaskStatus, string> = {
 
 export type WorkspaceTab =
   | "chat"
+  | "trace"
   | "team"
   | "files"
   | "board"
