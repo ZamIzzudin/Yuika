@@ -305,23 +305,69 @@ export default function Home() {
     }
   }, []);
 
-  // SSE: buka saat sesi ada; reconnect bawaan browser; replay pakai ?since=
+  // SSE: buka saat sesi ada. DUA jalur pemulihan (bug "UI diam walau trace jalan"):
+  //  (a) browser auto-reconnect (CONNECTING) — aman, applyEvent dedupe by id;
+  //  (b) FATAL (CLOSED, mis. route 500 sesaat / dev recompile) — browser TIDAK
+  //      reconnect; kita buat ulang EventSource dengan backoff (1s→15s),
+  //      ?since=lastEventId → tanpa celah/duplikat.
   useEffect(() => {
     if (!sessionId) return;
-    const es = new EventSource(
-      `/api/sessions/${sessionId}/stream?since=${lastEventId.current}`,
-    );
-    es.onmessage = (m) => {
+    let es: EventSource | null = null;
+    let dead = false;
+    let attempt = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const open = () => {
+      es = new EventSource(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}`);
+      es.onmessage = (m) => {
+        attempt = 0;
+        try {
+          applyEvent(JSON.parse(m.data) as YuiEvent);
+        } catch (err) {
+          console.error("event parse gagal", err);
+        }
+      };
+      es.onerror = () => {
+        if (dead || !es) return;
+        if (es.readyState === EventSource.CLOSED) {
+          es.close();
+          const delay = Math.min(1000 * 2 ** attempt++, 15_000);
+          timer = setTimeout(open, delay);
+        }
+        // CONNECTING = auto-retry browser (replay ?since lama; dedupe by id)
+      };
+    };
+    open();
+    return () => {
+      dead = true;
+      if (timer) clearTimeout(timer);
+      es?.close();
+    };
+  }, [sessionId, applyEvent]);
+
+  // Resync saat window kembali fokus: tarik snapshot event sejak lastEventId —
+  // menutup celah apa pun yang terlewat (SSE mati saat tab di background, dll).
+  useEffect(() => {
+    const resync = async () => {
+      if (!sessionId) return;
       try {
-        applyEvent(JSON.parse(m.data) as YuiEvent);
-      } catch (err) {
-        console.error("event parse gagal", err);
+        const r = await fetch(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`);
+        if (!r.ok) return;
+        const text = await r.text();
+        for (const block of text.split("\n\n")) {
+          const line = block.split("\n").find((l) => l.startsWith("data: "));
+          if (!line) continue;
+          try {
+            applyEvent(JSON.parse(line.slice(6)) as YuiEvent);
+          } catch {
+            /* blok tidak lengkap */
+          }
+        }
+      } catch {
+        /* offline — SSE watchdog akan ambil alih */
       }
     };
-    es.onerror = () => {
-      /* EventSource auto-reconnect; state replay via ?since */
-    };
-    return () => es.close();
+    window.addEventListener("focus", resync);
+    return () => window.removeEventListener("focus", resync);
   }, [sessionId, applyEvent]);
 
   async function pick(p: PersonaInfo, projectIdOverride?: string | null) {
