@@ -1210,6 +1210,19 @@ html, body {
 
 /* ── Metering panel (P1-CRED-1) ── */
 .usage-panel { display: flex; flex-direction: column; gap: 12px; }
+
+/* P1-CRED-2/3/4: panel saldo & batas */
+.budget-panel { display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1px solid var(--yui-border); border-radius: 8px; margin-bottom: 4px; }
+.budget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.budget-grid p { margin: 2px 0; font-size: var(--yui-text-md); }
+.budget-bar { position: relative; height: 14px; border-radius: 6px; background: var(--yui-surface-2, rgba(127, 127, 127, 0.15)); overflow: hidden; margin-top: 4px; }
+.budget-bar > div { height: 100%; background: var(--yui-accent, #7aa2f7); transition: width 0.3s; }
+.budget-bar > div[data-hot] { background: #e06c75; }
+.budget-bar > span { position: absolute; right: 6px; top: 0; font-size: 10px; line-height: 14px; color: var(--yui-text-secondary); }
+.budget-hit { color: #e06c75; margin: 0; font-size: var(--yui-text-sm); }
+.budget-limits { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.budget-limits input, .budget-limits select { width: 100%; }
+
 .usage-range { display: flex; gap: 6px; }
 .usage-total { margin: 0; font-size: var(--yui-text-md); }
 .usage-table { width: 100%; border-collapse: collapse; font-size: var(--yui-text-sm); }

@@ -182,4 +182,16 @@ describe("delegation runner", () => {
     ).toThrow(/tidak ditemukan/);
     store.close();
   });
+
+  it("P1-CRED-3: cap delegasi paralel dinamis (maxChildren) — spawn di atas cap ditolak", async () => {
+    const slow = new FakeProvider([]); // tak beres dalam test — anak 1 tetap "aktif"
+    const deps = { ...makeDeps(slow), maxChildren: () => 1 };
+    const h1 = runChildPersona(deps, { sessionId: parentSession, turnId: "t5" }, "yui-scribe", "ringkas", null, makeEmit());
+    expect(() =>
+      runChildPersona(deps, { sessionId: parentSession, turnId: "t5" }, "yui-analyst", "analisis", null, makeEmit()),
+    ).toThrow(/batas delegation paralel \(1\) tercapai/);
+    void h1.summary.catch(() => undefined);
+    await new Promise((r) => setTimeout(r, 50));
+    store.close();
+  });
 });

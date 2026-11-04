@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type McpServerStatus, type RosterEntry as RosterEntryIn, type YuiEvent } from "@yui/contracts";
+import { PersonaInfo, type McpServerStatus, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
 import { SessionStore } from "./session/store.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
@@ -25,6 +25,7 @@ import { installFromCatalog, uninstallFromConfig } from "./mcp/install.js";
 import { McpAuditStore } from "./mcp/audit.js";
 import { UsageLedger } from "./usage/ledger.js";
 import { loadPriceBook, saveModelPrice } from "./model-prices.js";
+import { AdmissionControl, usageMatrixWithCost } from "./budget.js";
 import type { ModelPrice } from "@yui/contracts";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
@@ -163,7 +164,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     workspaceGlobalPath: paths.workspacePath, // USER.md selalu global walau delegasi menimpa workspacePath
     routeModel: routeModelFor, // P1-MDL-1: anak resolve model persona-nya sendiri
     mcpAllowlistFor, // P1-PRJ-5: anak mewarisi binding MCP sesuai roster persona anak
-    recordUsage: (u) => usageLedger.record(u), // P1-CRED-1: loop delegasi anak ikut ter-meter
+    recordUsage: (u) => { usageLedger.record(u); admission.noteUsage(); }, // CRED-1 meter + CRED-2 saldo cache invalidate
+    maxChildren: () => admission.maxChildren(), // CRED-3: cap delegasi dinamis
   };
   registerDelegateTool(delegateDeps);
 
@@ -176,6 +178,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const mcpAudit = new McpAuditStore(paths.dbPath);
   // P1-CRED-1: ledger metering — token per panggilan model (loop utama + delegasi anak).
   const usageLedger = new UsageLedger(paths.dbPath);
+  // P1-CRED-2/3: admission control (saldo hold→settle + rate limit) — file budget.json.
+  const budgetFile = path.join(path.dirname(paths.dbPath), "budget.json");
+  const admission = new AdmissionControl(usageLedger, modelPricesFile, budgetFile);
   const onMcpCall = (info: McpCallInfo) => mcpAudit.log(info);
   let mcpConfig: McpRegistry | null = null;
   const reloadMcpConfig = (): McpRegistry | null => {
@@ -397,11 +402,24 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
 
   /** Dipakai REST runTurn & dungeon runner (async — resolve saat turn selesai). */
   function runTurnInternal(sessionId: string, text: string): Promise<void> {
+    // P1-CRED-2/3: admission control — cek rate limit & budget SEBELUM turn jalan.
+    const emit = makeEmitter(store, EventBus, sessionId);
+    const admit = admission.admitTurn(sessionId);
+    if (!admit.ok) {
+      emit({ type: "session.error", message: admit.reason ?? "turn ditolak", recoverable: true });
+      return Promise.resolve();
+    }
+    if (admit.warn) {
+      emit({ type: "session.error", message: `⚠ ${admit.warn} — turn tetap dijalankan (mode warn)`, recoverable: true });
+    }
     const ac = new AbortController();
     turnAborts.set(sessionId, ac);
     return makeLoopFor(sessionId)
       .runTurn(sessionId, text, { signal: ac.signal })
-      .finally(() => turnAborts.delete(sessionId));
+      .finally(() => {
+        turnAborts.delete(sessionId);
+        admission.settleTurn(sessionId); // CRED-2: hold dilepas (actual sudah di ledger)
+      });
   }
 
   function makeLoopFor(sessionId: string): AgentLoop {
@@ -420,7 +438,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       approvals,
       emit,
       mcpAllowlistFor, // P1-PRJ-5: binding MCP granular per project×persona
-      recordUsage: (u) => usageLedger.record(u), // P1-CRED-1: metering per panggilan model
+      recordUsage: (u) => { usageLedger.record(u); admission.noteUsage(); }, // CRED-1 meter + CRED-2 saldo cache
     });
     loopCache.set(sessionId, loop);
     return loop;
@@ -663,6 +681,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // P1-MDL-3: price book — indikator biaya metering (per persona/model).
     getModelPrices: () => loadPriceBook(modelPricesFile),
     updateModelPrice: (model: string, price: ModelPrice) => saveModelPrice(modelPricesFile, model, price),
+    // P1-CRED-2/3/4: budget & admission + attribution matrix.
+    getBudgetStatus: () => admission.status(),
+    updateBudget: (input: UpdateBudgetRequest) => {
+      admission.updateConfig(input);
+      return admission.status();
+    },
+    getUsageMatrix: (filter: UsageFilter = {}) => usageMatrixWithCost(usageLedger, modelPricesFile, filter),
     getModelRoutes: () => ({
       defaultModel: model,
       defaultFallback: process.env.YUI_MODEL_FALLBACK ?? "",

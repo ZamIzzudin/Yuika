@@ -7,3 +7,4 @@ export * from "./mcp.js";
 export * from "./memory.js";
 export * from "./settings.js";
 export * from "./usage.js";
+export * from "./budget.js";

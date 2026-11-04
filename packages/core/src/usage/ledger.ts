@@ -4,7 +4,7 @@
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import { type UsageEvent, type UsageFilter, type UsageRollup, type UsageSummary } from "@yui/contracts";
+import { type UsageEvent, type UsageFilter, type UsageMatrixRow, type UsageRollup, type UsageSummary } from "@yui/contracts";
 
 export class UsageLedger {
   private db: Database.Database;
@@ -74,6 +74,21 @@ export class UsageLedger {
       byPersona: roll("persona_id"), byModel: roll("model"),
       windowStart: total.first,
     };
+  }
+
+  /** CRED-4: attribution matrix persona × model (biaya dihitung pemanggil via price book). */
+  matrix(filter: UsageFilter = {}): UsageMatrixRow[] {
+    const { where, args } = this.where(filter);
+    const rows = this.db
+      .prepare(
+        `SELECT persona_id AS p, model AS m, COUNT(*) AS calls, SUM(prompt_tokens) AS pi, SUM(output_tokens) AS po
+         FROM usage_events ${where} GROUP BY persona_id, model ORDER BY pi + po DESC`
+      )
+      .all(...args) as Array<{ p: string; m: string; calls: number; pi: number; po: number }>;
+    return rows.map((r) => ({
+      personaId: r.p, model: r.m, calls: r.calls, promptTokens: r.pi, outputTokens: r.po,
+      cost: null, currency: null, // diisi usageMatrixWithCost (core/budget)
+    }));
   }
 
   private where(f: UsageFilter): { where: string; args: (string | number)[] } {

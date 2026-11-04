@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { UsageFilter } from "@yui/contracts";
 import { getRuntime } from "@/lib/runtime";
 
-/** GET /api/usage?projectId=&sessionId=&personaId=&since=&recent=N
+/** GET /api/usage?projectId=&sessionId=&personaId=&since=&recent=N&matrix=1
  *  P1-CRED-1: summary metering (rollup per persona/model) + feed event terbaru.
- *  `since` = epoch ms (window burn-rate); `recent` (opsional) menyertakan event mentah. */
+ *  `since` = epoch ms (window burn-rate); `recent` (opsional) menyertakan event
+ *  mentah; `matrix=1` (CRED-4) menyertakan attribution persona×model + biaya. */
 export async function GET(req: NextRequest) {
   const q = new URL(req.url).searchParams;
   const filter = UsageFilter.parse({
@@ -16,5 +17,6 @@ export async function GET(req: NextRequest) {
   const runtime = getRuntime();
   const summary = runtime.getUsageSummary(filter);
   const recent = q.get("recent") ? runtime.getUsageRecent(Math.min(Number(q.get("recent")) || 20, 200), filter) : undefined;
-  return NextResponse.json({ summary, recent });
+  const matrix = q.get("matrix") ? runtime.getUsageMatrix(filter) : undefined;
+  return NextResponse.json({ summary, recent, matrix });
 }

@@ -295,3 +295,36 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
   - ✅ Kolom "Est. biaya" per model & total di atas terisi angka ≠ "—";
      kembali lagi setelah refresh tetap tersimpan (model-prices.json).
   3. Kosongkan harga → kolom kembali "—" (bukan 0).
+
+### M7.5 (P1-CRED-2/3/4) — Budget, admission control & rate limit
+> Prasyarat: M7.4 lolos (harga model terisi — angka saldo butuh price book).
+> Restart dev server sekali sebelum batch ini.
+
+1. Buka Settings → Metering → panel **Saldo & Batas** (paling atas).
+  - ✅ Terlihat: belanja Hari ini & Total (dengan bar bila limit diset),
+     burn-rate/jam (rata² 24 j), hold aktif; mode default "warn", semua limit
+     "— tanpa batas".
+  - ✅ Bila ada model belum dihargai: hint "angka = batas bawah (jujur)".
+
+2. **Mode block + limit harian**: set "Limit harian" ke angka KECIL di bawah
+   belanja hari ini (mis. 0.001) → ganti mode ke "block".
+  - ✅ Kirim chat apa pun → muncul pesan merah "Budget harian … tercapai — turn
+     DITOLAK (mode block)" dan TIDAK ada panggilan model (cekan cepat: jumlah
+     panggilan di metering tidak bertambah).
+  - ✅ Panel menunjukkan bar merah 100% + badge limit-hit.
+3. Kembalikan mode ke **"warn"** → kirim chat lagi.
+  - ✅ Turn TETAP jalan; sebelum jawaban muncul chip "⚠ Budget … (mode warn)".
+4. Kosongkan "Limit harian" (input kosong → blur) → chat normal tanpa warning.
+5. **Rate limit**: set "Turn / menit" = 2 → kirim 3 turn cepat berturut-turut.
+  - ✅ Yang ke-3 ditolak: "Rate limit workspace tercapai (2 turn/menit)".
+     Kosongkan kembali untuk test lanjutan.
+6. **Cap delegasi**: set "Delegasi paralel" = 1 → minta Conductor mendelegasi
+   2 persona sekaligus dalam satu prompt.
+  - ✅ Delegasi kedua ditolak dengan pesan "batas delegation paralel (1)
+     tercapai — atur di Settings → Metering"; kembalikan ke kosong/2 setelahnya.
+7. **Attribution matrix**: pastikan sudah pernah pakai ≥2 persona dengan model
+   berbeda (mis. override model satu persona di Settings → Provider) → buka
+   Metering.
+  - ✅ Tabel "Attribution biaya (persona × model)" muncul: baris per kombinasi,
+     token & est. biaya; model tanpa harga = "—".
+8. Refresh halaman → semua setting budget tetap (data/budget.json).

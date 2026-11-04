@@ -28,6 +28,8 @@ export interface DelegationDeps {
   mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
   /** P1-CRED-1: metering loop anak juga tercatat (persona anak + model anak). */
   recordUsage?: LoopDeps["recordUsage"];
+  /** P1-CRED-3: cap delegasi paralel dinamis (budget workspace); default 2. */
+  maxChildren?: () => number;
 }
 
 const MAX_PARALLEL_CHILDREN = 2; // DEMO cap — P1: pool berbasis workspace + plan
@@ -52,7 +54,8 @@ export function runChildPersona(
   if (!persona.manifest.delegation.spawnable_by.includes("yui") && !persona.manifest.delegation.spawnable_by.includes("user")) {
     throw new Error(`persona ${personaId} tidak spawnable`);
   }
-  if (activeChildren >= MAX_PARALLEL_CHILDREN) throw new Error("batas delegation paralel demo (2) tercapai");
+  if (activeChildren >= (deps.maxChildren?.() ?? MAX_PARALLEL_CHILDREN))
+    throw new Error(`batas delegation paralel (${deps.maxChildren?.() ?? MAX_PARALLEL_CHILDREN}) tercapai — atur di Settings → Metering`);
 
   const childSessionId = `s_${randomUUID()}`;
   // Toolset anak = toolset persona MINUS delegate_task (kedalaman 1 utk demo) — TODO(P1): depth policy

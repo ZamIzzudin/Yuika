@@ -150,6 +150,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             )}
             {section === "usage" && (
               <section aria-label="Metering pemakaian">
+                <BudgetPanel />
                 <UsagePanel />
               </section>
             )}
@@ -285,18 +286,137 @@ async function save(
   }
 }
 
+/** P1-CRED-2/3/4: panel saldo & batas — belanja jujur dari metering × price
+ *  book, burn-rate 24 j, hold aktif, limit harian/total (mode warn/block),
+ *  rate-limit turn/menit & cap delegasi paralel. Edit = blur → PUT budget. */
+function BudgetPanel() {
+  const [st, setSt] = useState<{
+    config: { mode: "warn" | "block"; dailyLimit: number | null; totalLimit: number | null; maxTurnsPerMinute: number | null; maxDelegationConcurrency: number | null };
+    spentToday: number; spentTotal: number; burnRatePerHour: number; activeHolds: number;
+    coverage: "full" | "partial" | "none"; currency: "USD" | "IDR" | null; dailyLimitHit: boolean; totalLimitHit: boolean;
+  } | null>(null);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    const r = await fetch("/api/settings/budget");
+    if (r.ok) setSt(await r.json());
+  }, []);
+  useEffect(() => {
+    void load();
+    const t = setInterval(() => void load(), 5_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const save = (patch: Record<string, number | "warn" | "block" | null>) =>
+    void fetch("/api/settings/budget", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(patch) })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => s && setSt(s));
+
+  if (!st) return <Skeleton lines={3} />;
+  const cur = st.currency ?? "USD";
+  const fmtC = (n: number) => `${n.toLocaleString("id-ID", { maximumFractionDigits: n < 100 ? 3 : 0 })} ${cur}`;
+  const bar = (spent: number, limit: number | null) => {
+    if (!limit) return null;
+    const pct = Math.min(100, Math.round((spent / limit) * 100));
+    return (
+      <div className="budget-bar" title={`${pct}% dari limit`}>
+        <div style={{ width: `${pct}%` }} data-hot={spent >= limit ? "" : undefined} />
+        <span>{pct}%</span>
+      </div>
+    );
+  };
+  const numField = (key: "dailyLimit" | "totalLimit" | "maxTurnsPerMinute" | "maxDelegationConcurrency", label: string, placeholder: string) => (
+    <label className="field">
+      <span className="field-title">{label}</span>
+      <input
+        inputMode="decimal"
+        placeholder={placeholder}
+        value={draft[key] ?? (st.config[key] === null ? "" : String(st.config[key]))}
+        onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
+        onBlur={() => {
+          if (!(key in draft)) return;
+          const raw = draft[key]!.trim();
+          const n = Number(raw.replace(",", "."));
+          const v = raw === "" ? null : Number.isFinite(n) && n > 0 ? n : undefined;
+          if (v === undefined) { setDraft(({ [key]: _, ...rest }) => rest); return; } // tidak valid → batal
+          save({ [key]: v } as Record<string, number | null>);
+          setDraft(({ [key]: _, ...rest }) => rest);
+        }}
+      />
+    </label>
+  );
+  return (
+    <div className="budget-panel">
+      <div className="budget-grid">
+        <div>
+          <span className="field-title">Hari ini</span>
+          <p>
+            <b>{fmtC(st.spentToday)}</b>
+            {st.config.dailyLimit !== null ? <> / {fmtC(st.config.dailyLimit)}</> : <small className="dim"> (tanpa batas)</small>}
+          </p>
+          {bar(st.spentToday, st.config.dailyLimit)}
+        </div>
+        <div>
+          <span className="field-title">Total</span>
+          <p>
+            <b>{fmtC(st.spentTotal)}</b>
+            {st.config.totalLimit !== null ? <> / {fmtC(st.config.totalLimit)}</> : <small className="dim"> (tanpa batas)</small>}
+          </p>
+          {bar(st.spentTotal, st.config.totalLimit)}
+        </div>
+        <div>
+          <span className="field-title">Burn-rate</span>
+          <p>
+            <b>{fmtC(st.burnRatePerHour)}</b>/j <small className="dim">(rata² 24 j)</small>
+          </p>
+          <p className="dim">
+            Hold aktif: {fmtC(st.activeHolds)}
+          </p>
+        </div>
+      </div>
+      {(st.dailyLimitHit || st.totalLimitHit) && (
+        <p className={st.config.mode === "block" ? "budget-hit" : "pane-hint"}>
+          {st.config.mode === "block"
+            ? "⛔ Limit tercapai — turn baru DITOLAK (mode block)."
+            : "⚠ Limit tercapai (mode warn) — turn tetap berjalan."}
+        </p>
+      )}
+      {st.coverage !== "full" && (
+        <p className="pane-hint">
+          {st.coverage === "none"
+            ? "Angka biaya butuh harga model — isi di editor Harga model di bawah."
+            : "Sebagian model belum dihargai — angka = batas bawah (jujur, bukan 0)."}
+        </p>
+      )}
+      <div className="budget-limits">
+        {numField("dailyLimit", `Limit harian (${cur})`, "— tanpa batas")}
+        {numField("totalLimit", `Limit total (${cur})`, "— tanpa batas")}
+        {numField("maxTurnsPerMinute", "Turn / menit", "— tanpa batas")}
+        {numField("maxDelegationConcurrency", "Delegasi paralel", "— default 2")}
+        <label className="field">
+          <span className="field-title">Saat limit tercapai</span>
+          <select value={st.config.mode} onChange={(e) => save({ mode: e.target.value as "warn" | "block" })}>
+            <option value="warn">warn — peringatkan saja</option>
+            <option value="block">block — tolak turn</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 /** P1-CRED-1 + P1-MDL-3: panel metering — rollup token per persona & model +
  *  estimasi biaya dari price book (hanya bila harga di-set — tanpa harga = tak
  *  dihitung, bukan 0). Editor harga inline per 1 jt token. */
 function UsagePanel() {
-  const [data, setData] = useState<{ summary: { calls: number; promptTokens: number; outputTokens: number; byPersona: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; byModel: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; windowStart: number | null }; recent?: { at: number; personaId: string; model: string; promptTokens: number; outputTokens: number; latencyMs: number }[] } | null>(null);
+  const [data, setData] = useState<{ summary: { calls: number; promptTokens: number; outputTokens: number; byPersona: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; byModel: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; windowStart: number | null }; recent?: { at: number; personaId: string; model: string; promptTokens: number; outputTokens: number; latencyMs: number }[]; matrix?: { personaId: string; model: string; calls: number; promptTokens: number; outputTokens: number; cost: number | null; currency: "USD" | "IDR" | null }[] } | null>(null);
   const [prices, setPrices] = useState<Record<string, { inputPerMillion: number; outputPerMillion: number; currency: "USD" | "IDR" }> | null>(null);
   const [hours, setHours] = useState<number>(0); // 0 = semua waktu
 
   const load = useCallback(async () => {
     const since = hours > 0 ? Date.now() - hours * 3_600_000 : undefined;
     const [u, p] = await Promise.all([
-      fetch(`/api/usage?recent=8${since ? `&since=${since}` : ""}`),
+      fetch(`/api/usage?recent=8&matrix=1${since ? `&since=${since}` : ""}`),
       fetch("/api/settings/models/prices"),
     ]);
     if (u.ok) setData(await u.json());
@@ -399,6 +519,35 @@ function UsagePanel() {
               ))}
             </tbody>
           </table>
+          {data.matrix && data.matrix.length > 0 && (
+            <>
+              <span className="field-title">Attribution biaya (persona × model)</span>
+              <table className="usage-table" aria-label="Attribution biaya persona per model">
+                <thead>
+                  <tr>
+                    <th>Persona</th>
+                    <th>Model</th>
+                    <th>Panggilan</th>
+                    <th>Token</th>
+                    <th>Est. biaya</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.matrix.map((r) => (
+                    <tr key={`${r.personaId}|${r.model}`}>
+                      <td>{r.personaId.replace("yui-", "")}</td>
+                      <td>
+                        <code>{r.model}</code>
+                      </td>
+                      <td>{fmt(r.calls)}</td>
+                      <td>{fmt(r.promptTokens + r.outputTokens)}</td>
+                      <td>{r.cost === null ? "—" : `${r.cost.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${r.currency}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
           <PriceBookEditor models={data.summary.byModel.map((m) => m.key)} prices={prices} onSave={savePrice} />
           {data.recent && data.recent.length > 0 && (
             <>
