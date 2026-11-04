@@ -188,6 +188,27 @@ export class SessionStore {
     });
   }
 
+  /** P0 reliabilitas (boot heal): sesi yang `turn.started` TERAKHIRNYA tidak
+   *  punya event penutup (persona.state done/idle/error, turn.cancelled, atau
+   *  session.error) — turn itu mati bersama proses lama (server direstart saat
+   *  berjalan). Tanpa heal, replay UI menampilkan "berjalan" zombie selamanya. */
+  findInterruptedTurns(): Array<{ sessionId: string; personaId: string; lastTurnEventId: number }> {
+    const rows = this.db
+      .prepare(
+        `SELECT s.id AS sid, s.persona_id AS pid, ts.id AS last_turn_id
+         FROM sessions s
+         JOIN (SELECT session_id, MAX(id) AS id FROM events WHERE type = 'turn.started' GROUP BY session_id) ts
+           ON ts.session_id = s.id
+         LEFT JOIN events e ON e.session_id = s.id AND e.id > ts.id AND (
+           e.type = 'turn.cancelled' OR e.type = 'session.error' OR
+           (e.type = 'persona.state' AND json_extract(e.payload, '$.state') IN ('done','idle','error'))
+         )
+         WHERE e.id IS NULL`
+      )
+      .all() as Array<{ sid: string; pid: string; last_turn_id: number }>;
+    return rows.map((r) => ({ sessionId: r.sid, personaId: r.pid, lastTurnEventId: r.last_turn_id }));
+  }
+
   /** P0-DATA-3: approval persist — kartu pending survive restart (jika mati →
    *  expired), dan "Setujui & ingat" lintas restart via approval_memory. */
   insertApproval(row: { requestId: string; sessionId: string; tool: string; args: Record<string, unknown>; reason: string }): void {

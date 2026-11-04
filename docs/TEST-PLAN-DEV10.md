@@ -138,6 +138,12 @@ Format laporan per kasus: `M1.1 ✅` / `M1.2 ❌ — <yang terjadi>`.
      berjalan". 🗑 pada latihan user → terhapus dari list & disk.
   2. Restart dev server saat misi berjalan → refresh.
   - ✅ Status berubah "✕ gagal — server direstart saat misi berjalan".
+  3. **BOOT HEAL sesi chat (baru):** restart server saat TURN CHAT/delegasi
+     berjalan (persona "berpikir") → refresh.
+  - ✅ Chip persona kembali **idle** (bukan "berpikir" selamanya) + muncul
+     pesan "Turn sebelumnya terputus — dev server direstart…"; kartu delegasi
+     anak menutup dengan "_(terputus — server direstart…)_; composer aktif
+     kembali. Terminal server mencetak `[yui:heal] N turn terputus ditutup`.
 
 ### Bagian 2 — Lifecycle skill (DUN-2 + DUN-3)
 

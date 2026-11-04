@@ -45,7 +45,8 @@ function Card({
   subtitle?: string;
   root?: boolean;
 }) {
-  const label = state === "done" ? "selesai" : STATE_LABEL[state] ?? "menunggu";
+  const label =
+    state === "done" ? "selesai" : (STATE_LABEL[state] ?? "menunggu");
   return (
     <div className={"org-card" + (root ? " org-root" : "")} data-s={state}>
       <span className="face">
@@ -72,8 +73,12 @@ function TaskRows({ edges, now }: { edges: DelegationEdge[]; now: number }) {
         const dur = e.doneAt ? e.doneAt - e.startedAt : now - e.startedAt;
         return (
           <span key={e.childSessionId} className="org-task" title={e.goal}>
-            <span className="dot">{running ? (e.state === "idle" ? "○" : "◐") : "✓"}</span>
-            <span className="goal-text">{e.goal.length > 64 ? e.goal.slice(0, 64) + "…" : e.goal}</span>
+            <span className="dot">
+              {running ? (e.state === "idle" ? "○" : "◐") : "✓"}
+            </span>
+            <span className="goal-text">
+              {e.goal.length > 64 ? e.goal.slice(0, 64) + "…" : e.goal}
+            </span>
             <span className="dur">{fmtDur(dur)}</span>
           </span>
         );
@@ -104,24 +109,50 @@ function Branch({
     groups.set(e.personaId, arr);
   }
   return (
-    <ul className={"org-branches" + (isRootBranch ? " root" : "")} aria-label="cabang delegasi">
+    <ul
+      className={"org-branches" + (isRootBranch ? " root" : "")}
+      aria-label="cabang delegasi"
+    >
       {[...groups.entries()].map(([personaId, ds]) => {
-        const working = ds.some((d) => d.status === "running" && d.state !== "idle");
+        const working = ds.some(
+          (d) => d.status === "running" && d.state !== "idle",
+        );
         const doneCount = ds.filter((d) => d.status === "done").length;
-        const state = working ? "working" : doneCount === ds.length ? "done" : "idle";
-        const delegatedBy = ds[0]!.parentPersonaId !== "yui-conductor" && !isRootBranch ? `dari ${PERSONA_NAME[ds[0]!.parentPersonaId] ?? ds[0]!.parentPersonaId}` : undefined;
+        const state = working
+          ? "working"
+          : doneCount === ds.length
+            ? "done"
+            : "idle";
+        const delegatedBy =
+          ds[0]!.parentPersonaId !== "yui-conductor" && !isRootBranch
+            ? `dari ${PERSONA_NAME[ds[0]!.parentPersonaId] ?? ds[0]!.parentPersonaId}`
+            : undefined;
         return (
           <li key={personaId + ds[0]!.childSessionId} className="org-branch">
-            <span className="org-link" aria-hidden title="mendelegasikan tugas" />
+            <span
+              className="org-link"
+              aria-hidden
+              title="mendelegasikan tugas"
+            />
             <Card
               personaId={personaId}
               state={state}
-              subtitle={delegatedBy ?? (ds.length > 1 ? `${ds.length} tugas · ${doneCount} selesai` : undefined)}
+              subtitle={
+                delegatedBy ??
+                (ds.length > 1
+                  ? `${ds.length} tugas · ${doneCount} selesai`
+                  : undefined)
+              }
             />
             <TaskRows edges={ds} now={now} />
             {/* delegasi turunan (mis. designer → coder) */}
             {ds.map((d) => (
-              <Branch key={d.childSessionId} parentSessionId={d.childSessionId} edges={edges} now={now} />
+              <Branch
+                key={d.childSessionId}
+                parentSessionId={d.childSessionId}
+                edges={edges}
+                now={now}
+              />
             ))}
           </li>
         );
@@ -148,13 +179,21 @@ export function TeamTree({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [dragging, setDragging] = useState(false);
-  const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const dragRef = useRef<{
+    x: number;
+    y: number;
+    px: number;
+    py: number;
+  } | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     try {
       const r = await fetch(`/api/projects/${projectId}/delegations`);
-      if (r.ok) setEdges(((await r.json()) as { delegations: DelegationEdge[] }).delegations);
+      if (r.ok)
+        setEdges(
+          ((await r.json()) as { delegations: DelegationEdge[] }).delegations,
+        );
     } catch {
       /* biarkan data lama */
     }
@@ -175,7 +214,12 @@ export function TeamTree({
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
-        setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * (e.deltaY < 0 ? 1.15 : 1 / 1.15))));
+        setZoom((z) =>
+          Math.min(
+            ZOOM_MAX,
+            Math.max(ZOOM_MIN, z * (e.deltaY < 0 ? 1.15 : 1 / 1.15)),
+          ),
+        );
       } else {
         setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
       }
@@ -200,7 +244,9 @@ export function TeamTree({
     setDragging(false);
   };
 
-  const leadState = (rootState === "thinking" || rootState === "working" ? "working" : "idle") as "working" | "idle";
+  const leadState = (
+    rootState === "thinking" || rootState === "working" ? "working" : "idle"
+  ) as "working" | "idle";
   return (
     <div
       ref={canvasRef}
@@ -215,11 +261,19 @@ export function TeamTree({
     >
       {/* kontrol zoom overlay — klik tidak ikut tergeser (stopPropagation) */}
       <div className="org-controls" onPointerDown={(e) => e.stopPropagation()}>
-        <button className="btn secondary" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.2))} title="Perbesar">
+        <button
+          className="btn secondary"
+          onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.2))}
+          title="Perbesar"
+        >
           +
         </button>
         <span className="org-zoom">{Math.round(zoom * 100)}%</span>
-        <button className="btn secondary" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z / 1.2))} title="Perkecil">
+        <button
+          className="btn secondary"
+          onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z / 1.2))}
+          title="Perkecil"
+        >
           −
         </button>
         <button
@@ -233,20 +287,39 @@ export function TeamTree({
           ⌂
         </button>
       </div>
-      <p className="org-canvas-hint">Tahan &amp; geser untuk menjelajah · scroll = geser · Ctrl+scroll = zoom</p>
-      <div className="org-board" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}>
+      <div
+        className="org-board"
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+        }}
+      >
         <div className="org-tree">
           <div className="org-node">
             {rootPersonaId ? (
-              <Card personaId={rootPersonaId} state={leadState} subtitle="lead sesi ini" root />
+              <Card
+                personaId={rootPersonaId}
+                state={leadState}
+                subtitle="lead sesi ini"
+                root
+              />
             ) : (
-              <p className="task-empty">Buka sesi untuk melihat struktur delegasi live.</p>
+              <p className="task-empty">
+                Buka sesi untuk melihat struktur delegasi live.
+              </p>
             )}
             {rootSessionId && edges !== null && (
-              <Branch parentSessionId={rootSessionId} edges={edges} now={now} isRootBranch />
+              <Branch
+                parentSessionId={rootSessionId}
+                edges={edges}
+                now={now}
+                isRootBranch
+              />
             )}
             {edges !== null && edges.length === 0 && (
-              <p className="dim org-hint">Belum ada delegasi — lead mengerjakan sendiri atau minta ia mendelegasikan.</p>
+              <p className="dim org-hint">
+                Belum ada delegasi — lead mengerjakan sendiri atau minta ia
+                mendelegasikan.
+              </p>
             )}
           </div>
         </div>

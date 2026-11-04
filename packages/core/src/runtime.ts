@@ -48,6 +48,7 @@ import { computeReadiness } from "./project/readiness.js";
 import { taskTreeFromEvents } from "./project/tasktree.js";
 import { loadMissions, missionDir, createMission as writeMission, appendMissionResource, deleteMission, dungeonsDir, sanitizeMaterialName } from "./dungeon/mission.js";
 import { createDungeonRunner, sweepStaleRuns } from "./dungeon/runner.js";
+import { healInterruptedTurns } from "./session/heal.js";
 import { createSkillEvaluator, missionForSkill, readEval } from "./dungeon/eval.js";
 import { setSkillStatus } from "./skills/manager.js";
 
@@ -93,7 +94,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return msgs.length ? (msgs[msgs.length - 1]!.content ?? null) : null;
     },
   });
-  sweepStaleRuns(paths.workspacePath, loadMissions(paths.workspacePath)); // restart-safe
+  // P0 reliabilitas (feedback user dev-10): turn/run yang mati bersama proses
+  // lama (server direstart saat berjalan) ditutup jujur — anti UI "berjalan"
+  // zombie. Sekali per PROSES: HMR me-recreate runtime, tapi turn lama masih
+  // hidup di memori proses ini → jangan bunuh (flag globalThis). Flag yang sama
+  // menjaga sweepStaleRuns agar tidak menandai run HIDUP sebagai gagal saat HMR.
+  const gBoot = globalThis as unknown as { __yuiBootSwept?: boolean };
+  if (!gBoot.__yuiBootSwept) {
+    gBoot.__yuiBootSwept = true;
+    sweepStaleRuns(paths.workspacePath, loadMissions(paths.workspacePath)); // restart-safe
+    const healed = healInterruptedTurns(store);
+    if (healed.length) console.log(`[yui:heal] ${healed.length} turn terputus ditutup (server restart saat berjalan)`);
+  }
 
   // ---- P1-DUN-3: eval buta tested→ready (hakim = sesi fresh, lihat §13.8) ----
   const skillEvaluator = createSkillEvaluator({
