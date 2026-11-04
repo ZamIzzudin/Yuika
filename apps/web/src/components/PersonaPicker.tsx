@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
 import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
+import { OrinPortrait } from "./OrinPortrait";
 import { Modal } from "./ui";
 
 export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
@@ -106,14 +107,15 @@ export function PersonaOrbit({
     "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui hover:animate-none";
   return (
     <div className="relative mt-6 h-[380px] w-full max-w-[620px] sm:h-[430px]">
-      {/* pusat: maskot persona terpilih + deskripsi (muncul saat hover kartu) */}
+      {/* pusat: maskot INTERAKTIF persona terpilih + deskripsi (muncul saat hover
+          kartu — mata mengikuti kursor & bisa diklik, OrinPortrait v4) */}
       {active && (
         <div
           key={active.id}
           aria-live="polite"
-          className="msg-in pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-16 text-center sm:px-20"
+          className="msg-in absolute inset-0 flex flex-col items-center justify-center gap-2 px-16 text-center sm:px-20"
         >
-          <PersonaFace personaId={active.id} size={92} />
+          <OrinPortrait state="idle" personaId={active.id} size={150} />
           <b className="text-title font-semibold text-primary">{active.name}</b>
           <p className="max-w-[320px] text-body leading-6 text-muted">{active.description}</p>
           <GrowthBadge g={growth.get(active.id)} />

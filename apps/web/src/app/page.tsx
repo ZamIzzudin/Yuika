@@ -11,7 +11,6 @@ import { DungeonView } from "@/components/DungeonView";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, type ChatItem } from "@/components/ChatView";
-import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import {
@@ -631,12 +630,6 @@ export default function Home() {
           <>
             {!active ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-                <div className="w-[220px]">
-                  <OrinPortrait
-                    state="idle"
-                    personaId={activeProject ? undefined : "yui-conductor"}
-                  />
-                </div>
                 {activeProject ? (
                   <>
                     <h1 className="mt-4 text-display font-semibold text-primary">Menyiapkan {activeProject.name}…</h1>
