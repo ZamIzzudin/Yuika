@@ -17,8 +17,10 @@ import type { SessionStore } from "../session/store.js";
  */
 const pendingEngines = new Map<string, ApprovalEngine>();
 
-/** Deadline approval per policy (P0-SEC-4). Env dibaca ulang tiap pemanggilan
- *  agar test & hot-reload bisa mengatur tanpa restart. Default 5 menit. */
+/** Deadline approval per policy (P0-SEC-4). Env tervalidasi terpusat di
+ *  env.ts (P0-INF-2) tapi tetap dibaca ulang tiap pemanggilan agar test &
+ *  hot-reload bisa mengatur tanpa restart (parse di sini tetap fail-soft:
+ *  nilai rusak → default). Default 5 menit. */
 export function APPROVAL_TIMEOUT_MS(): number {
   const v = Number(process.env.YUI_APPROVAL_TIMEOUT_MS ?? 300_000);
   return Number.isFinite(v) && v >= 0 ? v : 300_000;

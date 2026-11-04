@@ -181,7 +181,7 @@
 > P0-SEC-3 · P0-DEL-1 job persist → P0-DEL-2/P1-DEL-3 steering · P0-DATA-1 Postgres
 > (dep P0-INF-5) → P0-DATA-2 retention · P1-MCP-2 OAuth (menyusul server OAuth-capable:
 > Penpot/Figma di P2-DSN) · P1-INF-1 auth (desain tenant, pasca-demo).
-> **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-2/3/4 · P0-CORE-4/5 ·
+> **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-3/4 ·
 > P0-QA-1/2 · P1-MCP-5 · P1-DEL-1 (parsial: cap paralel
 > dinamis via budget CRED-3 + consult paralel sudah jalan; sisa config per-plan).
 >

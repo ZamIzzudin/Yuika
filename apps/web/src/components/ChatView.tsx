@@ -11,7 +11,7 @@ import { PersonaFace } from "./PersonaPicker";
 import { Markdown } from "./Markdown";
 
 export interface ChatItem {
-  kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted" | "skill";
+  kind: "msg" | "activity" | "delegation" | "approval" | "error" | "noted" | "skill" | "compressed";
   // msg
   role?: "user" | "assistant";
   text?: string;
@@ -33,6 +33,10 @@ export interface ChatItem {
   resolved?: "approved" | "denied" | "expired" | null;
   // noted (P1-MEM-2: hasil learn nudge)
   scope?: "user" | "project";
+  // compressed (P0-CORE-4: chip transparansi kompresi konteks)
+  n?: number;
+  before?: number;
+  after?: number;
 }
 
 const STATE_LABEL: Record<PersonaState, string> = {
@@ -205,6 +209,20 @@ export function ChatView({
                   <span className="noted-icon">✎</span>
                   <span className="noted-text">
                     <b>Yui mencatat</b> ({it.scope === "project" ? "memori proyek" : "tentang Anda"}): {it.text}
+                  </span>
+                </div>
+              );
+            }
+            if (it.kind === "compressed") {
+              return (
+                <div
+                  key={`r${i}`}
+                  className="noted-chip"
+                  title="P0-CORE-4: history lama diringkas jadi checkpoint agar sesi panjang tetap muat di jendela model — riwayat asli tetap tersimpan utuh"
+                >
+                  <span className="noted-icon">🗜</span>
+                  <span className="noted-text">
+                    <b>Konteks dikompresi</b> — {it.n} pesan lama diringkas (~{it.before} → ~{it.after} token); semua riwayat asli tetap tersimpan.
                   </span>
                 </div>
               );

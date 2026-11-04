@@ -282,6 +282,13 @@ export default function Home() {
           { kind: "noted", text: e.note, scope: e.scope },
         ]);
         break;
+      case "context.compressed":
+        // P0-CORE-4: transparansi — user tahu konteks lama diringkas (riwayat asli utuh).
+        setItems((prev) => [
+          ...prev,
+          { kind: "compressed", n: e.messagesSummarized, before: e.estTokensBefore, after: e.estTokensAfter },
+        ]);
+        break;
       case "skill.proposed":
         setItems((prev) => [
           ...prev,

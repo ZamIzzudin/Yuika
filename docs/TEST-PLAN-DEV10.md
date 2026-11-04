@@ -493,3 +493,27 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
   - ✅ Log server yui: `MCP '<name>' daftar tool berubah: +1 -0`; panel
      (poll 10 dtk) menampilkan daftar baru; tool baru bisa dipakai persona
      pada turn berikutnya TANPA restart app.
+
+### M15 (P0) — Kernel Lestari: kompresi konteks + invariant (P0-CORE-4/5 + P0-INF-2)
+> Butuh sesi yang PANJANG. Untuk memancing cepat: set `YUI_CONTEXT_TOKENS=3000`
+> di `.env` + restart dev server (produksi 128k = kompresi baru terasa di sesi
+> 100+ turn).
+
+1. Chat panjang dengan satu persona (tempel artikel besar berulang, minta
+   ringkasan/analisis tiap kali) sampai chip **🗜 Konteks dikompresi** muncul.
+  - ✅ Chip tampil: `N pesan lama diringkas (~X → ~Y token); semua riwayat
+     asli tetap tersimpan`.
+  - ✅ Setelah kompresi, agent MASIH ingat inti awal sesi (nama task/artefak
+     awal disebut benar) — bukan amnesia total.
+  - ✅ Sesi lanjut normal; tool & delegasi tetap jalan pasca-kompresi.
+2. Reload halaman → resume: history chat UI tetap utuh (riwayat asli), chip
+   kompresi tampil di posisi kejadian (replay).
+3. Restart dev server → lanjut chat sesi yang sama: checkpoint dipertahankan
+   (DB), tidak kompresi ulang dari nol.
+4. (Fail-soft, opsional utk dev) matikan/matkakan aux model sementara lalu
+   pancing melewati ambang → turn tetap jalan tanpa kompresi; tidak ada error
+   sesi.
+5. (Invariant, otomatis) `contract-invariants.test.ts` hijau di CI = jaminan
+   append-only & frozen prompt/toolset — PR yang melanggar langsung gagal.
+6. (Env fail-fast) set `YUI_MAX_ITER=abc` → boot server langsung error jelas
+   `[yui] env YUI_* tidak valid (fail-fast): maxIter: ...` (bukan NaN diam-diam).

@@ -7,18 +7,18 @@ import type { ProviderAdapter, InternalMessage, ToolCallRequest } from "./provid
 import { registry } from "./registry.js";
 import { runLearnNudge } from "./memory/nudge.js";
 import type { SessionStore } from "./session/store.js";
+import { buildContextMessages } from "./session/compress.js";
+import { env } from "./env.js";
 import type { Emit } from "./session/emit.js";
 import type { ApprovalEngine } from "./approval/engine.js";
 import type { UsageEvent } from "@yui/contracts";
 
 // Budget iterasi per turn: env override untuk use case panjang (multi-delegasi).
-const MAX_ITERATIONS = Number(process.env.YUI_MAX_ITER ?? 16);
+const MAX_ITERATIONS = env.maxIter;
 
-/** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0) — jawaban untuk
- *  "kenapa lambat": pisahkan waktu provider vs tool vs menunggu approval. */
-const TRACE = process.env.YUI_TRACE !== "0";
+/** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0). */
 function trace(msg: string): void {
-  if (TRACE) console.log(`[yui:trace] ${msg}`);
+  if (env.trace) console.log(`[yui:trace] ${msg}`);
 }
 
 /** P1-PRJ-5 (D17): terapkan binding MCP pada daftar tool sesi — tool `mcp__*`
@@ -73,10 +73,49 @@ export class AgentLoop {
     emit({ type: "turn.started", turnId });
     emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
 
-    // 2) assembly: system prompt FROZEN (dari sesi) + history
+    // 2) assembly: system prompt FROZEN (dari sesi) + history — via view kompresi
+    // (P0-CORE-4): bila estimasi token > ambang, history lama diringkas aux model
+    // jadi CHECKPOINT (tabel messages tetap append-only; ini murni lapisan view).
+    const tAsm = Date.now();
+    const ctx = await buildContextMessages(
+      store,
+      provider,
+      model,
+      sessionId,
+      {
+        contextTokens: env.contextTokens,
+        threshold: env.compressThresholdPct / 1000,
+        keepRecent: env.compressKeepRecent,
+        minMessages: env.compressMinMessages,
+      },
+      // P1-INF-3: aux kompresi ter-meter (hanya dari usage provider).
+      (u) =>
+        this.deps.recordUsage?.({
+          sessionId,
+          projectId: session.projectId,
+          personaId: session.personaId,
+          model,
+          promptTokens: u.inputTokens,
+          outputTokens: u.outputTokens,
+          latencyMs: u.latencyMs,
+          at: Date.now(),
+        }),
+    );
+    if (ctx.compressed) {
+      emit({
+        type: "context.compressed",
+        turnId,
+        messagesSummarized: ctx.messagesSummarized,
+        estTokensBefore: ctx.estTokensBefore,
+        estTokensAfter: ctx.estTokensAfter,
+      });
+      trace(
+        `turn=${turnId.slice(0, 10)} KOMPRESI KONTEKS: ${ctx.messagesSummarized} pesan → checkpoint (~${ctx.estTokensBefore} → ~${ctx.estTokensAfter} token) dalam ${Date.now() - tAsm}ms`,
+      );
+    }
     const messages: InternalMessage[] = [
       { role: "system", content: session.systemPrompt },
-      ...store.getMessages(sessionId),
+      ...ctx.messages,
     ];
     // P1-PRJ-5 (D17): tool MCP hanya muncul bila persona DI-BIND di roster project.
     const tools = applyMcpBinding(registry.toolSchemas(session.toolsets), this.deps.mcpAllowlistFor?.(session) ?? null);

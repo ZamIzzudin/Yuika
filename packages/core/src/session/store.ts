@@ -50,6 +50,17 @@ export class SessionStore {
         ts INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, id);
+      -- P0-CORE-4: checkpoint kompresi konteks — append-only; baris ter-id TERBESAR
+      -- per sesi = checkpoint aktif (view prompt memakainya; messages tak pernah diubah).
+      CREATE TABLE IF NOT EXISTS context_checkpoints (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        upto_seq INTEGER NOT NULL,
+        summary TEXT NOT NULL,
+        model TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_ctxcp_session ON context_checkpoints(session_id, id);
       CREATE TABLE IF NOT EXISTS approvals (
         request_id TEXT PRIMARY KEY,
         session_id TEXT NOT NULL,
@@ -190,6 +201,38 @@ export class SessionStore {
       toolCalls: r.tool_calls ? (JSON.parse(r.tool_calls) as InternalMessage["toolCalls"]) : undefined,
       toolCallId: r.tool_call_id ?? undefined,
     }));
+  }
+
+  /** P0-CORE-4: messages + seq (untuk memotong batas kompresi yang aman —
+   *  tidak boleh memotong di tengah pasangan assistant-toolCalls/tool-result). */
+  getMessagesWithSeq(sessionId: string): Array<{ seq: number; msg: InternalMessage }> {
+    const rows = this.db
+      .prepare("SELECT * FROM messages WHERE session_id = ? ORDER BY seq ASC")
+      .all(sessionId) as { seq: number; role: string; content: string; tool_calls: string | null; tool_call_id: string | null }[];
+    return rows.map((r) => ({
+      seq: r.seq,
+      msg: {
+        role: r.role as InternalMessage["role"],
+        content: r.content,
+        toolCalls: r.tool_calls ? (JSON.parse(r.tool_calls) as InternalMessage["toolCalls"]) : undefined,
+        toolCallId: r.tool_call_id ?? undefined,
+      },
+    }));
+  }
+
+  /** P0-CORE-4: simpan checkpoint kompresi (append-only — tidak mengubah messages). */
+  saveContextCheckpoint(sessionId: string, uptoSeq: number, summary: string, model: string): void {
+    this.db
+      .prepare("INSERT INTO context_checkpoints (session_id, upto_seq, summary, model, created_at) VALUES (?, ?, ?, ?, ?)")
+      .run(sessionId, uptoSeq, summary, model, Date.now());
+  }
+
+  /** P0-CORE-4: checkpoint aktif = id terbesar sesi (null bila belum pernah dikompresi). */
+  latestContextCheckpoint(sessionId: string): { uptoSeq: number; summary: string; model: string } | null {
+    const row = this.db
+      .prepare("SELECT upto_seq, summary, model FROM context_checkpoints WHERE session_id = ? ORDER BY id DESC LIMIT 1")
+      .get(sessionId) as { upto_seq: number; summary: string; model: string } | undefined;
+    return row ? { uptoSeq: row.upto_seq, summary: row.summary, model: row.model } : null;
   }
 
   /** Append event draft + lekatkan meta (id monotonic, ts) — kunci replay/resume. */

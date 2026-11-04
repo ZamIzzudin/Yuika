@@ -131,6 +131,17 @@ export const TurnCancelledEvent = EventMeta.extend({
   turnId: z.string(),
 });
 
+/** P0-CORE-4: konteks sesi dikompresi — history LAMA diringkas aux model jadi
+ *  checkpoint (append-only tetap dijaga: tabel messages TIDAK pernah diubah;
+ *  ini murni lapisan VIEW saat menyusun prompt). tampil sebagai info di chat. */
+export const ContextCompressedEvent = EventMeta.extend({
+  type: z.literal("context.compressed"),
+  turnId: z.string(),
+  messagesSummarized: z.number().int().nonnegative(),
+  estTokensBefore: z.number().int().nonnegative(),
+  estTokensAfter: z.number().int().nonnegative(),
+});
+
 /** Discriminated union — setiap event punya `type` literal; UI switch-case atas ini. */
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
@@ -144,6 +155,7 @@ export const YuiEvent = z.discriminatedUnion("type", [
   PersonaStateEvent,
   ApprovalRequestedEvent,
   MemoryNotedEvent,
+  ContextCompressedEvent,
   SkillProposedEvent,
   TurnCancelledEvent,
   ApprovalResolvedEvent,
