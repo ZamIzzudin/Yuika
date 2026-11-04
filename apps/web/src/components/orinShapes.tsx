@@ -265,6 +265,7 @@ export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
   "yui-designer": "tri",
   "yui-analyst": "diamond", // P1-PER-6: prisma — potongan data
   "yui-operator": "hex", // P1-PER-6: baut — mesin/otomasi
+  "yui-planner": "star", // P2-PM-1 (D22): bintang — target & metrik PM
 };
 
 const FALLBACK: OrinShape = { ...SHAPES.orb, color: "#9A9A9A" };

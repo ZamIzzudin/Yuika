@@ -1,6 +1,6 @@
-// P1-PER-6: roster D9 = 7 persona — manifest valid, delegation rules koheren
-// (semua id yang dirujuk ada — mencegah typo seperti `yui_designer`), dan
-// toolset persona baru (Analyst/Operator) ekspos tool yang terdaftar.
+// P1-PER-6 + P2-PM-1: roster D9+D22 = 8 persona — manifest valid, delegation
+// rules koheren (semua id yang dirujuk ada — mencegah typo seperti `yui_designer`),
+// dan toolset persona baru ekspos tool yang terdaftar.
 import { describe, expect, it } from "vitest";
 import path from "node:path";
 import { listPersonas } from "../personas/loader.js";
@@ -12,8 +12,8 @@ describe("persona roster D9 (P1-PER-6)", () => {
   const personas = listPersonas(personasDir);
   const ids = personas.map((p) => p.manifest.id);
 
-  it("7 persona ter-load: conductor + 6 spesialis (termasuk Analyst & Operator)", () => {
-    expect(ids.sort()).toEqual(["yui-analyst", "yui-coder", "yui-conductor", "yui-designer", "yui-operator", "yui-scholar", "yui-scribe"]);
+  it("8 persona ter-load: conductor + 6 spesialis + planner (P2-PM-1, D22)", () => {
+    expect(ids.sort()).toEqual(["yui-analyst", "yui-coder", "yui-conductor", "yui-designer", "yui-operator", "yui-planner", "yui-scholar", "yui-scribe"]);
     expect(personas.every((p) => p.manifest.description.length <= 120)).toBe(true); // kontrak zod memaksa, guard tipologi
   });
 
@@ -37,5 +37,20 @@ describe("persona roster D9 (P1-PER-6)", () => {
     const operator = personas.find((p) => p.manifest.id === "yui-operator")!;
     expect(operator.manifest.tools).toContain("run_command");
     expect(operator.manifest.tools).toContain("mcp__*");
+  });
+
+  it("P2-PM-1 (D22): Planner — PM bukan eksekutor; consult + task tools; konsultasi hanya ke 3 penasihat", () => {
+    const planner = personas.find((p) => p.manifest.id === "yui-planner")!;
+    expect(planner.manifest.tools).toContain("consult"); // brainstorm terstruktur
+    expect(planner.manifest.tools).toContain("todo_add"); // task list detail
+    expect(planner.manifest.tools).toContain("write_file"); // dokumen perencanaan
+    // Planner TIDAK mendelegasikan eksekusi (itu ranah Conductor) — hanya konsultasi:
+    expect(planner.manifest.tools).not.toContain("delegate_task");
+    expect(planner.manifest.delegation.can_spawn.sort()).toEqual(["yui-analyst", "yui-scholar", "yui-scribe"]);
+    // dipanggil user langsung ATAU didelegasikan Conductor (fase planning di workflow nanti)
+    expect(planner.manifest.delegation.spawnable_by).toContain("user");
+    expect(planner.manifest.delegation.spawnable_by).toContain("yui-conductor");
+    // PM discipline ada di PERSONA.md
+    expect(planner.personaMd).toContain("acceptance");
   });
 });

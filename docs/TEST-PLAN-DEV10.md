@@ -407,3 +407,32 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
   - ✅ Masih ada — TIDAK ikut terhapus (by design, keputusan Anda).
 8. Settings → Metering: baris usage project terhapus.
   - ✅ Tetap tercatat (akuntansi jujur — by design), tidak di-reset.
+
+### M10 (P2) — Yui Planner & brainstorm consult (P2-PM-1/2, D22)
+> Prasyarat: project aktif dipilih di sidebar. Siapkan brief besar (contoh di bawah).
+
+1. Persona picker → kartu **Yui Planner** muncul (bentuk Orin bintang ⭐).
+  - ✅ Deskripsi: "Persona PM: brainstorm consult → dokumen perencanaan → task list
+     detail dengan acceptance & urutan." Klik → sesi Planner terbuat.
+2. Kirim brief besar, contoh:
+   "Rencanakan migrasi platform e-commerce kami: 120 modul, tim 5 orang,
+   harus jalan bertahap tanpa downtime. Mulai dari rencana."
+  - ✅ Planner MENANYAKAN/menulis asumsi (tidak langsung eksekusi); biasanya
+     memanggil `consult` → panel chat menampilkan kartu delegasi 2–3 persona
+     (Scholar/Analyst/Scribe) jalan PARALEL.
+3. Setelah consult selesai.
+  - ✅ Jawaban tiap persona berformat tetap (PENDAPAT/RISIKO/SARAN/ASUMSI);
+     Planner mensintesis perbedaan pendapat sebagai keputusan terbuka untuk Anda.
+4. Lanjut biarkan Planner menulis dokumen perencanaan.
+  - ✅ Tab File project: `docs/PLAN.md` berisi scope in/out, keputusan (dengan
+     sumber: user/consult/asumsi), risiko + pemutus, definisi selesai.
+5. Task list dari Planner.
+  - ✅ Tab Task/Papan: banyak task dengan assignee persona; urutan/depedensi
+     masuk akal (DAG); ada task verifikasi (review/testing).
+6. Trace panel sesi Planner.
+  - ✅ Langkah consult terlihat sebagai delegasi anak (ikon 🤝) dengan status.
+7. Metering: Settings → Metering.
+  - ✅ Panggilan consult tercatat (persona anak × model) — tidak ada biaya silang.
+8. (Negatif) minta Planner "langsung delegasikan coding ke Coder".
+  - ✅ Planner menolak/mengarahkan kembali ke perencanaan — TIDAK punya
+     delegate_task (eksekusi = ranah Conductor, by design D22).

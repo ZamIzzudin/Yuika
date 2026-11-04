@@ -1,0 +1,2 @@
+can_spawn: [yui-scholar, yui-analyst, yui-scribe]
+spawnable_by: [user, yui-conductor]

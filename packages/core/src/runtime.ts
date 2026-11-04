@@ -21,6 +21,7 @@ import { registerWebTools } from "./tools/web-tools.js";
 import { registerSkillTools } from "./tools/skill-tools.js";
 import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
+import { registerConsultTool } from "./tools/consult-tool.js";
 import { registerTodoTools } from "./tools/todo-tools.js";
 import { connectMcpFromConfig, connectMcpServer, type McpCallInfo, type McpRegistry } from "./mcp/client.js";
 import { MCP_CATALOG } from "./mcp/catalog.js";
@@ -182,6 +183,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     maxChildren: () => admission.maxChildren(), // CRED-3: cap delegasi dinamis
   };
   registerDelegateTool(delegateDeps);
+  // P2-PM-2 (D22): consult — brainstorm terstruktur Planner ke persona spesialis
+  // (paralel via delegation runner yang sama: metering/cap/event/audit berlaku).
+  registerConsultTool(delegateDeps);
 
   // MCP dari config (demo: best-effort, lanjut jika gagal).
   // Placeholder {workspace} di-substitusi path absolut — path relatif salah resolve
