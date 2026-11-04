@@ -436,3 +436,34 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
 8. (Negatif) minta Planner "langsung delegasikan coding ke Coder".
   - ✅ Planner menolak/mengarahkan kembali ke perencanaan — TIDAK punya
      delegate_task (eksekusi = ranah Conductor, by design D22).
+
+### M11 (P0) — Keamanan: approval timeout + redaction secrets (P0-SEC-4/2)
+> Set `YUI_APPROVAL_TIMEOUT_MS=30000` (30 dtk) di .env lalu restart dev server
+> untuk test cepat. Untuk redaction, siapkan file `demo-key.txt` di workspace
+> project berisi: `API_KEY=supersecretvalue123`.
+
+1. Approval timeout: minta agent (Coder) menjalankan `node script.js` → muncul
+   kartu approval. JANGAN dijawab, tunggu 30 dtk.
+  - ✅ Kartu mati dengan status expired (event approval.expired); turn LANJUT
+     dengan hasil tool DITOLAK (fail-closed) — chat tidak menggantung selamanya.
+2. Kontrol: ulangi, jawab "Setujui" sebelum 30 dtk — jalan normal, tidak ada
+     kartu expired ganda muncul setelahnya.
+3. Redaction — read_file: minta agent membaca `demo-key.txt`.
+  - ✅ Isi yang muncul di chat: `API_KEY=«redacted»` — nilai asli tidak terkirim
+     ke provider (cek Trace juga: payload tool result sudah tersamarkan).
+4. Redaction — run_command: buat script node yang `console.log(process.env)`
+   atau men-print token dummy (`sk-abcdefghijklmnopqrst`), minta agent menjalankan.
+  - ✅ stdout di chat: token tersamarkan `«redacted»`.
+5. Kontrol negatif: minta agent membaca file normal (kode/teks biasa).
+  - ✅ Isi TIDAK berubah — tidak ada redact berlebihan (mis. kata "skrip",
+     "token usage: 123" tetap utuh).
+
+### M12 (P0) — CI GitHub Actions (P0-INF-6)
+> Butuh repo di GitHub. `git remote add origin <url>` lalu push branch.
+
+1. Push branch dev → tab Actions repo GitHub.
+  - ✅ Workflow "CI" jalan: typecheck semua package + test contracts/core
+     (188) + lint — hijau.
+2. Buka PR ke main.
+  - ✅ CI jalan di PR; merge di-gate hasil CI. Turbo cache aktif (run kedua
+     lebih cepat — task tak berubah dilewati).

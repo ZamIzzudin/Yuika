@@ -181,8 +181,8 @@
 > P0-SEC-3 · P0-DEL-1 job persist → P0-DEL-2/P1-DEL-3 steering · P0-DATA-1 Postgres
 > (dep P0-INF-5) → P0-DATA-2 retention · P1-MCP-2 OAuth (menyusul server OAuth-capable:
 > Penpot/Figma di P2-DSN) · P1-INF-1 auth (desain tenant, pasca-demo).
-> **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-2/3/4 · P0-SEC-2/4 ·
-> P0-CORE-4/5 · P0-QA-1/2 · P1-MCP-5/6 · P1-MEM-6 · P1-DEL-1 (parsial: cap paralel
+> **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-2/3/4 · P0-CORE-4/5 ·
+> P0-QA-1/2 · P1-MCP-5/6 · P1-MEM-6 · P1-DEL-1 (parsial: cap paralel
 > dinamis via budget CRED-3 + consult paralel sudah jalan; sisa config per-plan) ·
 > P1-DEL-4 (konteks anak FAKTUAL sudah terisolasi — sesi anak fresh; sisa audit+
 > test formal) · P1-PER-4 growth.
@@ -196,14 +196,14 @@
 - [ ] **P0-INF-3** Logging terstruktur (pino) + `traceId` per turn ter-propagasi ke semua event/log · *B · 1d*
 - [ ] **P0-INF-4** Error taxonomy konsisten (provider/tool/internal + kode) · *A · 1d*
 - [ ] **P0-INF-5** Docker compose dev (web+api+db) + README update · *B · 1d*
-- [ ] **P0-INF-6** CI: lint+typecheck+test di PR (GitHub Actions), turbo cache · *B · 1d*
+- [x] **P0-INF-6** CI: lint+typecheck+test di PR (GitHub Actions), turbo cache · *B · 1d* — ✅ v0 dev-10: `.github/workflows/ci.yml` — push (main/dev/**) + PR, Node 24 + npm cache, turbo typecheck+test+lint dengan cache `.turbo` antar-run (actions/cache) + concurrency cancel; verifikasi penuh menunggu repo di-push ke GitHub (remote belum di-set) — jadi bagian gerbang G-P0 saat itu
 
 ### P0-SEC (sandbox & keamanan)
 
 - [ ] **P0-SEC-1** Sandbox container untuk `run_command` (Docker exec, resource cap, timeout, network default-deny) · *A · 3d · dep P0-INF-5* → perintah berjalan di container sekali-pakai; egress diblokir default
-- [ ] **P0-SEC-2** Redaction secrets dari log & tool result (pola `redact` Hermes) · *B · 1d* → test: key menyamar di semua jalur output
+- [x] **P0-SEC-2** Redaction secrets dari log & tool result (pola `redact` Hermes) · *B · 1d* → test: key menyamar di semua jalur output — ✅ v0 dev-10: `core/redact.ts` — modul tunggal `redactSecrets()` (pola token vendor: sk-/ghp_/xox/AKIA/AIza/glpat/JWT/PEM/Bearer + assignment eksplisit `KEY=…`/`"secret": …`, fail-closed, idempotent); dipasang di 3 vektor bocor menuju konteks agent: stdout/stderr/err `run_command`, `read_file` content, baris hasil `search_files`; +4 test (vendor token, assignment, no-false-positive teks normal, PEM utuh); INPUT write_file TIDAK di-redact (isi memang dimaksudkan)
 - [x] **P0-SEC-3** Path policy ketat + workspace isolation test suite · *A · 1d* — ✅ v0 dev-10 (terserap P1-PRJ-2): `safeProjectPath` anti-traversal jadi SATU gerbang semua akses file project (`code/../../escape` → throw, `../../etc/passwd` → ditolak; test `project-files.test.ts` + `file-tools.test.ts`); scope file tools & run_command dibatasi root project via `projectRoot()`. Sisa scope task ini (isolasi prosus-level/network) pindah ke P0-SEC-1 sandbox container
-- [ ] **P0-SEC-4** Approval timeout + auto-deny policy (ganti shortcut no-deadline) · *A · 0.5d*
+- [x] **P0-SEC-4** Approval timeout + auto-deny policy (ganti shortcut no-deadline) · *A · 0.5d* — ✅ v0 dev-10: `ApprovalEngine.expire()` — deadline `YUI_APPROVAL_TIMEOUT_MS` (default 5 mnt, 0=off utk test; timer `unref`), lewat deadline → settle DB "expired" + event `approval.expired` (bentuk sama dgn boot-heal restart) + resolve FALSE (fail-closed — turn lanjut, tool ditolak, tidak menggantung); jawab tepat waktu → `clearTimeout` (tanpa expiry ganda); +3 test (auto-deny, resolve-tepat-waktu, off)
 
 ### P0-DATA (persistence)
 

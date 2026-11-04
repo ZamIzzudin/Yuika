@@ -1,0 +1,44 @@
+# CI (P0-INF-6): lint+typecheck+test di setiap push/PR — gerbang G-P0.
+# Turbo menjalankan task per package (contracts+core vitest, semua tsc, web tsc);
+# turbo cache lokal di-cache antar-run lewat actions/cache untuk akselerasi.
+name: CI
+
+on:
+  push:
+    branches: [main, "dev/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # G-P0 turunan: cache turbo lokal — task tak berubah dilewati antar-run
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+
+      - name: Install (workspaces)
+        run: npm ci
+
+      - name: Typecheck semua package
+        run: npx turbo run typecheck --cache-dir=.turbo
+
+      - name: Test (contracts + core)
+        run: npx turbo run test --cache-dir=.turbo
+
+      - name: Lint
+        run: npx turbo run lint --cache-dir=.turbo

@@ -1,11 +1,13 @@
 // @yui/core — run_command (DEMO): ls/echo dieksekusi INTERNAL (readdir/print —
 // aman & lintas-OS), `node` via execFile dengan cwd = workspace proyek +
-// approval. DEMO-SHORTCUT: bukan sandbox — P0 mengganti dengan container (P0-SEC).
+// approval. P0-SEC-2: stdout/stderr di-redact sebelum masuk konteks agent.
+// DEMO-SHORTCUT: bukan sandbox — P0 mengganti dengan container (P0-SEC-1).
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { registry } from "../registry.js";
+import { redactSecrets } from "../redact.js";
 
 const TIMEOUT_MS = 10_000;
 
@@ -46,9 +48,9 @@ export function registerRunCommandTool(): void {
             resolve(
               JSON.stringify({
                 cwd: ctx.workspacePath,
-                err: err?.message ?? null,
-                stdout: String(stdout).slice(0, 8_000),
-                stderr: String(stderr).slice(0, 2_000),
+                err: redactSecrets(err?.message ?? ""),
+                stdout: redactSecrets(String(stdout).slice(0, 8_000)),
+                stderr: redactSecrets(String(stderr).slice(0, 2_000)),
               }),
             );
           },

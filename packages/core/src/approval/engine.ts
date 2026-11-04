@@ -3,6 +3,9 @@
 // P0-DATA-3: pending approval & "Setujui & ingat" PERSIST di SQLite — permintaan
 // yang menggantung saat server restart ditandai expired (event approval.expired),
 // bukan menghilang diam-diam; remembered tool dimuat ulang tiap engine baru.
+// P0-SEC-4: deadline + auto-deny — approval yang diabaikan user TIDAK menggantung
+// selamanya; setelah `YUI_APPROVAL_TIMEOUT_MS` (default 5 menit; 0 = nonaktif utk
+// test) turn dilanjutkan FAIL-CLOSED (denied), event approval.expired ke UI.
 import { randomUUID } from "node:crypto";
 import type { Emit } from "../session/emit.js";
 import type { SessionStore } from "../session/store.js";
@@ -13,6 +16,13 @@ import type { SessionStore } from "../session/store.js";
  * yang permanen ada di tabel `approvals` (P0-DATA-3).
  */
 const pendingEngines = new Map<string, ApprovalEngine>();
+
+/** Deadline approval per policy (P0-SEC-4). Env dibaca ulang tiap pemanggilan
+ *  agar test & hot-reload bisa mengatur tanpa restart. Default 5 menit. */
+export function APPROVAL_TIMEOUT_MS(): number {
+  const v = Number(process.env.YUI_APPROVAL_TIMEOUT_MS ?? 300_000);
+  return Number.isFinite(v) && v >= 0 ? v : 300_000;
+}
 
 export function resolvePendingApproval(requestId: string, approved: boolean, remember = false): boolean {
   const engine = pendingEngines.get(requestId);
@@ -26,7 +36,7 @@ export interface ApprovalPersistOptions {
 }
 
 export class ApprovalEngine {
-  private pending = new Map<string, { tool: string; resolve: (approved: boolean) => void }>();
+  private pending = new Map<string, { tool: string; resolve: (approved: boolean) => void; clearTimeout: () => void }>();
   /** Tool yang di-approve + "ingat" — skip approval sesi ini (mengurangi round-trip user).
    *  Persist di approval_memory → bertahan restart server (P0-DATA-3). */
   private remembered = new Set<string>();
@@ -48,9 +58,28 @@ export class ApprovalEngine {
     this.persist?.store.insertApproval({ requestId, sessionId: this.persist.sessionId, tool, args, reason });
     pendingEngines.set(requestId, this);
     return new Promise<boolean>((resolve) => {
-      this.pending.set(requestId, { tool, resolve });
-      // DEMO-SHORTCUT: tanpa deadline. P0: timeout + auto-deny per policy.
+      // P0-SEC-4: deadline auto-deny — fail-closed, turn tidak menggantung tanpa batas.
+      const timeoutMs = APPROVAL_TIMEOUT_MS();
+      const timer = timeoutMs > 0 ? setTimeout(() => this.expire(requestId), timeoutMs) : null;
+      timer?.unref?.(); // jangan tahan proses hidup hanya karena timer approval
+      this.pending.set(requestId, {
+        tool,
+        resolve,
+        clearTimeout: () => timer && clearTimeout(timer),
+      });
     });
+  }
+
+  /** P0-SEC-4: lewat deadline → tolak (fail-closed) + tandai expired di DB + event
+   *  `approval.expired` (bentuk sama dengan boot-heal restart) → kartu UI mati rapi. */
+  private expire(requestId: string): void {
+    const entry = this.pending.get(requestId);
+    if (!entry) return; // sudah diselesaikan user tepat waktu
+    this.pending.delete(requestId);
+    pendingEngines.delete(requestId);
+    this.persist?.store.settleApproval(requestId, "expired");
+    this.emit({ type: "approval.expired", requestId, tool: entry.tool });
+    entry.resolve(false);
   }
 
   /** Dipanggil dari POST /api/approvals/:id — `remember` menandai tool bebas-approval
@@ -60,6 +89,7 @@ export class ApprovalEngine {
     if (!entry) return false;
     this.pending.delete(requestId);
     pendingEngines.delete(requestId);
+    entry.clearTimeout(); // P0-SEC-4: user menjawab sebelum deadline — matikan timer
     if (approved && remember) {
       this.remembered.add(entry.tool);
       this.persist?.store.rememberApproval(this.persist.sessionId, entry.tool);

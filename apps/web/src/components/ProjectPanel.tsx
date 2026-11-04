@@ -46,7 +46,10 @@ export function ProjectPanel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: name.trim(), description: desc.trim() }),
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
+      if (!res.ok)
+        throw new Error(
+          (await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`,
+        );
       setName("");
       setDesc("");
       setOpen(false);
@@ -62,8 +65,12 @@ export function ProjectPanel({
     if (deleting) return;
     setDeleting(p.id);
     try {
-      const res = await fetch(`/api/projects/${encodeURIComponent(p.id)}`, { method: "DELETE" });
-      const body = (await res.json().catch(() => ({}))) as DeleteProjectResult & { error?: string };
+      const res = await fetch(`/api/projects/${encodeURIComponent(p.id)}`, {
+        method: "DELETE",
+      });
+      const body = (await res
+        .json()
+        .catch(() => ({}))) as DeleteProjectResult & { error?: string };
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
       setConfirmId(null);
       setNote(
@@ -81,7 +88,12 @@ export function ProjectPanel({
     <section className="project-section" aria-label="Proyek">
       <div className="project-head">
         <span className="project-title">Proyek</span>
-        <button className="project-add" onClick={() => setOpen((v) => !v)} aria-label="Proyek baru" disabled={open}>
+        <button
+          className="project-add"
+          onClick={() => setOpen((v) => !v)}
+          aria-label="Proyek baru"
+          disabled={open}
+        >
           +
         </button>
       </div>
@@ -108,7 +120,11 @@ export function ProjectPanel({
             <button className="btn secondary" onClick={() => setOpen(false)}>
               Batal
             </button>
-            <button className="btn" onClick={create} disabled={!name.trim() || busy}>
+            <button
+              className="btn"
+              onClick={create}
+              disabled={!name.trim() || busy}
+            >
               {busy ? "Menyimpan…" : "Buat"}
             </button>
           </div>
@@ -116,14 +132,18 @@ export function ProjectPanel({
       )}
 
       <div className="project-list">
-        {!booted && <SkeletonRows rows={2} />}
-        <button className="project-row" data-active={activeId === null ? "" : undefined} onClick={() => onPick(null)}>
+        <button
+          className="project-row"
+          data-active={activeId === null ? "" : undefined}
+          onClick={() => onPick(null)}
+        >
           <i className="project-dot" />
           <span>
             <b>Workspace</b>
-            <small>tanpa proyek — scope bebas</small>
+            <small>Freespace</small>
           </span>
         </button>
+        {!booted && <SkeletonRows rows={3} />}
         {projects.map((p) => (
           <div key={p.id} className="project-row-wrap">
             <button
@@ -135,7 +155,11 @@ export function ProjectPanel({
               <i className="project-dot" />
               <span>
                 <b>{p.name}</b>
-                <small>{p.status === "archived" ? "arsip" : p.description || "proyek"}</small>
+                <small>
+                  {p.status === "archived"
+                    ? "arsip"
+                    : p.description || "proyek"}
+                </small>
               </span>
             </button>
             <button
@@ -150,15 +174,25 @@ export function ProjectPanel({
             {confirmId === p.id && (
               <div className="project-del-confirm">
                 <p>
-                  Hapus <b>“{p.name}”</b> permanen? Sesi, task, file, memory project & audit ikut dibersihkan.
+                  Hapus <b>“{p.name}”</b> permanen? Sesi, task, file, memory
+                  project & audit ikut dibersihkan.
                   <br />
-                  <small>Skill yang dipelajari persona & metering tetap tersimpan.</small>
+                  <small>
+                    Skill yang dipelajari persona & metering tetap tersimpan.
+                  </small>
                 </p>
                 <div className="project-form-actions">
-                  <button className="btn secondary" onClick={() => setConfirmId(null)}>
+                  <button
+                    className="btn secondary"
+                    onClick={() => setConfirmId(null)}
+                  >
                     Batal
                   </button>
-                  <button className="btn danger" onClick={() => void remove(p)} disabled={deleting === p.id}>
+                  <button
+                    className="btn danger"
+                    onClick={() => void remove(p)}
+                    disabled={deleting === p.id}
+                  >
                     {deleting === p.id ? "Menghapus…" : "Hapus permanen"}
                   </button>
                 </div>
