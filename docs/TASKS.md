@@ -258,7 +258,7 @@
 
 ### P1-CRED (SaaS credits v1 — wajib sebelum alpha)
 
-- [ ] **P1-CRED-1** Skema ledger + usage events (per turn: token in/out/cache, sandbox detik) · *A · 2d*
+- [x] **P1-CRED-1** Skema ledger + usage events (per turn: token in/out/cache, sandbox detik) · *A · 2d* — ✅ v0 dev-10: kontrak `UsageEvent`/`UsageFilter`/`UsageSummary`/`UsageRollup`; `core/usage/ledger.ts` (tabel SQLite `usage_events` append-only + index at/project/persona; rollup byPersona/byModel + filter projectId/sessionId/personaId/since + feed recent); hook `LoopDeps.recordUsage` di AgentLoop (loop utama) + delegasi anak (persona/model anak ter-meter); **tanpa estimasi** — hanya dari `usage` chunk done provider (GLM/openai-compat sudah parse); runtime `getUsageSummary`/`getUsageRecent`; REST `GET /api/usage`; UI Settings → **Metering** (rentang semua/24j/1j, tabel per persona & model, feed terbaru, refresh 5 dtk); sandbox-detik = derivabel dari DungeonRun runs.json (noted); +6 test (rollup, filter, kosong, usage→event, tanpa-usage→tanpa-event, multi-iterasi tool round). CRED-2 hold/settle & CRED-3 rate-limit menyusul; akurasi <2% vs tagihan = CRED-6 saat billing nyata
 - [ ] **P1-CRED-2** Admission control hold→settle + saldo cache · *A · 2d · dep P1-CRED-1*
 - [ ] **P1-CRED-3** Rate limit per workspace (turn/menit, delegation concurrency) · *A · 1d*
 - [ ] **P1-CRED-4** UI saldo + burn-rate + attribution per persona/job · *B · 2d · dep P1-CRED-1*

@@ -23,6 +23,7 @@ import { connectMcpFromConfig, connectMcpServer, type McpCallInfo, type McpRegis
 import { MCP_CATALOG } from "./mcp/catalog.js";
 import { installFromCatalog, uninstallFromConfig } from "./mcp/install.js";
 import { McpAuditStore } from "./mcp/audit.js";
+import { UsageLedger } from "./usage/ledger.js";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js";
@@ -147,6 +148,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     workspaceGlobalPath: paths.workspacePath, // USER.md selalu global walau delegasi menimpa workspacePath
     routeModel: routeModelFor, // P1-MDL-1: anak resolve model persona-nya sendiri
     mcpAllowlistFor, // P1-PRJ-5: anak mewarisi binding MCP sesuai roster persona anak
+    recordUsage: (u) => usageLedger.record(u), // P1-CRED-1: loop delegasi anak ikut ter-meter
   };
   registerDelegateTool(delegateDeps);
 
@@ -157,6 +159,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // tiap panggilan tool MCP di-audit. Trust berubah (PUT /api/mcp/trust) =
   // connect/disconnect dinamis + re-register handler (deny list baru).
   const mcpAudit = new McpAuditStore(paths.dbPath);
+  // P1-CRED-1: ledger metering — token per panggilan model (loop utama + delegasi anak).
+  const usageLedger = new UsageLedger(paths.dbPath);
   const onMcpCall = (info: McpCallInfo) => mcpAudit.log(info);
   let mcpConfig: McpRegistry | null = null;
   const reloadMcpConfig = (): McpRegistry | null => {
@@ -401,6 +405,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       approvals,
       emit,
       mcpAllowlistFor, // P1-PRJ-5: binding MCP granular per project×persona
+      recordUsage: (u) => usageLedger.record(u), // P1-CRED-1: metering per panggilan model
     });
     loopCache.set(sessionId, loop);
     return loop;
@@ -438,6 +443,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   return {
     getModelSmoke: (): { running: boolean; results: ModelSmokeResult[] } => ({ running: smokeRunning, results: smokeResults }),
     runModelSmoke: () => runModelSmoke(),
+    // P1-CRED-1: metering ledger — summary rollup + feed event terbaru.
+    getUsageSummary: (filter: { projectId?: string; sessionId?: string; personaId?: string; since?: number } = {}) =>
+      usageLedger.summary(filter),
+    getUsageRecent: (limit = 50, filter: { projectId?: string; sessionId?: string; personaId?: string; since?: number } = {}) =>
+      usageLedger.recent(limit, filter),
     paths,
     store,
     bus: EventBus,

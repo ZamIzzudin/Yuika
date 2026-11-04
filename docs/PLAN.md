@@ -577,6 +577,14 @@ Marketplace fase lanjut: persona buatan user (fork + remix skill + asset sendiri
 
 ### 8.1 Apa yang di-meter
 
+> **Status v0 (P1-CRED-1, dev-10):** ledger `usage_events` LIVE — tiap panggilan
+> model sukses (loop utama + delegasi anak) tercatat: token in/out + latensi +
+> persona + model + project. Angka HANYA dari laporan usage provider (tanpa
+> estimasi — provider tak melapor = tak tercatat). Rollup per persona/model di
+> Settings → Metering (`GET /api/usage`, filter project/session/persona/window).
+> Hold/settle saldo & rate limit = CRED-2/3; sandbox-detik derivabel dari
+> DungeonRun.started/ended (runs.json).
+
 | Item | Satuan | Catatan |
 |---|---|---|
 | LLM tokens | credit per 1k token, **rate per model** (margin di atas harga provider) | Input/output/cache terpisah; aux model lebih murah — insentif routing pintar |

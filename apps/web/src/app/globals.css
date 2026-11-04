@@ -1207,3 +1207,13 @@ html, body {
 .dungeon-actions { display: flex; gap: 8px; }
 .dungeon-note { max-width: 640px; }
 .side-settings[data-active] { border-color: var(--yui-border-focus); color: var(--yui-text-primary); }
+
+/* ── Metering panel (P1-CRED-1) ── */
+.usage-panel { display: flex; flex-direction: column; gap: 12px; }
+.usage-range { display: flex; gap: 6px; }
+.usage-total { margin: 0; font-size: var(--yui-text-md); }
+.usage-table { width: 100%; border-collapse: collapse; font-size: var(--yui-text-sm); }
+.usage-table th { text-align: left; color: var(--yui-text-secondary); font-weight: 500; border-bottom: 1px solid var(--yui-border); padding: 4px 8px 4px 0; }
+.usage-table td { border-bottom: 1px solid var(--yui-border); padding: 5px 8px 5px 0; }
+.usage-table td:last-child, .usage-table th:last-child { text-align: right; }
+.usage-recent { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: var(--yui-text-sm); color: var(--yui-text-secondary); }

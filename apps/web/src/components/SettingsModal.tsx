@@ -8,11 +8,12 @@ import type { ModelRoutes, ProviderSettings } from "@yui/contracts";
 import { McpPanel } from "./McpPanel";
 import { Skeleton } from "./Skeleton";
 
-type Section = "provider" | "mcp";
+type Section = "provider" | "mcp" | "usage";
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   { id: "provider", label: "Provider & Model", hint: "API key, base URL, model" },
   { id: "mcp", label: "MCP & Tools", hint: "katalog, trust, audit" },
+  { id: "usage", label: "Metering", hint: "pemakaian token per persona/model" },
 ];
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
@@ -147,6 +148,11 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 <McpPanel />
               </div>
             )}
+            {section === "usage" && (
+              <section aria-label="Metering pemakaian">
+                <UsagePanel />
+              </section>
+            )}
           </div>
         </div>
       </div>
@@ -277,4 +283,107 @@ async function save(
   } finally {
     setSaving(null);
   }
+}
+
+/** P1-CRED-1: panel metering — rollup token per persona & model (tanpa estimasi:
+ *  hanya event usage dari provider). Burn-rate per window via tombol rentang. */
+function UsagePanel() {
+  const [data, setData] = useState<{ summary: { calls: number; promptTokens: number; outputTokens: number; byPersona: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; byModel: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; windowStart: number | null }; recent?: { at: number; personaId: string; model: string; promptTokens: number; outputTokens: number; latencyMs: number }[] } | null>(null);
+  const [hours, setHours] = useState<number>(0); // 0 = semua waktu
+
+  const load = useCallback(async () => {
+    const since = hours > 0 ? Date.now() - hours * 3_600_000 : undefined;
+    const r = await fetch(`/api/usage?recent=8${since ? `&since=${since}` : ""}`);
+    if (r.ok) setData(await r.json());
+  }, [hours]);
+
+  useEffect(() => {
+    void load();
+    const t = setInterval(() => void load(), 5_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const fmt = (n: number) => n.toLocaleString("id-ID");
+  return (
+    <div className="usage-panel">
+      <div className="usage-range">
+        {[
+          [0, "Semua"],
+          [24, "24 jam"],
+          [1, "1 jam"],
+        ].map(([h, label]) => (
+          <button key={h} className="btn secondary" data-active={hours === h ? "" : undefined} onClick={() => setHours(h as number)}>
+            {label as string}
+          </button>
+        ))}
+      </div>
+      {data === null ? (
+        <Skeleton lines={4} />
+      ) : data.summary.calls === 0 ? (
+        <p className="pane-hint">Belum ada pemakaian tercatat. Metering aktif otomatis — angka hanya dari laporan usage provider (tanpa estimasi).</p>
+      ) : (
+        <>
+          <p className="usage-total">
+            <b>{fmt(data.summary.calls)}</b> panggilan model · <b>{fmt(data.summary.promptTokens)}</b> token masuk ·{" "}
+            <b>{fmt(data.summary.outputTokens)}</b> token keluar
+            {data.summary.windowStart && <small className="dim"> (sejak {new Date(data.summary.windowStart).toLocaleString("id-ID")})</small>}
+          </p>
+          <table className="usage-table" aria-label="Pemakaian per persona">
+            <thead>
+              <tr>
+                <th>Persona</th>
+                <th>Panggilan</th>
+                <th>Tok masuk</th>
+                <th>Tok keluar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.summary.byPersona.map((r) => (
+                <tr key={r.key}>
+                  <td>{r.key.replace("yui-", "")}</td>
+                  <td>{fmt(r.calls)}</td>
+                  <td>{fmt(r.promptTokens)}</td>
+                  <td>{fmt(r.outputTokens)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <table className="usage-table" aria-label="Pemakaian per model">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Panggilan</th>
+                <th>Tok masuk</th>
+                <th>Tok keluar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.summary.byModel.map((r) => (
+                <tr key={r.key}>
+                  <td>
+                    <code>{r.key}</code>
+                  </td>
+                  <td>{fmt(r.calls)}</td>
+                  <td>{fmt(r.promptTokens)}</td>
+                  <td>{fmt(r.outputTokens)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {data.recent && data.recent.length > 0 && (
+            <>
+              <span className="field-title">Terbaru</span>
+              <ul className="usage-recent">
+                {data.recent.map((e, i) => (
+                  <li key={i}>
+                    <code>{e.model}</code> · {e.personaId.replace("yui-", "")} · {fmt(e.promptTokens)}+{fmt(e.outputTokens)} tok · {e.latencyMs} ms
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
 }

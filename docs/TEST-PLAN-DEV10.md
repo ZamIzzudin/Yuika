@@ -256,3 +256,28 @@ M6.1–M6.4 ✅
 
 Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 → M5.2**
 (sisanya menyusul) — itu tulang punggung reliabilitas + alur dungeon penuh.
+
+## Batch M7 — Metering ledger (P1-CRED-1) — BARU dev-10
+
+> Yang diuji: setiap panggilan model tercatat jujur (tanpa estimasi) — angka
+> hanya muncul bila provider melapor usage. Panel: ⚙ Pengaturan → Metering.
+
+- [ ] **M7.1 (P0) — Turn chat ter-meter**
+  1. Restart dev server (tabel baru dibuat otomatis di db).
+  2. Kirim 1–2 turn chat biasa (apa pun).
+  3. Buka ⚙ Pengaturan → **Metering**.
+  - ✅ "N panggilan model · X token masuk · Y token keluar" muncul (>0);
+    tabel per persona berisi persona yang dipakai; tabel per model berisi
+    model aktif; feed "Terbaru" menampilkan latensi.
+  - ❌ Bila 0 terus padahal chat jalan → provider tidak mengirim usage
+    (laporkan — jangan sampai metering diam-diam kosong).
+
+- [ ] **M7.2 (P1) — Delegasi: persona anak ikut tercatat**
+  1. Di project, minta Conductor mendelegasikan ke spesialis (mis. Scholar).
+  2. Setelah selesai, cek panel Metering.
+  - ✅ Baris persona anak (mis. scholar) muncul dengan panggilan & token
+    sendiri — attribution per persona akurat.
+
+- [ ] **M7.3 (P2) — Rentang & konsistensi**
+  1. Tombol "1 jam" → hanya event ≥1 jam; "Semua" → total ≥ sebelumnya.
+  2. `curl localhost:3000/api/usage` → JSON summary sama dengan panel.

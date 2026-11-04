@@ -9,6 +9,7 @@ import { runLearnNudge } from "./memory/nudge.js";
 import type { SessionStore } from "./session/store.js";
 import type { Emit } from "./session/emit.js";
 import type { ApprovalEngine } from "./approval/engine.js";
+import type { UsageEvent } from "@yui/contracts";
 
 // Budget iterasi per turn: env override untuk use case panjang (multi-delegasi).
 const MAX_ITERATIONS = Number(process.env.YUI_MAX_ITER ?? 16);
@@ -47,6 +48,9 @@ export interface LoopDeps {
   /** P1-PRJ-5 (D17): allowlist tool MCP untuk sesi ini (prefix `mcp__<srv>__*` / nama persis).
    *  null/undefined = sesi tanpa binding → SEMUA tool MCP disembunyikan (fail-closed). */
   mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
+  /** P1-CRED-1: catat pemakaian per panggilan model sukses (token dari provider,
+   *  tanpa estimasi). Diisi runtime → ledger SQLite. */
+  recordUsage?: (u: UsageEvent) => void;
 }
 
 export class AgentLoop {
@@ -116,6 +120,19 @@ export class AgentLoop {
               emit({ type: "message.delta", turnId, delta: chunk.delta });
             }
           });
+          // P1-CRED-1: metering — HANYA dari usage provider (tanpa estimasi).
+          if (done.usage) {
+            this.deps.recordUsage?.({
+              sessionId,
+              projectId: session.projectId,
+              personaId: session.personaId,
+              model: attemptModel,
+              promptTokens: done.usage.inputTokens ?? 0,
+              outputTokens: done.usage.outputTokens ?? 0,
+              latencyMs: Date.now() - tProvider,
+              at: Date.now(),
+            });
+          }
           if (ai > 0) {
             trace(`turn=${turnId.slice(0, 10)} FALLBACK AKTIF: ${attempts[0]} → ${attemptModel} (cooldown 5 mnt)`);
             model = attemptModel; // iterasi berikutnya tetap di fallback (jangan bolak-balik)

@@ -542,10 +542,6 @@ export function ProjectTabs({
 
       {loaded && activeTab === "board" && (
         <section aria-label="Papan kanban task">
-          <p className="pane-hint">
-            Seret kartu antar kolom untuk mengubah status — sinkron dengan
-            tasklist agent & TaskTree.
-          </p>
           <div className="board">
             {(["todo", "doing", "review", "done"] as const).map((col) => {
               const cards = flattenCards.filter((c) => c.node.status === col);
@@ -601,12 +597,6 @@ export function ProjectTabs({
 
       {loaded && activeTab === "memory" && (
         <section aria-label="Memori — apa yang Yui ketahui">
-          <p className="pane-hint">
-            Catatan ini dibaca agent di setiap <b>sesi baru</b> (frozen per
-            sesi). Agent menambah catatan lewat tool
-            <code> memory_append</code> (dedupe otomatis); Anda bebas mengedit
-            langsung.
-          </p>
           <div className="memory-doc">
             <header>
               <b>Tentang Anda — USER.md</b>
