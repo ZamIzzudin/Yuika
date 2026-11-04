@@ -13,7 +13,7 @@ import { GeminiProvider } from "./provider/gemini.js";
 import type { ProviderKind } from "./provider/index.js";
 import { AgentLoop } from "./loop.js";
 import { registry } from "./registry.js";
-import { ApprovalEngine, resolvePendingApproval } from "./approval/engine.js";
+import { ApprovalEngine, resolvePendingApproval, getApprovalMode, setApprovalMode, type ApprovalMode } from "./approval/engine.js";
 import { listPersonas } from "./personas/loader.js";
 import { buildPersonaGrowth } from "./personas/growth.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
@@ -145,6 +145,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // P1-MDL-1: override per persona (diedit di Settings) — file JSON di samping DB.
   const modelOverridesFile = path.join(path.dirname(paths.dbPath), "model-overrides.json");
   const modelPricesFile = path.join(path.dirname(paths.dbPath), "model-prices.json");
+  // Mode approval (fix dev-10): persist di data/ — "auto" = write_file &
+  // run_command bebas-approval (mode cepat), "ask" = kartu persetujuan.
+  const approvalModeFile = path.join(path.dirname(paths.dbPath), "approval-mode.json");
+  try {
+    setApprovalMode(JSON.parse(fs.readFileSync(approvalModeFile, "utf-8")).mode === "auto" ? "auto" : "ask");
+  } catch {
+    setApprovalMode("ask"); // belum ada / rusak → default aman
+  }
 
   // tools core (sekali per proses)
   const fileRevisions = new FileRevisionStore(paths.dbPath);
@@ -774,6 +782,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // P1-MDL: model per persona — override untuk UI Settings (sumber: file JSON).
     // P1-MDL-3: price book — indikator biaya metering (per persona/model).
     getModelPrices: () => loadPriceBook(modelPricesFile),
+    // Mode approval: GET/PUT (persist file — survive restart; global lintas sesi).
+    approvalMode: () => getApprovalMode(),
+    setApprovalMode: (mode: ApprovalMode) => {
+      setApprovalMode(mode);
+      fs.mkdirSync(path.dirname(approvalModeFile), { recursive: true });
+      fs.writeFileSync(approvalModeFile, JSON.stringify({ mode }, null, 2), "utf-8");
+    },
     updateModelPrice: (model: string, price: ModelPrice) => saveModelPrice(modelPricesFile, model, price),
     // P1-CRED-2/3/4: budget & admission + attribution matrix.
     getBudgetStatus: () => admission.status(),

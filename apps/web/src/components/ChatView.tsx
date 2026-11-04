@@ -82,6 +82,8 @@ export function ChatView({
   onApprove,
   busy,
   emptySlot,
+  approvalMode,
+  onToggleApprovalMode,
 }: {
   items: ChatItem[];
   personaState: PersonaState;
@@ -93,6 +95,9 @@ export function ChatView({
   /** Konten state kosong (hero + saran) — composer tetap tampil, user bisa langsung menulis. */
   emptySlot?: ReactNode;
   onApprove: (requestId: string, approved: boolean, remember?: boolean) => void;
+  /** Fix dev-10: mode cepat — "auto" = write_file & run_command bebas-approval. */
+  approvalMode?: "ask" | "auto";
+  onToggleApprovalMode?: () => void;
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
@@ -303,6 +308,17 @@ export function ChatView({
       </div>
 
       <div className="composer-wrap">
+        {onToggleApprovalMode ? (
+          <button
+            type="button"
+            className="approval-mode-chip"
+            data-on={approvalMode === "auto" ? "" : undefined}
+            onClick={onToggleApprovalMode}
+            title="Mode cepat: write_file & run_command disetujui otomatis (tanpa kartu approval). Klik untuk berganti."
+          >
+            ⚡ {approvalMode === "auto" ? "Auto-approve aktif" : "Auto-approve mati"}
+          </button>
+        ) : null}
         <form className="composer" onSubmit={submit}>
           <textarea
             ref={taRef}

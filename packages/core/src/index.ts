@@ -12,7 +12,7 @@ export { estimateTokens } from "./session/tokens.js";
 export { env as coreEnv } from "./env.js";
 export { makeEmitter, type Emit } from "./session/emit.js";
 export { AgentLoop } from "./loop.js";
-export { ApprovalEngine } from "./approval/engine.js";
+export { ApprovalEngine, getApprovalMode, setApprovalMode, type ApprovalMode } from "./approval/engine.js";
 export { listPersonas, loadPersona, type Persona } from "./personas/loader.js";
 export { listSkills, loadSkill, type Skill, type SkillIndexEntry } from "./skills/loader.js";
 export { buildSystemPrompt, CORE_SYSTEM_PROMPT } from "./prompt/builder.js";

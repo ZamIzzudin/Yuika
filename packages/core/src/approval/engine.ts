@@ -21,8 +21,26 @@ import type { SessionStore } from "../session/store.js";
  * "sudah selesai" padahal approval hidup. Sama seperti bus emitter: map WAJIB
  * di-cache di globalThis agar semua module-instance berbagi.
  */
-const approvalGlobal = globalThis as unknown as { __yuiPendingApprovalEngines?: Map<string, ApprovalEngine> };
+const approvalGlobal = globalThis as unknown as {
+  __yuiPendingApprovalEngines?: Map<string, ApprovalEngine>;
+  __yuiApprovalMode?: ApprovalMode;
+};
 const pendingEngines = (approvalGlobal.__yuiPendingApprovalEngines ??= new Map<string, ApprovalEngine>());
+
+/** Mode cepat (fix dev-10 user: approval kedaluwarsa → proses terasa stuck):
+ *  "auto" = tulis file & jalankan kode disetujui otomatis; tool lain (MCP,
+ *  dst.) tetap minta persetujuan. Global lintas sesi & lintas delegasi —
+ *  di-cache di globalThis (tahan HMR) + dipersist runtime. */
+export type ApprovalMode = "ask" | "auto";
+const AUTO_APPROVE_TOOLS = new Set(["write_file", "run_command"]);
+
+export function getApprovalMode(): ApprovalMode {
+  return approvalGlobal.__yuiApprovalMode ?? "ask";
+}
+
+export function setApprovalMode(mode: ApprovalMode): void {
+  approvalGlobal.__yuiApprovalMode = mode;
+}
 
 /** Deadline approval per policy (P0-SEC-4). Env tervalidasi terpusat di
  *  env.ts (P0-INF-2) tapi tetap dibaca ulang tiap pemanggilan agar test &
@@ -58,6 +76,12 @@ export class ApprovalEngine {
   }
 
   request(tool: string, args: Record<string, unknown>, reason: string): Promise<boolean> {
+    // Mode cepat: tulis file & jalankan kode disetujui otomatis (fix dev-10 —
+    // tanpa kartu approval; event resolved tetap muncul supaya jujur/traceable).
+    if (getApprovalMode() === "auto" && AUTO_APPROVE_TOOLS.has(tool)) {
+      this.emit({ type: "approval.resolved", requestId: `apr_auto_${tool}`, tool, approved: true });
+      return Promise.resolve(true);
+    }
     if (this.remembered.has(tool)) {
       this.emit({ type: "approval.resolved", requestId: `apr_remembered_${tool}`, tool, approved: true });
       return Promise.resolve(true);

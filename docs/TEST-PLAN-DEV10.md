@@ -39,3 +39,18 @@
 4. Total waktu tugas sederhana target: menit-an pertama terasa "hidup"
      (streaming reasoning), meskipun model berpikir lama — itu properti model
      (glm-5 reasoning besar), bukan UI/orkestrasi.
+
+### M18 (P0) — Mode auto-approve + scope dungeon + form modal (feedback user)
+1. Di atas composer ada chip **"⚡ Auto-approve mati"** — klik → "⚡ Auto-approve
+   aktif" (aksen menyala). Restart dev server → state tetap (persist).
+2. Dengan auto aktif: minta agent menulis file di luar `code|docs|reports` DAN
+   menjalankan perintah → TIDAK ada kartu approval (langsung jalan; event
+   "Disetujui" otomatis tetap tercatat di trace). Matikan chip → kartu approval
+   muncul lagi seperti biasa (tool MCP tetap minta kartu walau auto aktif).
+3. Tab Skill: ada catatan ℹ aktivasi — skill baru langsung bisa dijalankan via
+   `skills_list`/`skill_view`, diperkenalkan di prompt pada sesi BARU.
+4. Daftar project (sidebar) TIDAK lagi menampilkan ruangan latihan dungeon.
+   Buka menu ⚔ Dungeon → tab **"Riwayat sesi latihan"**: semua run + tombol
+   "Buka sesi →" membuka ruangan latihan sebagai workspace (chat + artefak).
+5. Form "Buat latihan baru" kini tombol yang membuka **popup modal** (ESC/klik
+   luar menutup) — daftar misi tetap terlihat di belakang.

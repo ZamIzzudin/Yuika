@@ -529,6 +529,23 @@ export default function Home() {
   // Trace realtime (fix dev-10): naik tiap event SSE — TracePanel refetch
   // trace terstruktur saat itu (debounce), BUKAN polling 3 dtk buta.
   const [traceTick, setTraceTick] = useState(0);
+  // Mode approval (fix dev-10): "auto" = write_file & run_command bebas-approval.
+  const [approvalMode, setApprovalMode] = useState<"ask" | "auto">("ask");
+  useEffect(() => {
+    fetch("/api/settings/approval")
+      .then((r) => r.json())
+      .then((d: { mode: "ask" | "auto" }) => setApprovalMode(d.mode ?? "ask"))
+      .catch(() => {});
+  }, []);
+  const toggleApprovalMode = useCallback(() => {
+    const next = approvalMode === "auto" ? "ask" : "auto";
+    setApprovalMode(next); // optimistic — server persist (survive restart)
+    fetch("/api/settings/approval", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mode: next }),
+    }).catch(() => setApprovalMode(approvalMode));
+  }, [approvalMode]);
 
   async function approve(
     requestId: string,
@@ -563,7 +580,7 @@ export default function Home() {
           Your-Yui <span className="sub">demo</span>
         </div>
         <ProjectPanel
-          projects={projects}
+          projects={projects.filter((p) => p.kind !== "dungeon")}
           booted={booted}
           activeId={activeProjectId}
           onPick={pickProject}
@@ -601,6 +618,10 @@ export default function Home() {
           <DungeonView
             personas={personas}
             onBack={() => setDungeonOpen(false)}
+            onOpenProject={(pid) => {
+              setActiveProjectId(pid); // buka ruangan latihan seperti project
+              setDungeonOpen(false);
+            }}
           />
         ) : (
           <>
@@ -763,6 +784,8 @@ export default function Home() {
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
+                          approvalMode={approvalMode}
+                          onToggleApprovalMode={toggleApprovalMode}
                           busy={busy}
                           emptySlot={
                             <>
@@ -807,6 +830,8 @@ export default function Home() {
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
+                          approvalMode={approvalMode}
+                          onToggleApprovalMode={toggleApprovalMode}
                           busy={busy}
                         />
                       )}

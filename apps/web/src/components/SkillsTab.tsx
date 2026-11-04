@@ -148,6 +148,11 @@ export function SkillsTab() {
 
   return (
     <section aria-label="Skill — draf dan siap pakai">
+      <p className="dim skill-activation-note">
+        ℹ Skill baru <b>langsung tersimpan & bisa dijalankan agent</b> via
+        <code> skills_list</code>/<code>skill_view</code> — tapi baru <b>diperkenalkan
+        otomatis di prompt pada SESI BARU</b> (prompt sesi berjalan beku by design).
+      </p>
       {drafts.length === 0 ? (
         <p className="dim">
           Belum ada draf. Sebut di chat — mis. &quot;jadikan skill cara kerja

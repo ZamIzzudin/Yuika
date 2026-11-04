@@ -1356,3 +1356,62 @@ details.reasoning pre {
   margin: 6px 0 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim);
   border-top: 1px solid var(--yui-border); padding-top: 6px;
 }
+
+/* Mode approval chip (fix dev-10): toggle cepat di atas composer */
+.approval-mode-chip {
+  align-self: flex-start;
+  margin-bottom: var(--yui-space-2);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--yui-border-strong);
+  background: transparent;
+  color: var(--yui-text-muted);
+  font-size: var(--yui-text-xs);
+  cursor: pointer;
+  transition: all var(--yui-dur-fast) var(--yui-ease-in-out);
+}
+.approval-mode-chip:hover { color: var(--yui-text-secondary); }
+.approval-mode-chip[data-on] {
+  border-color: var(--yui-accent);
+  color: var(--yui-accent);
+  background: color-mix(in oklab, var(--yui-accent) 12%, transparent);
+}
+
+/* Dungeon: tab Misi/Riwayat + daftar riwayat sesi latihan (fix dev-10 user) */
+.dungeon-tabs { display: flex; gap: var(--yui-space-1); margin-top: var(--yui-space-2); }
+.dungeon-tabs button {
+  padding: 4px 12px; border-radius: 999px; border: 1px solid var(--yui-border);
+  background: transparent; color: var(--yui-text-muted); cursor: pointer;
+  font-size: var(--yui-text-sm);
+}
+.dungeon-tabs button[data-active] {
+  border-color: var(--yui-accent); color: var(--yui-accent);
+  background: color-mix(in oklab, var(--yui-accent) 10%, transparent);
+}
+.dungeon-history { display: flex; flex-direction: column; gap: var(--yui-space-2); }
+.dungeon-history-row {
+  display: flex; align-items: center; gap: var(--yui-space-3);
+  padding: var(--yui-space-2) var(--yui-space-3);
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card);
+  background: var(--yui-bg-surface);
+}
+.dungeon-history-row .dh-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.dungeon-history-row .dh-main small { color: var(--yui-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Dungeon: tombol buka form (form kini modal — fix dev-10 user "UI lebih rapih") */
+.dungeon-create-actions {
+  display: flex; align-items: center; gap: var(--yui-space-3);
+  padding: var(--yui-space-2) var(--yui-space-3);
+  border: 1px dashed var(--yui-border-strong); border-radius: var(--yui-radius-card);
+}
+.dungeon-form-modal {
+  width: min(720px, 94vw); max-height: 88vh;
+  display: flex; flex-direction: column;
+  background: var(--yui-glass); backdrop-filter: var(--yui-glass-blur);
+  -webkit-backdrop-filter: var(--yui-glass-blur);
+  border: 1px solid var(--yui-glass-border); border-radius: var(--yui-radius-xl);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.dungeon-form-body { overflow-y: auto; padding: var(--yui-space-3) var(--yui-space-4); }
+.dungeon-form-body .dungeon-create { border: none; padding: 0; }

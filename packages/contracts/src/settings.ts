@@ -89,3 +89,9 @@ export const ModelSmokeResponse = z.object({
   results: z.array(ModelSmokeResult),
 });
 export type ModelSmokeResponse = z.infer<typeof ModelSmokeResponse>;
+
+/** Mode approval (fix dev-10 user: approval kedaluwarsa → turn terasa stuck).
+ *  "auto" = write_file & run_command disetujui otomatis (mode cepat alur
+ *  tulis+jalankan kode); tool lain tetap minta persetujuan. */
+export const ApprovalModeSetting = z.enum(["ask", "auto"]);
+export type ApprovalModeSetting = z.infer<typeof ApprovalModeSetting>;

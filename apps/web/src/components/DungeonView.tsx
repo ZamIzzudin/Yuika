@@ -19,7 +19,7 @@ interface DungeonRow {
     targetSkill: { name: string; description: string };
     origin: "seed" | "user";
   };
-  runs: { id: string; status: "running" | "done" | "failed"; startedAt: number; endedAt: number | null; summary: string | null }[];
+  runs: { id: string; status: "running" | "done" | "failed"; startedAt: number; endedAt: number | null; summary: string | null; sessionId: string | null; projectId: string }[];
 }
 
 const DEFAULT_ACC: Record<"research" | "documents", string[]> = {
@@ -35,13 +35,17 @@ const DEFAULT_ACC: Record<"research" | "documents", string[]> = {
   ],
 };
 
-export function DungeonView({ personas, onBack }: { personas: PersonaInfo[]; onBack: () => void }) {
+export function DungeonView({ personas, onBack, onOpenProject }: { personas: PersonaInfo[]; onBack: () => void; onOpenProject?: (projectId: string) => void }) {
   const [dungeons, setDungeons] = useState<DungeonRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const uploadFor = useRef<string | null>(null);
+  // Fix dev-10 (user): sesi latihan TIDAK lagi tampil sebagai card project (scope
+  // beda) — daftar semua run latihan bisa dibuka dari sini (tab Riwayat).
+  const [view, setView] = useState<"misi" | "riwayat">("misi");
+  const [formOpen, setFormOpen] = useState(false);
 
   // ---- form buat latihan ----
   const [mode, setMode] = useState<"research" | "documents">("research");
@@ -220,6 +224,11 @@ export function DungeonView({ personas, onBack }: { personas: PersonaInfo[]; onB
     );
   };
 
+  const allRuns =
+    dungeons
+      ?.flatMap((d) => d.runs.map((r) => ({ ...r, title: d.mission.title, persona: d.mission.persona })))
+      .sort((a, b) => b.startedAt - a.startedAt) ?? [];
+
   return (
     <section className="dungeon-page" aria-label="Dungeon — arena latihan persona">
       <header className="dungeon-hero">
@@ -232,8 +241,60 @@ export function DungeonView({ personas, onBack }: { personas: PersonaInfo[]; onB
           persona belajar di sandbox → menghasilkan <b>skill</b> yang ia kuasai (draf → Anda terima → eval buta → siap
           di-assign ke project).
         </p>
+        <div className="dungeon-tabs" role="tablist">
+          <button role="tab" aria-selected={view === "misi"} data-active={view === "misi" ? "" : undefined} onClick={() => setView("misi")}>
+            Misi
+          </button>
+          <button role="tab" aria-selected={view === "riwayat"} data-active={view === "riwayat" ? "" : undefined} onClick={() => setView("riwayat")}>
+            Riwayat sesi latihan ({allRuns.length})
+          </button>
+        </div>
       </header>
 
+      {view === "riwayat" ? (
+        <div className="dungeon-history">
+          {allRuns.length === 0 ? (
+            <p className="dim">Belum ada sesi latihan — jalankan misi dulu.</p>
+          ) : (
+            allRuns.map((r) => (
+              <div key={r.id} className="dungeon-history-row">
+                <PersonaFace personaId={r.persona} size={24} />
+                <div className="dh-main">
+                  <b>{r.title}</b>
+                  <small className="dim">
+                    {new Date(r.startedAt).toLocaleString("id-ID")} ·{" "}
+                    {r.status === "running" ? "◐ berjalan" : r.status === "done" ? "✓ selesai" : "✕ gagal"}
+                    {r.summary ? ` — ${r.summary.slice(0, 140)}` : ""}
+                  </small>
+                </div>
+                <button
+                  className="btn secondary"
+                  disabled={!onOpenProject}
+                  onClick={() => onOpenProject?.(r.projectId)}
+                  title="Buka ruangan latihan (chat + artefak sesi ini)"
+                >
+                  Buka sesi →
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      ) : (
+        <>
+      <div className="dungeon-create-actions">
+        <button className="btn" onClick={() => setFormOpen(true)}>
+          + Buat latihan baru
+        </button>
+        <small className="dim">Form lengkap (mode, persona, skill, kriteria lulus) kini popup modal — daftar misi tetap terlihat.</small>
+      </div>
+      {formOpen && (
+      <div className="settings-overlay" onClick={(e) => e.target === e.currentTarget && setFormOpen(false)} role="dialog" aria-modal>
+        <div className="dungeon-form-modal">
+          <div className="settings-head">
+            <b>⚔ Buat latihan baru</b>
+            <button className="settings-close" onClick={() => setFormOpen(false)} aria-label="Tutup">✕</button>
+          </div>
+          <div className="dungeon-form-body">
       <div className="dungeon-create">
         <span className="field-title">Buat latihan baru</span>
         <div className="dungeon-mode" role="tablist">
@@ -302,7 +363,11 @@ export function DungeonView({ personas, onBack }: { personas: PersonaInfo[]; onB
           </div>
         </div>
         {err && <p className="project-err">{err}</p>}
+          </div>
+          </div>
+        </div>
       </div>
+      )}
 
       {dungeons === null ? (
         <Skeleton lines={4} />
@@ -324,6 +389,8 @@ export function DungeonView({ personas, onBack }: { personas: PersonaInfo[]; onB
             Selesai latihan → skill muncul sebagai <b>draf</b> di tab Skill project (Terima → “diuji manusia” →
             <b> Eval buta</b> → ✓ siap). Persona tanpa skill fase ditandai ✕ di tab Roster — latih di sini.
           </p>
+        </>
+      )}
         </>
       )}
 
