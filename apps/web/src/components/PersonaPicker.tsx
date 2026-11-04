@@ -110,7 +110,7 @@ export function PersonaOrbit({
   const n = personas.length;
   const active = personas[Math.min(focus, n - 1)] ?? null;
   const cardBase =
-    "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui";
+    "flex w-[130px] cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui";
   return (
     <div className="relative mt-2 h-[460px] w-full max-w-[720px] sm:h-[500px]">
       {/* dekorasi: lintasan orbit (elips putus-putus tepat di jalur kartu) +
