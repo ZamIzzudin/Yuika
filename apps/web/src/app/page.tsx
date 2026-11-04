@@ -500,6 +500,16 @@ export default function Home() {
           activeId={activeProjectId}
           onPick={pickProject}
           onCreated={loadProjects}
+          onDeleted={(pid) => {
+            // Scope yang aktif terhapus → kembali ke workspace global (reset sesi);
+            // selain itu cukup refresh daftar project + sesi project aktif.
+            void loadProjects();
+            if (activeProjectId === pid) {
+              void pickProject(null);
+            } else if (activeProjectId) {
+              void loadProjectSessions(activeProjectId);
+            }
+          }}
         />
         <div className="side-foot">
           <button

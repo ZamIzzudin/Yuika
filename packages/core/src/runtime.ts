@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type McpServerStatus, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
+import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
 import { SessionStore } from "./session/store.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
@@ -586,6 +586,51 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     deleteDungeonMission: (slug: string) => deleteMission(paths.workspacePath, slug),
     listProjects: () => projectStore.listProjects(),
     getProject: (id: string) => projectStore.getProject(id),
+    /** P1-PRJ-8 (request user): hapus project + SEMUA artefak terkait — sesi &
+     *  eventnya, task + project_events, file workspace (termasuk MEMORY.md project
+     *  & uploads), revisi file, baris audit MCP, ruangan+dungeon run (kalau kind
+     *  dungeon). YANG DIPERTAHANKAN: skill persona (milik persona — keputusan user)
+     *  & usage ledger (akuntansi metering jujur; baris tinggal historis). */
+    deleteProject: (id: string): DeleteProjectResult => {
+      const project = projectStore.getProject(id);
+      if (!project) throw new Error(`project tidak ditemukan: ${id}`);
+      // 1. Batalkan turn in-flight sesi project ini (turnAborts → loop batal;
+      //    loopCache dibuang agar turn finalizer tak menulis setelah baris dihapus).
+      const sessions = store.listProjectSessions(id).map((s) => s.id);
+      for (const sid of sessions) {
+        turnAborts.get(sid)?.abort();
+        turnAborts.delete(sid);
+        loopCache.delete(sid);
+      }
+      // 2. Baris DB: sesi + events/messages/approvals → audit MCP milik sesi itu.
+      const delSessions = store.deleteProjectSessions(id);
+      const auditRows = mcpAudit.deleteForSessions(sessions);
+      // 3. Revisi file project (prefix = root project) lalu seluruh dir workspace-
+      //    project (file, uploads/, reports/, MEMORY.md project, roster, runs dungeon).
+      const root = path.join(paths.workspacePath, project.rootPath);
+      const revisions = fileRevisions.deleteRevisionsUnder(root + path.sep);
+      fs.rmSync(root, { recursive: true, force: true });
+      // 4. Terakhir: baris project itu sendiri (tasks + project_events + projects).
+      const delProject = projectStore.deleteProjectData(id);
+      return {
+        ok: true,
+        projectId: id,
+        name: project.name,
+        kind: project.kind ?? "project",
+        deleted: {
+          sessions: delSessions.sessions,
+          events: delSessions.events,
+          approvals: delSessions.approvals,
+          tasks: delProject.tasks,
+          projectEvents: delProject.projectEvents,
+          revisions,
+          auditRows,
+          workspaceDir: root,
+        },
+        keptUsage: true,
+        keptSkills: true,
+      };
+    },
     // P2-STU-3 v0: tab File — tree + baca file, scoped dir project (anti traversal).
     listProjectFiles: (id: string) => {
       const p = projectStore.getProject(id);

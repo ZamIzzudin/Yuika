@@ -59,6 +59,13 @@ export class FileRevisionStore {
     return row?.content ?? null;
   }
 
+  /** P1-PRJ-8: hapus revisi semua file di bawah prefix path (root project yang
+   *  akan dihapus) — tanpa ini revisi jadi yatim. Return jumlah baris terhapus. */
+  deleteRevisionsUnder(absPathPrefix: string): number {
+    const esc = absPathPrefix.replace(/[\\%_]/g, (c) => "\\" + c) + "%"; // concat — hindari template raw string
+    return this.db.prepare("DELETE FROM file_revisions WHERE path LIKE ? ESCAPE '\\'").run(esc).changes;
+  }
+
   close(): void {
     this.db.close();
   }

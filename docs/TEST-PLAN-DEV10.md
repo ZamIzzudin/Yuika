@@ -382,3 +382,28 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
      model utama (Metering: tidak ada lagi baris model aux).
 4. (Bonus regression) kosongkan juga Model fallback → Simpan → restart server.
   - ✅ Fallback tetap kosong (dulu: nilai lama "hidup lagi" dari .env).
+
+### M9 (P1) — Hapus project + bersih artefak (P1-PRJ-8)
+> Siapkan: project "Uji Hapus" berisi ≥1 sesi dengan turn (biar ada event), ≥1
+> task, 1 file via tab File/upload, dan biarkan persona mencatat sesuatu sekali
+> (memory project). Project lain biarkan tetap ada sebagai pembanding.
+
+1. Sidebar Proyek → hover baris "Uji Hapus" → tombol ✕ muncul di kanan.
+  - ✅ Klik ✕ → kotak konfirmasi merah muncul (bukan langsung hapus), berisi
+     penjelasan apa yang dihapus & catatan "skill & metering tetap tersimpan".
+2. Klik "Batal" → konfirmasi tertutup, project masih ada.
+3. Klik ✕ lagi → "Hapus permanen".
+  - ✅ Project lenyap dari daftar; muncul ringkasan "… dihapus — N sesi, M task,
+     file & memory project dibersihkan…".
+4. Verifikasi artefak benar-benar bersih:
+  - ✅ Workspace folder `workspace/projects/<id-project>` hilang (cek file
+     explorer); sesi project tak lagi muncul; tab Task/Papan project 404/error
+     wajar.
+5. Project pembanding: pilih & buka sesinya.
+  - ✅ Sesi, task, file, revisi (dropdown "revisi…" di tab File) masih utuh.
+6. Jika project yang dihapus sedang AKTIF (dipilih di sidebar):
+  - ✅ UI otomatis kembali ke Workspace global (tidak nyangkut di scope mati).
+7. Skill yang pernah dipelajari persona dari project itu (tab Skills):
+  - ✅ Masih ada — TIDAK ikut terhapus (by design, keputusan Anda).
+8. Settings → Metering: baris usage project terhapus.
+  - ✅ Tetap tercatat (akuntansi jujur — by design), tidak di-reset.

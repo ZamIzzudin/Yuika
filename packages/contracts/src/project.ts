@@ -244,3 +244,27 @@ export const PhaseReadiness = z.object({
   skills: z.array(z.string()).default([]),
 });
 export type PhaseReadiness = z.infer<typeof PhaseReadiness>;
+
+/** Hasil hapus project + artefak terkait (P1-PRJ-8, request user).
+ *  Skill persona yang lahir dari project INI TIDAK ikut dihapus (milik persona,
+ *  hidup di packages/skills — keputusan user). Metering (usage ledger) juga
+ *  dipertahankan — akuntansi jujur; projectId tinggal baris historis. */
+export const DeleteProjectResult = z.object({
+  ok: z.literal(true),
+  projectId: z.string(),
+  name: z.string(),
+  kind: z.enum(["project", "dungeon"]),
+  deleted: z.object({
+    sessions: z.number().int(),
+    events: z.number().int(),
+    approvals: z.number().int(),
+    tasks: z.number().int(),
+    projectEvents: z.number().int(),
+    revisions: z.number().int(),
+    auditRows: z.number().int(),
+    workspaceDir: z.string(),
+  }),
+  keptUsage: z.literal(true),
+  keptSkills: z.literal(true),
+});
+export type DeleteProjectResult = z.infer<typeof DeleteProjectResult>;

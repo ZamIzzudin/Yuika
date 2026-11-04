@@ -67,6 +67,13 @@ export class McpAuditStore {
     }));
   }
 
+  /** P1-PRJ-8: hapus baris audit milik sesi-sesi yang dihapus (cleanup project). */
+  deleteForSessions(sessionIds: string[]): number {
+    if (sessionIds.length === 0) return 0;
+    const ph = sessionIds.map(() => "?").join(",");
+    return this.db.prepare(`DELETE FROM mcp_audit WHERE session_id IN (${ph})`).run(...sessionIds).changes;
+  }
+
   close(): void {
     this.db.close();
   }

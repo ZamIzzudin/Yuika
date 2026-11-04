@@ -106,7 +106,6 @@ export class ProjectStore {
   // ---- tasks (P1-PRJ-4) + event task.node.* (P1-PRJ-7, PLAN §13.7) ----
   // Setiap mutasi task menulis event DI TRANSAKSI YANG SAMA — ProjectStore adalah
   // satu-satunya penulis → TaskTree (proyeksi event) tak bisa drift dari tabel.
-
   createTask(input: { id: string; projectId: string; title: string; assignee?: string | null; parentId?: string | null }): TaskItem {
     const now = Date.now();
     const parent = input.parentId ?? null;
@@ -199,6 +198,15 @@ export class ProjectStore {
       .prepare("SELECT type, payload FROM project_events WHERE project_id = ? ORDER BY seq ASC")
       .all(projectId) as { type: string; payload: string }[];
     return rows.map((r) => ProjectEvent.parse({ ...JSON.parse(r.payload), type: r.type }));
+  }
+
+  /** P1-PRJ-8: hapus SEMUA baris milik project (tasks + event + baris projects)
+   *  dalam SATU transaksi — panggil SETELAH artefak lain (sesi/file) bersih. */
+  deleteProjectData(projectId: string): { tasks: number; projectEvents: number } {
+    const tasks = this.db.prepare("DELETE FROM project_tasks WHERE project_id = ?").run(projectId).changes;
+    const projectEvents = this.db.prepare("DELETE FROM project_events WHERE project_id = ?").run(projectId).changes;
+    this.db.prepare("DELETE FROM projects WHERE id = ?").run(projectId);
+    return { tasks, projectEvents };
   }
 
   close(): void {

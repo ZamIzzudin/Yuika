@@ -250,6 +250,27 @@ export class SessionStore {
     return pending.length;
   }
 
+  /** P1-PRJ-8: hapus SEMUA sesi milik project + turunannya (events, messages,
+   *  approvals, approval_memory) dalam SATU transaksi. Return jumlah yang dihapus. */
+  deleteProjectSessions(projectId: string): { sessions: number; events: number; approvals: number } {
+    const ids = (this.db.prepare("SELECT id FROM sessions WHERE project_id = ?").all(projectId) as { id: string }[]).map(
+      (r) => r.id,
+    );
+    if (ids.length === 0) return { sessions: 0, events: 0, approvals: 0 };
+    const ph = ids.map(() => "?").join(",");
+    let events = 0;
+    let approvals = 0;
+    const tx = this.db.transaction(() => {
+      events = this.db.prepare(`DELETE FROM events WHERE session_id IN (${ph})`).run(...ids).changes;
+      this.db.prepare(`DELETE FROM messages WHERE session_id IN (${ph})`).run(...ids);
+      approvals = this.db.prepare(`DELETE FROM approvals WHERE session_id IN (${ph})`).run(...ids).changes;
+      this.db.prepare(`DELETE FROM approval_memory WHERE session_id IN (${ph})`).run(...ids);
+      this.db.prepare(`DELETE FROM sessions WHERE id IN (${ph})`).run(...ids);
+    });
+    tx();
+    return { sessions: ids.length, events, approvals };
+  }
+
   close(): void {
     this.db.close();
   }
