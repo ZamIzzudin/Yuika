@@ -14,11 +14,14 @@ import { PersonaFace } from "./PersonaPicker";
 import { Button, StateChip } from "./ui";
 
 const PERSONA_NAME: Record<string, string> = {
-  "yui-conductor": "Yui Conductor",
-  "yui-scholar": "Yui Scholar",
-  "yui-scribe": "Yui Scribe",
-  "yui-coder": "Yui Coder",
-  "yui-designer": "Yui Designer",
+  "yui-conductor": "Maestro Yui",
+  "yui-planner": "Liebert Yui",
+  "yui-analyst": "Sherlock Yui",
+  "yui-scholar": "Einstein Yui",
+  "yui-scribe": "Poe Yui",
+  "yui-coder": "Hiro Yui",
+  "yui-designer": "Picasso Yui",
+  "yui-operator": "Neo Yui",
 };
 const ZOOM_MIN = 0.35;
 const ZOOM_MAX = 2.5;

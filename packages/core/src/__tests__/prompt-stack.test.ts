@@ -75,19 +75,19 @@ describe("prompt stack frozen per sesi (W2-C2)", () => {
 describe("USER.md stub (W5-C2)", () => {
   it("1 catatan preferensi (label preview) per sesi; header sekali; tidak menimpa edit user", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-usermd-"));
-    appendUserPreferenceNote(dir, "Yui Conductor");
+    appendUserPreferenceNote(dir, "Maestro Yui");
     const first = fs.readFileSync(userMdPath(dir), "utf-8");
     expect(first).toContain("# USER.md");
     expect(first).toContain("(preview)");
-    expect(first).toContain("Yui Conductor");
+    expect(first).toContain("Maestro Yui");
 
     // user mengedit isi — harus terjaga
     fs.appendFileSync(userMdPath(dir), "- preferensi manual user: suka bullet point.\n", "utf-8");
 
-    appendUserPreferenceNote(dir, "Yui Scholar");
+    appendUserPreferenceNote(dir, "Einstein Yui");
     const second = fs.readFileSync(userMdPath(dir), "utf-8");
     expect(second).toContain("preferensi manual user");
-    expect(second).toContain("Yui Scholar");
+    expect(second).toContain("Einstein Yui");
     expect(second.match(/\(preview\)/g)).toHaveLength(2); // +1 per sesi
   });
 });

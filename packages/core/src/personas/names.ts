@@ -1,0 +1,23 @@
+/**
+ * Alias tampilan persona (keputusan user 2026-11: konsep "tokoh legendaris + Yui").
+ * ID teknis `yui-*` TIDAK berubah (folder, binding skill, roster, sesi lama) —
+ * ini murni label tampilan; sumber nama resmi tetap persona.yaml.
+ * Fallback untuk persona kustom (bukan 8 bawaan): "Yui <Short>".
+ */
+export const PERSONA_ALIAS: Record<string, string> = {
+  "yui-conductor": "Maestro Yui",
+  "yui-planner": "Liebert Yui",
+  "yui-analyst": "Sherlock Yui",
+  "yui-scholar": "Einstein Yui",
+  "yui-scribe": "Poe Yui",
+  "yui-coder": "Hiro Yui",
+  "yui-designer": "Picasso Yui",
+  "yui-operator": "Neo Yui",
+};
+
+export function personaDisplayName(id: string): string {
+  const alias = PERSONA_ALIAS[id];
+  if (alias) return alias;
+  const short = id.replace(/^yui-/, "");
+  return `Yui ${short.charAt(0).toUpperCase()}${short.slice(1)}`;
+}

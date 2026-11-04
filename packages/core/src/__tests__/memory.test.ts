@@ -20,13 +20,13 @@ describe("memory manager (P1-MEM-1)", () => {
 
   it("appendCurated menulis berformat; dedupe inti catatan sama (beda timestamp/persona) → skip", () => {
     const ws = tmpWs();
-    expect(appendCurated(ws, "user", "jawaban ringkas, bahasa Indonesia", "Yui Conductor")).toBe(true);
-    expect(appendCurated(ws, "user", "Jawaban ringkas, bahasa Indonesia", "Yui Scholar")).toBe(false); // dedupe
-    expect(appendCurated(ws, "user", "selalu sertakan contoh kode", "Yui Coder")).toBe(true);
+    expect(appendCurated(ws, "user", "jawaban ringkas, bahasa Indonesia", "Maestro Yui")).toBe(true);
+    expect(appendCurated(ws, "user", "Jawaban ringkas, bahasa Indonesia", "Einstein Yui")).toBe(false); // dedupe
+    expect(appendCurated(ws, "user", "selalu sertakan contoh kode", "Hiro Yui")).toBe(true);
     const content = readMemory(ws, "user");
     expect(content).toContain("- [");
-    expect(content).toContain("Yui Conductor: jawaban ringkas, bahasa Indonesia");
-    expect(content.match(/Yui Scholar/)).toBeNull(); // catatan dedupe tidak menulis ulang
+    expect(content).toContain("Maestro Yui: jawaban ringkas, bahasa Indonesia");
+    expect(content.match(/Einstein Yui/)).toBeNull(); // catatan dedupe tidak menulis ulang
   });
 
   it("saveMemory menimpa utuh (editor user) dan readMemory round-trip", () => {

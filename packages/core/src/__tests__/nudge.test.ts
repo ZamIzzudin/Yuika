@@ -54,7 +54,7 @@ describe("learn nudge (P1-MEM-2)", () => {
       provider: fakeProvider('{"note":"user ingin jawaban ringkas bahasa Indonesia","scope":"user"}'),
       model: "m",
       personaId: "yui-conductor",
-      personaName: "Yui Conductor",
+      personaName: "Maestro Yui",
       transcript,
       sessionId: "s_1",
       turnId: "t1",
@@ -121,7 +121,7 @@ describe("learn nudge (P1-MEM-2)", () => {
       provider: fakeProvider('```json\n{"note":"stack proyek: Next.js + SQLite","scope":"project"}\n```'),
       model: "m",
       personaId: "yui-conductor",
-      personaName: "Yui Conductor",
+      personaName: "Maestro Yui",
       transcript,
       sessionId: "s_1",
       turnId: "t1",
@@ -143,7 +143,7 @@ describe("learn nudge (P1-MEM-2)", () => {
         return { type: "done", text: '{"note":null,"scope":"user"}', finishReason: "stop", toolCalls: [] } as never;
       },
     };
-    const res = await runLearnNudge({ provider: p, model: "m", personaId: "yui-conductor", personaName: "Yui Conductor", transcript, sessionId: "s_1", turnId: "t1", workspacePath: ws, emit: emit as never });
+    const res = await runLearnNudge({ provider: p, model: "m", personaId: "yui-conductor", personaName: "Maestro Yui", transcript, sessionId: "s_1", turnId: "t1", workspacePath: ws, emit: emit as never });
     expect(seen).toEqual(["m-aux-murah"]);
     expect(res.skipped).toContain("none");
     delete process.env.YUI_AUX_MODEL;
@@ -159,7 +159,7 @@ describe("learn nudge (P1-MEM-2)", () => {
       },
     };
     await runLearnNudge({
-      provider: p, model: "m", personaId: "yui-conductor", personaName: "Yui Conductor", transcript,
+      provider: p, model: "m", personaId: "yui-conductor", personaName: "Maestro Yui", transcript,
       sessionId: "s_1", turnId: "t1", workspacePath: ws, emit: emit as never,
       recordUsage: (u) => usages.push({ model: u.model, prompt: u.promptTokens, output: u.outputTokens }),
     });

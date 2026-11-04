@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { registry } from "../registry.js";
 import { appendCurated } from "../memory/manager.js";
+import { personaDisplayName } from "../personas/names.js";
 import type { SessionStore } from "../session/store.js";
 import type { ProjectStore } from "../project/store.js";
 
@@ -50,8 +51,7 @@ export function registerMemoryTools(deps: {
       // P1-MEM-6: scope domain → memori bidang persona pemanggil (lintas project).
       const domain = scope === "domain" ? deps.domainOfPersona?.(session.personaId) ?? null : null;
       if (scope === "domain" && !domain) throw new Error("domain persona tidak diketahui — scope domain tidak tersedia");
-      const short = session.personaId.replace(/^yui-/, "");
-      const personaName = `Yui ${short.charAt(0).toUpperCase()}${short.slice(1)}`;
+      const personaName = personaDisplayName(session.personaId);
       const written = appendCurated(deps.workspacePath, scope, note, personaName, projectRootPath, domain);
       const file = scope === "user" ? "USER.md" : scope === "project" ? "MEMORY.md" : `memory/domains/${domain}.md`;
       return {

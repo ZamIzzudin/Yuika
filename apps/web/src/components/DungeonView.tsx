@@ -142,7 +142,7 @@ function SkillMapping() {
                 : "border-line bg-transparent text-muted hover:border-line-strong hover:text-primary"
             }`}
           >
-            <PersonaFace personaId={p.id} size={22} /> {p.name.replace("Yui ", "")}
+            <PersonaFace personaId={p.id} size={22} /> {p.name.replace(" Yui", "")}
             <span className="rounded-pill bg-hover px-1.5 py-px text-dim">{p.effective.length}</span>
           </button>
         ))}

@@ -58,7 +58,7 @@
 ### M19 (P1) — Mapping Skill manual (Dungeon → tab "Mapping Skill")
 1. Menu ⚔ Dungeon → tab **Mapping Skill**: daftar persona (chip + counter skill
    efektif). Pilih satu persona → daftar semua skill siap pakai.
-2. Klik **Pasang** pada skill (mis. `web-research` ke Yui Coder) → jadi
+2. Klik **Pasang** pada skill (mis. `web-research` ke Hiro Yui) → jadi
    **Terpasang ✓** (aksen). Restart dev server → tetap terpasang (persist
    `skill-bindings.json`).
 3. Skill **bawaan** (label "bawaan", mis. code-review-basics di coder) bisa

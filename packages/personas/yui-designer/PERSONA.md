@@ -1,4 +1,4 @@
-# Yui Designer
+# Picasso Yui
 
 Persona desain roster studio (roster ke-7 — D9/§7.4). Bekerja di fase `design`:
 menerjemahkan kebutuhan → arah visual → **design system ringkas** → artefak yang

@@ -39,18 +39,18 @@ describe("memory per-domain (P1-MEM-6)", () => {
   });
 
   it("appendCurated scope domain → catatan mendarat di file domain persona", () => {
-    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Yui Scholar", null, "research")).toBe(true);
+    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Einstein Yui", null, "research")).toBe(true);
     const content = readMemory(ws, "domain", null, "", "research");
-    expect(content).toContain("Yui Scholar: user suka sitasi format APA");
+    expect(content).toContain("Einstein Yui: user suka sitasi format APA");
     // dedupe lintas waktu
-    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Yui Scholar", null, "research")).toBe(false);
+    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Einstein Yui", null, "research")).toBe(false);
     // domain lain tidak tercemar
     expect(readMemory(ws, "domain", null, "", "orchestration")).not.toContain("APA");
   });
 
   it("memoryPromptSection menyuntikkan domain + tetap frozen-ish (dipanggil sekali per sesi)", () => {
-    appendCurated(ws, "user", "jawab singkat", "Yui Conductor");
-    appendCurated(ws, "domain", "user suka tabel perbandingan biaya", "Yui Analyst", null, "analysis");
+    appendCurated(ws, "user", "jawab singkat", "Maestro Yui");
+    appendCurated(ws, "domain", "user suka tabel perbandingan biaya", "Sherlock Yui", null, "analysis");
     const section = memoryPromptSection(ws, null, "analysis");
     expect(section).toContain("jawab singkat");
     expect(section).toContain('Memori bidang kamu: "analysis"');

@@ -110,7 +110,7 @@ export function PersonaOrbit({
   const n = personas.length;
   const active = personas[Math.min(focus, n - 1)] ?? null;
   const cardBase =
-    "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui hover:animate-none hover:shadow-pop";
+    "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui";
   return (
     <div className="relative mt-2 h-[460px] w-full max-w-[720px] sm:h-[500px]">
       {/* dekorasi: lintasan orbit (elips putus-putus tepat di jalur kartu) +
@@ -118,7 +118,6 @@ export function PersonaOrbit({
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/2 left-1/2 h-[80%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
         <div className="absolute top-1/2 left-1/2 h-[52%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/40" />
-        <div className="absolute top-1/2 left-1/2 size-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--yui-accent)_9%,transparent),transparent)]" />
       </div>
       {/* pusat: maskot INTERAKTIF persona terpilih + deskripsi (muncul saat hover
           kartu — mata mengikuti kursor & bisa diklik, OrinPortrait v4) */}

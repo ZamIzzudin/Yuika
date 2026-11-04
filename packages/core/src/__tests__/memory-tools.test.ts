@@ -33,7 +33,7 @@ describe("memory_append tool (P1-MEM-1)", () => {
     const res = await registry.dispatch("memory_append", { scope: "user", note: "jawaban ringkas, bahasa Indonesia" }, ctx);
     expect(res.isError).toBeFalsy();
     const content = readMemory(ws, "user");
-    expect(content).toContain("Yui Conductor: jawaban ringkas, bahasa Indonesia");
+    expect(content).toContain("Maestro Yui: jawaban ringkas, bahasa Indonesia");
   });
 
   it("dedupe: catatan inti sama → skip, bukan duplikat", async () => {

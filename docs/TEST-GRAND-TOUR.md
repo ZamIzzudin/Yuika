@@ -21,8 +21,8 @@
 1. Buat project baru: nama **"Petualangan Kopi Nusantara"** (apapun boleh),
    deskripsi bebas.
 2. Di kartu persona tengah layar, perhatikan **badge growth** di setiap kartu
-   (mis. "Baru · 3 turn") — termasuk kartu **Yui Planner** (bentuk ⭐).
-3. Pilih **Yui Conductor** sebagai lead → sesi chat terbuka.
+   (mis. "Baru · 3 turn") — termasuk kartu **Liebert Yui** (bentuk ⭐).
+3. Pilih **Maestro Yui** sebagai lead → sesi chat terbuka.
 4. Sidebar kiri: tombol hanya **Dungeon** & **Pengaturan** (Trace sudah pindah
    jadi tab). Baris tab di atas chat: `Chat · 🧭 Trace · Tim · File · Papan ·
    Pohon · Roster · Sesi · Memori · Skill`.
@@ -30,7 +30,7 @@
 
 ## Babak 2 — Planning (Planner + consult) — M10
 
-1. Kembali ke tab Chat, ganti persona via dropdown ke **Yui Planner**.
+1. Kembali ke tab Chat, ganti persona via dropdown ke **Liebert Yui**.
 2. Kirim brief besar:
    > "Rencanakan landing page brand kopi: 3 varian produk, cerita petani,
    > newsletter. Tim kecil, budget hemat, jalan 2 minggu. Mulai dari rencana."

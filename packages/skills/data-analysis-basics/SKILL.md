@@ -15,7 +15,7 @@ metadata:
 # Data Analysis Basics
 
 Prosedur analisis dataset tabular (CSV/Excel) yang bisa direproduksi siapa pun
-dari file mentah. Milik: Yui Analyst.
+dari file mentah. Milik: Sherlock Yui.
 
 ## 1. Inspeksi dulu, tafsir belakangan
 

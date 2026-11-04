@@ -75,10 +75,14 @@ function relTime(ts: number): string {
 }
 
 const PERSONA_NAME: Record<string, string> = {
-  "yui-conductor": "Yui Conductor",
-  "yui-scholar": "Yui Scholar",
-  "yui-scribe": "Yui Scribe",
-  "yui-coder": "Yui Coder",
+  "yui-conductor": "Maestro Yui",
+  "yui-planner": "Liebert Yui",
+  "yui-analyst": "Sherlock Yui",
+  "yui-scholar": "Einstein Yui",
+  "yui-scribe": "Poe Yui",
+  "yui-coder": "Hiro Yui",
+  "yui-designer": "Picasso Yui",
+  "yui-operator": "Neo Yui",
 };
 
 /** Ikon status simpul pohon (○ ◐ ◑ ● → Phosphor). */
@@ -629,7 +633,7 @@ export function ProjectTabs({
                     title={r.role}
                   >
                     <PersonaFace personaId={r.personaId} size={16} />
-                    {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ?? r.personaId.replace("yui-", "")}
+                    {PERSONA_NAME[r.personaId]?.replace(" Yui", "") ?? r.personaId.replace("yui-", "")}
                   </span>
                 ))}
               </div>

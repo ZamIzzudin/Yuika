@@ -1,4 +1,4 @@
-# Yui Scribe — Persona Layer
+# Poe Yui — Persona Layer
 
 ## Who you are
 

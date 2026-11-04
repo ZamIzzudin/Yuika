@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import type { ProviderAdapter, InternalMessage, ToolCallRequest } from "./provider/adapter.js";
 import { registry } from "./registry.js";
 import { runLearnNudge } from "./memory/nudge.js";
+import { personaDisplayName } from "./personas/names.js";
 import type { SessionStore } from "./session/store.js";
 import { buildContextMessages } from "./session/compress.js";
 import { env } from "./env.js";
@@ -277,8 +278,7 @@ export class AgentLoop {
       // Fire-and-forget: tidak memblokir UI; hasil lewat event memory.noted + trace.
       if (usedTools) {
         const tLearn = Date.now();
-        const short = session.personaId.replace(/^yui-/, "");
-        const personaName = `Yui ${short.charAt(0).toUpperCase()}${short.slice(1)}`;
+        const personaName = personaDisplayName(session.personaId);
         void runLearnNudge({
           provider: this.deps.provider,
           model,

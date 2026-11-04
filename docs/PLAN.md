@@ -5,7 +5,7 @@
 > Disusun dari pembelajaran mendalam `hermes-agent` (Nous Research) + brainstorming
 > konsep dari ekosistem tools lain. Status: draft aktif — eksekusi demo dimulai.
 >
-> **Changelog v0.6:** **Persona Project Manager (Yui Planner — D22)** untuk project skala
+> **Changelog v0.6:** **Persona Project Manager (Liebert Yui — D22)** untuk project skala
 > besar: division of labor planning (Planner: brainstorm `consult` multi-persona → dokumen
 > perencanaan → task list detail dengan acceptance/depends_on/assignee) vs eksekusi
 > (Conductor: delegasi sequential/paralel) · matriks tanggung jawab + metrik keluaran per
@@ -16,7 +16,7 @@
 > arena latihan persona: misi → skill (draft→tested→ready) → assign gating (§13.8) ·
 > **Multi-model per persona** (persona.yaml `model`+`fallback`, §13.10) · pipeline
 > **desain→kode** di fase develop (§13.9) · keputusan D18–D21.
-> Putusan lanjutan: **Yui Designer resmi masuk roster** (D9 = 7 persona, §7.4) · Penpot
+> Putusan lanjutan: **Picasso Yui resmi masuk roster** (D9 = 7 persona, §7.4) · Penpot
 > **wajib ter-embed di platform** — bukan app terpisah; scope v0 **ramping tapi flow utuh**
 > (tangga embed §13.9).
 > Putusan maskot: **Orin v4** (docs/Orin v4 – Pilih Maskot) menggantikan rig v2 — lebih
@@ -68,8 +68,8 @@
 
 **Your-Yui** adalah platform AI agent yang berjalan **hanya** di permukaan milikmu sendiri —
 web (termasuk self-hosted), mobile, dan desktop — dengan satu inti agent yang sama di cloud.
-Yui bukan chatbot generik: dia adalah **keluarga persona spesialis** — Yui Coder, Yui Scholar,
-Yui Analyst — masing-masing dengan ilustrasi, kepribadian, skill set, dan memori keahlian
+Yui bukan chatbot generik: dia adalah **keluarga persona spesialis** — Hiro Yui, Einstein Yui,
+Sherlock Yui — masing-masing dengan ilustrasi, kepribadian, skill set, dan memori keahlian
 sendiri, yang tumbuh lewat learning loop, bekerja terjadwal, dan **saling mendelegasikan**
 pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 
@@ -112,7 +112,7 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D6 | Prioritas fitur: **MCP, memory learning-loop, delegation** | Ketiganya naik ke Fase 1; persona v1 (infrastruktur data) juga Fase 1 karena terkait erat |
 | D7 | **Pure TypeScript dikunci** (tim 3 orang, TS-dominan semua) | Monorepo TS: npm+turbo, kontrak zod, Node+Fastify, Next.js/Expo/Tauri — detail §9.4 |
 | D8 | Ekspresi persona = **animasi**; teknologi rekomendasi **Rive** (state machine interaktif, runtime web/RN/desktop) | Spec asset & pemetaan state di §7.6; fallback Spine/Lottie dilihat bersama artist |
-| D9 | Roster persona (§7.4) — **7 persona per v0.5** (semula 6): Conductor + 6 spesialis — **+Yui Designer** (putusan user v0.5, §12.16) | Conductor + spesialis; ilustrasi = workstream paralel non-blocking |
+| D9 | Roster persona (§7.4) — **7 persona per v0.5** (semula 6): Conductor + 6 spesialis — **+Picasso Yui** (putusan user v0.5, §12.16) | Conductor + spesialis; ilustrasi = workstream paralel non-blocking |
 | D10 | Varian ilustrasi **gratis by usage**; monetisasi kosmetik via **skin berbayar + event musiman + achievement** (konsep baru) | Garis keras: tidak ada pay-to-win — skin murni kosmetik, keahlian persona tidak pernah dijual (§7.6) |
 | D11 | Self-host = **lisensi berbayar + wajib akun premium**; premium = entitlement akun lintas platform (sekali premium → web+mobile+desktop) | Butuh license/entitlement service + validasi saat start + grace offline (§8.3) |
 | D12 | Model = **kunci provider langsung, OpenAI-compatible saja** untuk sekarang | Tetap di belakang interface `ProviderAdapter`; adapter lain (Anthropic native, dll.) menunggu Fase 1 |
@@ -125,7 +125,7 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D19 | **TaskTree = hierarki pemantauan delegasi** (task → subtask → step → job agent) yang **diproyeksikan dari event**, bukan state kedua | TaskList (board) = flat view dari tree; refresh/reconnect = replay; status paralel/sequential terlihat dari struktur node |
 | D20 | **Dungeon = arena latihan persona**: misi (research/praktik/template) → skill dengan lifecycle `draft→tested→ready`; assign ke project digating skill readiness | Bukan fine-tuning bobot model — skill = file deklaratif + memory domain; rigor eval = kunci kualitas (blind test + curator) |
 | D21 | **Model per persona**: persona.yaml `model` + `fallback` — tiap loop (parent & delegation anak) resolve model persona masing-masing | Quirk provider dinetralkan terpusat (`normalizeToolSchema` — pelajaran GLM 1210); metering per persona (P1-CRED-4) |
-| D22 | **Persona Project Manager (Yui Planner, roster ke-8)**: pemisah peran PLANNING vs EKSEKUSI — Planner: brainstorm multi-persona terstruktur (`consult`) → dokumen perencanaan → task list detail (acceptance, depends_on, assignee); Conductor: delegasi eksekusi sequential/paralel. Tiap fase flow punya owner + metrik keluaran terukur (RACI ringan); iterasi besar = run berantai (delta + regresi), bukan restart | Untuk project skala besar dengan puluhan-ratusan task & iterasi berulang; butuh engine P2-FLOW; brainstorm = prompt terstruktur bukan chat bebas (output deterministik, ter-audit) |
+| D22 | **Persona Project Manager (Liebert Yui, roster ke-8)**: pemisah peran PLANNING vs EKSEKUSI — Planner: brainstorm multi-persona terstruktur (`consult`) → dokumen perencanaan → task list detail (acceptance, depends_on, assignee); Conductor: delegasi eksekusi sequential/paralel. Tiap fase flow punya owner + metrik keluaran terukur (RACI ringan); iterasi besar = run berantai (delta + regresi), bukan restart | Untuk project skala besar dengan puluhan-ratusan task & iterasi berulang; butuh engine P2-FLOW; brainstorm = prompt terstruktur bukan chat bebas (output deterministik, ter-audit) |
 
 ---
 
@@ -233,7 +233,7 @@ skill dari pengalaman; skill self-improve; graph visual di desktop).
 - Format SKILL.md apa adanya → kompatibel dengan ekosistem skill yang sudah ada.
 - Progressive disclosure + `skills_list`/`skill_view` — pola inti.
 - **Learning loop naik ke Fase 1**: usage tracking + nudge + skill-create-from-experience.
-- 🔧 Kaitkan ke persona (§7): skill yang dipelajari Yui Coder masuk domain persona itu;
+- 🔧 Kaitkan ke persona (§7): skill yang dipelajari Hiro Yui masuk domain persona itu;
   growth timeline per persona.
 - Curator (auto-archive) menyusul di Fase 2.
 - Marketplace skill = fase lanjut.
@@ -468,7 +468,7 @@ personas/yui-coder/
 ```yaml
 # persona.yaml (contoh)
 id: yui-coder
-name: "Yui Coder"
+name: "Hiro Yui"
 version: 1.0.0
 expertise: software-development
 tags: [coding, debugging, refactoring, testing]
@@ -505,15 +505,15 @@ Satu sesi = satu persona utama; persona lain hadir sebagai **delegation target**
 | Persona | Domain | Toolset inti | Skill seed |
 |---|---|---|---|
 | **Yui (Conductor)** | generalis/orkestrator | delegation, todo, memory, web | task decomposition, planning |
-| **Yui Coder** | software dev | file, terminal→sandbox, browser, delegation | TDD, systematic-debugging, code-review |
-| **Yui Scholar** | riset | web, browser, file | research methodology, citation, fact-check |
-| **Yui Analyst** | data | code-exec, file | data cleaning, viz, statistics |
-| **Yui Scribe** | tulis/konten | file, web | writing styles, editing, SEO |
-| **Yui Operator** | otomasi/devops | terminal, cron, delegation | cron blueprints, monitoring |
-| **Yui Designer** (v0.5) | desain produk/UI | Penpot connector (embed), file, delegation | design-system basics, design→code handoff, Penpot operation |
+| **Hiro Yui** | software dev | file, terminal→sandbox, browser, delegation | TDD, systematic-debugging, code-review |
+| **Einstein Yui** | riset | web, browser, file | research methodology, citation, fact-check |
+| **Sherlock Yui** | data | code-exec, file | data cleaning, viz, statistics |
+| **Poe Yui** | tulis/konten | file, web | writing styles, editing, SEO |
+| **Neo Yui** | otomasi/devops | terminal, cron, delegation | cron blueprints, monitoring |
+| **Picasso Yui** (v0.5) | desain produk/UI | Penpot connector (embed), file, delegation | design-system basics, design→code handoff, Penpot operation |
 
 > Mulai 4–6 persona; Conductor + 3 spesialis adalah minimum untuk demo cerita delegation.
-> v0.5: **Yui Designer** ditambahkan (putusan user — D9 jadi 7) sebagai persona inti studio
+> v0.5: **Picasso Yui** ditambahkan (putusan user — D9 jadi 7) sebagai persona inti studio
 > desain→kode (§13.9); skill seed-nya dilatih lewat dungeon (P1-DUN, P1-PER-7).
 >
 > **Status (dev-10):** roster D9 LENGKAP — 7 persona ter-load & teruji
@@ -531,7 +531,7 @@ Satu sesi = satu persona utama; persona lain hadir sebagai **delegation target**
 ```
 
 Aturan: fakta user global (semua persona tahu kamu suka ringkasan pagi); keahlian domain
-terisolasi (Yui Scholar tidak otomatis mahir coding) tapi **Conductor bisa memanggil siapa
+terisolasi (Einstein Yui tidak otomatis mahir coding) tapi **Conductor bisa memanggil siapa
 pun**; skill bisa ditandai `shared` agar muncul di persona lain.
 
 ### 7.6 Growth, ekspresi & skins (diferensiasi UX)
@@ -572,7 +572,7 @@ Marketplace fase lanjut: persona buatan user (fork + remix skill + asset sendiri
 - **Delegation**: persona = bentuk produk dari "roles" Hermes — `delegate_task(persona=…)`
   dengan progres berilustrasi per persona.
 - **Memory learning-loop**: skill hasil belajar masuk domain persona; growth terukur.
-- **MCP**: tiap persona bisa punya koneksi MCP kurasi (Yui Coder ↔ GitHub MCP; Yui Scribe ↔
+- **MCP**: tiap persona bisa punya koneksi MCP kurasi (Hiro Yui ↔ GitHub MCP; Poe Yui ↔
   Notion MCP) — OAuth di web, sekali klik.
 
 ---
@@ -759,7 +759,7 @@ resume setelah refresh.
 - [ ] **Credits v1**: usage events + ledger + admission (hold→settle) + saldo UI + plan sederhana
 - [ ] Compression (ContextEngine default) + prompt-cache discipline tests
 
-**Demo keluar:** "Yui Conductor memecah tugas riset → mendelegasikan ke Yui Scholar (dengan
+**Demo keluar:** "Maestro Yui memecah tugas riset → mendelegasikan ke Einstein Yui (dengan
 koneksi MCP Notion) → skill baru tercatat di domain persona → semua terlihat dari web dengan
 expression states; burn-rate credit terukur per turn."
 
@@ -767,7 +767,7 @@ expression states; burn-rate credit terukur per turn."
 - [ ] **P2-FLOW (v0.4): workflow engine** — DAG fase deklaratif (template 7 fase),
            sequential/paralel per fase, human gate, monitoring board live (§13.3)
 - [ ] **P2-FLOW (v0.5): TaskTree board** — pohon pemantauan delegasi + steering per node (§13.7)
-- [ ] **P2-PM (v0.6): persona Project Manager & planning flow skala besar** — Yui Planner:
+- [ ] **P2-PM (v0.6): persona Project Manager & planning flow skala besar** — Liebert Yui:
       brainstorm `consult` multi-persona → dokumen perencanaan → task list detail (acceptance/
       depends_on/assignee, validator coverage) → RACI + metrik keluaran per fase → dashboard
       progres terukur → iterasi run berantai (§13.3.1, D22)

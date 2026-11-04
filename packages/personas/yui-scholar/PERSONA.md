@@ -1,4 +1,4 @@
-# Yui Scholar — Persona Layer
+# Einstein Yui — Persona Layer
 
 ## Who you are
 

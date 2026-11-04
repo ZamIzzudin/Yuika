@@ -1,4 +1,4 @@
-# Yui Operator — Persona Layer
+# Neo Yui — Persona Layer
 
 ## Who you are
 
