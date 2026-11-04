@@ -1016,6 +1016,13 @@ pilih persona → jalankan MISI (mission.yaml: goal, sumber belajar, acceptance,
                  ▼
      Skill inventory per persona (UI: “apa yang persona ini bisa”)
                  ▼
+```
+
+> **Status implementasi (dev-10):** DUN-1 + DUN-2 jalan v0 — ruangan dungeon =
+> project `kind:"dungeon"` (sesi otomatis sandbox ke folder misi), misi
+> `workspace/dungeons/<slug>/mission.yaml` (zod, seed "riset Phaser"), runner
+> async + persist; lifecycle skill `draft→tested→ready` di frontmatter
+> (`metadata.yui.status`) — accept = tested, blind-eval (DUN-3) → ready.
      ASSIGN GATING: roster project menampilkan skill readiness —
      persona tanpa skill yang dibutuhkan fase ditandai “belum siap”
 ```

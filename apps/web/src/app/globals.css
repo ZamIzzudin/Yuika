@@ -1139,3 +1139,23 @@ html, body {
 /* Durasi di tab Pohon */
 .tree-dur { font-variant-numeric: tabular-nums; color: var(--yui-text-dim); }
 .tree-dur.running { color: var(--yui-warn); }
+
+/* Dungeon (P1-DUN-1..2): arena latihan persona di tab Skill. */
+.dungeon-arena { margin-top: var(--yui-space-4); display: flex; flex-direction: column; gap: 10px; }
+.dungeon-mission {
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
+  background: var(--yui-bg-inset); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;
+}
+.dungeon-head { display: flex; align-items: center; gap: 8px; }
+.dungeon-head b { flex: 1; }
+.dungeon-persona {
+  font-size: var(--yui-text-sm); color: var(--yui-text-dim);
+  border: 1px solid var(--yui-border); border-radius: 999px; padding: 1px 8px;
+}
+.dungeon-goal { color: var(--yui-text-dim); }
+.dungeon-run { color: var(--yui-text-dim); }
+.dungeon-run[data-s="running"] { color: var(--yui-warn); }
+.dungeon-run[data-s="done"] { color: var(--yui-ok); }
+.dungeon-run[data-s="failed"] { color: var(--yui-danger, #e5484d); }
+.skill-status[data-s="tested"] { color: var(--yui-warn); }
+.skill-personas { color: var(--yui-text-dim); }

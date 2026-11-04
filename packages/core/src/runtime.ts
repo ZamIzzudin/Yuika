@@ -40,6 +40,8 @@ import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
 import { taskTreeFromEvents } from "./project/tasktree.js";
+import { loadMissions, missionDir } from "./dungeon/mission.js";
+import { createDungeonRunner, sweepStaleRuns } from "./dungeon/runner.js";
 
 export interface YuiRuntimeConfig {
   provider: { baseUrl: string; apiKey: string; model: string };
@@ -62,6 +64,26 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // P0-DATA-3: approval pending dari proses sebelumnya → expired (turn-nya mati
   // bersama proses lama); kartu di UI ditandai lewat event approval.expired.
   store.expirePendingApprovals();
+
+  // ---- P1-DUN-1: dungeon runner (arena latihan; ruangan = project sandbox) ----
+  const dungeonRunner = createDungeonRunner({
+    workspacePath: paths.workspacePath,
+    ensureRoom: (m) => {
+      const id = `p_dungeon-${m.id}`;
+      const existing = projectStore.getProject(id);
+      if (existing) return id;
+      const rootPath = `dungeons/${m.id}`; // folder misi = workspace sandbox
+      for (const sub of ["code", "reports"]) fs.mkdirSync(path.join(paths.workspacePath, rootPath, sub), { recursive: true });
+      return projectStore.createProject({ id, name: `Dungeon: ${m.title}`, description: m.goal.slice(0, 200), rootPath, kind: "dungeon" }).id;
+    },
+    createSession: (personaId, projectId) => createSession(personaId, projectId).sessionId,
+    runTurn: (sessionId, text) => runTurnInternal(sessionId, text),
+    lastAssistantText: (sessionId) => {
+      const msgs = store.getMessages(sessionId).filter((m) => m.role === "assistant");
+      return msgs.length ? (msgs[msgs.length - 1]!.content ?? null) : null;
+    },
+  });
+  sweepStaleRuns(paths.workspacePath, loadMissions(paths.workspacePath)); // restart-safe
   const projectStore = new ProjectStore(paths.dbPath);
   // Settings: provider & model bisa di-swap panas (updateProviderSettings) —
   // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
@@ -335,6 +357,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   /** P0-CORE-1: satu turn aktif per sesi — AbortController untuk Stop (HTTP + loop checks). */
   const turnAborts = new Map<string, AbortController>();
 
+  /** Dipakai REST runTurn & dungeon runner (async — resolve saat turn selesai). */
+  function runTurnInternal(sessionId: string, text: string): Promise<void> {
+    const ac = new AbortController();
+    turnAborts.set(sessionId, ac);
+    return makeLoopFor(sessionId)
+      .runTurn(sessionId, text, { signal: ac.signal })
+      .finally(() => turnAborts.delete(sessionId));
+  }
+
   function makeLoopFor(sessionId: string): AgentLoop {
     const cached = loopCache.get(sessionId);
     if (cached) return cached;
@@ -363,13 +394,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     listPersonas: listPersonaInfos,
     createSession,
     listProjectSessions,
-    runTurn: (sessionId: string, text: string) => {
-      const ac = new AbortController();
-      turnAborts.set(sessionId, ac);
-      return makeLoopFor(sessionId)
-        .runTurn(sessionId, text, { signal: ac.signal })
-        .finally(() => turnAborts.delete(sessionId));
-    },
+    runTurn: (sessionId: string, text: string) => runTurnInternal(sessionId, text),
     /** Batalkan turn sesi (tombol Stop). true bila ada turn aktif yang dibatalkan. */
     cancelTurn: (sessionId: string) => {
       const ac = turnAborts.get(sessionId);
@@ -394,6 +419,16 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         fs.mkdirSync(path.join(paths.workspacePath, rootPath, sub), { recursive: true });
       }
       return projectStore.createProject({ id, name, description, rootPath });
+    },
+    // ---- Dungeon (P1-DUN-1): arena latihan persona — ruangan sandbox ----
+    listDungeons: () => {
+      const missions = loadMissions(paths.workspacePath);
+      return missions.map((m) => ({ mission: m, runs: dungeonRunner.runs(m.id) }));
+    },
+    startDungeonRun: (missionId: string) => {
+      const m = loadMissions(paths.workspacePath).find((x) => x.id === missionId);
+      if (!m) throw new Error(`misi dungeon tidak ditemukan: ${missionId}`);
+      return dungeonRunner.start(m);
     },
     listProjects: () => projectStore.listProjects(),
     getProject: (id: string) => projectStore.getProject(id),
@@ -556,8 +591,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const drafts = safeList(() => listDrafts(paths.skillsDir));
       const skills = safeList(() => listSkills(paths.skillsDir));
       return {
-        drafts: drafts.map((s) => ({ slug: path.basename(s.dir), name: s.name, description: s.description, body: s.body, usage: readUsage(s.dir) })),
-        skills: skills.map((s) => ({ name: s.name, description: s.description, usage: readUsage(s.dir) })),
+        drafts: drafts.map((s) => ({ slug: path.basename(s.dir), name: s.name, description: s.description, body: s.body, usage: readUsage(s.dir), status: s.status, personas: s.personas })),
+        skills: skills.map((s) => ({ name: s.name, description: s.description, usage: readUsage(s.dir), status: s.status, personas: s.personas })),
       };
     },
     updateSkillDraft: (input: { slug: string; name: string; description: string; body: string }) =>

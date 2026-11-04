@@ -14,6 +14,7 @@ type ProjectRow = {
   description: string;
   status: string;
   root_path: string;
+  kind: string;
   created_at: number;
   updated_at: number;
 };
@@ -55,16 +56,21 @@ export class ProjectStore {
       );
       CREATE INDEX IF NOT EXISTS idx_project_events_project ON project_events(project_id, seq);
     `);
+    // P1-DUN-1: kolom kind — ruangan `dungeon` (arena latihan) vs `project` produksi
+    const pcols = this.db.prepare("PRAGMA table_info(projects)").all() as { name: string }[];
+    if (!pcols.some((c) => c.name === "kind")) {
+      this.db.exec("ALTER TABLE projects ADD COLUMN kind TEXT NOT NULL DEFAULT 'project'");
+    }
   }
 
-  createProject(input: { id: string; name: string; description?: string; rootPath: string }): ProjectInfo {
+  createProject(input: { id: string; name: string; description?: string; rootPath: string; kind?: "project" | "dungeon" }): ProjectInfo {
     const now = Date.now();
     this.db
       .prepare(
-        "INSERT INTO projects (id, name, description, status, root_path, created_at, updated_at) VALUES (?, ?, ?, 'active', ?, ?, ?)",
+        "INSERT INTO projects (id, name, description, status, root_path, kind, created_at, updated_at) VALUES (?, ?, ?, 'active', ?, ?, ?, ?)",
       )
-      .run(input.id, input.name, input.description ?? "", input.rootPath, now, now);
-    return { id: input.id, name: input.name, description: input.description ?? "", status: "active", rootPath: input.rootPath, createdAt: now, updatedAt: now };
+      .run(input.id, input.name, input.description ?? "", input.rootPath, input.kind ?? "project", now, now);
+    return { id: input.id, name: input.name, description: input.description ?? "", status: "active", rootPath: input.rootPath, kind: input.kind ?? "project", createdAt: now, updatedAt: now };
   }
 
   listProjects(): ProjectInfo[] {
@@ -207,6 +213,7 @@ function toInfo(r: ProjectRow): ProjectInfo {
     description: r.description,
     status: r.status,
     rootPath: r.root_path,
+    kind: (r.kind as "project" | "dungeon") ?? "project",
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   });

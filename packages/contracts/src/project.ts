@@ -24,6 +24,8 @@ export const ProjectInfo = z.object({
   status: ProjectStatus.default("active"),
   /** Root relatif terhadap workspace (mis. `projects/p_demo`) — isolasi penuh di P1-PRJ-2. */
   rootPath: z.string(),
+  /** P1-DUN-1: ruang `dungeon` = arena latihan persona (sandbox, bukan produksi). */
+  kind: z.enum(["project", "dungeon"]).default("project"),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
 });
@@ -177,3 +179,33 @@ export const FileNode: z.ZodType<FileNode> = z.lazy(() =>
     children: z.array(FileNode).optional(),
   }),
 );
+
+// ---- Dungeon: arena latihan persona (P1-DUN-1..3, PLAN §13.8) ----
+
+/** Format misi `mission.yaml` di workspace/dungeons/<slug>/. */
+export const Mission = z.object({
+  id: z.string().min(1),
+  title: z.string().min(3).max(120),
+  /** Persona yang dilatih (target skill milik dia — P1-DUN-2). */
+  persona: z.string().min(3),
+  goal: z.string().min(10),
+  /** Sumber belajar: URL / path file di folder misi. */
+  resources: z.array(z.string()).default([]),
+  /** Kriteria lulus — dievaluasi blind (P1-DUN-3), v0: dibaca agent sebagai target. */
+  acceptance: z.array(z.string()).min(1),
+  targetSkill: z.object({ name: z.string().min(3), description: z.string().min(10) }),
+});
+export type Mission = z.infer<typeof Mission>;
+
+/** Satu eksekusi misi (sesi sandbox; status dipolling UI). */
+export const DungeonRun = z.object({
+  id: z.string(),
+  missionId: z.string(),
+  sessionId: z.string().nullable(),
+  projectId: z.string(),
+  status: z.enum(["running", "done", "failed"]).default("running"),
+  startedAt: z.number().int(),
+  endedAt: z.number().int().nullable().default(null),
+  summary: z.string().nullable().default(null),
+});
+export type DungeonRun = z.infer<typeof DungeonRun>;

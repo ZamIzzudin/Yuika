@@ -69,7 +69,7 @@ export function updateDraft(skillsDir: string, slug: string, name: string, descr
 }
 
 /** Terima draft: lint (parse ulang) + pindah keluar drafts/ → siap dipakai. */
-export function acceptDraft(skillsDir: string, slug: string): { name: string } {
+export function acceptDraft(skillsDir: string, slug: string): { name: string; status: "tested" } {
   const from = path.join(draftsDir(skillsDir), slug);
   if (!fs.existsSync(from)) throw new Error(`draft '${slug}' tidak ditemukan`);
   const skill = loadSkill(from); // lint v0: frontmatter valid (throw → route 400)
@@ -77,14 +77,24 @@ export function acceptDraft(skillsDir: string, slug: string): { name: string } {
   if (fs.existsSync(to)) throw new Error(`skill aktif '${slugify(skill.name)}' sudah ada`);
   bumpUsage(from, "patches"); // accept = patch final (P1-MEM-4) — ikut pindah folder
   fs.renameSync(from, to);
-  // tulis ulang tanpa status draft (siap pakai murni)
-  const fm = { ...skill.frontmatter };
-  delete (fm.metadata as { yui?: { status?: string } } | undefined)?.yui?.status;
-  const meta = fm.metadata as { yui?: Record<string, unknown> } | undefined;
-  if (meta?.yui && Object.keys(meta.yui).length === 0) delete fm.metadata;
+  // tulis ulang dengan status `tested` — P1-DUN-2: direview manusia, belum
+  // lulus eval acceptance blind (P1-DUN-3 yang menaikkan ke `ready` otomatis).
+  const fm = { ...skill.frontmatter } as { metadata?: { yui?: Record<string, unknown> } };
+  fm.metadata = fm.metadata ?? {};
+  fm.metadata.yui = { ...(fm.metadata.yui ?? {}), status: "tested" };
   const yamlFm = toYaml(fm);
   fs.writeFileSync(path.join(to, "SKILL.md"), `${yamlFm}---\n\n${skill.body}\n`, "utf-8");
-  return { name: skill.name };
+  return { name: skill.name, status: "tested" };
+}
+
+/** P1-DUN-2/3: ubah status lifecycle skill aktif (tested→ready via eval, dsb.). */
+export function setSkillStatus(skillsDir: string, name: string, status: "tested" | "ready"): void {
+  const skill = listSkills(skillsDir).find((s) => s.name === name || slugify(s.name) === slugify(name));
+  if (!skill) throw new Error(`skill aktif '${name}' tidak ditemukan`);
+  const fm = { ...skill.frontmatter } as { metadata?: { yui?: Record<string, unknown> } };
+  fm.metadata = fm.metadata ?? {};
+  fm.metadata.yui = { ...(fm.metadata.yui ?? {}), status };
+  fs.writeFileSync(path.join(skill.dir, "SKILL.md"), `${toYaml(fm)}---\n\n${skill.body}\n`, "utf-8");
 }
 
 /** Tolak draft: hapus foldernya. */

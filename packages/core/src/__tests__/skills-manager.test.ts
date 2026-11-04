@@ -43,7 +43,7 @@ describe("skill lifecycle (P1-MEM-3)", () => {
     const active = listSkills(dir);
     expect(active).toHaveLength(1);
     expect(active[0]!.name).toBe("Flow B");
-    expect((active[0]!.frontmatter.metadata as { yui?: { status?: string } } | undefined)?.yui?.status).toBeUndefined(); // status draft dibuang
+    expect((active[0]!.frontmatter.metadata as { yui?: { status?: string } } | undefined)?.yui?.status).toBe("tested"); // P1-DUN-2: accept = tested (eval DUN-3 → ready)
   });
 
   it("update draft sebelum accept (validasi user)", () => {

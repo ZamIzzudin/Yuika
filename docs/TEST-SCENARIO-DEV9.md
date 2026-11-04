@@ -182,3 +182,17 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
    (perbaikan sesi ini: klik file kini benar-benar membuka isinya — dulu efek
    reset salah-saling-kunci; tab Tim kini kanvas bebas: tahan & geser untuk
    pan, scroll = geser, Ctrl+scroll / tombol ± = zoom, ⌂ = reset.)
+
+## L. Fitur baru: approval persist, MCP reconnect, Dungeon (15 menit)
+
+1. **Approval survive restart**: minta agent jalankan `node` (muncul kartu
+   approval) → JANGAN dijawab, restart dev server → buka lagi sesinya → kartu
+   berubah "Kedaluwarsa — server direstart saat menunggu" (bukan error 404).
+   "Setujui & ingat" kini juga bertahan restart.
+2. **MCP reconnect**: trust satu server MCP → matikan paksa prosesnya (Task
+   Manager) → status di panel MCP berubah "sambung ulang…" (backoff) → hidupkan
+   lagi → otomatis tersambung; gagal 5× → "parkir" + tombol ↻.
+3. **Dungeon**: tab Skill → section Dungeon → misi "Riset dokumentasi Phaser"
+   → Jalankan → persona Scholar bekerja di sandbox (progress via status run);
+   skill hasil misi muncul sebagai DRAF skill → Terima → status "◐ diuji
+   manusia" (lifecycle draft→tested→ready).

@@ -10,7 +10,7 @@ export interface SkillFrontmatter {
   version?: string;
   author?: string;
   platforms?: string[];
-  metadata?: { yui?: { tags?: string[]; category?: string; personas?: string[] } };
+  metadata?: { yui?: { tags?: string[]; category?: string; personas?: string[]; status?: string } };
   [k: string]: unknown;
 }
 
@@ -23,6 +23,11 @@ export interface Skill extends SkillIndexEntry {
   frontmatter: SkillFrontmatter;
   body: string;
   dir: string;
+  /** P1-DUN-2 lifecycle: draft (hasil sesi) → tested (direview) → ready (siap assign).
+   *  Skill seed tanpa status eksplisit = ready. */
+  status: "draft" | "tested" | "ready";
+  /** Persona pemilik (metadata.yui.personas) — inventory “apa yang persona bisa”. */
+  personas: string[];
 }
 
 function parseSkillMd(text: string): { frontmatter: SkillFrontmatter; body: string } {
@@ -38,12 +43,16 @@ function parseSkillMd(text: string): { frontmatter: SkillFrontmatter; body: stri
 export function loadSkill(dir: string): Skill {
   const raw = fs.readFileSync(path.join(dir, "SKILL.md"), "utf-8");
   const { frontmatter, body } = parseSkillMd(raw);
+  const rawStatus = frontmatter.metadata?.yui?.status;
+  const status = rawStatus === "draft" || rawStatus === "tested" ? rawStatus : "ready";
   return {
     name: frontmatter.name,
     description: frontmatter.description,
     frontmatter,
     body,
     dir,
+    status,
+    personas: frontmatter.metadata?.yui?.personas ?? [],
   };
 }
 
