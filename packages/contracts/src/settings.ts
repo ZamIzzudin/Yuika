@@ -46,6 +46,25 @@ export const UpdateModelRouteRequest = z.object({
 });
 export type UpdateModelRouteRequest = z.infer<typeof UpdateModelRouteRequest>;
 
+/** P1-MDL-3: harga per model — dasar indikator biaya dari metering (P1-CRED-1).
+ *  perMillion = harga per 1.000.000 token; 0/absen = biaya tak dihitung (jujur). */
+export const ModelPrice = z.object({
+  inputPerMillion: z.number().nonnegative().default(0),
+  outputPerMillion: z.number().nonnegative().default(0),
+  currency: z.enum(["USD", "IDR"]).default("USD"),
+});
+export type ModelPrice = z.infer<typeof ModelPrice>;
+/** key = nama model persis (mis. "glm/glm-5.1"). */
+export const PriceBook = z.record(z.string(), ModelPrice);
+export type PriceBook = z.infer<typeof PriceBook>;
+
+/** PUT /api/settings/models/prices — upsert satu model (string kosong tak mungkin; hapus via nol). */
+export const UpdateModelPriceRequest = z.object({
+  model: z.string().min(1),
+  price: ModelPrice,
+});
+export type UpdateModelPriceRequest = z.infer<typeof UpdateModelPriceRequest>;
+
 /** P1-MDL-2: hasil smoke test satu model (tool-call 2 langkah minimal). */
 export const ModelSmokeResult = z.object({
   model: z.string(),

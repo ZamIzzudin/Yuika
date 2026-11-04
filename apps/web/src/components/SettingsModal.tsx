@@ -285,16 +285,22 @@ async function save(
   }
 }
 
-/** P1-CRED-1: panel metering — rollup token per persona & model (tanpa estimasi:
- *  hanya event usage dari provider). Burn-rate per window via tombol rentang. */
+/** P1-CRED-1 + P1-MDL-3: panel metering — rollup token per persona & model +
+ *  estimasi biaya dari price book (hanya bila harga di-set — tanpa harga = tak
+ *  dihitung, bukan 0). Editor harga inline per 1 jt token. */
 function UsagePanel() {
   const [data, setData] = useState<{ summary: { calls: number; promptTokens: number; outputTokens: number; byPersona: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; byModel: { key: string; calls: number; promptTokens: number; outputTokens: number }[]; windowStart: number | null }; recent?: { at: number; personaId: string; model: string; promptTokens: number; outputTokens: number; latencyMs: number }[] } | null>(null);
+  const [prices, setPrices] = useState<Record<string, { inputPerMillion: number; outputPerMillion: number; currency: "USD" | "IDR" }> | null>(null);
   const [hours, setHours] = useState<number>(0); // 0 = semua waktu
 
   const load = useCallback(async () => {
     const since = hours > 0 ? Date.now() - hours * 3_600_000 : undefined;
-    const r = await fetch(`/api/usage?recent=8${since ? `&since=${since}` : ""}`);
-    if (r.ok) setData(await r.json());
+    const [u, p] = await Promise.all([
+      fetch(`/api/usage?recent=8${since ? `&since=${since}` : ""}`),
+      fetch("/api/settings/models/prices"),
+    ]);
+    if (u.ok) setData(await u.json());
+    if (p.ok) setPrices(await p.json());
   }, [hours]);
 
   useEffect(() => {
@@ -304,6 +310,26 @@ function UsagePanel() {
   }, [load]);
 
   const fmt = (n: number) => n.toLocaleString("id-ID");
+  /** Estimasi biaya baris model — null bila model tak berharga (jujur, bukan 0). */
+  const cost = (m: { key: string; promptTokens: number; outputTokens: number }): number | null => {
+    const p = prices?.[m.key];
+    if (!p || (!p.inputPerMillion && !p.outputPerMillion)) return null;
+    return (m.promptTokens / 1_000_000) * p.inputPerMillion + (m.outputTokens / 1_000_000) * p.outputPerMillion;
+  };
+  const pricedCurrency =
+    Object.entries(prices ?? {}).find(([, p]) => p.inputPerMillion || p.outputPerMillion)?.[1].currency ?? "USD";
+  const fmtCost = (c: number | null) => (c === null ? "—" : `${c.toLocaleString("id-ID", { maximumFractionDigits: c < 100 ? 2 : 0 })} ${pricedCurrency}`);
+  const totalCost = data ? data.summary.byModel.reduce((acc, m) => acc + (cost(m) ?? 0), 0) : 0;
+  const anyPriced = data?.summary.byModel.some((m) => cost(m) !== null) ?? false;
+
+  async function savePrice(model: string, p: { inputPerMillion: number; outputPerMillion: number; currency: "USD" | "IDR" }) {
+    const r = await fetch("/api/settings/models/prices", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ model, price: p }),
+    });
+    if (r.ok) setPrices(await r.json());
+  }
   return (
     <div className="usage-panel">
       <div className="usage-range">
@@ -326,6 +352,7 @@ function UsagePanel() {
           <p className="usage-total">
             <b>{fmt(data.summary.calls)}</b> panggilan model · <b>{fmt(data.summary.promptTokens)}</b> token masuk ·{" "}
             <b>{fmt(data.summary.outputTokens)}</b> token keluar
+            {anyPriced && <> · est. biaya <b>{fmtCost(totalCost)}</b></>}
             {data.summary.windowStart && <small className="dim"> (sejak {new Date(data.summary.windowStart).toLocaleString("id-ID")})</small>}
           </p>
           <table className="usage-table" aria-label="Pemakaian per persona">
@@ -355,6 +382,7 @@ function UsagePanel() {
                 <th>Panggilan</th>
                 <th>Tok masuk</th>
                 <th>Tok keluar</th>
+                <th>Est. biaya</th>
               </tr>
             </thead>
             <tbody>
@@ -366,10 +394,12 @@ function UsagePanel() {
                   <td>{fmt(r.calls)}</td>
                   <td>{fmt(r.promptTokens)}</td>
                   <td>{fmt(r.outputTokens)}</td>
+                  <td>{fmtCost(cost(r))}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <PriceBookEditor models={data.summary.byModel.map((m) => m.key)} prices={prices} onSave={savePrice} />
           {data.recent && data.recent.length > 0 && (
             <>
               <span className="field-title">Terbaru</span>
@@ -385,5 +415,106 @@ function UsagePanel() {
         </>
       )}
     </div>
+  );
+}
+
+/** P1-MDL-3: editor price book — harga per 1 jt token (in/out) + mata uang.
+ *  Baris = model yang terlihat di metering + yang sudah berharga; blur = simpan. */
+function PriceBookEditor({
+  models,
+  prices,
+  onSave,
+}: {
+  models: string[];
+  prices: Record<string, { inputPerMillion: number; outputPerMillion: number; currency: "USD" | "IDR" }> | null;
+  onSave: (model: string, p: { inputPerMillion: number; outputPerMillion: number; currency: "USD" | "IDR" }) => Promise<void>;
+}) {
+  const rows = Array.from(new Set([...(prices ? Object.keys(prices) : []), ...models]));
+  const [draft, setDraft] = useState<Record<string, { i: string; o: string; c: "USD" | "IDR" }>>({});
+
+  const rowOf = (m: string) => draft[m] ?? {
+    i: String(prices?.[m]?.inputPerMillion ?? ""),
+    o: String(prices?.[m]?.outputPerMillion ?? ""),
+    c: prices?.[m]?.currency ?? "USD",
+  };
+  return (
+    <details className="usage-prices">
+      <summary>
+        Harga model (indikator biaya) — per 1 juta token
+      </summary>
+      <p className="pane-hint">
+        Isi sesuai tagihan provider-mu. Model tanpa harga tidak dihitung biayanya (bukan nol) — angka token metering
+        tetap akurat apa pun.
+      </p>
+      <table className="usage-table" aria-label="Harga per model">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Masuk / 1jt</th>
+            <th>Keluar / 1jt</th>
+            <th> Mata uang</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="dim">
+                Belum ada model tercatat — kirim satu turn chat dulu.
+              </td>
+            </tr>
+          ) : (
+            rows.map((m) => {
+              const r = rowOf(m);
+              const commit = () =>
+                void onSave(m, {
+                  inputPerMillion: Number(r.i) || 0,
+                  outputPerMillion: Number(r.o) || 0,
+                  currency: r.c,
+                });
+              return (
+                <tr key={m}>
+                  <td>
+                    <code>{m}</code>
+                  </td>
+                  <td>
+                    <input
+                      className="price-input"
+                      inputMode="decimal"
+                      value={r.i}
+                      placeholder="—"
+                      onChange={(e) => setDraft((d) => ({ ...d, [m]: { ...r, i: e.target.value } }))}
+                      onBlur={commit}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="price-input"
+                      inputMode="decimal"
+                      value={r.o}
+                      placeholder="—"
+                      onChange={(e) => setDraft((d) => ({ ...d, [m]: { ...r, o: e.target.value } }))}
+                      onBlur={commit}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      value={r.c}
+                      onChange={(e) => {
+                        const c = e.target.value as "USD" | "IDR";
+                        setDraft((d) => ({ ...d, [m]: { ...r, c } }));
+                        void onSave(m, { inputPerMillion: Number(r.i) || 0, outputPerMillion: Number(r.o) || 0, currency: c });
+                      }}
+                    >
+                      <option value="USD">USD</option>
+                      <option value="IDR">IDR</option>
+                    </select>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </details>
   );
 }

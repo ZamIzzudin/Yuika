@@ -24,6 +24,8 @@ import { MCP_CATALOG } from "./mcp/catalog.js";
 import { installFromCatalog, uninstallFromConfig } from "./mcp/install.js";
 import { McpAuditStore } from "./mcp/audit.js";
 import { UsageLedger } from "./usage/ledger.js";
+import { loadPriceBook, saveModelPrice } from "./model-prices.js";
+import type { ModelPrice } from "@yui/contracts";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js";
@@ -113,6 +115,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   let model = cfg.provider.model;
   // P1-MDL-1: override per persona (diedit di Settings) — file JSON di samping DB.
   const modelOverridesFile = path.join(path.dirname(paths.dbPath), "model-overrides.json");
+  const modelPricesFile = path.join(path.dirname(paths.dbPath), "model-prices.json");
 
   // tools core (sekali per proses)
   const fileRevisions = new FileRevisionStore(paths.dbPath);
@@ -630,6 +633,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       keyPreview: process.env.YUI_API_KEY ? `…${process.env.YUI_API_KEY.slice(-4)}` : "",
     }),
     // P1-MDL: model per persona — override untuk UI Settings (sumber: file JSON).
+    // P1-MDL-3: price book — indikator biaya metering (per persona/model).
+    getModelPrices: () => loadPriceBook(modelPricesFile),
+    updateModelPrice: (model: string, price: ModelPrice) => saveModelPrice(modelPricesFile, model, price),
     getModelRoutes: () => ({
       defaultModel: model,
       defaultFallback: process.env.YUI_MODEL_FALLBACK ?? "",

@@ -281,3 +281,11 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
 - [ ] **M7.3 (P2) — Rentang & konsistensi**
   1. Tombol "1 jam" → hanya event ≥1 jam; "Semua" → total ≥ sebelumnya.
   2. `curl localhost:3000/api/usage` → JSON summary sama dengan panel.
+
+- [ ] **M7.4 (P2) — Indikator biaya (P1-MDL-3)**
+  1. Setelah M7.1, buka Metering → klik "Harga model (indikator biaya)".
+  2. Isi harga model aktif (mis. masuk 0.6 / keluar 2.2 per 1 jt, USD) —
+     klik di luar input.
+  - ✅ Kolom "Est. biaya" per model & total di atas terisi angka ≠ "—";
+     kembali lagi setelah refresh tetap tersimpan (model-prices.json).
+  3. Kosongkan harga → kolom kembali "—" (bukan 0).

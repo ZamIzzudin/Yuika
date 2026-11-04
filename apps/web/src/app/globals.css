@@ -1217,3 +1217,6 @@ html, body {
 .usage-table td { border-bottom: 1px solid var(--yui-border); padding: 5px 8px 5px 0; }
 .usage-table td:last-child, .usage-table th:last-child { text-align: right; }
 .usage-recent { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: var(--yui-text-sm); color: var(--yui-text-secondary); }
+.usage-prices { border-top: 1px dashed var(--yui-border); padding-top: 10px; }
+.usage-prices summary { cursor: pointer; font-size: var(--yui-text-md); color: var(--yui-text-secondary); }
+.price-input { width: 90px; }
