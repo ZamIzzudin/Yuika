@@ -179,3 +179,6 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
 6. **Tailscale MCP**: panel MCP → katalog → install "Tailscale Tunnel" →
    Trust → tanya agent "cek status tailscale" → tool ts_status.
    (Butuh tailscale CLI terpasang & login.)
+   (perbaikan sesi ini: klik file kini benar-benar membuka isinya — dulu efek
+   reset salah-saling-kunci; tab Tim kini kanvas bebas: tahan & geser untuk
+   pan, scroll = geser, Ctrl+scroll / tombol ± = zoom, ⌂ = reset.)

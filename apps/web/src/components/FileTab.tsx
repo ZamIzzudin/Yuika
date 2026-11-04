@@ -2,7 +2,7 @@
 // Tab File (P2-STU-3 v0): tree kiri + viewer kanan. Artefak agent (reports/,
 // code/, MEMORY.md) bisa diperiksa tanpa keluar app. File teks/kode ≤256 KB
 // dibaca; selain itu tampil info ukuran. Diff hasil edit = penyusul (butuh snapshot lama).
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileNode } from "@yui/contracts";
 import { SkeletonRows } from "./Skeleton";
 import { diffLines, diffStat } from "@yui/core/project/diff";
@@ -85,14 +85,21 @@ export function FileTab({ projectId }: { projectId: string }) {
     }
   }, [projectId, sel]);
 
+  // latest-ref: effect reset (dep projectId) selalu memanggil loadTree terbaru
+  const loadTreeRef = useRef(loadTree);
+  loadTreeRef.current = loadTree;
+
+  // Reset hanya saat GANTI PROJECT — jangan ikut identitas loadTree (dep `sel`):
+  // FIX test user #2: klik file → sel berubah → loadTree baru → effect lama
+  // me-reset sel ke null → pane kanan tak pernah menampilkan isi file.
   useEffect(() => {
     setTree(null);
     setSel(null);
     setContent(null);
     setRevisions([]);
     setDiff(null);
-    void loadTree();
-  }, [loadTree]);
+    void loadTreeRef.current();
+  }, [projectId]);
 
   // FIX test user: file baru hasil agent tidak muncul — refresh berkala saat tab
   // terbuka + saat jendela kembali fokus (write_file bisa terjadi di background).

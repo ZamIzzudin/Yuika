@@ -1090,9 +1090,32 @@ html, body {
 .file-toolbar { display: flex; justify-content: flex-end; }
 .tab-dot.warn { background: var(--yui-warn); animation: pulse 1.2s ease-in-out infinite; }
 
-/* Diagram hierarki Tim v2 (dev-10): tree bercabang klasik — root tengah,
-   anak sejajar, konektor CSS murni (tanpa dep), horizontal scroll bila lebar. */
-.org-scroll { overflow-x: auto; padding: 4px 0 12px; }
+/* Diagram hierarki Tim v3 (dev-10): kanvas tak terbatas ala Excalidraw —
+   pan hold-drag (Pointer Events + capture), scroll = geser, Ctrl+scroll = zoom,
+   grid dot yang ikut bergeser (background-position = pan), tanpa dependency. */
+.org-canvas {
+  position: relative; overflow: hidden; height: min(58vh, 540px);
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
+  background-color: var(--yui-bg-inset);
+  background-image: radial-gradient(color-mix(in srgb, var(--yui-text-dim) 26%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px; background-position: center;
+  cursor: grab; touch-action: none; user-select: none;
+}
+.org-canvas.dragging { cursor: grabbing; }
+.org-board { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; padding-top: 34px; will-change: transform; }
+.org-controls {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 6px; border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
+  background: color-mix(in srgb, var(--yui-bg-surface) 82%, transparent);
+  backdrop-filter: blur(8px);
+}
+.org-controls .btn { padding: 2px 9px; }
+.org-zoom { min-width: 42px; text-align: center; font-size: var(--yui-text-sm); color: var(--yui-text-dim); font-variant-numeric: tabular-nums; }
+.org-canvas-hint {
+  position: absolute; left: 10px; bottom: 8px; z-index: 2; margin: 0;
+  font-size: var(--yui-text-sm); color: var(--yui-text-dim); pointer-events: none;
+}
 .org-tree { display: flex; justify-content: center; min-width: max-content; margin: 0 auto; padding: 8px 24px 16px; }
 .org-node { display: flex; flex-direction: column; align-items: center; }
 .org-hint { margin: 10px 0 0; text-align: center; }

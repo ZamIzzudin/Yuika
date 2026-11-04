@@ -949,6 +949,7 @@ Katalog + custom server menyusul dari P1-MCP; yang baru hanya model binding gran
 | **Terminal** | CLI di root project — agent & user share sesi terminal yang sama | `xterm.js` ↔ PTY di sandbox (generalisasi `run_command`; approval untuk perintah berisiko) |
 | **Browser** | Halaman yang sedang diriset/didesain — agent bisa buka & inspeksi, user melihat | Server-side proxy + render read-only (screenshot/DOM) — D16; interaktif penuh menyusul (§12.14) |
 | **File** | Tree kode/docs project + viewer + diff hasil kerja agent | Di atas file tools yang sudah ada |
+| **Tim** | Diagram hierarki delegasi live di **kanvas tak terbatas** (ala Excalidraw/draw.io: hold-drag = pan, Ctrl+scroll = zoom, grid dot) — graf nyata dari event delegation lintas sesi | ✅ v0 (dev-10): `TeamTree` + REST `/projects/:id/delegations`; persona sama di dua cabang = dua sesi nyata, label “dari &lt;pemberi&gt;”; durasi per tugas live 5 dtk |
 | **Board** | Tasklist project (kolom todo/doing/review/done) + run workflow aktif | P1-PRJ tasklist + P2-FLOW monitoring |
 | **Docs** | Markdown deliverable, laporan run | Viewer/editor sederhana |
 | **Design** (v0.5) | Canvas Penpot **ter-embed** — hasil kerja persona Designer, live; artefak ter-link ke TaskTree | Tangga embed §13.9: v0 ramping (view + navigasi) → v2 white-label SSO |
