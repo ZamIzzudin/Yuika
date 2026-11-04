@@ -33,6 +33,8 @@ import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
 import { findUvx, installUv } from "./mcp/uv.js";
 import { buildModelRouter, loadModelOverrides, saveModelOverride } from "./model-router.js";
+import { smokeModel } from "./provider/smoke.js";
+import type { ModelSmokeResult } from "@yui/contracts";
 import { acceptDraft, listDrafts, readUsage, rejectDraft, updateDraft } from "./skills/manager.js";
 import { buildFileTree, readProjectFile, safeProjectPath } from "./project/files.js";
 import { FileRevisionStore } from "./project/revisions.js";
@@ -404,7 +406,38 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return loop;
   }
 
+  // ---- P1-MDL-2: smoke test model (tool-call 2 langkah) + fallback otomatis ----
+  // Model gagal smoke → unhealthy (cooldown 5 mtn) → router langsung ke fallback;
+  // lulus → cooldown dibersihkan. Auto setelah provider settings berubah;
+  // manual via POST /api/settings/provider/smoke.
+  let smokeResults: ModelSmokeResult[] = [];
+  let smokeRunning = false;
+  async function runModelSmoke(): Promise<ModelSmokeResult[]> {
+    if (smokeRunning) return smokeResults; // sedang berjalan — pakai hasil terakhir
+    smokeRunning = true;
+    try {
+      const models = new Set<string>([model, process.env.YUI_MODEL_FALLBACK ?? ""].filter(Boolean));
+      for (const p of listPersonas(paths.personasDir)) {
+        const r = modelRouter.route(p.manifest.id);
+        if (r.model) models.add(r.model);
+        if (r.fallback) models.add(r.fallback);
+      }
+      smokeResults = [];
+      for (const m of models) {
+        const r = await smokeModel(provider, m);
+        if (r.ok) modelRouter.markHealthy(m);
+        else modelRouter.markUnhealthy(m);
+        smokeResults.push(r);
+      }
+      return smokeResults;
+    } finally {
+      smokeRunning = false;
+    }
+  }
+
   return {
+    getModelSmoke: (): { running: boolean; results: ModelSmokeResult[] } => ({ running: smokeRunning, results: smokeResults }),
+    runModelSmoke: () => runModelSmoke(),
     paths,
     store,
     bus: EventBus,
@@ -600,6 +633,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       if (Object.keys(toWrite).length > 0) {
         updateEnvFile(envFile, toWrite);
         loopCache.clear(); // sesi berikutnya memakai provider/model baru
+        // P1-MDL-2: smoke ulang di background — model baru gagal smoke → fallback otomatis
+        void runModelSmoke();
       }
       return { ok: true, note: "Sesi baru & turn berikutnya memakai config baru (loopCache dikosongkan; .env diperbarui)." };
     },

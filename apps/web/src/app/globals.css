@@ -1166,3 +1166,9 @@ html, body {
 /* P1-DUN-5: gating fase roster — siap/belum per fase workflow. */
 .roster-phase[data-r="ok"] { color: var(--yui-ok); }
 .roster-phase[data-r="gap"] { color: var(--yui-danger, #e5484d); font-style: normal; }
+/* P1-MDL-2: panel smoke test model di Settings. */
+.smoke-panel { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.smoke-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.smoke-list li { font-size: var(--yui-text-sm); color: var(--yui-danger, #e5484d); }
+.smoke-list li[data-ok] { color: var(--yui-ok); }
+.smoke-list small { color: var(--yui-text-dim); }

@@ -71,6 +71,10 @@ export function buildModelRouter(opts: {
     markUnhealthy(model: string): void {
       unhealthy.set(model, Date.now() + COOLDOWN_MS);
     },
+    /** P1-MDL-2: smoke lulus → bersihkan cooldown (model dipercaya lagi). */
+    markHealthy(model: string): void {
+      unhealthy.delete(model);
+    },
     isCooling(model: string): boolean {
       const until = unhealthy.get(model) ?? 0;
       return Date.now() < until;

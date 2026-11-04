@@ -15,7 +15,7 @@ const SKILLS = [
 
 describe("computeReadiness (P1-DUN-5)", () => {
   it("persona siap bila tiap fase gated-nya punya skill tested/ready milik dia", () => {
-    const [scholar] = computeReadiness([entry("yui-scholar", ["research", "documentation"])], SKILLS);
+    const scholar = computeReadiness([entry("yui-scholar", ["research", "documentation"])], SKILLS)[0]!;
     expect(scholar.ready).toBe(false); // documentation: tidak ada skill productivity milik scholar
     const research = scholar.phases.find((p) => p.phase === "research")!;
     expect(research.ready).toBe(true);
@@ -25,11 +25,11 @@ describe("computeReadiness (P1-DUN-5)", () => {
   });
 
   it("fase inti (planning/delivery) tanpa gating; tested dihitung siap; persona lain tak kebagian skill scholar", () => {
-    const [conductor] = computeReadiness([entry("yui-conductor", ["planning", "delivery", "research"])], SKILLS);
+    const conductor = computeReadiness([entry("yui-conductor", ["planning", "delivery", "research"])], SKILLS)[0]!;
     expect(conductor.phases.find((p) => p.phase === "planning")!.ready).toBe(true); // inti
     expect(conductor.phases.find((p) => p.phase === "research")!.ready).toBe(false); // skill milik scholar
     expect(conductor.ready).toBe(false);
-    const [designer] = computeReadiness([entry("yui-designer", ["design"])], SKILLS);
+    const designer = computeReadiness([entry("yui-designer", ["design"])], SKILLS)[0]!;
     expect(designer.ready).toBe(true); // tested = siap
   });
 

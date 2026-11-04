@@ -45,3 +45,19 @@ export const UpdateModelRouteRequest = z.object({
   fallback: z.string().optional(),
 });
 export type UpdateModelRouteRequest = z.infer<typeof UpdateModelRouteRequest>;
+
+/** P1-MDL-2: hasil smoke test satu model (tool-call 2 langkah minimal). */
+export const ModelSmokeResult = z.object({
+  model: z.string(),
+  ok: z.boolean(),
+  latencyMs: z.number().int(),
+  error: z.string().nullable().default(null),
+});
+export type ModelSmokeResult = z.infer<typeof ModelSmokeResult>;
+
+/** GET/POST /api/settings/provider/smoke — status terakhir / jalankan ulang. */
+export const ModelSmokeResponse = z.object({
+  running: z.boolean(),
+  results: z.array(ModelSmokeResult),
+});
+export type ModelSmokeResponse = z.infer<typeof ModelSmokeResponse>;

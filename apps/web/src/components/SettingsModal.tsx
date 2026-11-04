@@ -155,23 +155,42 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 }
 
 /** P1-MDL: editor model per persona — kosong = ikut default; tersimpan ke
- *  model-overrides.json, sesi berikutnya langsung memakai route baru. */
+ *  model-overrides.json, sesi berikutnya langsung memakai route baru.
+ *  P1-MDL-2: panel smoke test — model gagal tool-call 2 langkah → fallback otomatis. */
 function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
   const [routes, setRoutes] = useState<ModelRoutes | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [smoke, setSmoke] = useState<{ running: boolean; results: { model: string; ok: boolean; latencyMs: number; error: string | null }[] } | null>(null);
 
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/settings/models");
       if (r.ok) setRoutes((await r.json()) as ModelRoutes);
+      const s = await fetch("/api/settings/provider/smoke");
+      if (s.ok) setSmoke((await s.json()) as NonNullable<typeof smoke>);
     } catch {
       /* coba lagi */
     }
   }, []);
   useEffect(() => {
     void load();
-  }, [load]);
+    // smoke berjalan async (auto setelah ganti provider) — poll ringan
+    const t = setInterval(() => {
+      if (smoke?.running) void load();
+    }, 3_000);
+    return () => clearInterval(t);
+  }, [load, smoke?.running]);
+
+  async function runSmoke() {
+    setSmoke({ running: true, results: smoke?.results ?? [] });
+    try {
+      const r = await fetch("/api/settings/provider/smoke", { method: "POST" });
+      if (r.ok) setSmoke((await r.json()) as NonNullable<typeof smoke>);
+    } catch {
+      setSmoke(null);
+    }
+  }
 
   if (!routes) return <Skeleton lines={3} />;
   return (
@@ -181,6 +200,23 @@ function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
         Kosongkan untuk ikut default (<code>{defaultModel}</code>). Anak delegasi memakai model
         persona-nya sendiri — jadi Conductor & Coder bisa berjalan di model berbeda dalam satu run.
       </small>
+      {/* P1-MDL-2: smoke test — verifikasi tool-call 2 langkah per model aktif */}
+      <div className="smoke-panel">
+        <button className="btn" onClick={() => void runSmoke()} disabled={smoke?.running}>
+          {smoke?.running ? "menguji…" : "Uji semua model"}
+        </button>
+        {smoke && smoke.results.length > 0 && (
+          <ul className="smoke-list">
+            {smoke.results.map((s) => (
+              <li key={s.model} data-ok={s.ok ? "" : undefined} title={s.error ?? undefined}>
+                {s.ok ? "✓" : "✕"} <code>{s.model}</code> · {(s.latencyMs / 1000).toFixed(1)}s
+                {!s.ok && <small> — fallback otomatis aktif</small>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {smoke && smoke.results.length === 0 && !smoke.running && <small className="dim">belum ada hasil — klik "Uji semua model"</small>}
+      </div>
       <table className="model-table">
         <tbody>
           {routes.personas.map((p) => {

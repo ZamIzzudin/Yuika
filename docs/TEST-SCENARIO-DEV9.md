@@ -202,6 +202,10 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
    chip per fase (`research ✓` / `research ✕`) — ✕ = belum ada skill siap,
    tooltip menyarankan latih di Dungeon (tab Skill).
 * L lanjutan: persona baru (Analyst & Operator) — 5 menit
+4b. **Uji model**: Settings → seksi Model → tombol "Uji semua model" → tiap model
+    aktif menampilkan ✓/✕ + latensi; model ✕ otomatis dilewati router
+    ("fallback otomatis aktif"). Mengganti provider/model di Settings juga
+    memicu smoke otomatis di background.
 5. **Persona baru muncul**: refresh → picker persona memuat 7 persona; pilih
    **Yui Analyst** → wajah Orin bentuk diamond; minta ia baca upload CSV
    (doc_read) & hitung via `run_command node` (muncul approval command).
