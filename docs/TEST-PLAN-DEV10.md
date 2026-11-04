@@ -14,3 +14,10 @@
    dengan argumen benar — schema asli kini sampai ke provider (tool-call lebih
    akurat); argumen salah ditolak "invalid args (json schema)".
 4. (Otomatis) `load-light.test.ts` — 10 sesi paralel × 5 turn hijau di CI.
+
+> **Fix dev-10 (laporan user):** klik Setujui pada approval pernah 404
+> "request tidak dikenal / sudah selesai" padahal kartu baru muncul — akar:
+> Next.js dev membundel @yui/core terpisah per route; map pending approval
+> module-local jadi kosong di copy route approvals. Fix: map di-cache
+> globalThis (pola bus emitter) + kegagalan resolve kini TAMPIL sebagai item
+> error di chat (tidak diam). Regresi: `approval-hmr.test.ts`.

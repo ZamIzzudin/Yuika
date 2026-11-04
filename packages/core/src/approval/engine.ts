@@ -14,8 +14,15 @@ import type { SessionStore } from "../session/store.js";
  * Registry pending lintas engine: satu engine per turn, tapi route handler
  * hanya tahu requestId. Live promise hanya hidup selama proses — statusnya
  * yang permanen ada di tabel `approvals` (P0-DATA-3).
+ *
+ * QUIRK dev (dipelajari dev-10, fix bug user "approval 404 saat disetujui"):
+ * Next.js dev membundel @yui/core TERPISAH per route — route approvals mendapat
+ * copy modul sendiri. Map module-local → map KOSONG di copy route → resolve 404
+ * "sudah selesai" padahal approval hidup. Sama seperti bus emitter: map WAJIB
+ * di-cache di globalThis agar semua module-instance berbagi.
  */
-const pendingEngines = new Map<string, ApprovalEngine>();
+const approvalGlobal = globalThis as unknown as { __yuiPendingApprovalEngines?: Map<string, ApprovalEngine> };
+const pendingEngines = (approvalGlobal.__yuiPendingApprovalEngines ??= new Map<string, ApprovalEngine>());
 
 /** Deadline approval per policy (P0-SEC-4). Env tervalidasi terpusat di
  *  env.ts (P0-INF-2) tapi tetap dibaca ulang tiap pemanggilan agar test &

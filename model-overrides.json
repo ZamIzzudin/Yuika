@@ -5,10 +5,16 @@
   "yui-coder": {
     "model": "glm/glm-5"
   },
+  "yui-conductor": {
+    "model": "glm/glm-5"
+  },
   "yui-designer": {
     "model": "glm/glm-5"
   },
   "yui-operator": {
+    "model": "glm/glm-5"
+  },
+  "yui-planner": {
     "model": "glm/glm-5"
   },
   "yui-scholar": {

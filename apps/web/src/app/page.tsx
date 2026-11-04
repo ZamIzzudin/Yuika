@@ -491,11 +491,25 @@ export default function Home() {
     approved: boolean,
     remember = false,
   ) {
-    await fetch(`/api/approvals/${requestId}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ approved, remember }),
-    });
+    try {
+      const res = await fetch(`/api/approvals/${requestId}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ approved, remember }),
+      });
+      // Fix dev-10 (approval 404): kegagalan resolve TIDAK lagi diam-diam —
+      // tampil sebagai item error di chat supaya bisa dilaporkan, bukan kartu
+      // yang seolah diabaikan.
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setItems((prev) => [
+          ...prev,
+          { kind: "error", text: `Keputusan approval gagal terkirim (${res.status}): ${body.error ?? "tidak diketahui"}` },
+        ]);
+      }
+    } catch {
+      setItems((prev) => [...prev, { kind: "error", text: "Keputusan approval gagal terkirim (jaringan/server) — coba lagi." }]);
+    }
   }
 
   return (
