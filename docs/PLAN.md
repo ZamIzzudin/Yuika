@@ -1,9 +1,15 @@
 # YOUR-YUI — Blueprint Platform Agent Multi-Platform
 
-> Dokumen perencanaan **v0.5** — diperbarui setelah putaran keputusan kedua (lihat §2),
+> Dokumen perencanaan **v0.6** — diperbarui setelah putaran keputusan kedua (lihat §2),
 > perluasan visi Studio Proyek (§13), dan pilar v0.5 (§13.7–13.10).
 > Disusun dari pembelajaran mendalam `hermes-agent` (Nous Research) + brainstorming
 > konsep dari ekosistem tools lain. Status: draft aktif — eksekusi demo dimulai.
+>
+> **Changelog v0.6:** **Persona Project Manager (Yui Planner — D22)** untuk project skala
+> besar: division of labor planning (Planner: brainstorm `consult` multi-persona → dokumen
+> perencanaan → task list detail dengan acceptance/depends_on/assignee) vs eksekusi
+> (Conductor: delegasi sequential/paralel) · matriks tanggung jawab + metrik keluaran per
+> fase flow · dashboard progres terukur · iterasi = run berantai (§13.3.1, P2-PM).
 >
 > **Changelog v0.5:** **Penpot menggantikan pen.dev** (open source — §12.11, §13.9) ·
 > **TaskTree & TaskList** sebagai struktur pemantauan delegasi (§13.7) · **Dungeon** =
@@ -119,6 +125,7 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D19 | **TaskTree = hierarki pemantauan delegasi** (task → subtask → step → job agent) yang **diproyeksikan dari event**, bukan state kedua | TaskList (board) = flat view dari tree; refresh/reconnect = replay; status paralel/sequential terlihat dari struktur node |
 | D20 | **Dungeon = arena latihan persona**: misi (research/praktik/template) → skill dengan lifecycle `draft→tested→ready`; assign ke project digating skill readiness | Bukan fine-tuning bobot model — skill = file deklaratif + memory domain; rigor eval = kunci kualitas (blind test + curator) |
 | D21 | **Model per persona**: persona.yaml `model` + `fallback` — tiap loop (parent & delegation anak) resolve model persona masing-masing | Quirk provider dinetralkan terpusat (`normalizeToolSchema` — pelajaran GLM 1210); metering per persona (P1-CRED-4) |
+| D22 | **Persona Project Manager (Yui Planner, roster ke-8)**: pemisah peran PLANNING vs EKSEKUSI — Planner: brainstorm multi-persona terstruktur (`consult`) → dokumen perencanaan → task list detail (acceptance, depends_on, assignee); Conductor: delegasi eksekusi sequential/paralel. Tiap fase flow punya owner + metrik keluaran terukur (RACI ringan); iterasi besar = run berantai (delta + regresi), bukan restart | Untuk project skala besar dengan puluhan-ratusan task & iterasi berulang; butuh engine P2-FLOW; brainstorm = prompt terstruktur bukan chat bebas (output deterministik, ter-audit) |
 
 ---
 
@@ -760,6 +767,10 @@ expression states; burn-rate credit terukur per turn."
 - [ ] **P2-FLOW (v0.4): workflow engine** — DAG fase deklaratif (template 7 fase),
            sequential/paralel per fase, human gate, monitoring board live (§13.3)
 - [ ] **P2-FLOW (v0.5): TaskTree board** — pohon pemantauan delegasi + steering per node (§13.7)
+- [ ] **P2-PM (v0.6): persona Project Manager & planning flow skala besar** — Yui Planner:
+      brainstorm `consult` multi-persona → dokumen perencanaan → task list detail (acceptance/
+      depends_on/assignee, validator coverage) → RACI + metrik keluaran per fase → dashboard
+      progres terukur → iterasi run berantai (§13.3.1, D22)
 - [ ] **P2-DSN (v0.5): pipeline desain→kode via Penpot** — persona desain produksi file,
            tab Design, generate komponen di fase develop (§13.9)
 - [ ] **P2-STU (v0.4): workbench multi-tab** — tab shell, terminal (PTY sandbox),
@@ -937,6 +948,35 @@ workflow.run ──► Engine (DAG → job graph)
 - **Steering mid-run** (pola OpenBot): pause/stop satu step, reassign task ke persona lain,
   atau suntik instruksi tambahan — semua lewat kontrak, tercatat di event.
 - **Deliverable** = fase akhir mengumpulkan artefak (`reports/`, docs) + ringkasan run.
+
+#### 13.3.1 Planning flow skala besar (v0.6, D22) — pra-eksekusi workflow
+
+```
+brief user (skala besar, iterasi berulang)
+      │
+      ▼
+ Yui PLANNER ── consult ──► scholar + analyst + scribe (paralel,
+      │                      pertanyaan terstruktur, bukan chat bebas)
+      ▼
+ dokumen perencanaan project (docs/PLAN.md): scope, risiko, pendekatan,
+      keputusan brainstorm disintesis (tiap pendapat terkutip)
+      ▼
+ task list detail (TaskTree penuh): deskripsi + acceptance criteria +
+      depends_on + assignee persona + estimate — divalidasi (coverage
+      acceptance per fase, DAG tanpa cycle) → human gate "rencana disetujui?"
+      ▼
+ Yui CONDUCTOR: delegasi eksekusi (sequential/paralel sesuai depends_on)
+      ▼
+ fase design → eksekusi → testing → deploy (owner + metrik keluaran per fase,
+      §13.3 board) → retrospektif → PLANNER susun run BERIKUTNYA (delta + regresi)
+```
+
+- **Planner ≠ Conductor**: Planner dipertanggungjawabkan pada KUALITAS RENCANA (coverage,
+  clarity, estimasi); Conductor pada EKSEKUSI (delegasi tepat, steering, selesai tepat).
+- **Terukur**: metrik keluaran per fase (planning: % task punya acceptance; eksekusi: task
+  done; testing: laporan QA; deploy: checklist rilis) + burndown & health di board.
+- **Iterasi**: hasil acceptance → run berantai (`workflow.run_id` ke-N hanya task delta +
+  regresi blocker) — proyek besar TIDAK restart dari nol tiap iterasi.
 
 ### 13.4 MCP sebagai kapabilitas persona (jawaban pain point)
 

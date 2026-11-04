@@ -348,6 +348,21 @@
 - [ ] **P2-FLOW-6** Steering mid-run: pause/stop step, reassign ke persona lain, suntik instruksi (pola OpenBot Stop/Resume/Reassign) · *B · 2d · dep P2-FLOW-5* → reassign mid-run tercatat di event & audit
 - [ ] **P2-FLOW-7** TaskTree board UI (D19): pohon task→subtask→step dengan kartu agent & status live; sequential/paralel terbaca dari struktur; klik node → sesi agent + steering · *B · 2d · dep P1-PRJ-7 + P2-FLOW-4* → pohon delegasi live; refresh → utuh via replay — *v0 sesi dev 8: tab **Papan** = kanban 4 kolom (Belum/Kerja/Reviu/Selesai) dari flatten TaskTree + task pra-migrasi, drag&drop HTML5 → PATCH status (sinkron tasklist & pohon, auto-refresh saat agent `todo_*`); sisa: kartu agent per langkah + klik node → sesi & steering (dep P2-FLOW-4)*
 
+### P2-PM — Persona Project Manager & planning flow skala besar (request user v0.6; D22)
+
+> Kebutuhan user: project skala **besar**, iterasi **berkali-kali**, task **bukan 1–2 digit**.
+> Division of labor (D22): **Yui Planner** merencanakan (brainstorm → dokumen perencanaan →
+> task list detail), **Yui Conductor** mengeksekusi (delegasi sequential/paralel sesuai
+> depends_on). Tiap fase flow (brainstorm → perencanaan → task list → design → eksekusi →
+> testing → deploy) punya penanggung jawab + metrik keluaran yang terukur & termonitor.
+
+- [ ] **P2-PM-1** Persona **Yui Planner** (roster ke-8): manifest (spawnable_by user; bukan spawnable — Planner dipanggil langsung/user assign) + PERSONA.md (kepribadian PM: menuntut scope jelas, toleransi ambigu rendah, wajib rencana sebelum eksekusi, obsesi acceptance criteria) + toolset (todo_*, task_tree write, doc_write, consult) + skill seed `project-planning-basics` · *C · 2d · dep P1-PER-7* → menerima brief besar → menghasilkan dokumen perencanaan + kerangka TaskTree
+- [ ] **P2-PM-2** Langkah **brainstorm multi-persona**: tool `consult` — Planner meminta pendapat scholar+analyst+scribe (paralel, pertanyaan terstruktur) → sintesis jadi SATU dokumen keputusan `docs/PLAN.md` project (bukan chat bebas: prompt planning, output terstruktur) · *A · 3d · dep P2-PM-1 + P0-DEL-1* → brainstorm 3 persona → 1 dokumen sintesis, semua sesi terkutip di event/audit
+- [ ] **P2-PM-3** **Task list detail** first-class: Planner generate TaskTree penuh dari planning doc — tiap task: deskripsi, acceptance criteria, depends_on, assignee persona, estimate; **validator coverage** (setiap acceptance fase ter-cover ≥1 task; DAG tanpa cycle) · *A · 2d · dep P2-PM-2 + P1-PRJ-7* → brief besar → ≥30 task terstruktur, validator hijau
+- [ ] **P2-PM-4** **Matriks tanggung jawab fase** (RACI ringan): tiap fase workflow punya owner persona + metrik keluaran (brainstorm: dokumen disetujui user; planning: % task punya acceptance; design: gate review; eksekusi: task done/test hijau; testing: laporan QA; deploy: checklist rilis) — render di monitoring board · *B · 1d · dep P2-FLOW-5 + P2-PM-3* → tiap kolom fase menampilkan owner + metrik live
+- [ ] **P2-PM-5** **Dashboard progres terukur**: burndown task (Belum/Kerja/Reviu/Selesai), health per fase (blocker aktif, task revisi, hold approval menunggu), ringkasan iterasi (run ke-N: selesai/total, delta vs run sebelumnya) · *B · 3d · dep P2-FLOW-5 + P2-PM-3* → project 100+ task: progres & blocker terbaca sekali lihat tanpa scroll-cek satu-satu
+- [ ] **P2-PM-6** **Iterasi berantai**: hasil acceptance fase testing/deploy → Planner susun run BERIKUTNYA (hanya task delta + regresi blocker, bukan restart dari nol); workflow.run_id berantai + link dokumen retrospektif singkat · *A · 2d · dep P2-FLOW-3 + P2-PM-3* → iterasi #2 berisi task delta; riwayat run ke-1..N utuh
+
 ### P2-STU — Workbench multi-tab & surface (Studio §13.5; D16)
 
 - [ ] **P2-STU-1** Tab shell v0: tab chat/file/board/monitor dalam project home (state per tab; layout kolom desktop) · *B · 2d · dep P1-PRJ-6* → pindah tab tanpa kehilangan state chat
