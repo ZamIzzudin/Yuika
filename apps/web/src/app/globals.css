@@ -79,6 +79,25 @@
   -webkit-backdrop-filter: var(--yui-glass-blur);
   border: 1px solid var(--yui-glass-border);
 }
+/* Animasi timeline chat (keyframes legacy di bawah tetap hidup). */
+@utility msg-in {
+  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
+}
+@utility caret-blink {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  translate: 2px 3px;
+  background: var(--yui-text-muted);
+  animation: chip-pulse 0.9s steps(1) infinite;
+}
+@utility typing-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--yui-success);
+  animation: typing-dot 900ms ease-in-out infinite;
+}
 
 :root {
   color-scheme: dark;
@@ -178,61 +197,11 @@ html, body {
 #__next, main { height: 100%; }
 
 /* ── Shell ─────────────────────────────────────────────────────── */
-.yui-shell {
-  display: flex;
-  height: 100vh;
-  background: var(--yui-bg-canvas);
-}
 
-.yui-side {
-  display: flex;
-  flex-direction: column;
-  width: 272px;
-  flex: 0 0 auto;
-  background: var(--yui-bg-sidebar);
-  border-right: 1px solid var(--yui-border);
-  padding: var(--yui-space-3) var(--yui-space-2);
-  overflow-y: auto;
-}
-.yui-logo {
-  display: flex;
-  align-items: baseline;
-  gap: var(--yui-space-2);
-  padding: var(--yui-space-2) var(--yui-space-2) var(--yui-space-4);
-  font-size: var(--yui-text-md);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.yui-logo .sub { color: var(--yui-text-dim); font-weight: 400; font-size: var(--yui-text-sm); }
-
-.yui-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
 
 /* ── Workspace: satu area konten + tab bar (Chat juga tab) ────── */
 .workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.main-tabs {
-  display: flex; gap: 2px; padding: var(--yui-space-2) var(--yui-space-4) 0;
-  border-bottom: 1px solid var(--yui-border); flex: none; overflow-x: auto;
-}
-.main-tabs button {
-  display: inline-flex; align-items: center; gap: 7px;
-  font: inherit; font-size: var(--yui-text-md); font-weight: 500;
-  color: var(--yui-text-dim); background: none; border: none;
-  border-bottom: 2px solid transparent; padding: 8px 14px; cursor: pointer;
-  white-space: nowrap;
-}
-.main-tabs button:hover { color: var(--yui-text-secondary); }
-.main-tabs button[data-active] { color: var(--yui-text-primary); border-bottom-color: var(--yui-text-primary); }
-.tab-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--yui-accent);
-  animation: yui-pulse 1.4s ease-in-out infinite;
-}
 @keyframes yui-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-.workspace-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .pane-scroll {
   flex: 1; min-height: 0; overflow-y: auto;
   width: 100%; margin: 0 auto;
@@ -281,18 +250,6 @@ html, body {
 }
 
 /* ── Header percakapan ─────────────────────────────────────────── */
-.chat-header {
-  display: flex;
-  min-height: 52px;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--yui-space-3);
-  border-bottom: 1px solid var(--yui-border);
-  padding: var(--yui-space-6);
-}
-.chat-header .who { display: flex; flex-direction: column; min-width: 0; }
-.chat-header .who b { font-size: var(--yui-text-md); font-weight: 600; }
-.chat-header .who span { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
 .state-chip {
   margin-left: auto;
   display: inline-flex;
@@ -317,225 +274,25 @@ html, body {
 @keyframes chip-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
 /* ── Timeline pesan ────────────────────────────────────────────── */
-.chat-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--yui-space-4) var(--yui-space-6) var(--yui-space-6);
-  scroll-behavior: smooth;
-}
-.chat-col { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--yui-space-3); }
 
 /* Agent: teks polos, gutter avatar, nama muted (pola message-entry-with-author) */
-.msg-agent {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  column-gap: var(--yui-space-3);
-  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
-}
-.msg-agent .author {
-  grid-column: 2;
-  color: var(--yui-text-muted);
-  font-size: var(--yui-text-sm);
-  padding: 0 var(--yui-space-3);
-}
-.msg-agent .face { grid-column: 1; align-self: end; }
-.msg-agent .body {
-  grid-column: 2;
-  padding: 0 var(--yui-space-3);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  color: var(--yui-text-primary);
-  line-height: 1.625;
-}
-.msg-agent .body .caret {
-  display: inline-block;
-  width: 8px;
-  height: 15px;
-  translate: 2px 3px;
-  background: var(--yui-text-muted);
-  animation: chip-pulse 0.9s steps(1) infinite;
-}
 
 /* User: bubble terang rata kanan (pola ui-bubble default OpenBot) */
-.msg-user {
-  display: flex;
-  justify-content: flex-end;
-  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
-}
-.msg-user .body {
-  max-width: 80%;
-  border-radius: var(--yui-radius-bubble);
-  background: var(--yui-surface-light);
-  color: var(--yui-text-on-light);
-  padding: 8px 14px;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  line-height: 1.625;
-}
 @keyframes message-in {
   from { opacity: 0; translate: 0 6px; }
   to { opacity: 1; translate: 0 0; }
 }
 
 /* Typing dots (pola team-typing-dots) */
-.typing-row {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  column-gap: var(--yui-space-3);
-  align-items: center;
-}
-.typing-row .dots { display: flex; gap: 3px; padding: 0 var(--yui-space-3); }
-.typing-row .dots i {
-  width: 4px;
-  height: 4px;
-  border-radius: var(--yui-radius-pill);
-  background: var(--yui-success);
-  animation: typing-dot 900ms ease-in-out infinite;
-}
-.typing-row .dots i:nth-child(2) { animation-delay: 140ms; }
-.typing-row .dots i:nth-child(3) { animation-delay: 280ms; }
 @keyframes typing-dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 
 /* Langkah tool: senyap, mono, lipat (pola agent-steps) */
 .steps { display: flex; flex-direction: column; gap: 2px; }
-.step-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--yui-space-2);
-  border: 0;
-  border-radius: var(--yui-radius-sm);
-  background: transparent;
-  padding: var(--yui-space-1) var(--yui-space-2);
-  color: var(--yui-text-muted);
-  font-size: var(--yui-text-sm);
-  cursor: pointer;
-  align-self: flex-start;
-}
-.step-toggle:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
-.step-toggle svg { transition: rotate var(--yui-dur-fast) var(--yui-ease-out); }
-.step-toggle[aria-expanded="true"] svg { rotate: 180deg; }
-.step-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin-left: var(--yui-space-6);
-  border-left: 1px solid var(--yui-border-strong);
-  padding-left: var(--yui-space-3);
-}
-.step-row {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  gap: var(--yui-space-2);
-  font-size: var(--yui-text-sm);
-  color: var(--yui-text-muted);
-  animation: message-in var(--yui-dur-normal) var(--yui-ease-in-out) both;
-}
-.step-row code {
-  font-family: var(--yui-font-mono);
-  font-size: var(--yui-text-sm);
-  color: var(--yui-text-secondary);
-}
-.step-row .detail {
-  min-width: 0;
-  flex: 1;
-  color: var(--yui-text-dim);
-  font-family: var(--yui-font-mono);
-  font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.step-row .st { flex: 0 0 auto; color: var(--yui-text-dim); }
-.step-row[data-ok="1"] .st { color: var(--yui-success); }
-.step-row[data-err="1"] .st, .step-row[data-err="1"] code { color: var(--yui-danger); }
 
 /* Delegation: baris subagent (pola subagents) */
-.subagent {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  column-gap: var(--yui-space-3);
-  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
-}
-.subagent .face { grid-column: 1; align-self: start; padding-top: var(--yui-space-1); }
-.subagent .card {
-  grid-column: 2;
-  border: 1px solid var(--yui-border-strong);
-  border-radius: var(--yui-radius-card);
-  background: var(--yui-bg-surface);
-  padding: var(--yui-space-3);
-  min-width: 0;
-}
-.subagent .card .head { display: flex; align-items: center; gap: var(--yui-space-2); }
-.subagent .card .head b { font-size: var(--yui-text-md); font-weight: 600; }
-.subagent .card .goal { margin: 2px 0 0; color: var(--yui-text-muted); font-size: var(--yui-text-md); }
-.subagent .card .summary {
-  margin: var(--yui-space-2) 0 0;
-  padding-top: var(--yui-space-2);
-  border-top: 1px solid var(--yui-border);
-  color: var(--yui-text-secondary);
-  font-size: var(--yui-text-md);
-  white-space: pre-wrap;
-}
 /* Feed live delegasi (fix dev-10 "kartu delegasi statis menit-lamanya") */
-.subagent .card .delegation-live {
-  display: flex;
-  gap: var(--yui-space-2);
-  align-items: flex-start;
-  margin: var(--yui-space-2) 0 0;
-  padding: var(--yui-space-2);
-  border-radius: var(--yui-radius-card);
-  background: color-mix(in oklab, var(--yui-accent) 8%, transparent);
-  font-size: var(--yui-text-sm);
-  color: var(--yui-text-secondary);
-}
-.subagent .card .delegation-live .live-dot {
-  width: 7px;
-  height: 7px;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: var(--yui-accent);
-  flex: none;
-  animation: yui-pulse 1.2s ease-in-out infinite;
-}
-.subagent .card .delegation-live .live-text {
-  min-width: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 7.5em;
-  overflow: hidden;
-  mask-image: linear-gradient(to bottom, transparent, black 1.6em);
-}
-.subagent .card .delegation-live[data-kind="tool"] .live-text { font-family: var(--yui-mono); font-size: var(--yui-text-xs); }
-.subagent .card .delegation-live[data-kind="reasoning"] { opacity: 0.85; font-style: italic; }
 
 /* Reasoning stream (fix dev-10: pikiran model GLM kini terlihat — kolaps-able) */
-details.reasoning {
-  margin: 2px 0;
-  border-left: 2px solid var(--yui-border-strong);
-  padding-left: var(--yui-space-2);
-  font-size: var(--yui-text-sm);
-  color: var(--yui-text-muted);
-}
-details.reasoning > summary {
-  cursor: pointer;
-  user-select: none;
-  color: var(--yui-text-secondary);
-  list-style: none;
-}
-details.reasoning > summary::before { content: "▸ "; }
-details.reasoning[open] > summary::before { content: "▾ "; }
-details.reasoning .dim { color: var(--yui-text-muted); font-size: var(--yui-text-xs); }
-details.reasoning pre {
-  margin: var(--yui-space-1) 0 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: var(--yui-mono);
-  font-size: var(--yui-text-xs);
-  max-height: 300px;
-  overflow: auto;
-}
 
 /* Approval: kartu tenang, outline + aksen lembut (pola bubble tinted) */
 .approval {
@@ -559,62 +316,8 @@ details.reasoning pre {
 .approval .actions { display: flex; gap: var(--yui-space-2); margin-top: var(--yui-space-3); }
 
 /* Error sesi */
-.error-row {
-  border: 1px solid var(--yui-border-strong);
-  border-left: 2px solid var(--yui-danger);
-  border-radius: var(--yui-radius-card);
-  background: var(--yui-danger-soft);
-  padding: var(--yui-space-3) var(--yui-space-4);
-  color: var(--yui-text-secondary);
-  font-size: var(--yui-text-md);
-  animation: message-in var(--yui-dur-slow) var(--yui-ease-in-out) both;
-}
 
 /* ── Composer (pola .composer OpenBot) ─────────────────────────── */
-.composer-wrap { flex: 0 0 auto; padding: 0 var(--yui-space-6) var(--yui-space-4); }
-.composer {
-  max-width: 760px;
-  margin: 0 auto;
-  display: flex;
-  align-items: flex-end;
-  gap: var(--yui-space-2);
-  border: 0.5px solid var(--yui-border);
-  border-radius: var(--yui-radius-lg);
-  background: var(--yui-bg-surface);
-  padding: var(--yui-space-2);
-  transition: border-color var(--yui-dur-normal) var(--yui-ease-out);
-}
-.composer:focus-within { border-color: var(--yui-border-strong); }
-.composer textarea {
-  flex: 1;
-  min-height: 40px;
-  max-height: 160px;
-  border: 0;
-  background: transparent;
-  color: var(--yui-text-primary);
-  font: inherit;
-  line-height: 1.5;
-  padding: var(--yui-space-2) var(--yui-space-2);
-  outline: none;
-  resize: none;
-}
-.composer textarea::placeholder { color: var(--yui-text-dim); }
-.send-btn {
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: var(--yui-radius-md);
-  background: var(--yui-accent);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background var(--yui-dur-fast) ease;
-}
-.send-btn:hover:not(:disabled) { background: var(--yui-accent-hover); }
-.send-btn:disabled { background: var(--yui-bg-control-active); color: var(--yui-text-dim); cursor: default; }
 
 /* Tombol umum */
 .btn {
@@ -640,57 +343,10 @@ details.reasoning pre {
 /* ── Form kit: SEMUA input/select/textarea seirama composer ──────
  * Satu DNA: surface bg, border 0.5px, radius-md, fokus border menyala.
  * Composer textarea punya styling sendiri dan dikecualikan. */
-.yui-shell :where(input:is([type="text"], [type="password"], [type="search"], [type="number"], [type="email"], [type="url"], :not([type])), select, textarea):not(.composer textarea) {
-  border: 0.5px solid var(--yui-border-strong);
-  border-radius: var(--yui-radius-md);
-  background: var(--yui-bg-surface);
-  color: var(--yui-text-primary);
-  font: inherit;
-  font-size: var(--yui-text-md);
-  line-height: 1.5;
-  padding: 7px 10px;
-  outline: none;
-  transition: border-color var(--yui-dur-normal) var(--yui-ease-out), background var(--yui-dur-normal) var(--yui-ease-out);
-}
-.yui-shell :where(input, select, textarea):not(.composer textarea):focus-visible {
-  border-color: var(--yui-border-focus);
-}
-.yui-shell :where(input, textarea):not(.composer textarea)::placeholder {
-  color: var(--yui-text-dim);
-}
-.yui-shell :where(select):not(.composer select) { cursor: pointer; }
 
 /* ── Empty state (pola agent-chat-empty) ───────────────────────── */
-.empty-state {
-  flex: 1;
-  min-height: 0; /* anak flex boleh menyusut — scroll DI SINI, bukan body */
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   /* safe center: muat = tengah; overflow = mulai dari atas (tidak ada
      konten terpotong — jebakan klasik flex center + overflow) */
-  justify-content: flex-start;
-  justify-content: safe center;
-  gap: var(--yui-space-2);
-  padding: var(--yui-space-8);
-  text-align: center;
-}
-.empty-state .portrait-hero { width: 220px; }
-.empty-state h1 { margin: var(--yui-space-4) 0 0; font-size: var(--yui-text-2xl); font-weight: 600; }
-.empty-state .pitch { margin: 0; color: var(--yui-text-muted); font-size: var(--yui-text-md); max-width: 420px; }
-.suggest-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--yui-space-2); margin-top: var(--yui-space-4); max-width: 560px; }
-.suggest {
-  border: 1px solid var(--yui-border-strong);
-  border-radius: var(--yui-radius-card);
-  background: var(--yui-bg-surface);
-  color: var(--yui-text-secondary);
-  padding: var(--yui-space-2) var(--yui-space-4);
-  font-size: var(--yui-text-md);
-  cursor: pointer;
-  transition: border-color var(--yui-dur-fast) ease, background var(--yui-dur-fast) ease, color var(--yui-dur-fast) ease;
-}
-.suggest:hover { border-color: var(--yui-border-focus); background: var(--yui-bg-surface-raised); color: var(--yui-text-primary); }
 
 /* ── Portrait ──────────────────────────────────────────────────── */
 .portrait-face { display: block; }
@@ -709,8 +365,6 @@ details.reasoning pre {
 .portrait-hero { width: 220px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .msg-agent, .msg-user, .step-row, .subagent, .approval, .error-row { animation: none; }
-  .chat-scroll { scroll-behavior: auto; }
 }
 
 /* ── Project panel (P1-PRJ-6 shell v0) ─────────────────────────── */
@@ -864,7 +518,6 @@ details.reasoning pre {
 /* State kosong di dalam chat-scroll: hero + saran + composer aktif di bawahnya */
 .chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--yui-space-3); padding: var(--yui-space-8) var(--yui-space-6); min-height: 100%; text-align: center; }
 .chat-empty h1 { margin: 0; }
-.chat-empty .suggest-row { margin-top: var(--yui-space-2); }
 
 /* ── Pemilihan persona di tengah layar (scope Workspace) ───────── */
 .persona-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--yui-space-3); width: 100%; max-width: 720px; margin-top: var(--yui-space-4); }
@@ -895,27 +548,6 @@ details.reasoning pre {
 .growth-badge small { color: var(--yui-text-dim); }
 
 /* ── Switcher persona di chat-header (dropdown) ────────────────── */
-.persona-switch { position: relative; }
-.persona-switch summary { display: flex; align-items: center; gap: var(--yui-space-2); list-style: none; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
-.persona-switch summary::-webkit-details-marker { display: none; }
-.persona-switch summary:hover { background: var(--yui-hover); }
-.persona-switch[open] summary { background: var(--yui-hover); }
-.persona-menu {
-  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 230px;
-  display: flex; flex-direction: column; gap: 1px; padding: 4px;
-  background: var(--yui-glass); backdrop-filter: var(--yui-glass-blur);
-  -webkit-backdrop-filter: var(--yui-glass-blur);
-  border: 1px solid var(--yui-glass-border); border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-}
-.persona-menu button {
-  display: flex; align-items: center; gap: var(--yui-space-2); font: inherit; font-size: var(--yui-text-md);
-  color: var(--yui-text-secondary); background: none; border: none; border-radius: 8px;
-  padding: 7px 8px; cursor: pointer; text-align: left;
-}
-.persona-menu button:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
-.persona-menu button[data-active] { color: var(--yui-text-primary); background: var(--yui-bg-control-active); }
-.persona-menu small { margin-left: auto; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
 
 /* ── Riwayat sesi project (drawer) ─────────────────────────────── */
 .session-new { width: 100%; margin-bottom: var(--yui-space-2); }
@@ -1000,28 +632,8 @@ details.reasoning pre {
 .memory-doc small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 
 /* ── Noted chip (P1-MEM-2: learn nudge) ─────────────────────────── */
-.noted-chip {
-  display: flex; align-items: flex-start; gap: 8px; max-width: 560px;
-  margin: 2px auto; padding: 8px 12px; border-radius: 12px;
-  background: var(--yui-bg-inset, rgba(255, 255, 255, 0.03));
-  border: 1px dashed var(--yui-border-strong);
-  font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
-}
-.noted-icon { color: var(--yui-accent); flex: none; }
-.noted-text b { color: var(--yui-text-primary); font-weight: 600; margin-right: 2px; }
 
 /* ── Sidebar footer + Settings modal ────────────────────────────── */
-.side-foot {
-  margin-top: auto; padding-top: var(--yui-space-3);
-  border-top: 1px solid var(--yui-border);
-}
-.side-settings {
-  width: 100%; display: flex; align-items: center; gap: 8px;
-  font: inherit; font-size: var(--yui-text-md); color: var(--yui-text-dim);
-  background: none; border: none; border-radius: 8px;
-  padding: 8px 10px; cursor: pointer;
-}
-.side-settings:hover { color: var(--yui-text-primary); background: var(--yui-hover); }
 
 .settings-overlay {
   position: fixed; inset: 0; z-index: 100;
@@ -1029,18 +641,7 @@ details.reasoning pre {
   display: flex; align-items: center; justify-content: center;
   padding: var(--yui-space-6);
 }
-.settings-modal {
-  width: min(940px, 94vw); height: min(640px, 88vh);
-  display: flex; flex-direction: column;
   /* Glass ala menu macOS (disetujui user): bg semi-transparan + blur di belakang */
-  background: var(--yui-glass);
-  backdrop-filter: var(--yui-glass-blur);
-  -webkit-backdrop-filter: var(--yui-glass-blur);
-  border: 1px solid var(--yui-glass-border);
-  border-radius: var(--yui-radius-xl);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
 .settings-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--yui-space-3) var(--yui-space-5);
@@ -1052,29 +653,6 @@ details.reasoning pre {
   cursor: pointer; padding: 4px 8px; border-radius: 6px;
 }
 .settings-close:hover { color: var(--yui-text-primary); background: var(--yui-hover); }
-.settings-body { flex: 1; min-height: 0; display: flex; }
-.settings-nav {
-  flex: 0 0 200px; display: flex; flex-direction: column; gap: 2px;
-  padding: var(--yui-space-3); border-right: 1px solid var(--yui-border);
-  overflow-y: auto;
-}
-.settings-nav button {
-  display: flex; flex-direction: column; gap: 2px; text-align: left;
-  font: inherit; background: none; border: none; border-radius: 10px;
-  padding: 10px 12px; cursor: pointer; color: var(--yui-text-dim);
-}
-.settings-nav button:hover { background: var(--yui-hover); }
-.settings-nav button[data-active] { background: var(--yui-hover); color: var(--yui-text-primary); }
-.settings-nav b { font-size: var(--yui-text-md); font-weight: 600; }
-.settings-nav small { font-size: var(--yui-text-sm); }
-.settings-content { flex: 1; min-width: 0; overflow-y: auto; padding: var(--yui-space-5) var(--yui-space-6); }
-.settings-mcp { max-width: 640px; }
-.settings-mcp .mcp-section { border-top: none; margin-top: 0; padding-top: 0; }
-.settings-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--yui-space-4); }
-.settings-field > span { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
-.settings-field input { max-width: 420px; font-family: var(--yui-font-mono, ui-monospace, monospace); }
-.settings-actions { display: flex; align-items: center; gap: 10px; }
-.settings-actions .ok { color: var(--yui-ok); font-size: var(--yui-text-sm); }
 .catalog-runtime {
   font-size: 10px; color: #d29922; border: 1px solid #d29922;
   border-radius: 999px; padding: 1px 6px; margin-left: 4px; white-space: nowrap;
@@ -1141,19 +719,10 @@ details.reasoning pre {
 }
 .skill-list b { font-size: var(--yui-text-md); font-weight: 600; }
 .skill-list small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
-.skill-chip .noted-icon { filter: none; }
 
 /* ── Model per persona (P1-MDL) di Settings ─────────────────────── */
 .model-routes .field-title { font-weight: 600; display: block; margin-bottom: 2px; }
 .model-routes .dim { display: block; margin-bottom: var(--yui-space-2); color: var(--yui-text-dim); }
-.model-table { width: 100%; border-collapse: collapse; }
-.model-table th {
-  text-align: left; font-weight: 500; font-size: var(--yui-text-sm); color: var(--yui-text-muted);
-  padding: 4px 8px 4px 0; white-space: nowrap;
-}
-.model-table td { padding: 2px 0 2px 6px; }
-.model-table input { min-width: 150px; }
-.model-table tr[data-dirty] th { color: var(--yui-accent); }
 
 /* ── Tab File (P2-STU-3 v0) ─────────────────────────────────────── */
 .file-split { display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: var(--yui-space-3); min-height: 320px; }
@@ -1243,7 +812,6 @@ details.reasoning pre {
 
 /* Tombol refresh file tree */
 .file-toolbar { display: flex; justify-content: flex-end; }
-.tab-dot.warn { background: var(--yui-warn); animation: pulse 1.2s ease-in-out infinite; }
 
 /* Diagram hierarki Tim v3 (dev-10): kanvas tak terbatas ala Excalidraw —
    pan hold-drag (Pointer Events + capture), scroll = geser, Ctrl+scroll = zoom,
@@ -1306,16 +874,10 @@ details.reasoning pre {
 .roster-phase[data-r="ok"] { color: var(--yui-ok); }
 .roster-phase[data-r="gap"] { color: var(--yui-danger, #e5484d); font-style: normal; }
 /* P1-MDL-2: panel smoke test model di Settings. */
-.smoke-panel { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
-.smoke-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.smoke-list li { font-size: var(--yui-text-sm); color: var(--yui-danger, #e5484d); }
-.smoke-list li[data-ok] { color: var(--yui-ok); }
-.smoke-list small { color: var(--yui-text-dim); }
 
 /* ── Dungeon page (P1-DUN-4): halaman terpisah arena latihan persona ── */
 
 /* ── Metering panel (P1-CRED-1) ── */
-.usage-panel { display: flex; flex-direction: column; gap: 12px; }
 
 /* P1-INF-4: trace view */
 .trace-view { display: flex; flex-direction: column; gap: 14px; max-width: 860px; margin: 0 auto; width: 100%; padding: 18px 8px; overflow-y: auto; }
@@ -1337,27 +899,7 @@ details.reasoning pre {
 .trace-label { flex: 1; min-width: 220px; word-break: break-word; }
 
 /* P1-CRED-2/3/4: panel saldo & batas */
-.budget-panel { display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1px solid var(--yui-border); border-radius: 8px; margin-bottom: 4px; }
-.budget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.budget-grid p { margin: 2px 0; font-size: var(--yui-text-md); }
-.budget-bar { position: relative; height: 14px; border-radius: 6px; background: var(--yui-surface-2, rgba(127, 127, 127, 0.15)); overflow: hidden; margin-top: 4px; }
-.budget-bar > div { height: 100%; background: var(--yui-accent, #7aa2f7); transition: width 0.3s; }
-.budget-bar > div[data-hot] { background: #e06c75; }
-.budget-bar > span { position: absolute; right: 6px; top: 0; font-size: 10px; line-height: 14px; color: var(--yui-text-secondary); }
-.budget-hit { color: #e06c75; margin: 0; font-size: var(--yui-text-sm); }
-.budget-limits { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-.budget-limits input, .budget-limits select { width: 100%; }
 
-.usage-range { display: flex; gap: 6px; }
-.usage-total { margin: 0; font-size: var(--yui-text-md); }
-.usage-table { width: 100%; border-collapse: collapse; font-size: var(--yui-text-sm); }
-.usage-table th { text-align: left; color: var(--yui-text-secondary); font-weight: 500; border-bottom: 1px solid var(--yui-border); padding: 4px 8px 4px 0; }
-.usage-table td { border-bottom: 1px solid var(--yui-border); padding: 5px 8px 5px 0; }
-.usage-table td:last-child, .usage-table th:last-child { text-align: right; }
-.usage-recent { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: var(--yui-text-sm); color: var(--yui-text-secondary); }
-.usage-prices { border-top: 1px dashed var(--yui-border); padding-top: 10px; }
-.usage-prices summary { cursor: pointer; font-size: var(--yui-text-md); color: var(--yui-text-secondary); }
-.price-input { width: 90px; }
 
 /* ---- P1-PRJ-8: hapus project (konfirmasi dua langkah) ---- */
 .project-row-wrap { position: relative; display: block; }
@@ -1391,23 +933,5 @@ details.reasoning pre {
 }
 
 /* Mode approval chip (fix dev-10): toggle cepat di atas composer */
-.approval-mode-chip {
-  align-self: flex-start;
-  margin-bottom: var(--yui-space-2);
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--yui-border-strong);
-  background: transparent;
-  color: var(--yui-text-muted);
-  font-size: var(--yui-text-xs);
-  cursor: pointer;
-  transition: all var(--yui-dur-fast) var(--yui-ease-in-out);
-}
-.approval-mode-chip:hover { color: var(--yui-text-secondary); }
-.approval-mode-chip[data-on] {
-  border-color: var(--yui-accent);
-  color: var(--yui-accent);
-  background: color-mix(in oklab, var(--yui-accent) 12%, transparent);
-}
 
 /* Dungeon: tab Misi/Riwayat + daftar riwayat sesi latihan (fix dev-10 user) */

@@ -135,17 +135,44 @@ Tab aria lengkap; konten diganti pemanggil.
 | ✔ Do | ✘ Don't |
 |---|---|
 | `<Button variant="primary">` untuk 1 aksi utama | banyak tombol primary sekaligus |
-| `<Chip tone="ok">✓ selesai</Chip>` | emoji status dalam teks biasa berwarna manual |
+| `<Chip tone="ok"><Check …/> selesai</Chip>` | emoji status dalam teks biasa berwarna manual |
 | `text-muted` untuk meta | `text-[#979797]` / opacity hack |
 | `EmptyState` untuk kosong | paragraf abu polos |
 | `gap-*` untuk jarak | margin kiri-kanan manual |
 | `font-mono` untuk path/kode/filename | font sans untuk kode |
+| ikon Phosphor `<Icon size={13} />` | emoji / SVG buatan sendiri |
+
+## 5b. Ikon — Phosphor (`@phosphor-icons/react`)
+
+SATU set ikon untuk seluruh app: **Phosphor** (weight `regular` default; `bold`/`fill`
+hanya untuk penekanan). Dilarang emoji sebagai ikon dan SVG inline buatan
+sendiri (portret persona & Orin = seni, bukan ikon — tetap).
+
+- **Ukuran**: 11–13 (inline teks/chip) · 15–16 (tombol) · 20–22 (empty state/hero).
+- **`aria-hidden`** pada ikon dekoratif; tombol ikon murni WAJIB `aria-label`.
+- Peta ikon yang sudah dipakai (konsistenkan!):
+
+| Ikon | Phosphor | Dipakai untuk |
+|---|---|---|
+| Kirim | `PaperPlaneTilt` | composer chat |
+| Stop turn | `Stop` | batalkan turn |
+| Berpikir | `Brain` | blok reasoning 💭 |
+| Auto-approve | `Lightning` | chip mode cepat |
+| Catatan memori | `PencilSimple` | learn nudge |
+| Kompresi konteks | `ArrowsInLineVertical` | chip 🗜 |
+| Usulan skill | `Wrench` | chip skill |
+| Tutup | `X` · sukses `Check` · gagal `X` | modal, smoke, status |
+| Berjalan | `CircleNotch` | status running |
+| Mundur | `ArrowLeft` | tombol kembali |
+| Dungeon | `Sword` · riset `MagnifyingGlass` · bahan `Books` · unggah `UploadSimple` · hapus `Trash` · waktu `Clock` · kosong `Sparkle`/`Leaf` | menu ⚔ |
+| Peringatan | `Warning` · larangan `Prohibit` | budget warn/block |
 
 ## 6. Checklist fitur / page baru (wajib lulus sebelum commit)
 
 - [ ] Semua tombol `<Button>`; semua input `<Field>`+`TextInput/TextArea/Select`.
 - [ ] Semua warna/teks/radius via utility semantik §2 — nol hex, nol px manual.
 - [ ] Popup via `<Modal>`; list kosong via `<EmptyState>`; status via `<Chip>`.
+- [ ] Semua ikon Phosphor (§5b) — tanpa emoji/SVG inline.
 - [ ] Teks & placeholder bahasa Indonesia; komentar kode menjelaskan *kenapa*.
 - [ ] Aksesibilitas dasar: `aria-label` untuk tombol ikon, `aria-pressed` untuk toggle.
 - [ ] Tidak menambah kelas CSS di `globals.css`.
@@ -154,15 +181,14 @@ Tab aria lengkap; konten diganti pemanggil.
 
 | File | Status |
 |---|---|
-| `components/DungeonView.tsx` | ✅ referensi DS (ui/* + Tailwind murni) |
+| `components/DungeonView.tsx` | ✅ referensi DS (ui/* + Tailwind murni + Phosphor) |
+| `components/ChatView.tsx` | ✅ batch 2 — timeline, composer, kartu approval/delegasi/reasoning |
+| `components/SettingsModal.tsx` | ✅ batch 2 — ui Modal/Field/Button + tabel metering |
+| `page.tsx` shell | ✅ batch 2 — sidebar, header persona, TabList, empty state |
 | `components/Skeleton.tsx` | ✅ sederhana (tetap dipakai) |
-| `page.tsx` shell (sidebar, header, main-tabs) | ⏳ batch 2 |
-| `ChatView.tsx` | ⏳ batch 2 |
-| `SettingsModal.tsx` (→ `Modal`+`Field`) | ⏳ batch 2 |
-| `SkillsTab.tsx` | ⏳ batch 3 |
-| `ProjectPanel.tsx` / `PersonaPicker.tsx` | ⏳ batch 3 |
+| `SkillsTab.tsx` / `ProjectPanel.tsx` / `PersonaPicker.tsx` | ⏳ batch 3 |
 | `TaskDrawer.tsx` / `FileTab.tsx` / `McpPanel.tsx` / `TeamTree.tsx` / `TracePanel.tsx` / `Markdown.tsx` | ⏳ batch 4 |
-| `OrinPortrait.tsx` / `orinShapes.tsx` | ✅ tetap (SVG art, bukan layout) |
+| `OrinPortrait.tsx` / `orinShapes.tsx` / `PersonaPortrait.tsx` | ✅ tetap (SVG art, bukan layout) |
 
 Aturan transisi: file yang belum dimigrasi tetap pakai kelas CSS lama (jangan
 campur dua gaya dalam satu file); setelah sebuah file bersih, hapus kelas

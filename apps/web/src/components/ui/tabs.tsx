@@ -1,10 +1,13 @@
 // DS-1 — komponen global: Tabs + primitif kecil (EmptyState, Skeleton, MetaRow, SectionTitle).
 // Tabs: baris tab aria lengkap; konten digele pengguna (state tab milik pemanggil).
 import type { ReactNode } from "react";
+import { Leaf } from "@phosphor-icons/react";
 
 export interface TabItem {
   id: string;
   label: ReactNode;
+  /** Tooltip tab (opsional). */
+  title?: string;
 }
 
 export function TabList({
@@ -25,6 +28,7 @@ export function TabList({
           key={t.id}
           role="tab"
           aria-selected={value === t.id}
+          title={t.title}
           onClick={() => onChange(t.id)}
           className={`-mb-px inline-flex cursor-pointer items-center gap-1.5 rounded-t-md2 border border-b-0 px-3 py-1.5 text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
             value === t.id
@@ -40,10 +44,10 @@ export function TabList({
 }
 
 /** Keadaan kosong seragam — JANGAN pakai <p className="dim"> polos untuk list kosong. */
-export function EmptyState({ icon = "◦", title, hint, className = "" }: { icon?: ReactNode; title: ReactNode; hint?: ReactNode; className?: string }) {
+export function EmptyState({ icon, title, hint, className = "" }: { icon?: ReactNode; title: ReactNode; hint?: ReactNode; className?: string }) {
   return (
-    <div className={`flex flex-col items-center justify-center gap-1 rounded-card border border-line border-dashed bg-transparent px-4 py-8 text-center ${className}`}>
-      <span aria-hidden className="text-muted">{icon}</span>
+    <div className={`flex flex-col items-center justify-center gap-1 rounded-card border border-dashed border-line px-4 py-8 text-center ${className}`}>
+      <span aria-hidden className="mb-1 text-muted">{icon ?? <Leaf size={22} />}</span>
       <b className="text-body text-secondary">{title}</b>
       {hint ? <small className="max-w-sm text-caption text-dim">{hint}</small> : null}
     </div>

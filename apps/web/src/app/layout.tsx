@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Your-Yui — Studio Proyek Persona",
-  description: "Platform agent multi-persona: proyek, delegasi, skill, dan MCP dalam satu studio.",
+  title: "Your Yui | Studio Proyek Persona",
+  description:
+    "Platform agent multi-persona: proyek, delegasi, skill, dan MCP dalam satu studio.",
   manifest: "/site.webmanifest",
   icons: {
     // favicon.ico & apple-icon.png di src/app/ di-serve otomatis oleh Next (file convention);
@@ -18,7 +23,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="id" className={inter.variable}>
       <body>{children}</body>

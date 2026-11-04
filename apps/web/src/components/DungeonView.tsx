@@ -3,6 +3,7 @@
 // utility Tailwind semantik; tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PersonaInfo } from "@yui/contracts";
+import { ArrowLeft, Books, Check, CircleNotch, Clock, MagnifyingGlass, Sparkle, Sword, Trash, UploadSimple, X } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { Skeleton } from "./Skeleton";
 import { Button, Chip, Card, Modal, Field, TextInput, TextArea, Select, TabList, EmptyState, MetaRow, SectionTitle } from "./ui";
@@ -150,7 +151,7 @@ function SkillMapping() {
       {persona ? (
         <div className="flex flex-col gap-2">
           {data.skills.length === 0 ? (
-            <EmptyState icon="✦" title="Belum ada skill" hint="Latih persona di tab Misi — hasil latihan muncul di sini sebagai draf yang bisa diterima." />
+            <EmptyState icon={<Sparkle size={20} />} title="Belum ada skill" hint="Latih persona di tab Misi — hasil latihan muncul di sini sebagai draf yang bisa diterima." />
           ) : (
             data.skills.map((s) => {
               const on = persona.effective.includes(s.name);
@@ -361,7 +362,19 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
         )}
         {last && (
           <MetaRow>
-            {last.status === "running" ? <Chip tone="warn">◐ berjalan</Chip> : last.status === "done" ? <Chip tone="ok">✓ selesai</Chip> : <Chip tone="danger">✕ gagal</Chip>}
+            {last.status === "running" ? (
+              <Chip tone="warn">
+                <CircleNotch size={11} aria-hidden /> berjalan
+              </Chip>
+            ) : last.status === "done" ? (
+              <Chip tone="ok">
+                <Check size={11} weight="bold" aria-hidden /> selesai
+              </Chip>
+            ) : (
+              <Chip tone="danger">
+                <X size={11} weight="bold" aria-hidden /> gagal
+              </Chip>
+            )}
             {last.summary ? <span className="truncate">{last.summary.slice(0, 160)}</span> : null}
           </MetaRow>
         )}
@@ -374,11 +387,11 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
               fileRef.current?.click();
             }}
           >
-            {uploading === d.mission.id ? "mengunggah…" : "⬆ Bahan ajar"}
+            {uploading === d.mission.id ? "mengunggah…" : <><UploadSimple size={12} aria-hidden className="mr-1 inline align-[-2px]" /> Bahan ajar</>}
           </Button>
           {d.mission.origin === "user" && (
-            <Button size="sm" variant="danger" onClick={() => void remove(d.mission.id)} title="Hapus latihan ini">
-              🗑
+            <Button size="sm" variant="danger" onClick={() => void remove(d.mission.id)} title="Hapus latihan ini" aria-label="Hapus latihan">
+              <Trash size={13} aria-hidden />
             </Button>
           )}
         </div>
@@ -395,8 +408,12 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-6" aria-label="Dungeon — arena latihan persona">
       <header className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <Button onClick={onBack}>← Workspace</Button>
-          <h1 className="text-display font-semibold text-primary">⚔ Dungeon</h1>
+          <Button onClick={onBack}>
+            <ArrowLeft size={13} aria-hidden /> Workspace
+          </Button>
+          <h1 className="flex items-center gap-2 text-display font-semibold text-primary">
+            <Sword size={20} aria-hidden /> Dungeon
+          </h1>
         </div>
         <p className="text-body leading-6 text-muted">
           Ajari persona keterampilan baru layaknya mengajar orang: beri topik riset atau unggah bahan ajar → persona belajar di
@@ -416,7 +433,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 
       {view === "riwayat" ? (
         allRuns.length === 0 ? (
-          <EmptyState icon="🕒" title="Belum ada sesi latihan" hint="Jalankan misi dulu — semua run latihan tercatat di sini." />
+          <EmptyState icon={<Clock size={20} />} title="Belum ada sesi latihan" hint="Jalankan misi dulu — semua run latihan tercatat di sini." />
         ) : (
           <div className="flex flex-col gap-2">
             {allRuns.map((r) => (
@@ -427,7 +444,19 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
                   <MetaRow>
                     {new Date(r.startedAt).toLocaleString("id-ID")}
                     <span aria-hidden>·</span>
-                    {r.status === "running" ? "◐ berjalan" : r.status === "done" ? "✓ selesai" : "✕ gagal"}
+                    {r.status === "running" ? (
+                      <>
+                        <CircleNotch size={11} aria-hidden className="animate-pulse" /> berjalan
+                      </>
+                    ) : r.status === "done" ? (
+                      <>
+                        <Check size={11} weight="bold" aria-hidden /> selesai
+                      </>
+                    ) : (
+                      <>
+                        <X size={11} weight="bold" aria-hidden /> gagal
+                      </>
+                    )}
                     {r.summary ? <span className="truncate">— {r.summary.slice(0, 140)}</span> : null}
                   </MetaRow>
                 </div>
@@ -449,15 +478,15 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
             <small className="text-caption text-dim">Form lengkap (mode, persona, skill, kriteria lulus) sebagai popup modal.</small>
           </div>
 
-          <Modal open={formOpen} onClose={() => setFormOpen(false)} title="⚔ Buat latihan baru" wide>
+          <Modal open={formOpen} onClose={() => setFormOpen(false)} title={<span className="flex items-center gap-2"><Sword size={16} aria-hidden /> Buat latihan baru</span>} wide>
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap gap-2">
-                <ChipToggle2 active={mode === "research"} onClick={() => switchMode("research")}>
-                  🔍 Riset mandiri
-                </ChipToggle2>
-                <ChipToggle2 active={mode === "documents"} onClick={() => switchMode("documents")}>
-                  📚 Bahan ajar (file)
-                </ChipToggle2>
+                  <ChipToggle2 active={mode === "research"} onClick={() => switchMode("research")}>
+                    <MagnifyingGlass size={12} aria-hidden /> Riset mandiri
+                  </ChipToggle2>
+                  <ChipToggle2 active={mode === "documents"} onClick={() => switchMode("documents")}>
+                    <Books size={12} aria-hidden /> Bahan ajar (file)
+                  </ChipToggle2>
               </div>
               <small className="text-caption leading-5 text-muted">
                 {mode === "research"

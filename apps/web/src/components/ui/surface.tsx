@@ -3,6 +3,7 @@
 // Modal   → popup glass (ESC & klik overlay menutup) — jangan bikin overlay sendiri.
 // Field   → label + kontrol + hint seragam (TextInput/TextArea/Select share style).
 import { useEffect, type ReactNode } from "react";
+import { X } from "@phosphor-icons/react";
 
 export type CardVariant = "surface" | "raised" | "inset";
 
@@ -76,10 +77,10 @@ export function Modal({
           <button
             type="button"
             aria-label="Tutup"
-            className="cursor-pointer rounded-pill border border-transparent bg-transparent px-2 text-muted hover:bg-hover hover:text-primary"
+            className="cursor-pointer rounded-md2 border border-transparent bg-transparent p-1 text-muted transition-colors hover:bg-hover hover:text-primary"
             onClick={onClose}
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4">{children}</div>

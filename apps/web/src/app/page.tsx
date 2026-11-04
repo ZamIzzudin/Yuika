@@ -6,10 +6,11 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaGrid, PersonaFace } from "@/components/PersonaPicker";
+import { ArrowLeft, Sword } from "@phosphor-icons/react";
 import { DungeonView } from "@/components/DungeonView";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
-import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
+import { ChatView, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -19,6 +20,7 @@ import {
   type WorkspaceTab,
 } from "@/components/TaskDrawer";
 import { Skeleton } from "@/components/Skeleton";
+import { Button, Dot, StateChip, TabList } from "@/components/ui";
 import type {
   PersonaInfo,
   PersonaState,
@@ -574,10 +576,10 @@ export default function Home() {
   }
 
   return (
-    <div className="yui-shell">
-      <aside className="yui-side">
-        <div className="yui-logo">
-          Your-Yui <span className="sub">demo</span>
+    <div className="flex h-screen bg-canvas text-body text-secondary">
+      <aside className="flex w-[272px] shrink-0 flex-col overflow-y-auto border-r border-line bg-sidebar px-2 py-3">
+        <div className="flex items-baseline gap-2 px-2 pb-4 text-body font-semibold tracking-tight text-primary">
+          Your-Yui <span className="text-caption font-normal text-dim">demo</span>
         </div>
         <ProjectPanel
           projects={projects.filter((p) => p.kind !== "dungeon")}
@@ -596,24 +598,26 @@ export default function Home() {
             }
           }}
         />
-        <div className="side-foot">
+        <div className="mt-auto flex flex-col gap-1 border-t border-line pt-3">
           <button
-            className="side-settings"
-            data-active={dungeonOpen ? "" : undefined}
+            className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+              dungeonOpen ? "bg-hover text-primary" : "text-dim hover:bg-hover hover:text-primary"
+            }`}
+            aria-current={dungeonOpen ? "page" : undefined}
             onClick={() => setDungeonOpen((v) => !v)}
           >
-            Dungeon
+            <Sword size={15} aria-hidden /> Dungeon
           </button>
           <button
-            className="side-settings"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
             onClick={() => setSettingsOpen(true)}
           >
-            Pengaturan
+            <Dot tone="muted" /> Pengaturan
           </button>
         </div>
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
-      <main className="yui-main">
+      <main className="flex min-w-0 flex-1 flex-col">
         {dungeonOpen ? (
           <DungeonView
             personas={personas}
@@ -626,8 +630,8 @@ export default function Home() {
         ) : (
           <>
             {!active ? (
-              <div className="empty-state">
-                <div className="portrait-hero">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+                <div className="w-[220px]">
                   <OrinPortrait
                     state="idle"
                     personaId={activeProject ? undefined : "yui-conductor"}
@@ -635,16 +639,16 @@ export default function Home() {
                 </div>
                 {activeProject ? (
                   <>
-                    <h1>Menyiapkan {activeProject.name}…</h1>
-                    <p className="pitch">
+                    <h1 className="mt-4 text-display font-semibold text-primary">Menyiapkan {activeProject.name}…</h1>
+                    <p className="max-w-[420px] text-body text-muted">
                       Conductor sebagai project lead sedang dibuka.
                     </p>
                   </>
                 ) : (
                   <>
-                    <h1>Pilih partner untuk sesi Workspace</h1>
+                    <h1 className="mt-4 text-display font-semibold text-primary">Pilih partner untuk sesi Workspace</h1>
                     {personas.length === 0 ? (
-                      <div className="persona-grid">
+                      <div className="mt-4 grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
                         {Array.from({ length: 4 }, (_, i) => (
                           <Skeleton key={i} lines={3} />
                         ))}
@@ -659,121 +663,78 @@ export default function Home() {
                 )}
               </div>
             ) : (
-              <div className="workspace">
-                <nav className="main-tabs" role="tablist">
-                  <button
-                    role="tab"
-                    aria-selected={mainTab === "chat"}
-                    data-active={mainTab === "chat" ? "" : undefined}
-                    onClick={() => setMainTab("chat")}
-                  >
-                    <PersonaFace personaId={active.id} size={16} /> Chat
-                    {items.some(
-                      (it) => it.kind === "approval" && !it.resolved,
-                    ) && (
-                      <span
-                        className="tab-dot warn"
-                        title="menunggu persetujuan Anda"
-                      />
-                    )}
-                    {busy && <span className="tab-dot" title="agent bekerja" />}
-                  </button>
-
-                  {activeProject &&
-                    (
-                      [
-                        { id: "team", label: "Tim" },
-                        { id: "files", label: "File" },
-                        { id: "board", label: "Papan" },
-                        { id: "tree", label: "Pohon" },
-                        { id: "roster", label: "Roster" },
-                        { id: "sessions", label: "Sesi" },
-                        { id: "memory", label: "Memori" },
-                        { id: "skills", label: "Skill" },
-                      ] as const
-                    ).map((t) => (
-                      <button
-                        key={t.id}
-                        role="tab"
-                        aria-selected={mainTab === t.id}
-                        data-active={mainTab === t.id ? "" : undefined}
-                        onClick={() => setMainTab(t.id)}
-                      >
-                        {t.label}
-                        {t.id === "team" &&
-                          items.some(
-                            (it) => it.kind === "delegation" && !it.text,
-                          ) && (
-                            <span
-                              className="tab-dot"
-                              title="delegasi berjalan"
-                            />
-                          )}
-                      </button>
-                    ))}
-                  <button
-                    role="tab"
-                    aria-selected={mainTab === "trace"}
-                    data-active={mainTab === "trace" ? "" : undefined}
-                    onClick={() => setMainTab("trace")}
-                    title={
-                      sessionId
-                        ? "Jejak langkah per turn sesi aktif"
-                        : "Mulai sesi dulu untuk melihat trace"
-                    }
-                  >
-                    Trace
-                    {sessionId && busy && (
-                      <span
-                        className="tab-dot"
-                        title="turn berjalan — trace ikut live"
-                      />
-                    )}
-                  </button>
-                </nav>
-                <div className="workspace-body">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <TabList
+                  value={mainTab}
+                  onChange={(id) => setMainTab(id as WorkspaceTab)}
+                  className="flex-none overflow-x-auto"
+                  tabs={[
+                    {
+                      id: "chat",
+                      label: (
+                        <>
+                          <PersonaFace personaId={active.id} size={16} /> Chat
+                          {items.some((it) => it.kind === "approval" && !it.resolved) && <Dot tone="warn" pulse className="ml-1" />}
+                          {busy && <Dot tone="accent" pulse className="ml-1" />}
+                        </>
+                      ),
+                    },
+                    ...(activeProject
+                      ? ([
+                          { id: "team", label: <span>Tim{items.some((it) => it.kind === "delegation" && !it.text) && <Dot pulse className="ml-1" />}</span> },
+                          { id: "files", label: "File" },
+                          { id: "board", label: "Papan" },
+                          { id: "tree", label: "Pohon" },
+                          { id: "roster", label: "Roster" },
+                          { id: "sessions", label: "Sesi" },
+                          { id: "memory", label: "Memori" },
+                          { id: "skills", label: "Skill" },
+                        ] as const)
+                      : []),
+                    {
+                      id: "trace",
+                      label: <span>Trace{sessionId && busy && <Dot pulse className="ml-1" />}</span>,
+                      title: sessionId ? "Jejak langkah per turn sesi aktif" : "Mulai sesi dulu untuk melihat trace",
+                    },
+                  ]}
+                />
+                <div className="flex min-h-0 flex-1 flex-col">
                   {mainTab === "chat" && (
                     <>
-                      <header className="chat-header">
-                        <details className="persona-switch">
-                          <summary>
+                      <header className="flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
+                        <details className="group relative">
+                          <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill border border-transparent px-2 py-1 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
                             <PersonaPortrait
                               name={active.name}
                               state={personaState}
                               personaId={active.id}
                               variant="compact"
                             />
-                            <span className="who">
-                              <b>{active.name}</b>
-                              <span>{active.expertise}</span>
+                            <span className="flex min-w-0 flex-col text-left">
+                              <b className="text-body font-semibold text-primary">{active.name}</b>
+                              <span className="text-caption text-dim">{active.expertise}</span>
                             </span>
                           </summary>
-                          <div className="persona-menu">
+                          <div className="glass-panel absolute top-full left-0 z-30 mt-1 flex w-64 flex-col gap-px rounded-lg2 p-1 shadow-pop">
                             {personas.map((p) => (
                               <button
                                 key={p.id}
-                                data-active={
-                                  p.id === active.id ? "" : undefined
-                                }
+                                aria-current={p.id === active.id ? "true" : undefined}
+                                className={`flex cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2 py-1.5 text-left text-body transition-colors ${
+                                  p.id === active.id ? "bg-hover text-primary" : "text-secondary hover:bg-hover"
+                                }`}
                                 onClick={() => void switchPersona(p)}
                               >
                                 <PersonaFace personaId={p.id} size={20} />
-                                <span>{p.name}</span>
+                                <span className="flex-1">{p.name}</span>
                                 {activeProjectId && (
-                                  <small>
-                                    {activeProjectId
-                                      ? "sesi baru di project ini"
-                                      : ""}
-                                  </small>
+                                  <small className="text-caption text-dim">sesi baru</small>
                                 )}
                               </button>
                             ))}
                           </div>
                         </details>
-                        <span className="state-chip" data-s={personaState}>
-                          <i />
-                          {STATE_LABEL[personaState]}
-                        </span>
+                        <StateChip state={personaState} className="ml-auto" />
                       </header>
                       {items.length === 0 ? (
                         <ChatView
@@ -789,7 +750,7 @@ export default function Home() {
                           busy={busy}
                           emptySlot={
                             <>
-                              <div className="portrait-hero">
+                              <div className="w-[220px]">
                                 <PersonaPortrait
                                   name={active.name}
                                   state={personaState}
@@ -797,21 +758,21 @@ export default function Home() {
                                   variant="hero"
                                 />
                               </div>
-                              <h1>
+                              <h1 className="text-display font-semibold text-primary">
                                 {activeProject
                                   ? `${active.name} memimpin ${activeProject.name}`
                                   : `${active.name} siap`}
                               </h1>
-                              <p className="pitch">
+                              <p className="max-w-[420px] text-body leading-6 text-muted">
                                 {activeProject
                                   ? `Sebutkan tugasnya — ${active.name} akan mengerjakan atau mendelegasikan ke spesialis sesuai keahlian. Semua file & task terikat ke project ini.`
                                   : active.description}
                               </p>
-                              <div className="suggest-row">
+                              <div className="mt-2 flex max-w-[560px] flex-wrap justify-center gap-2">
                                 {(SUGGESTIONS[active.id] ?? []).map((s) => (
                                   <button
                                     key={s}
-                                    className="suggest"
+                                    className="cursor-pointer rounded-pill border border-line bg-surface px-3 py-1 text-caption text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary"
                                     onClick={() => send(s)}
                                   >
                                     {s}

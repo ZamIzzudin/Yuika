@@ -59,3 +59,35 @@ export function Dot({ tone = "muted", pulse, className = "" }: { tone?: ChipTone
     tone === "ok" ? "bg-success" : tone === "warn" ? "bg-warn" : tone === "danger" ? "bg-danger" : tone === "accent" ? "bg-accent" : "bg-muted";
   return <span aria-hidden className={`inline-block size-1.5 shrink-0 rounded-full ${color} ${pulse ? "animate-pulse" : ""} ${className}`} />;
 }
+
+/* ── State persona (idle/working/done/…) — dipakai header chat & kartu delegasi ── */
+export const STATE_LABEL: Record<string, string> = {
+  idle: "menunggu",
+  thinking: "berpikir",
+  working: "bekerja",
+  awaiting_input: "menunggu persetujuan",
+  done: "selesai",
+  error: "error",
+  celebrating: "merayakan",
+};
+const STATE_TONE: Record<string, ChipTone> = {
+  idle: "muted",
+  thinking: "accent",
+  working: "accent",
+  awaiting_input: "warn",
+  done: "ok",
+  celebrating: "ok",
+  error: "danger",
+};
+
+/** Chip state persona dengan titik berdenyut saat bekerja. */
+export function StateChip({ state, className = "" }: { state: string; className?: string }) {
+  const tone = STATE_TONE[state] ?? "muted";
+  const pulse = state === "thinking" || state === "working";
+  return (
+    <Chip tone={tone} className={className}>
+      <Dot tone={tone} pulse={pulse} />
+      {STATE_LABEL[state] ?? state}
+    </Chip>
+  );
+}

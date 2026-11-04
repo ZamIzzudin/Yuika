@@ -1,12 +1,14 @@
 "use client";
 // Settings modal (feedback user sesi dev 9): menu khusus untuk hal yang tidak muat
 // di sidebar — seksi: Provider & Model (API key/base URL/model, swap panas),
-// MCP (katalog + trust + audit — dulunya sesak di dasar sidebar), + fondasi
-// seksi setelan lain ke depan.
+// MCP (katalog + trust + audit — dulunya sesak di dasar sidebar), + metering.
+// DS-1: ui/* + Tailwind semantik + ikon Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
 import type { ModelRoutes, ProviderSettings } from "@yui/contracts";
+import { Check, Prohibit, Warning, X } from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
 import { Skeleton } from "./Skeleton";
+import { Button, Card, Field, Modal, Select, TextInput } from "./ui";
 
 type Section = "provider" | "mcp" | "usage";
 
@@ -41,19 +43,13 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         setAux(c.auxModel ?? "");
       }
     } catch {
-      /* coba lagi saat buka */ 
+      /* coba lagi saat buka */
     }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   async function save() {
     setErr(null);
@@ -85,99 +81,99 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   const dirty = Boolean(
     kind !== (cfg?.kind ?? "openai-compat") ||
-    aux !== (cfg?.auxModel ?? "") ||
-    (baseUrl.trim() && baseUrl !== cfg?.baseUrl) ||
+      aux !== (cfg?.auxModel ?? "") ||
+      (baseUrl.trim() && baseUrl !== cfg?.baseUrl) ||
       (model.trim() && model !== cfg?.model) ||
       apiKey.trim() ||
       fallback.trim(),
   );
 
   return (
-    <div className="settings-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} role="dialog" aria-modal>
-      <div className="settings-modal">
-        <header className="settings-head">
-          <b>Pengaturan</b>
-          <button className="settings-close" onClick={onClose} aria-label="Tutup pengaturan">
-            ✕
-          </button>
-        </header>
-        <div className="settings-body">
-          <nav className="settings-nav">
-            {SECTIONS.map((s) => (
-              <button key={s.id} data-active={section === s.id ? "" : undefined} onClick={() => setSection(s.id)}>
-                <b>{s.label}</b>
-                <small>{s.hint}</small>
-              </button>
-            ))}
-          </nav>
-          <div className="settings-content">
-            {section === "provider" && (
-              <section aria-label="Provider dan model">
-                {cfg === null ? (
-                  <Skeleton lines={5} />
-                ) : (
-                  <>
-                {cfg && (
-                  <p className="pane-hint">
-                    Key tersimpan: <code>{cfg.hasApiKey ? cfg.keyPreview : "belum ada"}</code> · aktif:{" "}
-                    <code>{cfg.model}</code>
+    <Modal open onClose={onClose} title="Pengaturan" wide>
+      <div className="flex h-[70vh] min-h-0">
+        <nav className="flex w-[200px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line p-3">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.id}
+              aria-current={section === s.id ? "page" : undefined}
+              onClick={() => setSection(s.id)}
+              className={`flex cursor-pointer flex-col gap-0.5 rounded-lg2 border border-transparent px-3 py-2.5 text-left transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                section === s.id ? "bg-hover text-primary" : "text-dim hover:bg-hover hover:text-secondary"
+              }`}
+            >
+              <b className="text-body font-semibold">{s.label}</b>
+              <small className="text-caption">{s.hint}</small>
+            </button>
+          ))}
+        </nav>
+        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          {section === "provider" && (
+            <section aria-label="Provider dan model" className="flex flex-col gap-4">
+              {cfg === null ? (
+                <Skeleton lines={5} />
+              ) : (
+                <>
+                  <p className="text-caption text-dim">
+                    Key tersimpan: <code className="font-mono">{cfg.hasApiKey ? cfg.keyPreview : "belum ada"}</code> · aktif:{" "}
+                    <code className="font-mono">{cfg.model}</code>
                   </p>
-                )}
-                <label className="settings-field">
-                  <span>Jenis provider (P1-INF-2)</span>
-                  <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
-                    <option value="openai-compat">OpenAI-compatible (GLM / OpenRouter / …)</option>
-                    <option value="anthropic">Anthropic (Claude)</option>
-                    <option value="gemini">Google Gemini</option>
-                  </select>
-                </label>
-                <label className="settings-field">
-                  <span>Base URL ({kind === "anthropic" ? "default: https://api.anthropic.com" : kind === "gemini" ? "default: https://generativelanguage.googleapis.com" : "OpenAI-compatible"})</span>
-                  <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={kind === "anthropic" ? "https://api.anthropic.com" : kind === "gemini" ? "https://generativelanguage.googleapis.com" : "https://api.…/v1"} spellCheck={false} />
-                </label>
-                <label className="settings-field">
-                  <span>API key {cfg?.hasApiKey ? "(kosongkan untuk keep)" : ""}</span>
-                  <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={cfg?.hasApiKey ? "••••••••" : "sk-…"} spellCheck={false} />
-                </label>
-                <label className="settings-field">
-                  <span>Model utama</span>
-                  <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="glm/glm-5.1" spellCheck={false} />
-                </label>
-                <label className="settings-field">
-                  <span>Model fallback (opsional — dipakai otomatis bila model utama gagal, P0-CORE-2)</span>
-                  <input value={fallback} onChange={(e) => setFallback(e.target.value)} placeholder="glm/glm-5" spellCheck={false} />
-                </label>
-                <label className="settings-field">
-                  <span>Model aux (opsional — tugas ringan seperti pembelajaran memori; kosong = model utama, P1-INF-3)</span>
-                  <input value={aux} onChange={(e) => setAux(e.target.value)} placeholder="glm/glm-5-flash" spellCheck={false} />
-                </label>
-                <ModelRoutesEditor defaultModel={cfg.model} />
-                <div className="settings-actions">
-                  <button className="btn" onClick={() => void save()} disabled={!dirty}>
-                    Simpan
-                  </button>
-                  {flash && <small className="ok">{flash}</small>}
-                  {err && <small className="project-err">{err}</small>}
-                </div>
-                  </>
-                )}
-              </section>
-            )}
-            {section === "mcp" && (
-              <div className="settings-mcp">
-                <McpPanel />
-              </div>
-            )}
-            {section === "usage" && (
-              <section aria-label="Metering pemakaian">
-                <BudgetPanel />
-                <UsagePanel />
-              </section>
-            )}
-          </div>
+                  <Field label="Jenis provider (P1-INF-2)">
+                    <Select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+                      <option value="openai-compat">OpenAI-compatible (GLM / OpenRouter / …)</option>
+                      <option value="anthropic">Anthropic (Claude)</option>
+                      <option value="gemini">Google Gemini</option>
+                    </Select>
+                  </Field>
+                  <Field
+                    label={`Base URL (${kind === "anthropic" ? "default: https://api.anthropic.com" : kind === "gemini" ? "default: https://generativelanguage.googleapis.com" : "OpenAI-compatible"})`}
+                  >
+                    <TextInput
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder={kind === "anthropic" ? "https://api.anthropic.com" : kind === "gemini" ? "https://generativelanguage.googleapis.com" : "https://api.…/v1"}
+                      spellCheck={false}
+                    />
+                  </Field>
+                  <Field label={`API key ${cfg?.hasApiKey ? "(kosongkan untuk keep)" : ""}`}>
+                    <TextInput type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={cfg?.hasApiKey ? "••••••••" : "sk-…"} spellCheck={false} />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Model utama">
+                      <TextInput value={model} onChange={(e) => setModel(e.target.value)} placeholder="glm/glm-5.1" spellCheck={false} />
+                    </Field>
+                    <Field label="Model fallback (opsional)" hint="dipakai otomatis bila model utama gagal (P0-CORE-2)">
+                      <TextInput value={fallback} onChange={(e) => setFallback(e.target.value)} placeholder="glm/glm-5" spellCheck={false} />
+                    </Field>
+                  </div>
+                  <Field label="Model aux (opsional)" hint="tugas ringan seperti pembelajaran memori; kosong = model utama (P1-INF-3)">
+                    <TextInput value={aux} onChange={(e) => setAux(e.target.value)} placeholder="glm/glm-5-flash" spellCheck={false} />
+                  </Field>
+                  <ModelRoutesEditor defaultModel={cfg.model} />
+                  <div className="flex items-center gap-3">
+                    <Button variant="primary" onClick={() => void save()} disabled={!dirty}>
+                      Simpan
+                    </Button>
+                    {flash && <small className="text-caption text-success">{flash}</small>}
+                    {err && <small className="text-caption text-danger">{err}</small>}
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+          {section === "mcp" && (
+            <div className="max-w-[640px]">
+              <McpPanel />
+            </div>
+          )}
+          {section === "usage" && (
+            <section aria-label="Metering pemakaian" className="flex flex-col gap-5">
+              <BudgetPanel />
+              <UsagePanel />
+            </section>
+          )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -221,49 +217,56 @@ function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
 
   if (!routes) return <Skeleton lines={3} />;
   return (
-    <div className="settings-field model-routes">
-      <span className="field-title">Model per persona (P1-MDL)</span>
-      <small className="dim">
-        Kosongkan untuk ikut default (<code>{defaultModel}</code>). Anak delegasi memakai model
-        persona-nya sendiri — jadi Conductor & Coder bisa berjalan di model berbeda dalam satu run.
-      </small>
+    <Card variant="inset" className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-1">
+        <b className="text-body font-semibold text-primary">Model per persona (P1-MDL)</b>
+        <small className="text-caption leading-5 text-muted">
+          Kosongkan untuk ikut default (<code className="font-mono">{defaultModel}</code>). Anak delegasi memakai model
+          persona-nya sendiri — jadi Conductor &amp; Coder bisa berjalan di model berbeda dalam satu run.
+        </small>
+      </div>
       {/* P1-MDL-2: smoke test — verifikasi tool-call 2 langkah per model aktif */}
-      <div className="smoke-panel">
-        <button className="btn" onClick={() => void runSmoke()} disabled={smoke?.running}>
+      <div className="flex flex-col gap-2">
+        <Button size="sm" onClick={() => void runSmoke()} disabled={smoke?.running}>
           {smoke?.running ? "menguji…" : "Uji semua model"}
-        </button>
+        </Button>
         {smoke && smoke.results.length > 0 && (
-          <ul className="smoke-list">
+          <ul className="flex flex-col gap-0.5">
             {smoke.results.map((s) => (
-              <li key={s.model} data-ok={s.ok ? "" : undefined} title={s.error ?? undefined}>
-                {s.ok ? "✓" : "✕"} <code>{s.model}</code> · {(s.latencyMs / 1000).toFixed(1)}s
-                {!s.ok && <small> — fallback otomatis aktif</small>}
+              <li key={s.model} className={`flex items-center gap-1.5 text-caption ${s.ok ? "text-secondary" : "text-danger"}`} title={s.error ?? undefined}>
+                {s.ok ? <Check size={12} weight="bold" aria-hidden /> : <X size={12} weight="bold" aria-hidden />}
+                <code className="font-mono">{s.model}</code> · {(s.latencyMs / 1000).toFixed(1)}s
+                {!s.ok && <small className="text-dim"> — fallback otomatis aktif</small>}
               </li>
             ))}
           </ul>
         )}
-        {smoke && smoke.results.length === 0 && !smoke.running && <small className="dim">belum ada hasil — klik "Uji semua model"</small>}
+        {smoke && smoke.results.length === 0 && !smoke.running && (
+          <small className="text-caption text-dim">belum ada hasil — klik “Uji semua model”</small>
+        )}
       </div>
-      <table className="model-table">
+      <table className="w-full text-caption">
         <tbody>
           {routes.personas.map((p) => {
             const o = routes.overrides[p.id];
             return (
-              <tr key={p.id} data-dirty={saving === p.id ? "" : undefined}>
-                <th>{p.name}</th>
-                <td>
-                  <input
+              <tr key={p.id} className="border-b border-line last:border-0">
+                <th className="w-[130px] py-1 pr-2 text-left align-middle font-medium text-secondary">{p.name}</th>
+                <td className="py-1 pr-2">
+                  <TextInput
                     defaultValue={o?.model ?? ""}
                     placeholder={defaultModel}
                     spellCheck={false}
+                    className="h-6"
                     onBlur={(e) => void save(p.id, "model", e.target.value, routes, setRoutes, setSaving, setOk)}
                   />
                 </td>
-                <td>
-                  <input
+                <td className="py-1">
+                  <TextInput
                     defaultValue={o?.fallback ?? ""}
                     placeholder={routes.defaultFallback || "—"}
                     spellCheck={false}
+                    className="h-6"
                     onBlur={(e) => void save(p.id, "fallback", e.target.value, routes, setRoutes, setSaving, setOk)}
                   />
                 </td>
@@ -272,8 +275,8 @@ function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
           })}
         </tbody>
       </table>
-      {ok && <small className="ok">{ok}</small>}
-    </div>
+      {ok && <small className="text-caption text-success">{ok}</small>}
+    </Card>
   );
 }
 
@@ -339,16 +342,15 @@ function BudgetPanel() {
     if (!limit) return null;
     const pct = Math.min(100, Math.round((spent / limit) * 100));
     return (
-      <div className="budget-bar" title={`${pct}% dari limit`}>
-        <div style={{ width: `${pct}%` }} data-hot={spent >= limit ? "" : undefined} />
-        <span>{pct}%</span>
+      <div className="relative mt-1 h-4 w-full overflow-hidden rounded-pill bg-inset" title={`${pct}% dari limit`}>
+        <div className={`h-full rounded-pill ${spent >= limit ? "bg-danger" : "bg-accent"}`} style={{ width: `${pct}%` }} />
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] text-secondary">{pct}%</span>
       </div>
     );
   };
   const numField = (key: "dailyLimit" | "totalLimit" | "maxTurnsPerMinute" | "maxDelegationConcurrency", label: string, placeholder: string) => (
-    <label className="field">
-      <span className="field-title">{label}</span>
-      <input
+    <Field label={label} className="col-span-1">
+      <TextInput
         inputMode="decimal"
         placeholder={placeholder}
         value={draft[key] ?? (st.config[key] === null ? "" : String(st.config[key]))}
@@ -358,68 +360,67 @@ function BudgetPanel() {
           const raw = draft[key]!.trim();
           const n = Number(raw.replace(",", "."));
           const v = raw === "" ? null : Number.isFinite(n) && n > 0 ? n : undefined;
-          if (v === undefined) { setDraft(({ [key]: _, ...rest }) => rest); return; } // tidak valid → batal
+          if (v === undefined) {
+            setDraft(({ [key]: _, ...rest }) => rest);
+            return; // tidak valid → batal
+          }
           save({ [key]: v } as Record<string, number | null>);
           setDraft(({ [key]: _, ...rest }) => rest);
         }}
       />
-    </label>
+    </Field>
   );
   return (
-    <div className="budget-panel">
-      <div className="budget-grid">
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div>
-          <span className="field-title">Hari ini</span>
-          <p>
+          <span className="text-caption font-semibold tracking-wide text-dim uppercase">Hari ini</span>
+          <p className="mt-1 text-body text-primary">
             <b>{fmtC(st.spentToday)}</b>
-            {st.config.dailyLimit !== null ? <> / {fmtC(st.config.dailyLimit)}</> : <small className="dim"> (tanpa batas)</small>}
+            {st.config.dailyLimit !== null ? <> / {fmtC(st.config.dailyLimit)}</> : <small className="text-dim"> (tanpa batas)</small>}
           </p>
           {bar(st.spentToday, st.config.dailyLimit)}
         </div>
         <div>
-          <span className="field-title">Total</span>
-          <p>
+          <span className="text-caption font-semibold tracking-wide text-dim uppercase">Total</span>
+          <p className="mt-1 text-body text-primary">
             <b>{fmtC(st.spentTotal)}</b>
-            {st.config.totalLimit !== null ? <> / {fmtC(st.config.totalLimit)}</> : <small className="dim"> (tanpa batas)</small>}
+            {st.config.totalLimit !== null ? <> / {fmtC(st.config.totalLimit)}</> : <small className="text-dim"> (tanpa batas)</small>}
           </p>
           {bar(st.spentTotal, st.config.totalLimit)}
         </div>
         <div>
-          <span className="field-title">Burn-rate</span>
-          <p>
-            <b>{fmtC(st.burnRatePerHour)}</b>/j <small className="dim">(rata² 24 j)</small>
+          <span className="text-caption font-semibold tracking-wide text-dim uppercase">Burn-rate</span>
+          <p className="mt-1 text-body text-primary">
+            <b>{fmtC(st.burnRatePerHour)}</b>/j <small className="text-dim">(rata² 24 j)</small>
           </p>
-          <p className="dim">
-            Hold aktif: {fmtC(st.activeHolds)}
-          </p>
+          <p className="text-caption text-muted">Hold aktif: {fmtC(st.activeHolds)}</p>
         </div>
       </div>
       {(st.dailyLimitHit || st.totalLimitHit) && (
-        <p className={st.config.mode === "block" ? "budget-hit" : "pane-hint"}>
-          {st.config.mode === "block"
-            ? "⛔ Limit tercapai — turn baru DITOLAK (mode block)."
-            : "⚠ Limit tercapai (mode warn) — turn tetap berjalan."}
+        <p className={`flex items-center gap-2 rounded-md2 border px-3 py-1.5 text-caption ${st.config.mode === "block" ? "border-danger/30 bg-danger-soft text-danger" : "border-line bg-hover text-muted"}`}>
+          {st.config.mode === "block" ? <Prohibit size={14} aria-hidden /> : <Warning size={14} aria-hidden />}
+          {st.config.mode === "block" ? "Limit tercapai — turn baru DITOLAK (mode block)." : "Limit tercapai (mode warn) — turn tetap berjalan."}
         </p>
       )}
       {st.coverage !== "full" && (
-        <p className="pane-hint">
+        <p className="text-caption text-dim">
           {st.coverage === "none"
             ? "Angka biaya butuh harga model — isi di editor Harga model di bawah."
             : "Sebagian model belum dihargai — angka = batas bawah (jujur, bukan 0)."}
         </p>
       )}
-      <div className="budget-limits">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {numField("dailyLimit", `Limit harian (${cur})`, "— tanpa batas")}
         {numField("totalLimit", `Limit total (${cur})`, "— tanpa batas")}
         {numField("maxTurnsPerMinute", "Turn / menit", "— tanpa batas")}
         {numField("maxDelegationConcurrency", "Delegasi paralel", "— default 2")}
-        <label className="field">
-          <span className="field-title">Saat limit tercapai</span>
-          <select value={st.config.mode} onChange={(e) => save({ mode: e.target.value as "warn" | "block" })}>
+        <Field label="Saat limit tercapai">
+          <Select value={st.config.mode} onChange={(e) => save({ mode: e.target.value as "warn" | "block" })}>
             <option value="warn">warn — peringatkan saja</option>
             <option value="block">block — tolak turn</option>
-          </select>
-        </label>
+          </Select>
+        </Field>
       </div>
     </div>
   );
@@ -456,8 +457,7 @@ function UsagePanel() {
     if (!p || (!p.inputPerMillion && !p.outputPerMillion)) return null;
     return (m.promptTokens / 1_000_000) * p.inputPerMillion + (m.outputTokens / 1_000_000) * p.outputPerMillion;
   };
-  const pricedCurrency =
-    Object.entries(prices ?? {}).find(([, p]) => p.inputPerMillion || p.outputPerMillion)?.[1].currency ?? "USD";
+  const pricedCurrency = Object.entries(prices ?? {}).find(([, p]) => p.inputPerMillion || p.outputPerMillion)?.[1].currency ?? "USD";
   const fmtCost = (c: number | null) => (c === null ? "—" : `${c.toLocaleString("id-ID", { maximumFractionDigits: c < 100 ? 2 : 0 })} ${pricedCurrency}`);
   const totalCost = data ? data.summary.byModel.reduce((acc, m) => acc + (cost(m) ?? 0), 0) : 0;
   const anyPriced = data?.summary.byModel.some((m) => cost(m) !== null) ?? false;
@@ -470,116 +470,98 @@ function UsagePanel() {
     });
     if (r.ok) setPrices(await r.json());
   }
+
+  const Table = ({ head, children, label }: { head: string[]; children: React.ReactNode; label: string }) => (
+    <table className="w-full text-caption" aria-label={label}>
+      <thead>
+        <tr className="border-b border-line-strong">
+          {head.map((h) => (
+            <th key={h} className="py-1 pr-3 text-left font-medium text-dim">{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>{children}</tbody>
+    </table>
+  );
+
   return (
-    <div className="usage-panel">
-      <div className="usage-range">
+    <div className="flex flex-col gap-3">
+      <div className="flex gap-2">
         {[
           [0, "Semua"],
           [24, "24 jam"],
           [1, "1 jam"],
         ].map(([h, label]) => (
-          <button key={h} className="btn secondary" data-active={hours === h ? "" : undefined} onClick={() => setHours(h as number)}>
+          <Button key={h} size="sm" active={hours === h} onClick={() => setHours(h as number)}>
             {label as string}
-          </button>
+          </Button>
         ))}
       </div>
       {data === null ? (
         <Skeleton lines={4} />
       ) : data.summary.calls === 0 ? (
-        <p className="pane-hint">Belum ada pemakaian tercatat. Metering aktif otomatis — angka hanya dari laporan usage provider (tanpa estimasi).</p>
+        <p className="text-caption text-dim">Belum ada pemakaian tercatat. Metering aktif otomatis — angka hanya dari laporan usage provider (tanpa estimasi).</p>
       ) : (
         <>
-          <p className="usage-total">
-            <b>{fmt(data.summary.calls)}</b> panggilan model · <b>{fmt(data.summary.promptTokens)}</b> token masuk ·{" "}
-            <b>{fmt(data.summary.outputTokens)}</b> token keluar
-            {anyPriced && <> · est. biaya <b>{fmtCost(totalCost)}</b></>}
-            {data.summary.windowStart && <small className="dim"> (sejak {new Date(data.summary.windowStart).toLocaleString("id-ID")})</small>}
+          <p className="text-caption text-secondary">
+            <b className="text-primary">{fmt(data.summary.calls)}</b> panggilan model · <b className="text-primary">{fmt(data.summary.promptTokens)}</b> token masuk ·{" "}
+            <b className="text-primary">{fmt(data.summary.outputTokens)}</b> token keluar
+            {anyPriced && (
+              <>
+                {" "}· est. biaya <b className="text-primary">{fmtCost(totalCost)}</b>
+              </>
+            )}
+            {data.summary.windowStart && <span className="text-dim"> (sejak {new Date(data.summary.windowStart).toLocaleString("id-ID")})</span>}
           </p>
-          <table className="usage-table" aria-label="Pemakaian per persona">
-            <thead>
-              <tr>
-                <th>Persona</th>
-                <th>Panggilan</th>
-                <th>Tok masuk</th>
-                <th>Tok keluar</th>
+          <Table label="Pemakaian per persona" head={["Persona", "Panggilan", "Tok masuk", "Tok keluar"]}>
+            {data.summary.byPersona.map((r) => (
+              <tr key={r.key} className="border-b border-line">
+                <td className="py-1 pr-3">{r.key.replace("yui-", "")}</td>
+                <td className="py-1 pr-3">{fmt(r.calls)}</td>
+                <td className="py-1 pr-3">{fmt(r.promptTokens)}</td>
+                <td className="py-1 pr-3">{fmt(r.outputTokens)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {data.summary.byPersona.map((r) => (
-                <tr key={r.key}>
-                  <td>{r.key.replace("yui-", "")}</td>
-                  <td>{fmt(r.calls)}</td>
-                  <td>{fmt(r.promptTokens)}</td>
-                  <td>{fmt(r.outputTokens)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <table className="usage-table" aria-label="Pemakaian per model">
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th>Panggilan</th>
-                <th>Tok masuk</th>
-                <th>Tok keluar</th>
-                <th>Est. biaya</th>
+            ))}
+          </Table>
+          <Table label="Pemakaian per model" head={["Model", "Panggilan", "Tok masuk", "Tok keluar", "Est. biaya"]}>
+            {data.summary.byModel.map((r) => (
+              <tr key={r.key} className="border-b border-line">
+                <td className="py-1 pr-3"><code className="font-mono">{r.key}</code></td>
+                <td className="py-1 pr-3">{fmt(r.calls)}</td>
+                <td className="py-1 pr-3">{fmt(r.promptTokens)}</td>
+                <td className="py-1 pr-3">{fmt(r.outputTokens)}</td>
+                <td className="py-1 pr-3">{fmtCost(cost(r))}</td>
               </tr>
-            </thead>
-            <tbody>
-              {data.summary.byModel.map((r) => (
-                <tr key={r.key}>
-                  <td>
-                    <code>{r.key}</code>
-                  </td>
-                  <td>{fmt(r.calls)}</td>
-                  <td>{fmt(r.promptTokens)}</td>
-                  <td>{fmt(r.outputTokens)}</td>
-                  <td>{fmtCost(cost(r))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </Table>
           {data.matrix && data.matrix.length > 0 && (
-            <>
-              <span className="field-title">Attribution biaya (persona × model)</span>
-              <table className="usage-table" aria-label="Attribution biaya persona per model">
-                <thead>
-                  <tr>
-                    <th>Persona</th>
-                    <th>Model</th>
-                    <th>Panggilan</th>
-                    <th>Token</th>
-                    <th>Est. biaya</th>
+            <div className="flex flex-col gap-2">
+              <span className="text-caption font-semibold tracking-wide text-dim uppercase">Attribution biaya (persona × model)</span>
+              <Table label="Attribution biaya persona per model" head={["Persona", "Model", "Panggilan", "Token", "Est. biaya"]}>
+                {data.matrix.map((r) => (
+                  <tr key={`${r.personaId}|${r.model}`} className="border-b border-line">
+                    <td className="py-1 pr-3">{r.personaId.replace("yui-", "")}</td>
+                    <td className="py-1 pr-3"><code className="font-mono">{r.model}</code></td>
+                    <td className="py-1 pr-3">{fmt(r.calls)}</td>
+                    <td className="py-1 pr-3">{fmt(r.promptTokens + r.outputTokens)}</td>
+                    <td className="py-1 pr-3">{r.cost === null ? "—" : `${r.cost.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${r.currency}`}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {data.matrix.map((r) => (
-                    <tr key={`${r.personaId}|${r.model}`}>
-                      <td>{r.personaId.replace("yui-", "")}</td>
-                      <td>
-                        <code>{r.model}</code>
-                      </td>
-                      <td>{fmt(r.calls)}</td>
-                      <td>{fmt(r.promptTokens + r.outputTokens)}</td>
-                      <td>{r.cost === null ? "—" : `${r.cost.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${r.currency}`}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
+                ))}
+              </Table>
+            </div>
           )}
           <PriceBookEditor models={data.summary.byModel.map((m) => m.key)} prices={prices} onSave={savePrice} />
           {data.recent && data.recent.length > 0 && (
-            <>
-              <span className="field-title">Terbaru</span>
-              <ul className="usage-recent">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-caption font-semibold tracking-wide text-dim uppercase">Terbaru</span>
+              <ul className="flex flex-col gap-0.5 text-caption text-muted">
                 {data.recent.map((e, i) => (
-                  <li key={i}>
-                    <code>{e.model}</code> · {e.personaId.replace("yui-", "")} · {fmt(e.promptTokens)}+{fmt(e.outputTokens)} tok · {e.latencyMs} ms
+                  <li key={i} className="flex flex-wrap gap-x-2">
+                    <code className="font-mono">{e.model}</code> · {e.personaId.replace("yui-", "")} · {fmt(e.promptTokens)}+{fmt(e.outputTokens)} tok · {e.latencyMs} ms
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
         </>
       )}
@@ -601,33 +583,33 @@ function PriceBookEditor({
   const rows = Array.from(new Set([...(prices ? Object.keys(prices) : []), ...models]));
   const [draft, setDraft] = useState<Record<string, { i: string; o: string; c: "USD" | "IDR" }>>({});
 
-  const rowOf = (m: string) => draft[m] ?? {
-    i: String(prices?.[m]?.inputPerMillion ?? ""),
-    o: String(prices?.[m]?.outputPerMillion ?? ""),
-    c: prices?.[m]?.currency ?? "USD",
-  };
+  const rowOf = (m: string) =>
+    draft[m] ?? {
+      i: String(prices?.[m]?.inputPerMillion ?? ""),
+      o: String(prices?.[m]?.outputPerMillion ?? ""),
+      c: prices?.[m]?.currency ?? "USD",
+    };
   return (
-    <details className="usage-prices">
-      <summary>
+    <details className="rounded-md2 border border-line bg-inset px-3 py-2">
+      <summary className="cursor-pointer list-none text-caption text-secondary select-none [&::-webkit-details-marker]:hidden">
         Harga model (indikator biaya) — per 1 juta token
       </summary>
-      <p className="pane-hint">
-        Isi sesuai tagihan provider-mu. Model tanpa harga tidak dihitung biayanya (bukan nol) — angka token metering
-        tetap akurat apa pun.
+      <p className="mt-2 text-caption leading-5 text-dim">
+        Isi sesuai tagihan provider-mu. Model tanpa harga tidak dihitung biayanya (bukan nol) — angka token metering tetap akurat apa pun.
       </p>
-      <table className="usage-table" aria-label="Harga per model">
+      <table className="mt-2 w-full text-caption" aria-label="Harga per model">
         <thead>
-          <tr>
-            <th>Model</th>
-            <th>Masuk / 1jt</th>
-            <th>Keluar / 1jt</th>
-            <th> Mata uang</th>
+          <tr className="border-b border-line-strong">
+            <th className="py-1 pr-3 text-left font-medium text-dim">Model</th>
+            <th className="py-1 pr-3 text-left font-medium text-dim">Masuk / 1jt</th>
+            <th className="py-1 pr-3 text-left font-medium text-dim">Keluar / 1jt</th>
+            <th className="py-1 text-left font-medium text-dim">Mata uang</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={4} className="dim">
+              <td colSpan={4} className="py-2 text-dim">
                 Belum ada model tercatat — kirim satu turn chat dulu.
               </td>
             </tr>
@@ -641,33 +623,32 @@ function PriceBookEditor({
                   currency: r.c,
                 });
               return (
-                <tr key={m}>
-                  <td>
-                    <code>{m}</code>
-                  </td>
-                  <td>
-                    <input
-                      className="price-input"
+                <tr key={m} className="border-b border-line last:border-0">
+                  <td className="py-1 pr-3"><code className="font-mono">{m}</code></td>
+                  <td className="py-1 pr-3">
+                    <TextInput
                       inputMode="decimal"
                       value={r.i}
                       placeholder="—"
+                      className="h-6 w-24"
                       onChange={(e) => setDraft((d) => ({ ...d, [m]: { ...r, i: e.target.value } }))}
                       onBlur={commit}
                     />
                   </td>
-                  <td>
-                    <input
-                      className="price-input"
+                  <td className="py-1 pr-3">
+                    <TextInput
                       inputMode="decimal"
                       value={r.o}
                       placeholder="—"
+                      className="h-6 w-24"
                       onChange={(e) => setDraft((d) => ({ ...d, [m]: { ...r, o: e.target.value } }))}
                       onBlur={commit}
                     />
                   </td>
-                  <td>
-                    <select
+                  <td className="py-1">
+                    <Select
                       value={r.c}
+                      className="h-6 w-20"
                       onChange={(e) => {
                         const c = e.target.value as "USD" | "IDR";
                         setDraft((d) => ({ ...d, [m]: { ...r, c } }));
@@ -676,7 +657,7 @@ function PriceBookEditor({
                     >
                       <option value="USD">USD</option>
                       <option value="IDR">IDR</option>
-                    </select>
+                    </Select>
                   </td>
                 </tr>
               );

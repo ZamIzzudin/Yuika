@@ -77,3 +77,16 @@
 3. **Panduan**: docs/DESIGN-SYSTEM.md — semua fitur baru wajib pakai komponen
    `ui/*` + utility semantik (bg-surface, text-muted, rounded-card, …).
    Verifikasi smoke: restart dev server, halaman Dungeon render normal.
+
+### M21 (P1) — DS-1 batch 2: ChatView + SettingsModal + shell + Phosphor
+1. **Hapus folder `.next` lalu `npm run dev`** (cache CSS lama bisa basi).
+2. Shell: sidebar & header pakai komponen global; tab workspace kini gaya TabList
+   (kotak atas, bukan garis bawah) dengan titik status berdenyut saat agent
+   bekerja/approval menunggu; menu Dungeon & Pengaturan di kaki sidebar dengan
+   ikon Phosphor (pedang / titik).
+3. Chat: bubble user & pesan agent serupa; ikon Phosphor (kirim = paper plane,
+   stop, 💭→ikon otak, ⚡ auto-approve, chip ✎/🗜/🛠); langkah kerja tetap lipat.
+4. Pengaturan: modal glass sama lebar; seksi nav sama; semua input Field seragam;
+   tabel metering & editor harga rapi; ikon ✓/✕/⚠/⛔ Phosphor.
+5. Smoke umum: kirim chat 1 turn, buka Trace, buka Dungeon (3 tab), Mapping Skill,
+   Pengaturan (3 seksi) — tak ada layout rusak/konsol error.
