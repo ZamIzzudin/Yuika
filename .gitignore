@@ -14,3 +14,5 @@ model-overrides.json
 packages/skills/*/.usage.json
 .tmp-*.txt
 .tmp-*.log
+approval-mode.json
+skill-bindings.json
