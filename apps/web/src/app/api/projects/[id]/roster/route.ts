@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { SaveRosterRequest } from "@yui/contracts";
 import { getRuntime } from "@/lib/runtime";
 
-/** GET /api/projects/:id/roster — roster dari project.yaml (ter-replay via file). */
+/** GET /api/projects/:id/roster — roster dari project.yaml + readiness skill (P1-DUN-5). */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!getRuntime().getProject(id)) return NextResponse.json({ error: "project tidak ditemukan" }, { status: 404 });
-  return NextResponse.json({ roster: getRuntime().getProjectRoster(id) });
+  return NextResponse.json({ roster: getRuntime().getProjectRoster(id), readiness: getRuntime().getRosterReadiness(id) });
 }
 
 /** PUT /api/projects/:id/roster — simpan roster utuh ke project.yaml. */

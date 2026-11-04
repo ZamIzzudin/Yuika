@@ -209,3 +209,20 @@ export const DungeonRun = z.object({
   summary: z.string().nullable().default(null),
 });
 export type DungeonRun = z.infer<typeof DungeonRun>;
+
+/** Hasil eval buta satu skill (`.eval.json` di folder skill) — P1-DUN-3. */
+export const SkillEval = z.object({
+  verdict: z.enum(["pending", "pass", "fail"]),
+  reason: z.string().nullable(),
+  judgeSessionId: z.string(),
+  at: z.number().int(),
+});
+export type SkillEval = z.infer<typeof SkillEval>;
+
+/** P1-DUN-5: readiness satu fase untuk satu persona (skill siap = tested/ready). */
+export const PhaseReadiness = z.object({
+  phase: z.enum(WORKFLOW_PHASES),
+  ready: z.boolean(),
+  skills: z.array(z.string()).default([]),
+});
+export type PhaseReadiness = z.infer<typeof PhaseReadiness>;

@@ -154,6 +154,7 @@ export function ProjectTabs({
     return () => clearInterval(t);
   }, []);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
+  const [readiness, setReadiness] = useState<{ personaId: string; ready: boolean; phases: { phase: string; ready: boolean; skills: string[] }[] }[]>([]);
   const [title, setTitle] = useState("");
   const [pick, setPick] = useState("");
   const [role, setRole] = useState("");
@@ -173,7 +174,11 @@ export function ProjectTabs({
         fetch("/api/mcp/servers"),
       ]);
       if (t.ok) setTasks(((await t.json()) as { tasks: TaskItem[] }).tasks);
-      if (r.ok) setRoster(((await r.json()) as { roster: RosterEntry[] }).roster);
+      if (r.ok) {
+        const rd = (await r.json()) as { roster: RosterEntry[]; readiness?: typeof readiness };
+        setRoster(rd.roster);
+        if (rd.readiness) setReadiness(rd.readiness);
+      }
       if (m.ok)
         setMcpServers(
           ((await m.json()) as { servers: { name: string; declared: boolean }[] }).servers.filter((s) => s.declared),
@@ -364,6 +369,15 @@ export function ProjectTabs({
                       <b>{p?.name ?? r.personaId}</b>
                       <small>{r.role}</small>
                       {r.phases.length > 0 && <em>{r.phases.join(" · ")}</em>}
+                      {/* P1-DUN-5: gating per fase — ✕ = belum ada skill siap (latih di Dungeon) */}
+                      {readiness
+                        .find((x) => x.personaId === r.personaId)
+                        ?.phases.filter((ph) => ph.skills.length > 0 || !ph.ready)
+                        .map((ph) => (
+                          <em key={ph.phase} className="roster-phase" data-r={ph.ready ? "ok" : "gap"} title={ph.ready ? `skill siap: ${ph.skills.join(", ")}` : "belum ada skill siap untuk fase ini — latih persona di Dungeon (tab Skill)"}>
+                            {ph.phase} {ph.ready ? "✓" : "✕"}
+                          </em>
+                        ))}
                       {r.mcp.map((b) => (
                         <em key={b.server} className="roster-mcp">
                           MCP:{b.server}

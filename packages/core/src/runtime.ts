@@ -39,9 +39,12 @@ import { FileRevisionStore } from "./project/revisions.js";
 import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
+import { computeReadiness } from "./project/readiness.js";
 import { taskTreeFromEvents } from "./project/tasktree.js";
 import { loadMissions, missionDir } from "./dungeon/mission.js";
 import { createDungeonRunner, sweepStaleRuns } from "./dungeon/runner.js";
+import { createSkillEvaluator, missionForSkill, readEval } from "./dungeon/eval.js";
+import { setSkillStatus } from "./skills/manager.js";
 
 export interface YuiRuntimeConfig {
   provider: { baseUrl: string; apiKey: string; model: string };
@@ -66,16 +69,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   store.expirePendingApprovals();
 
   // ---- P1-DUN-1: dungeon runner (arena latihan; ruangan = project sandbox) ----
+  /** Ruangan misi = project kind dungeon, root = folder misi (sandbox sesi). */
+  function ensureDungeonRoom(m: { id: string; title: string; goal: string }): string {
+    const id = `p_dungeon-${m.id}`;
+    const existing = projectStore.getProject(id);
+    if (existing) return id;
+    const rootPath = `dungeons/${m.id}`;
+    for (const sub of ["code", "reports"]) fs.mkdirSync(path.join(paths.workspacePath, rootPath, sub), { recursive: true });
+    return projectStore.createProject({ id, name: `Dungeon: ${m.title}`, description: m.goal.slice(0, 200), rootPath, kind: "dungeon" }).id;
+  }
   const dungeonRunner = createDungeonRunner({
     workspacePath: paths.workspacePath,
-    ensureRoom: (m) => {
-      const id = `p_dungeon-${m.id}`;
-      const existing = projectStore.getProject(id);
-      if (existing) return id;
-      const rootPath = `dungeons/${m.id}`; // folder misi = workspace sandbox
-      for (const sub of ["code", "reports"]) fs.mkdirSync(path.join(paths.workspacePath, rootPath, sub), { recursive: true });
-      return projectStore.createProject({ id, name: `Dungeon: ${m.title}`, description: m.goal.slice(0, 200), rootPath, kind: "dungeon" }).id;
-    },
+    ensureRoom: (m) => ensureDungeonRoom(m),
     createSession: (personaId, projectId) => createSession(personaId, projectId).sessionId,
     runTurn: (sessionId, text) => runTurnInternal(sessionId, text),
     lastAssistantText: (sessionId) => {
@@ -84,6 +89,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
   });
   sweepStaleRuns(paths.workspacePath, loadMissions(paths.workspacePath)); // restart-safe
+
+  // ---- P1-DUN-3: eval buta tested→ready (hakim = sesi fresh, lihat §13.8) ----
+  const skillEvaluator = createSkillEvaluator({
+    createJudgeSession: (personaId, projectId) => createSession(personaId, projectId).sessionId,
+    ensureRoom: (m) => ensureDungeonRoom(m),
+    runTurn: (sessionId, text) => runTurnInternal(sessionId, text),
+    lastAssistantText: (sessionId) => {
+      const msgs = store.getMessages(sessionId).filter((m) => m.role === "assistant");
+      return msgs.length ? (msgs[msgs.length - 1]!.content ?? null) : null;
+    },
+    promote: (skillName) => setSkillStatus(paths.skillsDir, skillName, "ready"),
+  });
   const projectStore = new ProjectStore(paths.dbPath);
   // Settings: provider & model bisa di-swap panas (updateProviderSettings) —
   // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
@@ -592,8 +609,21 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const skills = safeList(() => listSkills(paths.skillsDir));
       return {
         drafts: drafts.map((s) => ({ slug: path.basename(s.dir), name: s.name, description: s.description, body: s.body, usage: readUsage(s.dir), status: s.status, personas: s.personas })),
-        skills: skills.map((s) => ({ name: s.name, description: s.description, usage: readUsage(s.dir), status: s.status, personas: s.personas })),
+        skills: skills.map((s) => ({ name: s.name, description: s.description, usage: readUsage(s.dir), status: s.status, personas: s.personas, eval: readEval(s.dir) })),
       };
+    },
+    /** P1-DUN-3: eval buta skill `tested` (nama/slug) — fire-and-forget;
+     *  hasil di-polling via listSkillsWithDrafts (field `eval`). */
+    evalSkill: (nameOrSlug: string) => {
+      const skill = listSkills(paths.skillsDir).find((s) => s.name === nameOrSlug || path.basename(s.dir) === nameOrSlug);
+      if (!skill) throw new Error(`skill aktif '${nameOrSlug}' tidak ditemukan`);
+      if (skill.status !== "tested") throw new Error(`skill '${skill.name}' berstatus ${skill.status} — hanya skill 'tested' yang bisa dieval (accept draft dulu)`);
+      const ev = readEval(skill.dir);
+      if (ev?.verdict === "pending") throw new Error("eval sedang berjalan — tunggu selesai");
+      const mission = missionForSkill(loadMissions(paths.workspacePath), skill.name);
+      if (!mission) throw new Error(`tidak ada misi dengan target skill '${skill.name}' — eval buta butuh kriteria acceptance dari misi`);
+      void skillEvaluator.evaluate(mission, { name: skill.name, dir: skill.dir });
+      return { ok: true, skill: skill.name };
     },
     updateSkillDraft: (input: { slug: string; name: string; description: string; body: string }) =>
       updateDraft(paths.skillsDir, input.slug, input.name, input.description, input.body),
@@ -638,6 +668,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     // ---- roster project (P1-PRJ-3) ----
     getProjectRoster: (projectId: string) => loadRoster(projectRoot(projectId)),
+    /** P1-DUN-5: skill readiness persona di roster (assign gating) — dari
+     *  inventory skill global (tested/ready = siap; draft tidak dihitung). */
+    getRosterReadiness: (projectId: string) =>
+      computeReadiness(
+        loadRoster(projectRoot(projectId)),
+        listSkills(paths.skillsDir).map((s) => ({ name: s.name, category: s.frontmatter.metadata?.yui?.category, personas: s.personas, status: s.status })),
+      ),
     saveProjectRoster: (projectId: string, roster: RosterEntryIn[]): RosterEntryIn[] => {
       projectRoot(projectId); // validasi project ada
       const known = new Set(listPersonas(paths.personasDir).map((p) => p.manifest.id));

@@ -1159,3 +1159,10 @@ html, body {
 .dungeon-run[data-s="failed"] { color: var(--yui-danger, #e5484d); }
 .skill-status[data-s="tested"] { color: var(--yui-warn); }
 .skill-personas { color: var(--yui-text-dim); }
+.skill-eval { color: var(--yui-text-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.skill-eval[data-v="pass"] { color: var(--yui-ok); }
+.skill-eval[data-v="fail"] { color: var(--yui-danger, #e5484d); }
+.skill-eval-btn { padding: 1px 10px; font-size: var(--yui-text-sm); }
+/* P1-DUN-5: gating fase roster — siap/belum per fase workflow. */
+.roster-phase[data-r="ok"] { color: var(--yui-ok); }
+.roster-phase[data-r="gap"] { color: var(--yui-danger, #e5484d); font-style: normal; }

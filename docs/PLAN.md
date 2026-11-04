@@ -1023,6 +1023,10 @@ pilih persona → jalankan MISI (mission.yaml: goal, sumber belajar, acceptance,
 > `workspace/dungeons/<slug>/mission.yaml` (zod, seed "riset Phaser"), runner
 > async + persist; lifecycle skill `draft→tested→ready` di frontmatter
 > (`metadata.yui.status`) — accept = tested, blind-eval (DUN-3) → ready.
+> **DUN-3 + DUN-5 jalan v0 (dev-10):** eval buta = sesi hakim fresh (kriteria
+> acceptance + bukti folder + skill_view; verdict baris terakhir), lulus →
+> ready, hasil di `.eval.json`; roster menampilkan readiness per fase (chip ✓/✕
+> dengan hint latih di Dungeon).
      ASSIGN GATING: roster project menampilkan skill readiness —
      persona tanpa skill yang dibutuhkan fase ditandai “belum siap”
 ```

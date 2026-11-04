@@ -16,6 +16,7 @@ interface SkillRow {
   usage?: { views: number; patches: number; used: number };
   status?: "draft" | "tested" | "ready";
   personas?: string[];
+  eval?: { verdict: "pending" | "pass" | "fail"; reason: string | null; judgeSessionId: string; at: number } | null;
 }
 interface DungeonRow {
   mission: { id: string; title: string; persona: string; goal: string; resources: string[]; acceptance: string[]; targetSkill: { name: string; description: string } };
@@ -66,6 +67,22 @@ export function SkillsTab() {
         body: JSON.stringify({ missionId }),
       });
       if (!r.ok) setRunErr((((await r.json()) as { error?: string }).error ?? "gagal menjalankan misi") + "");
+      await refresh();
+    } catch {
+      setRunErr("gagal menghubungi server");
+    }
+  }
+
+  /** P1-DUN-3: eval buta skill tested — lulus → ready (polling 5 dtk mengambil hasil). */
+  async function evalSkill(name: string) {
+    setRunErr(null);
+    try {
+      const r = await fetch("/api/skills/eval", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug: name }),
+      });
+      if (!r.ok) setRunErr((((await r.json()) as { error?: string }).error ?? "gagal memulai eval") + "");
       await refresh();
     } catch {
       setRunErr("gagal menghubungi server");
@@ -205,6 +222,24 @@ export function SkillsTab() {
                   )}
                   {s.personas && s.personas.length > 0 && <span className="skill-personas"> · {s.personas.map((p) => p.replace("yui-", "")).join(", ")}</span>}
                 </small>
+                {(s.status === "tested" || s.eval) && (
+                  <small className="skill-eval" data-v={s.eval?.verdict ?? "none"}>
+                    {s.eval?.verdict === "pending" ? (
+                      "◐ evaluasi buta berjalan… (hakim sedang memeriksa bukti)"
+                    ) : s.eval?.verdict === "pass" ? (
+                      `✓ lulus eval buta${s.eval.reason ? ` — ${s.eval.reason.slice(0, 120)}` : ""}`
+                    ) : s.eval?.verdict === "fail" ? (
+                      `✕ belum lulus — ${s.eval.reason?.slice(0, 160) ?? "tanpa alasan"}`
+                    ) : (
+                      "belum pernah dieval"
+                    )}
+                    {s.status === "tested" && s.eval?.verdict !== "pending" && (
+                      <button className="btn secondary skill-eval-btn" disabled={busy} onClick={() => void evalSkill(s.name)}>
+                        Eval buta
+                      </button>
+                    )}
+                  </small>
+                )}
               </li>
             ))}
           </ul>

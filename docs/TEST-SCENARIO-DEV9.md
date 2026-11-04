@@ -192,7 +192,12 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
 2. **MCP reconnect**: trust satu server MCP → matikan paksa prosesnya (Task
    Manager) → status di panel MCP berubah "sambung ulang…" (backoff) → hidupkan
    lagi → otomatis tersambung; gagal 5× → "parkir" + tombol ↻.
-3. **Dungeon**: tab Skill → section Dungeon → misi "Riset dokumentasi Phaser"
+3. **Dungeon + lifecycle penuh**: tab Skill → section Dungeon → misi "Riset dokumentasi Phaser"
    → Jalankan → persona Scholar bekerja di sandbox (progress via status run);
-   skill hasil misi muncul sebagai DRAF skill → Terima → status "◐ diuji
-   manusia" (lifecycle draft→tested→ready).
+   skill hasil misi muncul sebagai DRAF skill → Terima → status "◐ diuji manusia"
+   → tombol **Eval buta** → hakim fresh memeriksa bukti (acceptance + file di
+   sandbox) → lulus = "✓ lulus eval buta" & status jadi siap; gagal = alasan
+   tampil + bisa ulang eval.
+4. **Assign gating**: tab Roster project → persona dengan fase aktif menampilkan
+   chip per fase (`research ✓` / `research ✕`) — ✕ = belum ada skill siap,
+   tooltip menyarankan latih di Dungeon (tab Skill).
