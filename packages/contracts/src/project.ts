@@ -146,6 +146,24 @@ export const DelegationEdge = z.object({
 });
 export type DelegationEdge = z.infer<typeof DelegationEdge>;
 
+/** P0-DEL-1: job delegasi PERSIST di DB — audit & status lintas restart.
+ *  Sumber kebenaran status delegasi (event delegation.* tetap jalan untuk UI live). */
+export const DelegationJob = z.object({
+  id: z.number(),
+  parentSessionId: z.string(),
+  parentTurnId: z.string(),
+  childSessionId: z.string(),
+  personaId: z.string(),
+  goal: z.string(),
+  /** running = proses lama yang mati bersama server; interrupted = ditutup boot-heal. */
+  status: z.enum(["running", "done", "error", "interrupted"]),
+  summary: z.string().nullish(),
+  error: z.string().nullish(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+export type DelegationJob = z.infer<typeof DelegationJob>;
+
 // Tasklist per project (P1-PRJ-4 memakai kontrak ini; TaskTree = D19 menyusul).
 // TaskList flat (P1-PRJ-4) — row di project_tasks.
 export const TaskItem = z.object({

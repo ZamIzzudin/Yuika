@@ -693,6 +693,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       await fs.promises.mkdir(path.dirname(abs), { recursive: true });
       await fs.promises.writeFile(abs, data);
     },
+    /** P0-DEL-1: riwayat job delegasi persist (audit/monitor lintas restart).
+     *  projectId = project sesi parent; undefined/null = semua. */
+    delegationJobs: (projectId?: string | null) => store.listDelegationJobs(projectId ?? undefined),
     /** Diagram Tim: SEMUA edge delegasi lintas sesi di proyek (grandchild ikut,
      *  relasi nyata dari event — bukan asumsi urutan persona). */
     getProjectDelegations: (id: string) => {

@@ -1,7 +1,10 @@
 // @yui/core — tool registry (pola registry Hermes §4.2)
 // register() → dispatch() dengan validasi zod + gerbang approval. Semua tool return JSON.
+// P0-MCP-2: parameters boleh zod schema ATAU JSON Schema mentah (dari server MCP
+// `t.inputSchema`) — validasi JSON Schema via ajv (compile sekali, di-cache).
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import Ajv, { type ValidateFunction } from "ajv";
 import type { EventDraft } from "@yui/contracts";
 
 export interface ToolContext {
@@ -20,13 +23,27 @@ export interface ToolResult {
 export interface ToolDefinition {
   name: string;
   description: string;
-  parameters: z.ZodTypeAny;
+  /** zod schema (tool internal) ATAU JSON Schema object (tool MCP — P0-MCP-2). */
+  parameters: z.ZodTypeAny | Record<string, unknown>;
   handler: (args: any, ctx: ToolContext) => Promise<ToolResult>;
   /** Return alasan (string) bila panggilan ini butuh approval manusia; null = langsung jalan. */
   approvalPolicy?: (args: any) => string | null;
 }
 
 const tools = new Map<string, ToolDefinition>();
+const isZod = (p: ToolDefinition["parameters"]): p is z.ZodTypeAny => typeof (p as z.ZodTypeAny).safeParse === "function";
+
+/** P0-MCP-2: validator ajv per tool (compile sekali — dispatch panas tidak re-compile). */
+const ajv = new Ajv({ allErrors: true, strict: false });
+const ajvCache = new Map<string, ValidateFunction>();
+function jsonSchemaValidator(name: string, schema: Record<string, unknown>): ValidateFunction {
+  let fn = ajvCache.get(name);
+  if (!fn) {
+    fn = ajv.compile(schema);
+    ajvCache.set(name, fn);
+  }
+  return fn;
+}
 
 /**
  * Normalisasi JSON Schema untuk kompatibilitas provider OpenAI-compatible.
@@ -78,7 +95,7 @@ export const registry = {
         name: t.name,
         description: t.description,
         parameters: normalizeToolSchema(
-          zodToJsonSchema(t.parameters, { target: "openApi3" }),
+          isZod(t.parameters) ? zodToJsonSchema(t.parameters, { target: "openApi3" }) : t.parameters,
         ) as Record<string, unknown>,
       }));
   },
@@ -86,11 +103,28 @@ export const registry = {
     const def = tools.get(name);
     if (!def) return { result: { error: `unknown tool: ${name}` }, isError: true };
 
-    const parsed = def.parameters.safeParse(rawArgs ?? {});
-    if (!parsed.success) {
-      return { result: { error: "invalid args", issues: parsed.error.issues }, isError: true };
+    // P0-MCP-2: dua jalur validasi — zod (tool internal) atau ajv (JSON Schema MCP).
+    let args: Record<string, unknown>;
+    if (isZod(def.parameters)) {
+      const parsed = def.parameters.safeParse(rawArgs ?? {});
+      if (!parsed.success) {
+        return { result: { error: "invalid args", issues: parsed.error.issues }, isError: true };
+      }
+      args = parsed.data as Record<string, unknown>;
+    } else {
+      const validate = jsonSchemaValidator(name, def.parameters);
+      const obj = (rawArgs ?? {}) as Record<string, unknown>;
+      if (!validate(obj)) {
+        return {
+          result: {
+            error: "invalid args (json schema)",
+            issues: (validate.errors ?? []).map((e) => ({ path: e.instancePath || e.params?.missingProperty || "", message: e.message ?? "invalid" })),
+          },
+          isError: true,
+        };
+      }
+      args = obj;
     }
-    const args = parsed.data as Record<string, unknown>;
 
     const reason = def.approvalPolicy?.(args) ?? null;
     if (reason) {
@@ -110,4 +144,5 @@ export const registry = {
 /** Reset untuk tests. */
 export function resetRegistryForTests(): void {
   tools.clear();
+  ajvCache.clear(); // P0-MCP-2: validator ter-compile ikut reset (schema lama tak nyangkut)
 }

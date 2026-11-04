@@ -178,7 +178,7 @@
 > nyata) · P1-INF-5 (VPS/domain) · P1-DEL-2 (web push) · P1-PER-1/2/3 (aset Rive
 > artist) · P1-PER-5 (penguji manusia — bisa Anda) · P0-INF-5/6 (infra docker/CI).
 > **(b) menunggu fondasi** — P0-SEC-1 sandbox container → membuka P1-MCP-4 + sisa
-> P0-SEC-3 · P0-DEL-1 job persist → P0-DEL-2/P1-DEL-3 steering · P0-DATA-1 Postgres
+> P0-SEC-3 · P0-DEL-2/P1-DEL-3 steering · P0-DATA-1 Postgres
 > (dep P0-INF-5) → P0-DATA-2 retention · P1-MCP-2 OAuth (menyusul server OAuth-capable:
 > Penpot/Figma di P2-DSN) · P1-INF-1 auth (desain tenant, pasca-demo).
 > **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-3/4 ·
@@ -219,15 +219,15 @@
 
 ### P0-DEL & P0-MCP
 
-- [ ] **P0-DEL-1** Delegation job persist (queue di DB, survive restart, status) · *A · 2d*
+- [x] **P0-DEL-1** Delegation job persist (queue di DB, survive restart, status) · *A · 2d* — ✅ v0 dev-10 (branch dev/p0-kernel): tabel `delegation_jobs` (running→done/error/interrupted) — job row dibuat SEBELUM loop anak jalan, best-effort (gagal tulis ≠ batal delegasi); loop menelan error provider → runner kini deteksi `session.error` non-recoverable anak → job error + kartu delegasi parent ditutup jujur (tak zombie); boot-heal menutup job running pasca-restart → interrupted + alasan; REST `/api/projects/[id]/delegations` + `jobs`; +6 test. (queue/retry background menyusul P1-DEL-2)
 - [ ] **P0-DEL-2** Cancel/steer anak dasar dari parent · *A · 1d · dep P0-DEL-1*
 - [x] **P0-MCP-1** MCP lifecycle: health check + reconnect backoff + park · *C · 2d* → server mati → reconnect otomatis tanpa crash turn — ✅ dev-10: `transport.onclose/onerror → onDown` (penutupan disengaja difilter flag) → lepas tools + **reconnect backoff 2s/5s/15s/60s/5mnt**; gagal 5× → **PARKED** (badge + tombol ↻ `POST /api/mcp/servers` bypass backoff); **health check ping 30 dtk** (deteksi hang tanpa crash); status `state/lastError/nextRetryAt` di panel MCP
-- [ ] **P0-MCP-2** Schema nyata MCP (`t.inputSchema`) menggantikan passthrough · *C · 1d*
+- [x] **P0-MCP-2** Schema nyata MCP (`t.inputSchema`) menggantikan passthrough · *C · 1d* — ✅ v0 dev-10: registry terima zod ATAU JSON Schema mentah; validasi dispatch via ajv (compile-cache, reset ikut tests); `toolSchemas` meneruskan schema asli ke provider (provider tahu parameter tool MCP → tool-call lebih akurat); fallback passthrough bila server tak menyertakan inputSchema; +3 test
 
 ### P0-QA & G-P0
 
 - [ ] **P0-QA-1** E2E smoke Playwright: skenario demo §2 otomatis · *B · 2d · dep P0-INF-1*
-- [ ] **P0-QA-2** Load ringan: 10 sesi paralel × 5 turn tanpa deadlock/leak · *A+B · 1d*
+- [x] **P0-QA-2** Load ringan: 10 sesi paralel × 5 turn tanpa deadlock/leak · *A+B · 1d* — ✅ v0 dev-10: `load-light.test.ts` — 10 sesi PARALEL × 5 turn provider jitter: semua selesai, history 10 pesan/sesi urutan user→assistant konsisten, provider tepat 50 panggilan (tanpa retry liar), tanpa kontaminasi antar-sesi
 - [ ] **G-P0** Gerbang: smoke E2E green di CI · contract invariant tests green · sandbox escape test lulus · pino trace per turn terlihat · fallback model terbukti · **retro tim: pelajaran demo → backlog**
 
 ---

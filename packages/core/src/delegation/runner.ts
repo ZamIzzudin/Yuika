@@ -77,6 +77,21 @@ export function runChildPersona(
 
   parentEmit({ type: "delegation.started", turnId: parent.turnId, childSessionId, personaId, goal });
   activeChildren++;
+  // P0-DEL-1: job persist — baris di DB sebelum loop anak jalan (audit & heal
+  // lintas restart); ditutup done/error saat selesai. Gagal tulis job TIDAK
+  // membatalkan delegasi (persist = best-effort, eksekusi tetap jalan).
+  let jobId = -1;
+  try {
+    jobId = deps.store.startDelegationJob({
+      parentSessionId: parent.sessionId,
+      parentTurnId: parent.turnId,
+      childSessionId,
+      personaId,
+      goal,
+    });
+  } catch {
+    /* best-effort */
+  }
 
   const summary = (async () => {
     const t0 = Date.now();
@@ -112,9 +127,24 @@ export function runChildPersona(
       const msgs = deps.store.getMessages(childSessionId);
       const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant" && m.content.trim());
       const summaryText = lastAssistant?.content ?? "(child selesai tanpa output)";
+      // P0-DEL-1: loop menelan error provider (session.error event, bukan throw)
+      // — job harus jujur: sesi anak berakhir GAGAL → status error, bukan done.
+      const childEvents = deps.store.getEvents(childSessionId);
+      const fatalError = [...childEvents].reverse().find((e): e is Extract<(typeof childEvents)[number], { type: "session.error" }> => e.type === "session.error" && e.recoverable === false);
+      if (fatalError) throw new Error(`child gagal: ${fatalError.message}`);
       parentEmit({ type: "delegation.done", turnId: parent.turnId, childSessionId, summary: summaryText });
+      if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: "done", summary: summaryText });
       console.log(`[yui:trace] delegasi ${personaId} SELESAI total=${Date.now() - t0}ms (goal: ${goal.slice(0, 60)}…)`);
       return summaryText;
+    } catch (err) {
+      // P0-DEL-1: error anak tercatat di job row (bukan hanya event) — auditable
+      // lintas restart, dasar notifikasi/retry menyusul.
+      const msg = err instanceof Error ? err.message : String(err);
+      if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: "error", error: msg });
+      // Tutup kartu delegasi di parent dengan ringkasan gagal — tanpa ini UI
+      // menampilkan persona anak "working" selamanya.
+      parentEmit({ type: "delegation.done", turnId: parent.turnId, childSessionId, summary: `_(anak gagal: ${msg})_` });
+      throw err;
     } finally {
       activeChildren--;
     }

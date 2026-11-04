@@ -61,6 +61,21 @@ export class SessionStore {
         created_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_ctxcp_session ON context_checkpoints(session_id, id);
+      -- P0-DEL-1: job delegasi persist — status lintas restart (audit + heal).
+      CREATE TABLE IF NOT EXISTS delegation_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        parent_session_id TEXT NOT NULL,
+        parent_turn_id TEXT NOT NULL,
+        child_session_id TEXT NOT NULL,
+        persona_id TEXT NOT NULL,
+        goal TEXT NOT NULL,
+        status TEXT NOT NULL, -- running|done|error|interrupted
+        summary TEXT,
+        error TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_deljob_parent ON delegation_jobs(parent_session_id);
       CREATE TABLE IF NOT EXISTS approvals (
         request_id TEXT PRIMARY KEY,
         session_id TEXT NOT NULL,
@@ -233,6 +248,59 @@ export class SessionStore {
       .prepare("SELECT upto_seq, summary, model FROM context_checkpoints WHERE session_id = ? ORDER BY id DESC LIMIT 1")
       .get(sessionId) as { upto_seq: number; summary: string; model: string } | undefined;
     return row ? { uptoSeq: row.upto_seq, summary: row.summary, model: row.model } : null;
+  }
+
+  // ── P0-DEL-1: delegation job persist ─────────────────────────────
+
+  startDelegationJob(input: { parentSessionId: string; parentTurnId: string; childSessionId: string; personaId: string; goal: string }): number {
+    const now = Date.now();
+    const info = this.db
+      .prepare("INSERT INTO delegation_jobs (parent_session_id, parent_turn_id, child_session_id, persona_id, goal, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'running', ?, ?)")
+      .run(input.parentSessionId, input.parentTurnId, input.childSessionId, input.personaId, input.goal, now, now);
+    return Number(info.lastInsertRowid);
+  }
+
+  finishDelegationJob(id: number, patch: { status: "done" | "error" | "interrupted"; summary?: string; error?: string }): void {
+    this.db
+      .prepare("UPDATE delegation_jobs SET status = ?, summary = COALESCE(?, summary), error = COALESCE(?, error), updated_at = ? WHERE id = ?")
+      .run(patch.status, patch.summary ?? null, patch.error ?? null, Date.now(), id);
+  }
+
+  /** Job berstatus running — kandidat heal saat boot (proses mati). */
+  findRunningDelegationJobs(): Array<{ id: number; parentSessionId: string; childSessionId: string; personaId: string; goal: string }> {
+    return (this.db
+      .prepare("SELECT id, parent_session_id, child_session_id, persona_id, goal FROM delegation_jobs WHERE status = 'running'")
+      .all() as Array<{ id: number; parent_session_id: string; child_session_id: string; persona_id: string; goal: string }>).map((r) => ({
+      id: r.id,
+      parentSessionId: r.parent_session_id,
+      childSessionId: r.child_session_id,
+      personaId: r.persona_id,
+      goal: r.goal,
+    }));
+  }
+
+  /** Riwayat job (terbaru dulu); filter projectId = project sesi PARENT. */
+  listDelegationJobs(projectId?: string | null): Array<import("@yui/contracts").DelegationJob> {
+    const rows = (
+      projectId
+        ? this.db.prepare(
+            `SELECT j.* FROM delegation_jobs j JOIN sessions s ON s.id = j.parent_session_id WHERE s.project_id = ? ORDER BY j.id DESC`,
+          ).all(projectId)
+        : this.db.prepare(`SELECT * FROM delegation_jobs ORDER BY id DESC`).all()
+    ) as Array<{ id: number; parent_session_id: string; parent_turn_id: string; child_session_id: string; persona_id: string; goal: string; status: string; summary: string | null; error: string | null; created_at: number; updated_at: number }>;
+    return rows.map((r) => ({
+      id: r.id,
+      parentSessionId: r.parent_session_id,
+      parentTurnId: r.parent_turn_id,
+      childSessionId: r.child_session_id,
+      personaId: r.persona_id,
+      goal: r.goal,
+      status: r.status as "running" | "done" | "error" | "interrupted",
+      summary: r.summary,
+      error: r.error,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
   }
 
   /** Append event draft + lekatkan meta (id monotonic, ts) — kunci replay/resume. */

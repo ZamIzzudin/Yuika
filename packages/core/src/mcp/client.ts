@@ -6,8 +6,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { McpTrustConfig } from "@yui/contracts";
-import { registry } from "../registry.js";
-import { findUvx } from "./uv.js";
+import { registry } from "../registry.js";import { findUvx } from "./uv.js";
 
 export interface McpServerConfig {
   command: string;
@@ -20,7 +19,7 @@ export interface McpRegistry {
 }
 
 /** Passthrough schema: parameter MCP sudah JSON Schema dari server. */
-const passthrough = z.object({}).passthrough();
+const passthrough = z.object({}).passthrough(); // fallback bila server tak menyertakan inputSchema
 
 export interface McpCallInfo {
   server: string;
@@ -89,7 +88,12 @@ export async function connectMcpServer(
       registry.register({
         name: fullName,
       description: `[MCP:${serverName}] ${t.description ?? t.name}`,
-      parameters: passthrough, // TODO(P1): schema nyata dari t.inputSchema
+      // P0-MCP-2: schema NYATA dari server (JSON Schema `t.inputSchema`) — provider
+      // & validasi dispatch memakai bentuk asli (bukan passthrough kosong). Provider
+      // jadi tahu parameter tool MCP → tool-call lebih akurat.
+      parameters: (t.inputSchema && typeof t.inputSchema === "object" && Object.keys(t.inputSchema).length > 0
+        ? (t.inputSchema as Record<string, unknown>)
+        : passthrough),
       handler: async (args: Record<string, unknown>, ctx) => {
         // P1-MCP-3: izin granular (deny list per workspace) + audit tiap panggilan.
         if (opts.denyTools?.includes(t.name)) {

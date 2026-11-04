@@ -32,5 +32,14 @@ export function healInterruptedTurns(store: SessionStore): string[] {
     store.appendEvent(it.sessionId, { type: "persona.state", personaId: it.personaId, state: "idle" });
     healed.push(it.sessionId);
   }
+  // P0-DEL-1: tutup job delegasi yang masih 'running' (proses mati bersama server)
+  // → 'interrupted'. Tabel job = sumber kebenaran status lintas restart — tanpa
+  // ini, job terlihat berjalan selamanya di audit/monitor.
+  for (const job of store.findRunningDelegationJobs()) {
+    store.finishDelegationJob(job.id, {
+      status: "interrupted",
+      error: "server direstart saat job berjalan",
+    });
+  }
   return healed;
 }
