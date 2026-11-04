@@ -136,7 +136,7 @@ function SkillMapping() {
             aria-pressed={persona?.id === p.id}
             title={`${p.effective.length} skill efektif`}
             onClick={() => setSel(p.id)}
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-pill border px-2.5 py-1 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border px-2.5 py-1 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
               persona?.id === p.id
                 ? "border-accent bg-accent-soft text-accent-text"
                 : "border-line bg-transparent text-muted hover:border-line-strong hover:text-primary"
@@ -584,7 +584,7 @@ function ChipToggle2({ active, onClick, children }: { active: boolean; onClick: 
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-pill border px-3 py-1 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
         active ? "border-accent bg-accent-soft text-accent-text" : "border-line text-muted hover:border-line-strong hover:text-primary"
       }`}
     >
