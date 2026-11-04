@@ -2,11 +2,18 @@
 // Panel MCP (P1-MCP-3 + P1-MCP-1): trust gate workspace + status koneksi live
 // + audit tail + KATALOG server (install → mcp.json, uninstall). Fail-closed:
 // install TIDAK menghubungkan — user harus Trust dulu (toggle di atas).
+// DS-1: ui/* + Tailwind + Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
 import type { McpAuditEntry, McpCatalogEntry, McpServerStatus } from "@yui/contracts";
-import { Skeleton, SkeletonRows } from "./Skeleton";
+import { ArrowsClockwise, ArrowClockwise, Check, Warning, X } from "@phosphor-icons/react";
+import { SkeletonRows } from "./Skeleton";
+import { Button, Chip, Dot, SectionTitle, TextInput } from "./ui";
 
-const RISK_LABEL: Record<string, string> = { rendah: "aman", sedang: "hati-hati", tinggi: "akses akun" };
+const RISK_LABEL: Record<string, { label: string; tone: "ok" | "warn" | "danger" }> = {
+  rendah: { label: "aman", tone: "ok" },
+  sedang: { label: "hati-hati", tone: "warn" },
+  tinggi: { label: "akses akun", tone: "danger" },
+};
 
 export function McpPanel() {
   const [servers, setServers] = useState<McpServerStatus[]>([]);
@@ -140,194 +147,212 @@ export function McpPanel() {
     (c) => !q || c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q) || c.category.includes(q),
   );
 
+  const rowBtn = "h-7 shrink-0 whitespace-nowrap px-2.5 text-caption";
+
   return (
-    <section className="mcp-section" aria-label="Server MCP">
-      <div className="project-head">
-        <span className="project-title">MCP</span>
-        <button className="project-add" onClick={() => void refresh()} aria-label="Refresh MCP">
-          ↻
-        </button>
+    <section aria-label="Server MCP" className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <SectionTitle>MCP</SectionTitle>
+        <Button size="sm" onClick={() => void refresh()} aria-label="Refresh MCP" title="Muat ulang status MCP">
+          <ArrowsClockwise size={12} aria-hidden />
+        </Button>
       </div>
       {booting ? (
         <SkeletonRows rows={3} />
       ) : (
         <>
-          {servers.length === 0 && <p className="task-empty">Tidak ada server MCP dideklarasikan — pasang dari katalog di bawah.</p>}
-          <ul className="mcp-list">
-        {servers.map((s) => (
-          <li key={s.name} className="mcp-row" data-trusted={s.trusted || undefined}>
-            <span className="mcp-dot" data-on={s.connected || undefined} />
-            <span className="mcp-body">
-              <b>{s.name}</b>
-              <small>
-                {s.state === "reconnecting"
-                  ? `sambung ulang… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}d)` : ""}`
-                  : s.state === "parked"
-                    ? "parkir — 5× gagal"
-                    : s.connected
-                      ? `${s.toolCount} tools`
-                      : s.trusted
-                        ? "menghubungkan…"
-                        : s.declared
-                          ? "untrusted"
-                          : "tak terpasang"}
-              </small>
-              {s.lastError && s.state !== "connected" && <small className="mcp-err">⚠ {s.lastError.slice(0, 64)}</small>}
-            </span>
-            {(s.state === "parked" || s.state === "reconnecting") && (
-              <button
-                className="btn secondary"
-                disabled={busy === s.name}
-                onClick={() => void retry(s.name)}
-                title="Coba hubungkan ulang sekarang"
+          {servers.length === 0 && (
+            <p className="text-caption leading-5 text-dim">Tidak ada server MCP dideklarasikan — pasang dari katalog di bawah.</p>
+          )}
+          <ul className="flex flex-col gap-1.5">
+            {servers.map((s) => (
+              <li
+                key={s.name}
+                className={`flex items-center gap-2.5 rounded-lg2 border px-3 py-2 ${s.trusted ? "border-accent/30 bg-accent-soft/30" : "border-line bg-surface"}`}
               >
-                ↻
-              </button>
-            )}
-            <button
-              className="btn mcp-toggle"
-              onClick={() => void toggle(s)}
-              disabled={busy === s.name || (s.trusted && !s.declared)}
-              title={s.trusted ? "Putuskan & matikan trust (fail-closed)" : "Trust server ini di workspace"}
-            >
-              {busy === s.name ? "…" : s.trusted ? "Untrust" : "Trust"}
-            </button>
-          </li>
-        ))}
-      </ul>
-      {err && <p className="project-err">{err}</p>}
-      {audit.length > 0 && (
-        <div className="mcp-audit">
-          <span className="project-title">Audit</span>
-          <ul>
-            {audit.map((a) => (
-              <li key={a.id} data-ok={a.ok || undefined}>
-                {a.ok ? "✓" : "✕"} {a.tool}
-                {a.error ? ` — ${a.error.slice(0, 46)}` : ""}
+                <Dot tone={s.connected ? "ok" : s.state === "parked" ? "danger" : s.trusted ? "accent" : "muted"} pulse={!s.connected && (s.state === "reconnecting" || s.trusted)} />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <b className="text-body font-semibold text-primary">{s.name}</b>
+                  <small className="text-caption text-muted">
+                    {s.state === "reconnecting"
+                      ? `sambung ulang… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}d)` : ""}`
+                      : s.state === "parked"
+                        ? "parkir — 5× gagal"
+                        : s.connected
+                          ? `${s.toolCount} tools`
+                          : s.trusted
+                            ? "menghubungkan…"
+                            : s.declared
+                              ? "untrusted"
+                              : "tak terpasang"}
+                  </small>
+                  {s.lastError && s.state !== "connected" && (
+                    <small className="flex items-center gap-1 text-caption leading-4 text-danger">
+                      <Warning size={11} aria-hidden className="shrink-0" /> {s.lastError.slice(0, 64)}
+                    </small>
+                  )}
+                </span>
+                {(s.state === "parked" || s.state === "reconnecting") && (
+                  <Button size="sm" className={rowBtn} disabled={busy === s.name} onClick={() => void retry(s.name)} title="Coba hubungkan ulang sekarang">
+                    <ArrowClockwise size={12} aria-hidden />
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  className={rowBtn}
+                  variant={s.trusted ? "secondary" : "primary"}
+                  onClick={() => void toggle(s)}
+                  disabled={busy === s.name || (s.trusted && !s.declared)}
+                  title={s.trusted ? "Putuskan & matikan trust (fail-closed)" : "Trust server ini di workspace"}
+                >
+                  {busy === s.name ? "…" : s.trusted ? "Untrust" : "Trust"}
+                </Button>
               </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      <div className="mcp-catalog">
-        <div className="project-head">
-          <span className="project-title">Katalog {booting ? "" : `(${catalog.length})`}</span>
-        </div>
-        <div className="uv-status" data-ok={uvx && uvx !== "loading" ? "" : undefined}>
-          {uvx === "loading" ? (
-            <small>cek runtime Python (uvx)…</small>
-          ) : uvx ? (
-            <small>
-              Python/uvx: siap ✓ <code>{uvx === "uvx" ? "di PATH" : uvx}</code>
-            </small>
-          ) : uvInstalling ? (
-            <small>menjalankan installer resmi astral.sh… (±30–120 dtk)</small>
-          ) : uvConfirm ? (
-            <>
-              <small>
-                <b>Install uv?</b> Menjalankan installer resmi
-                <code>astral.sh/uv</code> di mesin ini (~30 MB, profil user). Lanjut?
-              </small>
-              <button className="btn" onClick={() => void installUv()}>
-                Ya, install
-              </button>
-              <button className="btn secondary" onClick={() => setUvConfirm(false)}>
-                Batal
-              </button>
-            </>
-          ) : (
-            <>
-              <small>Python/uvx: belum terpasang — server Git/Time butuh ini (18 server lain tak butuh)</small>
-              <button className="btn" onClick={() => setUvConfirm(true)}>
-                Install uv
-              </button>
-            </>
+          {err && (
+            <p className="flex items-center gap-1.5 text-caption text-danger">
+              <X size={12} weight="bold" aria-hidden /> {err}
+            </p>
           )}
-        </div>
-        {uvLog && <small className="catalog-note">log installer: {uvLog}</small>}
-        <input
-          className="mcp-search"
-          placeholder="Cari server… (web, data, github…)"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {booting ? (
-          <SkeletonRows rows={5} />
-        ) : (
-        <ul className="catalog-list">
-          {shown.map((c) => {
-            const isInstalled = declared.has(c.id);
-            return (
-              <li key={c.id} className="catalog-row" data-installed={isInstalled || undefined}>
-                <span className="catalog-body">
-                  <b>
-                    {c.name} <small className="catalog-risk" data-r={c.risk}>{RISK_LABEL[c.risk]}</small>
-                    {c.runtime === "python" && (
-                      <small className="catalog-runtime" title={c.setupNote ?? "Server ini berbasis Python (uvx)"}>
-                        Python/uvx
-                      </small>
-                    )}
-                  </b>
-                  <small>{c.description}</small>
-                  {c.runtime === "python" && c.setupNote && (
-                    <small className="catalog-note">⚠ {c.setupNote}</small>
-                  )}
-                </span>
-                {isInstalled ? (
-                  <button className="btn mcp-toggle" onClick={() => void uninstall(c)} disabled={busy === c.id} title="Lepas dari mcp.json (putuskan koneksi)">
-                    {busy === c.id ? "…" : "Lepas"}
-                  </button>
-                ) : c.runtime === "python" && uvx === null ? (
-                  <button
-                    className="btn mcp-toggle"
-                    disabled
-                    title={c.setupNote ?? "Butuh uv (Python) — klik Install uv di atas"}
-                  >
-                    Butuh uv
-                  </button>
-                ) : openForm === c.id ? (
-                  <div className="catalog-form">
-                    {c.envKeys.map((k) => (
-                      <input
-                        key={k.key}
-                        type="password"
-                        placeholder={`${k.label}${k.required ? " *" : ""}`}
-                        value={envVals[k.key] ?? ""}
-                        onChange={(e) => setEnvVals({ ...envVals, [k.key]: e.target.value })}
-                      />
-                    ))}
-                    <button
-                      className="btn"
-                      onClick={() => void install(c)}
-                      disabled={busy === c.id || c.envKeys.some((k) => k.required && !envVals[k.key]?.trim())}
+          {audit.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <SectionTitle>Audit</SectionTitle>
+              <ul className="flex flex-col gap-0.5">
+                {audit.map((a) => (
+                  <li key={a.id} className={`flex items-center gap-1.5 text-caption ${a.ok ? "text-muted" : "text-danger"}`}>
+                    {a.ok ? <Check size={11} weight="bold" aria-hidden className="text-success" /> : <X size={11} weight="bold" aria-hidden />}
+                    <code className="font-mono">{a.tool}</code>
+                    {a.error ? <span className="truncate text-dim"> — {a.error.slice(0, 46)}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2.5 border-t border-line pt-3">
+            <SectionTitle>Katalog {booting ? "" : `(${catalog.length})`}</SectionTitle>
+            <div className="flex flex-wrap items-center gap-2 rounded-md2 border border-line bg-inset px-3 py-2">
+              {uvx === "loading" ? (
+                <small className="text-caption text-dim">cek runtime Python (uvx)…</small>
+              ) : uvx ? (
+                <small className="flex items-center gap-1.5 text-caption text-secondary">
+                  <Check size={12} weight="bold" aria-hidden className="text-success" /> Python/uvx siap —{" "}
+                  <code className="font-mono text-dim">{uvx === "uvx" ? "di PATH" : uvx}</code>
+                </small>
+              ) : uvInstalling ? (
+                <small className="text-caption text-muted">menjalankan installer resmi astral.sh… (±30–120 dtk)</small>
+              ) : uvConfirm ? (
+                <>
+                  <small className="flex-1 text-caption leading-5 text-secondary">
+                    <b>Install uv?</b> Menjalankan installer resmi <code className="font-mono">astral.sh/uv</code> di mesin ini
+                    (~30 MB, profil user). Lanjut?
+                  </small>
+                  <Button size="sm" variant="primary" onClick={() => void installUv()}>
+                    Ya, install
+                  </Button>
+                  <Button size="sm" onClick={() => setUvConfirm(false)}>
+                    Batal
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <small className="flex-1 text-caption leading-5 text-dim">
+                    Python/uvx: belum terpasang — server Git/Time butuh ini (18 server lain tak butuh)
+                  </small>
+                  <Button size="sm" onClick={() => setUvConfirm(true)}>
+                    Install uv
+                  </Button>
+                </>
+              )}
+            </div>
+            {uvLog && <small className="text-caption text-dim">log installer: {uvLog}</small>}
+            <TextInput
+              placeholder="Cari server… (web, data, github…)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {booting ? (
+              <SkeletonRows rows={5} />
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {shown.map((c) => {
+                  const isInstalled = declared.has(c.id);
+                  const risk = RISK_LABEL[c.risk] ?? RISK_LABEL.rendah!;
+                  return (
+                    <li
+                      key={c.id}
+                      className={`flex flex-wrap items-center gap-2.5 rounded-lg2 border px-3 py-2 ${isInstalled ? "border-accent/30 bg-accent-soft/20" : "border-line bg-surface"}`}
                     >
-                      Pasang
-                    </button>
-                    <button className="btn secondary" onClick={() => setOpenForm(null)}>
-                      Batal
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="btn mcp-toggle"
-                    onClick={() => {
-                      setOpenForm(c.id);
-                      setEnvVals({});
-                    }}
-                    disabled={busy === c.id}
-                    title={c.envKeys.length > 0 ? "Perlu API key" : "Pasang sekarang"}
-                  >
-                    {c.envKeys.length > 0 ? "Atur…" : "Pasang"}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-        )}
-      </div>
-      </>
+                      <span className="flex min-w-[200px] flex-1 flex-col gap-0.5">
+                        <b className="flex flex-wrap items-center gap-1.5 text-body font-semibold text-primary">
+                          {c.name} <Chip tone={risk.tone}>{risk.label}</Chip>
+                          {c.runtime === "python" && (
+                            <span title={c.setupNote ?? "Server ini berbasis Python (uvx)"}>
+                              <Chip tone="muted">Python/uvx</Chip>
+                            </span>
+                          )}
+                        </b>
+                        <small className="text-caption leading-5 text-muted">{c.description}</small>
+                        {c.runtime === "python" && c.setupNote && (
+                          <small className="flex items-center gap-1 text-caption leading-4 text-warn">
+                            <Warning size={11} aria-hidden className="shrink-0" /> {c.setupNote}
+                          </small>
+                        )}
+                      </span>
+                      {isInstalled ? (
+                        <Button size="sm" className={rowBtn} onClick={() => void uninstall(c)} disabled={busy === c.id} title="Lepas dari mcp.json (putuskan koneksi)">
+                          {busy === c.id ? "…" : "Lepas"}
+                        </Button>
+                      ) : c.runtime === "python" && uvx === null ? (
+                        <Button size="sm" className={rowBtn} disabled title={c.setupNote ?? "Butuh uv (Python) — klik Install uv di atas"}>
+                          Butuh uv
+                        </Button>
+                      ) : openForm === c.id ? (
+                        <div className="flex w-full flex-wrap items-center gap-2 border-t border-line pt-2">
+                          {c.envKeys.map((k) => (
+                            <TextInput
+                              key={k.key}
+                              type="password"
+                              className="h-7 w-44"
+                              placeholder={`${k.label}${k.required ? " *" : ""}`}
+                              value={envVals[k.key] ?? ""}
+                              onChange={(e) => setEnvVals({ ...envVals, [k.key]: e.target.value })}
+                            />
+                          ))}
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => void install(c)}
+                            disabled={busy === c.id || c.envKeys.some((k) => k.required && !envVals[k.key]?.trim())}
+                          >
+                            Pasang
+                          </Button>
+                          <Button size="sm" onClick={() => setOpenForm(null)}>
+                            Batal
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className={rowBtn}
+                          onClick={() => {
+                            setOpenForm(c.id);
+                            setEnvVals({});
+                          }}
+                          disabled={busy === c.id}
+                          title={c.envKeys.length > 0 ? "Perlu API key" : "Pasang sekarang"}
+                        >
+                          {c.envKeys.length > 0 ? "Atur…" : "Pasang"}
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </>
       )}
     </section>
   );

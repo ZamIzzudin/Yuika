@@ -103,3 +103,22 @@
    usage dan CircleNotch/Check/X untuk status eval.
 5. Cek visual: semua chip/badge/bar kini BENERAN kapsul (rounded-pill — token
    baru; sebelumnya diam-diam kotak).
+
+### M23 (P1) — DS-1 batch 4: TaskDrawer + FileTab + McpPanel + TeamTree + TracePanel + Markdown
+1. **Hapus folder `.next` lalu `npm run dev`** (banyak kelas legacy hilang).
+2. Tab Tim: kanvas pan (hold & drag) / zoom (Ctrl+scroll / tombol ±) TETAP jalan;
+   kartu persona gaya baru; garis penghubung tree tetap tergambar benar
+   (multi-anak T-connector, only-child garis lurus); chip status = StateChip.
+3. Tab Papan: kanban 4 kolom, strip warna atas per kolom, drag&drop antar kolom
+   tetap memindah status; subtask bertanda panah lengkung; artefak di Pohon
+   jadi chip kapsul dengan ikon klip kertas.
+4. Tab File: ikon folder/panah caret; tombol Upload/Segarkan pakai Phosphor;
+   diff revisi berwarna (+hijau/−merah per baris penuh lebar).
+5. Tab Roster & Sesi & Memori: baris rapi; ikon keluarkan (X) muncul on-hover;
+   fase gating ✓/✕ berwarna; editor memori Card + tombol Simpan centang.
+6. Pengaturan → MCP & Tools: dot status server, chip risiko (aman/hati-hati/
+   akses akun), form env rapi; audit ✓/✕ Phosphor.
+7. Tab Trace: ikon per jenis langkah (otak/wrench/jabat tangan/perisai/…),
+   status turn jadi chip; token tetap tampil.
+8. Markdown chat: kode blok, list, kutipan, link, tabel pemakaian — gaya baru
+   konsisten dengan bubble chat.

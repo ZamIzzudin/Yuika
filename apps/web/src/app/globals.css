@@ -202,37 +202,10 @@ html, body {
 /* ── Workspace: satu area konten + tab bar (Chat juga tab) ────── */
 .workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 @keyframes yui-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-.pane-scroll {
-  flex: 1; min-height: 0; overflow-y: auto;
-  width: 100%; margin: 0 auto;
-  padding: var(--yui-space-5) var(--yui-space-6);
-}
-.pane-hint { margin: 0 0 var(--yui-space-3); color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 
 /* ── Persona list (pola agent-row OpenBot) ─────────────────────── */
 
 /* ── Header percakapan ─────────────────────────────────────────── */
-.state-chip {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: var(--yui-radius-pill);
-  background: var(--yui-bg-surface);
-  padding: 3px 10px;
-  font-size: var(--yui-text-sm);
-  color: var(--yui-text-muted);
-}
-.state-chip i {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--yui-radius-pill);
-  background: var(--yui-text-dim);
-}
-.state-chip[data-s="thinking"] i, .state-chip[data-s="working"] i { background: var(--yui-accent); animation: chip-pulse 1.2s ease-in-out infinite; }
-.state-chip[data-s="awaiting_input"] i { background: var(--yui-warning); }
-.state-chip[data-s="done"] i, .state-chip[data-s="celebrating"] i { background: var(--yui-success); }
-.state-chip[data-s="error"] i { background: var(--yui-danger); }
 @keyframes chip-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
 /* ── Timeline pesan ────────────────────────────────────────────── */
@@ -282,25 +255,6 @@ html, body {
 /* ── Composer (pola .composer OpenBot) ─────────────────────────── */
 
 /* Tombol umum */
-.btn {
-  border: 0;
-  border-radius: var(--yui-radius-md);
-  background: var(--yui-accent);
-  color: #fff;
-  padding: 6px 14px;
-  font-size: var(--yui-text-md);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--yui-dur-fast) ease;
-}
-.btn:hover:not(:disabled) { background: var(--yui-accent-hover); }
-.btn.secondary {
-  background: var(--yui-bg-control);
-  color: var(--yui-text-primary);
-  border: 1px solid var(--yui-border-strong);
-}
-.btn.secondary:hover:not(:disabled) { background: var(--yui-bg-control-hover); }
-.btn:disabled { opacity: 0.45; cursor: default; }
 
 /* ── Form kit: SEMUA input/select/textarea seirama composer ──────
  * Satu DNA: surface bg, border 0.5px, radius-md, fokus border menyala.
@@ -322,7 +276,6 @@ html, body {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.face-mark { user-select: none; }
 .portrait-hero-wrap { display: flex; justify-content: center; }
 .portrait-hero { width: 220px; }
 
@@ -330,15 +283,6 @@ html, body {
 }
 
 /* ── Project panel (P1-PRJ-6 shell v0) ─────────────────────────── */
-.project-head { display: flex; align-items: center; justify-content: space-between; padding: 0 var(--yui-space-2) var(--yui-space-2); }
-.project-title { font-size: var(--yui-text-sm); letter-spacing: 0.08em; text-transform: uppercase; color: var(--yui-text-dim); }
-.project-add {
-  font: inherit; font-size: var(--yui-text-lg); line-height: 1; color: var(--yui-text-muted);
-  background: none; border: 1px solid var(--yui-border); border-radius: 6px; width: 22px; height: 22px;
-  display: grid; place-items: center; cursor: pointer;
-}
-.project-add:hover { color: var(--yui-text-primary); border-color: var(--yui-border-strong); }
-.project-err { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-danger); }
 
 /* Badge project di chat-header */
 .project-chip {
@@ -354,63 +298,17 @@ html, body {
 /* ── Task drawer (P1-PRJ-4 UI) ─────────────────────────────────── */
 /* ── Org-chart Tim (struktur delegasi live) ───────────────────── */
 .org-chart { display: flex; flex-direction: column; align-items: center; gap: 0; }
-.org-card {
-  display: flex; align-items: flex-start; gap: var(--yui-space-3);
-  width: 100%; max-width: 460px;
-  background: var(--yui-bg-surface); border: 1px solid var(--yui-border); border-radius: 12px;
-  padding: var(--yui-space-3) var(--yui-space-4);
-}
-.org-card.org-root { border-color: var(--yui-border-strong); background: var(--yui-bg-surface-raised); }
-.org-body { flex: 1; min-width: 0; }
-.org-body b { font-size: var(--yui-text-md); font-weight: 600; display: block; }
-.org-body small { color: var(--yui-text-dim); }
-.org-goal { margin: var(--yui-space-1) 0 0; font-size: var(--yui-text-sm); color: var(--yui-text-secondary); }
-.org-summary { margin: var(--yui-space-1) 0 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim); border-top: 1px dashed var(--yui-border); padding-top: var(--yui-space-1); }
 .org-connector { width: 2px; height: 20px; background: var(--yui-border-strong); }
 .org-children {
   list-style: none; margin: 0; padding: var(--yui-space-3) 0 0; display: flex; flex-direction: column; gap: var(--yui-space-2);
   width: 100%; align-items: center; position: relative;
 }
 .org-children::before { content: ""; position: absolute; top: 0; left: 50%; width: 2px; height: 12px; background: var(--yui-border-strong); }
-.org-card .state-chip { flex: none; margin-top: 2px; }
-.org-bench { margin-top: var(--yui-space-4); width: 100%; max-width: 460px; }
-.org-bench > small { color: var(--yui-text-dim); display: block; margin-bottom: var(--yui-space-2); }
-.bench-row { display: flex; flex-wrap: wrap; gap: var(--yui-space-2); }
-.bench-chip {
-  display: inline-flex; align-items: center; gap: 6px; font-size: var(--yui-text-sm); color: var(--yui-text-muted);
-  border: 1px dashed var(--yui-border); border-radius: 999px; padding: 3px 10px;
-}
 
 /* ── TaskTree (tab Pohon) ─────────────────────────────────────── */
-.tree-root, .tree-children { list-style: none; margin: 0; padding: 0; }
-.tree-node {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--yui-space-2);
-  padding: 6px 8px; border-radius: 8px;
-}
-.tree-node:hover { background: var(--yui-hover); }
-.tree-dot { width: 1.2em; text-align: center; color: var(--yui-text-dim); }
-.tree-node[data-s="done"] .tree-dot { color: var(--yui-ok); }
-.tree-node[data-s="doing"] .tree-dot, .tree-node[data-s="review"] .tree-dot { color: var(--yui-warn); }
-.tree-title { font-size: var(--yui-text-md); }
-.tree-node[data-s="done"] .tree-title { color: var(--yui-text-dim); text-decoration: line-through; }
-.tree-assignee {
-  font-size: var(--yui-text-sm); color: var(--yui-text-muted);
-  padding: 1px 8px; border: 1px solid var(--yui-border); border-radius: 999px;
-}
-.tree-artefak {
-  font-size: var(--yui-text-sm); color: var(--yui-text-dim); max-width: 180px; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap;
-  padding: 1px 8px; background: var(--yui-bg-inset, rgba(255, 255, 255, 0.04)); border-radius: 999px;
-}
-.task-close {
-  font: inherit; color: var(--yui-text-muted); background: none; border: none; cursor: pointer;
-  font-size: var(--yui-text-md); padding: 4px; border-radius: 6px;
-}
-.task-close:hover { color: var(--yui-text-primary); background: var(--yui-hover); }
 .task-add { display: flex; gap: var(--yui-space-2); padding-bottom: var(--yui-space-3); }
 .task-add input { min-width: 0; flex: 1; }
 .task-add-btn { padding: 0 12px; }
-.task-empty { margin: var(--yui-space-2) 0; font-size: var(--yui-text-sm); color: var(--yui-text-muted); line-height: 1.6; }
 .task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
 .task-row { display: flex; align-items: flex-start; gap: var(--yui-space-2); padding: var(--yui-space-2); border-radius: 8px; }
 .task-row:hover { background: var(--yui-hover); }
@@ -430,34 +328,8 @@ html, body {
 
 /* ── Roster (P1-PRJ-3, di drawer proyek) ───────────────────────── */
 .roster-section { display: flex; flex-direction: column; gap: var(--yui-space-2); padding-bottom: var(--yui-space-4); border-bottom: 1px solid var(--yui-border); margin-bottom: var(--yui-space-3); }
-.roster-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-.roster-row { display: flex; align-items: center; gap: var(--yui-space-2); padding: 5px 4px; border-radius: 8px; }
-.roster-row:hover { background: var(--yui-hover); }
-.roster-row .face { flex: none; width: 24px; height: 24px; }
-.roster-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.roster-body b { font-size: var(--yui-text-md); font-weight: 500; color: var(--yui-text-secondary); }
-.roster-body small { font-size: var(--yui-text-sm); color: var(--yui-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.roster-body em { font-size: var(--yui-text-sm); font-style: normal; color: var(--yui-accent-text); }
-.roster-assign { display: flex; flex-direction: column; gap: var(--yui-space-2); }
-.roster-assign select, .roster-assign input { min-width: 0; }
-.roster-assign .btn { align-self: flex-end; }
 
 /* ── Panel MCP (P1-MCP-3, sidebar) ─────────────────────────────── */
-.mcp-section { display: flex; flex-direction: column; gap: var(--yui-space-2); padding: var(--yui-space-4) var(--yui-space-2) 0; border-top: 1px solid var(--yui-border); margin-top: auto; }
-.mcp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-.mcp-row { display: flex; align-items: center; gap: var(--yui-space-2); padding: 5px 4px; border-radius: 8px; }
-.mcp-row:hover { background: var(--yui-hover); }
-.mcp-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--yui-text-dim); }
-.mcp-dot[data-on] { background: var(--yui-success); }
-.mcp-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.mcp-body b { font-size: var(--yui-text-md); font-weight: 500; color: var(--yui-text-secondary); }
-.mcp-body small { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
-.mcp-toggle { padding: 2px 8px; font-size: var(--yui-text-sm); }
-.mcp-audit { display: flex; flex-direction: column; gap: 3px; padding-top: var(--yui-space-2); border-top: 1px solid var(--yui-border); }
-.mcp-audit ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.mcp-audit li { font-size: var(--yui-text-sm); color: var(--yui-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mcp-audit li[data-ok] { color: var(--yui-text-muted); }
-.roster-mcp { color: var(--yui-accent-text); }
 
 /* State kosong di dalam chat-scroll: hero + saran + composer aktif di bawahnya */
 .chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--yui-space-3); padding: var(--yui-space-8) var(--yui-space-6); min-height: 100%; text-align: center; }
@@ -470,105 +342,19 @@ html, body {
 /* ── Switcher persona di chat-header (dropdown) ────────────────── */
 
 /* ── Riwayat sesi project (drawer) ─────────────────────────────── */
-.session-new { width: 100%; margin-bottom: var(--yui-space-2); }
-.session-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.session-list button {
-  display: flex; align-items: center; gap: var(--yui-space-2); font: inherit; font-size: var(--yui-text-md);
-  color: var(--yui-text-secondary); background: none; border: none; border-radius: 8px;
-  padding: 6px 8px; cursor: pointer; text-align: left;
-}
-.session-list button:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
-.session-list button[data-active] { background: var(--yui-bg-control-active); color: var(--yui-text-primary); }
-.session-list .who { font-weight: 500; }
-.session-list .when { margin-left: auto; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
 
 /* ── Papan kanban (P2-FLOW-7) ──────────────────────────────────── */
-.board { display: grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); gap: var(--yui-space-3); align-items: start; }
-.board-col {
-  display: flex; flex-direction: column; gap: var(--yui-space-2);
-  background: var(--yui-bg-inset, rgba(255, 255, 255, 0.03));
-  border: 1px solid var(--yui-border); border-radius: 12px; padding: var(--yui-space-3);
-  min-height: 220px;
-}
-.board-col[data-s="doing"] { border-top: 2px solid var(--yui-warn); }
-.board-col[data-s="review"] { border-top: 2px solid var(--yui-info); }
-.board-col[data-s="done"] { border-top: 2px solid var(--yui-ok); }
-.board-col[data-s="todo"] { border-top: 2px solid var(--yui-border-strong); }
-.board-col.dragover { background: var(--yui-hover); }
-.board-col > header { display: flex; align-items: center; justify-content: space-between; }
-.board-col > header b { font-size: var(--yui-text-md); font-weight: 600; color: var(--yui-text-secondary); }
-.board-count {
-  font-size: var(--yui-text-sm); color: var(--yui-text-dim);
-  background: var(--yui-bg-surface); border-radius: 999px; padding: 0 8px;
-}
-.board-cards { display: flex; flex-direction: column; gap: var(--yui-space-2); }
-.board-card {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  background: var(--yui-bg-surface-raised); border: 1px solid var(--yui-border);
-  border-radius: 10px; padding: var(--yui-space-2) var(--yui-space-3);
-  cursor: grab; user-select: none;
-}
-.board-card:active { cursor: grabbing; }
-.board-card:hover { border-color: var(--yui-border-strong); }
-.board-title { font-size: var(--yui-text-md); flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.board-sub { color: var(--yui-text-dim); }
-.board-assignee {
-  font-size: var(--yui-text-sm); color: var(--yui-text-muted);
-  border: 1px solid var(--yui-border); border-radius: 999px; padding: 1px 8px;
-}
-.board-art { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
-@media (max-width: 980px) { .board { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Katalog MCP (P1-MCP-1) ───────────────────────────────────── */
 .mcp-catalog { margin-top: var(--yui-space-4); display: flex; flex-direction: column; gap: var(--yui-space-2); }
-.mcp-search { width: 100%; }
-.catalog-list { display: flex; flex-direction: column; gap: 4px; max-height: 340px; overflow-y: auto; }
-.catalog-row {
-  display: flex; align-items: center; gap: var(--yui-space-2);
-  padding: var(--yui-space-2); border-radius: 8px; flex-wrap: wrap;
-}
-.catalog-row:hover { background: var(--yui-hover); }
-.catalog-row[data-installed] { background: var(--yui-bg-inset, rgba(255, 255, 255, 0.03)); }
-.catalog-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.catalog-body b { font-size: var(--yui-text-md); display: flex; align-items: center; gap: 6px; }
-.catalog-body small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
-.catalog-risk { font-size: 10px; border-radius: 999px; padding: 1px 7px; border: 1px solid var(--yui-border); color: var(--yui-text-dim); }
-.catalog-risk[data-r="tinggi"] { color: var(--yui-danger, #e57373); border-color: var(--yui-danger, #e57373); }
-.catalog-risk[data-r="sedang"] { color: var(--yui-warn); border-color: var(--yui-warn); }
-.catalog-form { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-.catalog-form input { width: 100%; font-size: var(--yui-text-sm); }
 
 /* ── Memori (P1-MEM-1) ──────────────────────────────────────────── */
-.memory-doc { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--yui-space-4); }
-.memory-doc > header { display: flex; align-items: center; justify-content: space-between; }
-.memory-doc > header b { font-size: var(--yui-text-md); font-weight: 600; }
-.memory-doc textarea {
-  width: 100%; resize: vertical; min-height: 120px;
-  font-family: var(--yui-font-mono, ui-monospace, monospace); font-size: var(--yui-text-sm);
-  line-height: 1.55; padding: var(--yui-space-3); border-radius: 10px;
-  background: var(--yui-bg-inset, rgba(255, 255, 255, 0.03)); border: 1px solid var(--yui-border);
-  color: var(--yui-text-primary);
-}
-.memory-doc small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 
 /* ── Noted chip (P1-MEM-2: learn nudge) ─────────────────────────── */
 
 /* ── Sidebar footer + Settings modal ────────────────────────────── */
 
   /* Glass ala menu macOS (disetujui user): bg semi-transparan + blur di belakang */
-.catalog-runtime {
-  font-size: 10px; color: #d29922; border: 1px solid #d29922;
-  border-radius: 999px; padding: 1px 6px; margin-left: 4px; white-space: nowrap;
-}
-.catalog-note { color: var(--yui-text-dim); font-size: 11px; }
-.uv-status {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 8px 10px; border: 1px dashed var(--yui-border);
-  border-radius: 10px; margin: 6px 0 10px;
-}
-.uv-status[data-ok] { border-style: solid; border-color: var(--yui-ok); }
-.uv-status small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
-.uv-status code { font-family: var(--yui-font-mono, ui-monospace, monospace); font-size: 11px; }
 
 /* ── Skeleton (loader konten — satu bahasa visual) ──────────────── */
 .skeleton {
@@ -607,123 +393,33 @@ html, body {
 /* ── Tab Skill (P1-MEM-3) ───────────────────────────────────────── */
 
 /* ── Model per persona (P1-MDL) di Settings ─────────────────────── */
-.model-routes .field-title { font-weight: 600; display: block; margin-bottom: 2px; }
-.model-routes .dim { display: block; margin-bottom: var(--yui-space-2); color: var(--yui-text-dim); }
 
 /* ── Tab File (P2-STU-3 v0) ─────────────────────────────────────── */
-.file-split { display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: var(--yui-space-3); min-height: 320px; }
-.file-tree, .file-view {
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
-  background: var(--yui-bg-inset); padding: var(--yui-space-2); overflow-y: auto; max-height: 60vh;
-}
-.file-row {
-  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
-  background: none; border: none; cursor: pointer; color: var(--yui-text-secondary);
-  font: inherit; font-size: var(--yui-text-sm); padding: 3px 6px; border-radius: var(--yui-radius-sm);
-}
-.file-row:hover { background: var(--yui-hover); color: var(--yui-text); }
-.file-row[data-sel] { background: var(--yui-hover); color: var(--yui-text); font-weight: 600; }
-.file-row .file-ico { opacity: 0.5; width: 12px; flex: none; }
-.file-row .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-row .file-size { margin-left: auto; color: var(--yui-text-dim); font-size: 11px; flex: none; }
-.file-view-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 2px 4px 8px; }
-.file-view-head small { color: var(--yui-text-dim); }
-.file-pre {
-  margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--yui-font-mono);
-  font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
-}
 
 /* ── Galeri 15 bentuk Orin (dev 10) ──────────────────────────────── */
 /* ── Kartu & modal galeri 15 bentuk Orin (dev 10) ────────────────── */
 .stop-btn { margin-left: 2px; color: var(--yui-warn, #e6a23c); }
 
 /* Diff file (P2-STU-3) */
-.file-view-tools { display: flex; align-items: center; gap: 8px; }
-.file-view-tools select { max-width: 180px; }
 .file-diff-stat { margin: 0 0 4px; color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 .file-diff-stat .add { color: var(--yui-ok); }
 .file-diff-stat .del { color: var(--yui-warn); }
-.dl-plus, .dl-\+ { color: var(--yui-ok); background: color-mix(in srgb, var(--yui-ok) 8%, transparent); display: inline-block; width: 100%; }
-.dl-minus, .dl-\- { color: var(--yui-warn); background: color-mix(in srgb, var(--yui-warn) 8%, transparent); display: inline-block; width: 100%; }
 
 /* Markdown dalam bubble chat (dev-10) */
-.md > *:first-child { margin-top: 0; }
-.md > *:last-child { margin-bottom: 0; }
-.md p { margin: 0 0 0.5em; }
-.md h4, .md h5, .md h6 { margin: 0.7em 0 0.3em; font-size: 1em; }
-.md h4 { font-size: 1.05em; }
-.md ul, .md ol { margin: 0.3em 0 0.5em; padding-left: 1.3em; }
-.md li { margin: 0.15em 0; }
-.md blockquote { margin: 0.4em 0; padding: 0.2em 0.8em; border-left: 2px solid var(--yui-border); color: var(--yui-text-dim); }
-.md pre { margin: 0.5em 0; padding: 0.6em 0.8em; background: var(--yui-hover); border-radius: 8px; overflow-x: auto; font-size: 0.85em; }
-.md code { font-family: var(--yui-mono, ui-monospace, monospace); background: var(--yui-hover); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
-.md pre code { background: none; padding: 0; }
-.md a { color: var(--yui-accent); text-underline-offset: 2px; }
-.md hr { border: none; border-top: 1px solid var(--yui-border); margin: 0.6em 0; }
 
 /* Baris tugas per persona di kartu Tim */
-.org-tasks { display: flex; flex-direction: column; gap: 3px; margin: 6px 0 0; }
-.org-task { display: flex; gap: 6px; align-items: baseline; font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
-.org-task .dot { flex: none; }
 
 /* Tombol refresh file tree */
-.file-toolbar { display: flex; justify-content: flex-end; }
 
 /* Diagram hierarki Tim v3 (dev-10): kanvas tak terbatas ala Excalidraw —
    pan hold-drag (Pointer Events + capture), scroll = geser, Ctrl+scroll = zoom,
    grid dot yang ikut bergeser (background-position = pan), tanpa dependency. */
-.org-canvas {
-  position: relative; overflow: hidden; height: min(85vh,85vh);
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
-  background-color: var(--yui-bg-inset);
-  background-image: radial-gradient(color-mix(in srgb, var(--yui-text-dim) 26%, transparent) 1px, transparent 1px);
-  background-size: 22px 22px; background-position: center;
-  cursor: grab; touch-action: none; user-select: none;
-}
-.org-canvas.dragging { cursor: grabbing; }
-.org-board { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; padding-top: 34px; will-change: transform; }
-.org-controls {
-  position: absolute; top: 10px; right: 10px; z-index: 2;
-  display: flex; align-items: center; gap: 6px;
-  padding: 4px 6px; border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
-  background: color-mix(in srgb, var(--yui-bg-surface) 82%, transparent);
-  backdrop-filter: blur(8px);
-}
-.org-controls .btn { padding: 2px 9px; }
-.org-zoom { min-width: 42px; text-align: center; font-size: var(--yui-text-sm); color: var(--yui-text-dim); font-variant-numeric: tabular-nums; }
-.org-canvas-hint {
-  position: absolute; left: 10px; bottom: 8px; z-index: 2; margin: 0;
-  font-size: var(--yui-text-sm); color: var(--yui-text-dim); pointer-events: none;
-}
-.org-tree { display: flex; justify-content: center; min-width: max-content; margin: 0 auto; padding: 8px 24px 16px; }
-.org-node { display: flex; flex-direction: column; align-items: center; }
-.org-hint { margin: 10px 0 0; text-align: center; }
-.org-branches { list-style: none; display: flex; justify-content: center; margin: 0; padding: 28px 0 0; position: relative; }
-.org-branches::before { content: ""; position: absolute; top: 0; left: 50%; height: 28px; border-left: 1px solid var(--yui-text-muted); }
-.org-branch { position: relative; padding: 28px 16px 0; display: flex; flex-direction: column; align-items: center; }
-.org-branch::before, .org-branch::after { content: ""; position: absolute; top: 0; width: 50%; height: 28px; border-top: 1px solid var(--yui-text-muted); }
-.org-branch::before { right: 50%; }
-.org-branch::after { left: 50%; border-left: 1px solid var(--yui-text-muted); }
-.org-branch:first-child::before { border-top: none; }
-.org-branch:last-child::after { border-top: none; }
-.org-branch:only-child::before, .org-branch:only-child::after { display: none; }
-.org-branch:only-child { padding-top: 28px; }
-.org-branch:only-child .org-link { display: block; }
-.org-link { display: none; position: absolute; top: 0; left: 50%; height: 28px; border-left: 1px solid var(--yui-text-muted); }
-.org-branch .org-card { min-width: 210px; max-width: 280px; }
-.org-branch .org-branches { margin-top: 4px; }
-.org-task .goal-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.org-task .dur { flex: none; font-variant-numeric: tabular-nums; color: var(--yui-text-dim); }
 
 /* Durasi di tab Pohon */
-.tree-dur { font-variant-numeric: tabular-nums; color: var(--yui-text-dim); }
-.tree-dur.running { color: var(--yui-warn); }
 
 /* Dungeon (P1-DUN-1..2): arena latihan persona di tab Skill. */
 
 /* P1-DUN-5: gating fase roster — siap/belum per fase workflow. */
-.roster-phase[data-r="ok"] { color: var(--yui-ok); }
-.roster-phase[data-r="gap"] { color: var(--yui-danger, #e5484d); font-style: normal; }
 /* P1-MDL-2: panel smoke test model di Settings. */
 
 /* ── Dungeon page (P1-DUN-4): halaman terpisah arena latihan persona ── */
@@ -731,29 +427,14 @@ html, body {
 /* ── Metering panel (P1-CRED-1) ── */
 
 /* P1-INF-4: trace view */
-.trace-view { display: flex; flex-direction: column; gap: 14px; max-width: 860px; margin: 0 auto; width: 100%; padding: 18px 8px; overflow-y: auto; }
-.trace-head { display: flex; align-items: center; gap: 12px; }
-.trace-head .btn { margin-left: auto; }
-.trace-turns { display: flex; flex-direction: column; gap: 8px; }
-.trace-turns details { border: 1px solid var(--yui-border); border-radius: 8px; padding: 8px 12px; }
-.trace-turns summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
-.trace-turns summary::-webkit-details-marker { display: none; }
-.trace-status { font-size: var(--yui-text-sm); padding: 1px 8px; border-radius: 999px; border: 1px solid var(--yui-border); }
 .trace-running { color: #e0af68; border-color: #e0af68; }
 .trace-error { color: #e06c75; border-color: #e06c75; }
 .trace-done { color: #9ece6a; border-color: #9ece6a; }
 .trace-cancelled { color: var(--yui-text-secondary); }
-.trace-steps { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: var(--yui-text-sm); }
-.trace-steps li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-.trace-steps li[data-error] .trace-label { color: #e06c75; }
-.trace-steps code { color: var(--yui-text-secondary); font-size: 11px; }
-.trace-label { flex: 1; min-width: 220px; word-break: break-word; }
 
 /* P1-CRED-2/3/4: panel saldo & batas */
 
 /* ---- P1-PRJ-8: hapus project (konfirmasi dua langkah) ---- */
-.btn.danger { background: var(--yui-danger); color: #fff; }
-.btn.danger:hover { filter: brightness(1.08); }
 
 /* Mode approval chip (fix dev-10): toggle cepat di atas composer */
 

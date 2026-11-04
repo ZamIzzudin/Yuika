@@ -181,13 +181,16 @@ sendiri (portret persona & Orin = seni, bukan ikon — tetap).
 
 | File | Status |
 |---|---|
-| `components/DungeonView.tsx` | ✅ referensi DS (ui/* + Tailwind murni + Phosphor) |
-| `components/ChatView.tsx` | ✅ batch 2 — timeline, composer, kartu approval/delegasi/reasoning |
-| `components/SettingsModal.tsx` | ✅ batch 2 — ui Modal/Field/Button + tabel metering |
-| `page.tsx` shell | ✅ batch 2 — sidebar, header persona, TabList, empty state |
-| `SkillsTab.tsx` / `ProjectPanel.tsx` / `PersonaPicker.tsx` | ✅ batch 3 — draf skill (Field/TextArea), sidebar project (konfirmasi hapus), grid persona + galeri bentuk (ui Modal) |
-| `TaskDrawer.tsx` / `FileTab.tsx` / `McpPanel.tsx` / `TeamTree.tsx` / `TracePanel.tsx` / `Markdown.tsx` | ⏳ batch 4 |
-| `OrinPortrait.tsx` / `orinShapes.tsx` / `PersonaPortrait.tsx` | ✅ tetap (SVG art, bukan layout) |
+| **SEMUA komponen sudah migrasi** — UI 100% ui/* + Tailwind semantik + Phosphor | ✅ |
+| `DungeonView` · `ChatView` · `SettingsModal` · `page.tsx` shell | ✅ batch 1–2 (referensi DS) |
+| `SkillsTab` · `ProjectPanel` · `PersonaPicker` | ✅ batch 3 |
+| `TaskDrawer` · `FileTab` · `McpPanel` · `TeamTree` · `TracePanel` · `Markdown` | ✅ batch 4 |
+| `OrinPortrait.tsx` / `orinShapes.tsx` / `PersonaPortrait.tsx` / `Skeleton.tsx` | ✅ tetap (SVG art / sederhana) |
+
+**globals.css final (~440 baris)**: hanya `@theme` token alias, `@keyframes` animasi,
+4 `@utility` (`glass-panel`/`msg-in`/`caret-blink`/`typing-dot`), `.chat-empty`
+(portrait), scrollbar & reset. **Nol kelas komponen legacy** — menambah kelas baru
+WAJIB lewat `@utility` (utility dipakai ≥3 tempat) atau komponen `ui/*`.
 
 Aturan transisi: file yang belum dimigrasi tetap pakai kelas CSS lama (jangan
 campur dua gaya dalam satu file); setelah sebuah file bersih, hapus kelas

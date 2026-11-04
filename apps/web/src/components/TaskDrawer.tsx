@@ -10,11 +10,22 @@ import type {
   TaskNode,
   TaskStatus,
 } from "@yui/contracts";
+import {
+  ArrowBendDownRight,
+  Check,
+  Circle,
+  CircleHalf,
+  CircleNotch,
+  Paperclip,
+  Plus,
+  X,
+} from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { TeamTree, fmtDur } from "./TeamTree";
 import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
+import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 
 /** Status cycle: klik chip = maju satu langkah. */
 const NEXT: Record<TaskStatus, TaskStatus> = {
@@ -28,12 +39,6 @@ const LABEL: Record<TaskStatus, string> = {
   doing: "Kerja",
   review: "Reviu",
   done: "Selesai",
-};
-const DOT: Record<TaskStatus, string> = {
-  todo: "○",
-  doing: "◐",
-  review: "◑",
-  done: "●",
 };
 
 export type WorkspaceTab =
@@ -75,58 +80,13 @@ const PERSONA_NAME: Record<string, string> = {
   "yui-scribe": "Yui Scribe",
   "yui-coder": "Yui Coder",
 };
-const STATE_LABEL: Record<string, string> = {
-  idle: "siaga",
-  thinking: "berpikir",
-  working: "bekerja",
-  awaiting_input: "menunggu Anda",
-  celebrating: "merayakan",
-  done: "selesai",
-  error: "error",
-};
 
-/** Org-chart Tim: kartu persona + state chip. */
-function OrgCard({
-  personaId,
-  subtitle,
-  state,
-  goal,
-  summary,
-  root,
-}: {
-  personaId: string;
-  subtitle?: string;
-  state?: PersonaState | "done";
-  goal?: string;
-  summary?: string;
-  root?: boolean;
-}) {
-  const label =
-    state === "done"
-      ? "selesai"
-      : state
-        ? STATE_LABEL[state as PersonaState]
-        : "menunggu";
-  return (
-    <div
-      className={"org-card" + (root ? " org-root" : "")}
-      data-s={state ?? "idle"}
-    >
-      <span className="face">
-        <PersonaFace personaId={personaId} size={root ? 34 : 26} />
-      </span>
-      <div className="org-body">
-        <b>{PERSONA_NAME[personaId] ?? personaId.replace("yui-", "")}</b>
-        {subtitle && <small>{subtitle}</small>}
-        {goal && <p className="org-goal">{goal}</p>}
-        {summary && <p className="org-summary">{summary}</p>}
-      </div>
-      <span className="state-chip" data-s={state ?? "idle"}>
-        <i />
-        {label}
-      </span>
-    </div>
-  );
+/** Ikon status simpul pohon (○ ◐ ◑ ● → Phosphor). */
+function TaskStatusIcon({ s, size = 10 }: { s: TaskStatus; size?: number }) {
+  if (s === "doing") return <CircleNotch size={size} aria-hidden className="animate-pulse text-accent" />;
+  if (s === "review") return <CircleHalf size={size} aria-hidden className="text-warn" />;
+  if (s === "done") return <Circle size={size} weight="fill" aria-hidden className="text-success" />;
+  return <Circle size={size} aria-hidden className="text-dim" />;
 }
 
 /** Satu simpul pohon task (rekursif) — proyeksi event `task.node.*` (D19). */
@@ -142,39 +102,37 @@ function TreeNode({
   const running = node.status === "doing" || node.status === "review";
   return (
     <li
-      className="tree-node"
-      data-s={node.status}
+      className="flex flex-wrap items-center gap-2 rounded-md2 px-2 py-1.5 text-body leading-6 hover:bg-hover"
       style={{ marginLeft: depth > 0 ? 16 : 0 }}
     >
-      <span className="tree-dot" title={LABEL[node.status]}>
-        {DOT[node.status]}
+      <span title={LABEL[node.status]} className="self-center">
+        <TaskStatusIcon s={node.status} />
       </span>
-      <span className="tree-title">{node.title}</span>
+      <span className="text-secondary">{node.title}</span>
       {node.assignee && (
-        <small className="tree-assignee">
-          {node.assignee.replace("yui-", "")}
-        </small>
+        <small className="text-caption text-dim">{node.assignee.replace("yui-", "")}</small>
       )}
       {running && node.startedAt && (
-        <small
-          className="tree-dur running"
-          title="sudah berjalan sejak status doing"
-        >
-          ◐ {fmtDur(now - node.startedAt)}
+        <small className="flex items-center gap-1 text-caption tabular-nums text-warn" title="sudah berjalan sejak status doing">
+          <CircleNotch size={9} aria-hidden className="animate-pulse" /> {fmtDur(now - node.startedAt)}
         </small>
       )}
       {node.status === "done" && node.startedAt && (
-        <small className="tree-dur" title="total durasi pengerjaan">
+        <small className="text-caption tabular-nums text-dim" title="total durasi pengerjaan">
           {fmtDur((node.doneAt ?? now) - node.startedAt)}
         </small>
       )}
       {node.artefak.map((a) => (
-        <small key={a} className="tree-artefak" title={a}>
-          {a.split("/").pop()}
+        <small
+          key={a}
+          className="flex items-center gap-0.5 rounded-pill border border-line bg-hover px-1.5 py-px font-mono text-caption text-muted"
+          title={a}
+        >
+          <Paperclip size={9} aria-hidden /> {a.split("/").pop()}
         </small>
       ))}
       {node.children.length > 0 && (
-        <ul className="tree-children">
+        <ul className="m-0 flex w-full list-none flex-col gap-0.5 p-0">
           {node.children.map((c) => (
             <TreeNode key={c.id} node={c} depth={depth + 1} now={now} />
           ))}
@@ -187,6 +145,7 @@ function TreeNode({
 /**
  * Tab proyek di area utama shell (P1-PRJ-4/6/7): Chat | Tim | Pohon | Roster | Sesi
  * berbagi satu area konten — nav tab dirender page.tsx, komponen ini = konten non-chat.
+ * DS-1: ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
  */
 export function ProjectTabs({
   project,
@@ -394,28 +353,33 @@ export function ProjectTabs({
   ];
 
   return (
-    <div className="pane-scroll">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6">
       {!loaded && <Skeleton lines={6} />}
       {loaded && activeTab === "sessions" && (
-        <section aria-label="Sesi project">
-          <button className="btn secondary session-new" onClick={onNewSession}>
-            + Sesi baru (Conductor)
-          </button>
+        <section aria-label="Sesi project" className="flex flex-col gap-2.5">
+          <div>
+            <Button onClick={onNewSession}>
+              <Plus size={13} weight="bold" aria-hidden /> Sesi baru (Conductor)
+            </Button>
+          </div>
           {sessions.length === 0 ? (
-            <p className="dim">Belum ada sesi.</p>
+            <p className="text-caption text-dim">Belum ada sesi.</p>
           ) : (
-            <ul className="session-list">
+            <ul className="flex flex-col gap-0.5">
               {sessions.map((s) => (
                 <li key={s.sessionId}>
                   <button
-                    data-active={
-                      s.sessionId === activeSessionId ? "" : undefined
-                    }
+                    aria-current={s.sessionId === activeSessionId ? "true" : undefined}
+                    className={`flex w-full cursor-pointer items-center gap-2.5 rounded-md2 border px-2.5 py-2 text-left transition-colors ${
+                      s.sessionId === activeSessionId
+                        ? "border-line bg-hover"
+                        : "border-transparent hover:bg-hover"
+                    }`}
                     onClick={() => onOpenSession(s)}
                   >
                     <PersonaFace personaId={s.personaId} size={18} />
-                    <span className="who">{s.personaName}</span>
-                    <span className="when">{relTime(s.lastEventAt)}</span>
+                    <span className="flex-1 text-body text-secondary">{s.personaName}</span>
+                    <span className="shrink-0 text-caption text-dim">{relTime(s.lastEventAt)}</span>
                   </button>
                 </li>
               ))}
@@ -425,69 +389,69 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "roster" && (
-        <section aria-label="Roster proyek">
-          <p className="pane-hint">
+        <section aria-label="Roster proyek" className="flex flex-col gap-3">
+          <p className="text-caption text-dim">
             {done}/{tasks.length} task selesai · roster tersimpan deklaratif di{" "}
-            <code>project.yaml</code>
+            <code className="font-mono">project.yaml</code>
           </p>
           {roster.length === 0 ? (
-            <p className="task-empty">
-              Belum ada persona di roster — assign di bawah untuk membentuk tim
-              proyek.
+            <p className="text-caption leading-5 text-dim">
+              Belum ada persona di roster — assign di bawah untuk membentuk tim proyek.
             </p>
           ) : (
-            <ul className="roster-list">
+            <ul className="flex flex-col gap-1.5">
               {roster.map((r) => {
                 const p = personas.find((x) => x.id === r.personaId);
                 return (
-                  <li key={r.personaId} className="roster-row">
+                  <li
+                    key={r.personaId}
+                    className="group flex items-start gap-3 rounded-lg2 border border-line bg-surface px-3 py-2.5"
+                  >
                     {p ? (
                       <PersonaFace personaId={p.id} size={24} />
                     ) : (
-                      <span className="face" />
+                      <span className="h-6 w-6 shrink-0 rounded-pill bg-inset" aria-hidden />
                     )}
-                    <span className="roster-body">
-                      <b>{p?.name ?? r.personaId}</b>
-                      <small>{r.role}</small>
-                      {r.phases.length > 0 && <em>{r.phases.join(" · ")}</em>}
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <b className="text-body font-semibold text-primary">{p?.name ?? r.personaId}</b>
+                      <small className="text-caption text-dim">{r.role}</small>
+                      {r.phases.length > 0 && (
+                        <small className="text-caption text-muted">{r.phases.join(" · ")}</small>
+                      )}
                       {/* P1-DUN-5: gating per fase — ✕ = belum ada skill siap (latih di Dungeon) */}
                       {readiness
                         .find((x) => x.personaId === r.personaId)
-                        ?.phases.filter(
-                          (ph) => ph.skills.length > 0 || !ph.ready,
-                        )
+                        ?.phases.filter((ph) => ph.skills.length > 0 || !ph.ready)
                         .map((ph) => (
-                          <em
+                          <small
                             key={ph.phase}
-                            className="roster-phase"
-                            data-r={ph.ready ? "ok" : "gap"}
+                            className={`flex items-center gap-0.5 text-caption ${ph.ready ? "text-success" : "text-danger"}`}
                             title={
                               ph.ready
                                 ? `skill siap: ${ph.skills.join(", ")}`
                                 : "belum ada skill siap untuk fase ini — latih persona di Dungeon (tab Skill)"
                             }
                           >
-                            {ph.phase} {ph.ready ? "✓" : "✕"}
-                          </em>
+                            {ph.ready ? <Check size={10} weight="bold" aria-hidden /> : <X size={10} weight="bold" aria-hidden />}
+                            {ph.phase}
+                          </small>
                         ))}
                       {r.mcp.map((b) => (
-                        <em key={b.server} className="roster-mcp">
+                        <Chip key={b.server} tone="muted" className="self-start">
                           MCP:{b.server}
                           {b.tools.length > 0 ? ` (${b.tools.length})` : ""}
-                        </em>
+                        </Chip>
                       ))}
                     </span>
                     <button
-                      className="task-close"
+                      className="flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
                       onClick={() =>
-                        void saveRoster(
-                          roster.filter((x) => x.personaId !== r.personaId),
-                        )
+                        void saveRoster(roster.filter((x) => x.personaId !== r.personaId))
                       }
                       aria-label={`Keluarkan ${p?.name ?? r.personaId}`}
                       disabled={busy}
                     >
-                      ✕
+                      <X size={12} aria-hidden />
                     </button>
                   </li>
                 );
@@ -495,31 +459,29 @@ export function ProjectTabs({
             </ul>
           )}
           {available.length > 0 && (
-            <div className="roster-assign">
-              <select
-                value={pick}
-                onChange={(e) => setPick(e.target.value)}
-                aria-label="Persona"
-              >
+            <div className="flex flex-wrap items-center gap-2 rounded-lg2 border border-line bg-inset p-3">
+              <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Persona" className="w-36">
                 <option value="">Persona…</option>
                 {available.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
-              </select>
-              <input
+              </Select>
+              <TextInput
                 placeholder="Peran di proyek ini…"
                 value={role}
                 maxLength={60}
+                className="w-56"
                 onChange={(e) => setRole(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && assign()}
               />
               {mcpServers.length > 0 && (
-                <select
+                <Select
                   value={mcpServer}
                   onChange={(e) => setMcpServer(e.target.value)}
                   aria-label="Binding MCP (opsional)"
+                  className="w-44"
                 >
                   <option value="">Tanpa binding MCP…</option>
                   {mcpServers.map((s) => (
@@ -527,15 +489,11 @@ export function ProjectTabs({
                       Bind MCP: {s.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
-              <button
-                className="btn"
-                onClick={assign}
-                disabled={!pick || !role.trim() || busy}
-              >
+              <Button variant="primary" onClick={assign} disabled={!pick || !role.trim() || busy}>
                 Assign
-              </button>
+              </Button>
             </div>
           )}
         </section>
@@ -543,14 +501,21 @@ export function ProjectTabs({
 
       {loaded && activeTab === "board" && (
         <section aria-label="Papan kanban task">
-          <div className="board">
+          <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
             {(["todo", "doing", "review", "done"] as const).map((col) => {
               const cards = flattenCards.filter((c) => c.node.status === col);
               return (
                 <div
                   key={col}
-                  className="board-col"
-                  data-s={col}
+                  className={`flex min-h-[220px] flex-col gap-2 rounded-lg2 border border-line border-t-2 bg-inset p-3 ${
+                    col === "doing"
+                      ? "border-t-warn"
+                      : col === "review"
+                        ? "border-t-accent"
+                        : col === "done"
+                          ? "border-t-success"
+                          : "border-t-line-strong"
+                  }`}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -558,33 +523,27 @@ export function ProjectTabs({
                     if (id) void moveTask(id, col);
                   }}
                 >
-                  <header>
-                    <b>{LABEL[col]}</b>
-                    <span className="board-count">{cards.length}</span>
+                  <header className="flex items-center justify-between">
+                    <b className="text-body font-semibold text-secondary">{LABEL[col]}</b>
+                    <span className="rounded-pill bg-surface px-2 text-caption tabular-nums text-dim">{cards.length}</span>
                   </header>
-                  <div className="board-cards">
+                  <div className="flex flex-col gap-2">
                     {cards.map(({ node, depth }) => (
                       <article
                         key={node.id}
-                        className="board-card"
+                        className="flex cursor-grab flex-wrap items-center gap-1.5 rounded-lg2 border border-line bg-raised px-3 py-2 select-none hover:border-line-strong active:cursor-grabbing"
                         style={{ marginLeft: depth * 10 }}
                         draggable
-                        onDragStart={(e) =>
-                          e.dataTransfer.setData("text/yui-task", node.id)
-                        }
+                        onDragStart={(e) => e.dataTransfer.setData("text/yui-task", node.id)}
                         title={depth > 0 ? "subtask" : undefined}
                       >
-                        {depth > 0 && <span className="board-sub">↳</span>}
-                        <span className="board-title">{node.title}</span>
+                        {depth > 0 && <ArrowBendDownRight size={10} aria-hidden className="text-dim" />}
+                        <span className="min-w-0 flex-1 overflow-wrap-anywhere text-body text-secondary">{node.title}</span>
                         {node.assignee && (
-                          <small className="board-assignee">
-                            {node.assignee.replace("yui-", "")}
-                          </small>
+                          <small className="text-caption text-muted">{node.assignee.replace("yui-", "")}</small>
                         )}
                         {node.artefak.length > 0 && (
-                          <small className="board-art">
-                            +{node.artefak.length}
-                          </small>
+                          <small className="text-caption text-dim">+{node.artefak.length}</small>
                         )}
                       </article>
                     ))}
@@ -597,45 +556,35 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "memory" && (
-        <section aria-label="Memori — apa yang Yui ketahui">
-          <div className="memory-doc">
-            <header>
-              <b>Tentang Anda — USER.md</b>
-              <button
-                className="btn"
-                onClick={() => void saveMemoryDoc("user")}
-              >
-                {savedFlash === "user" ? "✓ Tersimpan" : "Simpan"}
-              </button>
-            </header>
-            <textarea
-              value={userMd}
-              onChange={(e) => setUserMd(e.target.value)}
-              rows={9}
-              spellCheck={false}
-            />
-            <small>Lintas proyek: preferensi gaya, bahasa, batasan.</small>
-          </div>
-          <div className="memory-doc">
-            <header>
-              <b>Proyek ini — MEMORY.md</b>
-              <button
-                className="btn"
-                onClick={() => void saveMemoryDoc("project")}
-              >
-                {savedFlash === "project" ? "✓ Tersimpan" : "Simpan"}
-              </button>
-            </header>
-            <textarea
-              value={projMd}
-              onChange={(e) => setProjMd(e.target.value)}
-              rows={9}
-              spellCheck={false}
-            />
-            <small>
-              Keputusan, pelajaran, konteks yang berlaku di {project.name}.
-            </small>
-          </div>
+        <section aria-label="Memori — apa yang Yui ketahui" className="flex max-w-[760px] flex-col gap-3">
+          {(
+            [
+              { scope: "user" as const, title: "Tentang Anda — USER.md", hint: "Lintas proyek: preferensi gaya, bahasa, batasan." },
+              { scope: "project" as const, title: `Proyek ini — MEMORY.md`, hint: `Keputusan, pelajaran, konteks yang berlaku di ${project.name}.` },
+            ]
+          ).map((d) => (
+            <Card key={d.scope} className="flex flex-col gap-2.5">
+              <header className="flex items-center justify-between gap-2">
+                <b className="text-body font-semibold text-primary">{d.title}</b>
+                <Button size="sm" onClick={() => void saveMemoryDoc(d.scope)}>
+                  {savedFlash === d.scope ? (
+                    <>
+                      <Check size={12} weight="bold" aria-hidden /> Tersimpan
+                    </>
+                  ) : (
+                    "Simpan"
+                  )}
+                </Button>
+              </header>
+              <TextArea
+                value={d.scope === "user" ? userMd : projMd}
+                onChange={(e) => (d.scope === "user" ? setUserMd(e.target.value) : setProjMd(e.target.value))}
+                rows={9}
+                spellCheck={false}
+              />
+              <small className="text-caption text-dim">{d.hint}</small>
+            </Card>
+          ))}
         </section>
       )}
 
@@ -644,15 +593,15 @@ export function ProjectTabs({
       {loaded && activeTab === "skills" && <SkillsTab />}
 
       {loaded && activeTab === "tree" && (
-        <section aria-label="Pohon task (TaskTree)">
+        <section aria-label="Pohon task (TaskTree)" className="max-w-[860px]">
           {tree.length === 0 ? (
-            <p className="task-empty">
-              Pohon task masih kosong — simpul terbentuk dari event task (REST /
-              tools <code>todo_*</code>) sejak TaskTree aktif. Task pra-migrasi
-              hanya tampil di tab Tasklist.
+            <p className="text-caption leading-5 text-dim">
+              Pohon task masih kosong — simpul terbentuk dari event task (REST / tools{" "}
+              <code className="font-mono">todo_*</code>) sejak TaskTree aktif. Task pra-migrasi hanya tampil di tab
+              Tasklist.
             </p>
           ) : (
-            <ul className="tree-root">
+            <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
               {tree.map((n) => (
                 <TreeNode key={n.id} node={n} depth={0} now={now} />
               ))}
@@ -662,7 +611,7 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "team" && (
-        <section aria-label="Tim — diagram hierarki delegasi">
+        <section aria-label="Tim — diagram hierarki delegasi" className="flex flex-col gap-4">
           <TeamTree
             projectId={project.id}
             rootSessionId={activeSessionId}
@@ -670,14 +619,17 @@ export function ProjectTabs({
             rootState={live.parentState}
           />
           {bench.length > 0 && (
-            <div className="org-bench">
-              <small>Siaga (di roster, belum didelegasi):</small>
-              <div className="bench-row">
+            <div className="w-full max-w-[460px]">
+              <small className="mb-2 block text-caption text-dim">Siaga (di roster, belum didelegasi):</small>
+              <div className="flex flex-wrap gap-2">
                 {bench.map((r) => (
-                  <span key={r.personaId} className="bench-chip" title={r.role}>
+                  <span
+                    key={r.personaId}
+                    className="inline-flex items-center gap-1.5 rounded-pill border border-dashed border-line px-2.5 py-0.5 text-caption text-muted"
+                    title={r.role}
+                  >
                     <PersonaFace personaId={r.personaId} size={16} />
-                    {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ??
-                      r.personaId.replace("yui-", "")}
+                    {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ?? r.personaId.replace("yui-", "")}
                   </span>
                 ))}
               </div>

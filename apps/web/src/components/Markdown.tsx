@@ -2,6 +2,8 @@
 // di-parse jadi React nodes. Cakupan: fenced code ```…```, heading #–###,
 // list -/* dan 1., blockquote >, inline `code`, **bold**, *italic*,
 // ~~strike~~, [teks](url), autolink http(s). Sisanya teks polos.
+// DS-1: gaya via utility Tailwind semantik (docs/DESIGN-SYSTEM.md) — komponen
+// ini self-contained, tidak lagi bergantung pada kelas `.md` di globals.css.
 import React from "react";
 
 type Inline = React.ReactNode;
@@ -18,20 +20,35 @@ function inline(text: string, keyPrefix = ""): Inline[] {
     if (m.index > last) out.push(text.slice(last, m.index));
     const tok = m[0];
     const k = `${keyPrefix}i${i++}`;
-    if (tok.startsWith("`")) out.push(<code key={k}>{tok.slice(1, -1)}</code>);
-    else if (tok.startsWith("**") || tok.startsWith("__")) out.push(<b key={k}>{tok.slice(2, -2)}</b>);
-    else if (tok.startsWith("~~")) out.push(<s key={k}>{tok.slice(2, -2)}</s>);
+    if (tok.startsWith("`"))
+      out.push(
+        <code key={k} className="rounded-[4px] bg-hover px-1 py-px font-mono text-[12.5px]">
+          {tok.slice(1, -1)}
+        </code>,
+      );
+    else if (tok.startsWith("**") || tok.startsWith("__"))
+      out.push(
+        <b key={k} className="font-semibold text-primary">
+          {tok.slice(2, -2)}
+        </b>,
+      );
+    else if (tok.startsWith("~~"))
+      out.push(
+        <s key={k} className="text-dim">
+          {tok.slice(2, -2)}
+        </s>,
+      );
     else if (tok.startsWith("*")) out.push(<i key={k}>{tok.slice(1, -1)}</i>);
     else if (tok.startsWith("[")) {
       const mm = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(tok)!;
       out.push(
-        <a key={k} href={mm[2]} target="_blank" rel="noreferrer noopener">
+        <a key={k} href={mm[2]} target="_blank" rel="noreferrer noopener" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">
           {mm[1]}
         </a>,
       );
     } else
       out.push(
-        <a key={k} href={tok} target="_blank" rel="noreferrer noopener">
+        <a key={k} href={tok} target="_blank" rel="noreferrer noopener" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">
           {tok}
         </a>,
       );
@@ -53,7 +70,11 @@ export function Markdown({ text }: { text: string }) {
 
   const flushPara = () => {
     if (para.length) {
-      blocks.push(<p key={key()}>{inline(para.join("\n"), key())}</p>);
+      blocks.push(
+        <p key={key()} className="whitespace-pre-wrap">
+          {inline(para.join("\n"), key())}
+        </p>,
+      );
       para = [];
     }
   };
@@ -62,15 +83,19 @@ export function Markdown({ text }: { text: string }) {
       const L = list;
       blocks.push(
         L.ordered ? (
-          <ol key={key()}>
+          <ol key={key()} className="ml-5 list-decimal">
             {L.items.map((it, j) => (
-              <li key={j}>{inline(it, `${j}`)}</li>
+              <li key={j} className="my-0.5">
+                {inline(it, `${j}`)}
+              </li>
             ))}
           </ol>
         ) : (
-          <ul key={key()}>
+          <ul key={key()} className="ml-5 list-disc">
             {L.items.map((it, j) => (
-              <li key={j}>{inline(it, `${j}`)}</li>
+              <li key={j} className="my-0.5">
+                {inline(it, `${j}`)}
+              </li>
             ))}
           </ul>
         ),
@@ -81,7 +106,7 @@ export function Markdown({ text }: { text: string }) {
   const flushQuote = () => {
     if (quote.length) {
       blocks.push(
-        <blockquote key={key()}>
+        <blockquote key={key()} className="border-l-2 border-line pl-3 text-dim">
           {inline(quote.join("\n"), key())}
         </blockquote>,
       );
@@ -101,7 +126,7 @@ export function Markdown({ text }: { text: string }) {
     if (code) {
       if (fence) {
         blocks.push(
-          <pre key={key()} data-lang={code.lang || undefined}>
+          <pre key={key()} data-lang={code.lang || undefined} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
             <code>{code.lines.join("\n")}</code>
           </pre>,
         );
@@ -122,7 +147,11 @@ export function Markdown({ text }: { text: string }) {
     if (h) {
       flushAll();
       const Tag = (["h4", "h4", "h5", "h6"] as const)[h[1]!.length - 1]!;
-      blocks.push(<Tag key={key()}>{inline(h[2]!, key())}</Tag>);
+      blocks.push(
+        <Tag key={key()} className={`font-semibold text-primary ${Tag === "h4" ? "text-[1.05em]" : ""}`}>
+          {inline(h[2]!, key())}
+        </Tag>,
+      );
       continue;
     }
     const q = /^>\s?(.*)$/.exec(line);
@@ -147,7 +176,7 @@ export function Markdown({ text }: { text: string }) {
     }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) {
       flushAll();
-      blocks.push(<hr key={key()} />);
+      blocks.push(<hr key={key()} className="border-line" />);
       continue;
     }
     flushList();
@@ -157,11 +186,11 @@ export function Markdown({ text }: { text: string }) {
   if (code) {
     // fence tak tertutup saat streaming — tampilkan apa adanya
     blocks.push(
-      <pre key={key()}>
+      <pre key={key()} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
         <code>{code.lines.join("\n")}</code>
       </pre>,
     );
   }
   flushAll();
-  return <div className="md">{blocks}</div>;
+  return <div className="flex flex-col gap-2">{blocks}</div>;
 }

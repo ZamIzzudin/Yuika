@@ -5,10 +5,13 @@
 // sama boleh muncul di dua cabang (dua sesi berbeda, label "dari <pemberi>")
 // tanpa menyiratkan atasan permanen. Implementasi canvas murni CSS transform
 // + Pointer Events (tanpa dependency).
+// DS-1: Tailwind semantik — garis penghubung via varian before:/after:.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
 import type { DelegationEdge } from "@yui/contracts";
+import { Check, Circle, CircleNotch, House, Minus, Plus } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
+import { Button, StateChip } from "./ui";
 
 const PERSONA_NAME: Record<string, string> = {
   "yui-conductor": "Yui Conductor",
@@ -16,11 +19,6 @@ const PERSONA_NAME: Record<string, string> = {
   "yui-scribe": "Yui Scribe",
   "yui-coder": "Yui Coder",
   "yui-designer": "Yui Designer",
-};
-const STATE_LABEL: Record<string, string> = {
-  idle: "menunggu",
-  thinking: "berpikir",
-  working: "bekerja",
 };
 const ZOOM_MIN = 0.35;
 const ZOOM_MAX = 2.5;
@@ -45,21 +43,20 @@ function Card({
   subtitle?: string;
   root?: boolean;
 }) {
-  const label =
-    state === "done" ? "selesai" : (STATE_LABEL[state] ?? "menunggu");
   return (
-    <div className={"org-card" + (root ? " org-root" : "")} data-s={state}>
-      <span className="face">
-        <PersonaFace personaId={personaId} size={root ? 34 : 26} />
-      </span>
-      <div className="org-body">
-        <b>{PERSONA_NAME[personaId] ?? personaId.replace("yui-", "")}</b>
-        {subtitle && <small>{subtitle}</small>}
+    <div
+      className={`flex w-full max-w-[460px] items-start gap-3 rounded-lg2 border px-4 py-3 ${
+        root ? "border-line-strong bg-raised" : "border-line bg-surface"
+      } ${root ? "" : "min-w-[210px] max-w-[280px]"}`}
+    >
+      <PersonaFace personaId={personaId} size={root ? 34 : 26} />
+      <div className="min-w-0 flex-1">
+        <b className="block text-body font-semibold text-primary">
+          {PERSONA_NAME[personaId] ?? personaId.replace("yui-", "")}
+        </b>
+        {subtitle && <small className="text-caption text-dim">{subtitle}</small>}
       </div>
-      <span className="state-chip" data-s={state}>
-        <i />
-        {label}
-      </span>
+      <StateChip state={state} className="mt-0.5 shrink-0" />
     </div>
   );
 }
@@ -67,19 +64,25 @@ function Card({
 function TaskRows({ edges, now }: { edges: DelegationEdge[]; now: number }) {
   if (!edges.length) return null;
   return (
-    <div className="org-tasks">
+    <div className="mt-1.5 flex w-full max-w-[280px] flex-col gap-[3px]">
       {edges.map((e) => {
         const running = e.status === "running";
         const dur = e.doneAt ? e.doneAt - e.startedAt : now - e.startedAt;
         return (
-          <span key={e.childSessionId} className="org-task" title={e.goal}>
-            <span className="dot">
-              {running ? (e.state === "idle" ? "○" : "◐") : "✓"}
+          <span key={e.childSessionId} className="flex items-baseline gap-1.5 text-caption text-dim" title={e.goal}>
+            <span className="shrink-0 self-center">
+              {running ? (
+                e.state === "idle" ? (
+                  <Circle size={9} aria-hidden className="text-dim" />
+                ) : (
+                  <CircleNotch size={9} aria-hidden className="animate-pulse text-accent" />
+                )
+              ) : (
+                <Check size={9} weight="bold" aria-hidden className="text-success" />
+              )}
             </span>
-            <span className="goal-text">
-              {e.goal.length > 64 ? e.goal.slice(0, 64) + "…" : e.goal}
-            </span>
-            <span className="dur">{fmtDur(dur)}</span>
+            <span className="min-w-0 flex-1 truncate">{e.goal.length > 64 ? e.goal.slice(0, 64) + "…" : e.goal}</span>
+            <span className="shrink-0 tabular-nums">{fmtDur(dur)}</span>
           </span>
         );
       })}
@@ -110,49 +113,37 @@ function Branch({
   }
   return (
     <ul
-      className={"org-branches" + (isRootBranch ? " root" : "")}
+      // konektor: garis vertikal dari induk (before ul) + sambungan-T per anak
+      // (before/after li); only-child otomatis mulus karena before ul tetap ada.
       aria-label="cabang delegasi"
+      className={`relative m-0 flex list-none justify-center pt-7 before:absolute before:top-0 before:left-1/2 before:h-7 before:border-l before:border-muted before:content-[''] ${
+        isRootBranch ? "" : "mt-1"
+      }`}
     >
       {[...groups.entries()].map(([personaId, ds]) => {
-        const working = ds.some(
-          (d) => d.status === "running" && d.state !== "idle",
-        );
+        const working = ds.some((d) => d.status === "running" && d.state !== "idle");
         const doneCount = ds.filter((d) => d.status === "done").length;
-        const state = working
-          ? "working"
-          : doneCount === ds.length
-            ? "done"
-            : "idle";
+        const state = working ? "working" : doneCount === ds.length ? "done" : "idle";
         const delegatedBy =
           ds[0]!.parentPersonaId !== "yui-conductor" && !isRootBranch
             ? `dari ${PERSONA_NAME[ds[0]!.parentPersonaId] ?? ds[0]!.parentPersonaId}`
             : undefined;
         return (
-          <li key={personaId + ds[0]!.childSessionId} className="org-branch">
-            <span
-              className="org-link"
-              aria-hidden
-              title="mendelegasikan tugas"
-            />
+          <li
+            key={personaId + ds[0]!.childSessionId}
+            className="relative flex flex-col items-center px-4 pt-7 before:absolute before:top-0 before:right-1/2 before:h-7 before:w-1/2 before:border-t before:border-muted before:content-[''] after:absolute after:top-0 after:left-1/2 after:h-7 after:w-1/2 after:border-t after:border-l after:border-muted after:content-[''] first:before:border-t-0 last:after:border-t-0"
+          >
             <Card
               personaId={personaId}
               state={state}
               subtitle={
-                delegatedBy ??
-                (ds.length > 1
-                  ? `${ds.length} tugas · ${doneCount} selesai`
-                  : undefined)
+                delegatedBy ?? (ds.length > 1 ? `${ds.length} tugas · ${doneCount} selesai` : undefined)
               }
             />
             <TaskRows edges={ds} now={now} />
             {/* delegasi turunan (mis. designer → coder) */}
             {ds.map((d) => (
-              <Branch
-                key={d.childSessionId}
-                parentSessionId={d.childSessionId}
-                edges={edges}
-                now={now}
-              />
+              <Branch key={d.childSessionId} parentSessionId={d.childSessionId} edges={edges} now={now} />
             ))}
           </li>
         );
@@ -191,9 +182,7 @@ export function TeamTree({
     try {
       const r = await fetch(`/api/projects/${projectId}/delegations`);
       if (r.ok)
-        setEdges(
-          ((await r.json()) as { delegations: DelegationEdge[] }).delegations,
-        );
+        setEdges(((await r.json()) as { delegations: DelegationEdge[] }).delegations);
     } catch {
       /* biarkan data lama */
     }
@@ -215,10 +204,7 @@ export function TeamTree({
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         setZoom((z) =>
-          Math.min(
-            ZOOM_MAX,
-            Math.max(ZOOM_MIN, z * (e.deltaY < 0 ? 1.15 : 1 / 1.15)),
-          ),
+          Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * (e.deltaY < 0 ? 1.15 : 1 / 1.15))),
         );
       } else {
         setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
@@ -250,9 +236,11 @@ export function TeamTree({
   return (
     <div
       ref={canvasRef}
-      className={"org-canvas" + (dragging ? " dragging" : "")}
       role="tree"
       aria-label="Diagram hierarki delegasi — kanvas"
+      className={`relative h-[85vh] touch-none overflow-hidden rounded-lg2 border border-line bg-inset [background-image:radial-gradient(color-mix(in_srgb,var(--color-dim)_26%,transparent)_1px,transparent_1px)] [background-size:22px_22px] select-none ${
+        dragging ? "cursor-grabbing" : "cursor-grab"
+      }`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -260,65 +248,43 @@ export function TeamTree({
       style={{ backgroundPosition: `${pan.x}px ${pan.y}px` }}
     >
       {/* kontrol zoom overlay — klik tidak ikut tergeser (stopPropagation) */}
-      <div className="org-controls" onPointerDown={(e) => e.stopPropagation()}>
-        <button
-          className="btn secondary"
-          onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.2))}
-          title="Perbesar"
-        >
-          +
-        </button>
-        <span className="org-zoom">{Math.round(zoom * 100)}%</span>
-        <button
-          className="btn secondary"
-          onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z / 1.2))}
-          title="Perkecil"
-        >
-          −
-        </button>
-        <button
-          className="btn secondary"
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
+        <Button size="sm" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.2))} title="Perbesar" aria-label="Perbesar">
+          <Plus size={12} weight="bold" aria-hidden />
+        </Button>
+        <span className="min-w-[42px] text-center text-caption tabular-nums text-dim">{Math.round(zoom * 100)}%</span>
+        <Button size="sm" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z / 1.2))} title="Perkecil" aria-label="Perkecil">
+          <Minus size={12} weight="bold" aria-hidden />
+        </Button>
+        <Button
+          size="sm"
           onClick={() => {
             setPan({ x: 0, y: 0 });
             setZoom(1);
           }}
           title="Reset ke tengah"
+          aria-label="Reset ke tengah"
         >
-          ⌂
-        </button>
+          <House size={12} aria-hidden />
+        </Button>
       </div>
       <div
-        className="org-board"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-        }}
+        className="absolute inset-0 flex items-start justify-center pt-[34px] will-change-transform"
+        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
       >
-        <div className="org-tree">
-          <div className="org-node">
+        <div className="mx-auto flex min-w-max justify-center px-6 pt-2 pb-4">
+          <div className="flex flex-col items-center">
             {rootPersonaId ? (
-              <Card
-                personaId={rootPersonaId}
-                state={leadState}
-                subtitle="lead sesi ini"
-                root
-              />
+              <Card personaId={rootPersonaId} state={leadState} subtitle="lead sesi ini" root />
             ) : (
-              <p className="task-empty">
-                Buka sesi untuk melihat struktur delegasi live.
-              </p>
+              <p className="text-caption text-dim">Buka sesi untuk melihat struktur delegasi live.</p>
             )}
             {rootSessionId && edges !== null && (
-              <Branch
-                parentSessionId={rootSessionId}
-                edges={edges}
-                now={now}
-                isRootBranch
-              />
+              <Branch parentSessionId={rootSessionId} edges={edges} now={now} isRootBranch />
             )}
             {edges !== null && edges.length === 0 && (
-              <p className="dim org-hint">
-                Belum ada delegasi — lead mengerjakan sendiri atau minta ia
-                mendelegasikan.
+              <p className="mt-2.5 text-center text-caption text-dim">
+                Belum ada delegasi — lead mengerjakan sendiri atau minta ia mendelegasikan.
               </p>
             )}
           </div>

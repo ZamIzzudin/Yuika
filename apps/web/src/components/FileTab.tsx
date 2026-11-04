@@ -1,10 +1,13 @@
 "use client";
 // Tab File (P2-STU-3 v0): tree kiri + viewer kanan. Artefak agent (reports/,
 // code/, MEMORY.md) bisa diperiksa tanpa keluar app. File teks/kode ≤256 KB
-// dibaca; selain itu tampil info ukuran. Diff hasil edit = penyusul (butuh snapshot lama).
+// dibaca; selain itu tampil info ukuran. DS-1: ui/* + Tailwind + Phosphor.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileNode } from "@yui/contracts";
+import type { Icon } from "@phosphor-icons/react";
+import { ArrowsClockwise, CaretDown, CaretRight, FileDoc, FolderSimple, UploadSimple } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
+import { Button, Select, TextInput } from "./ui";
 import { diffLines, diffStat } from "@yui/core/project/diff";
 
 interface Content {
@@ -19,27 +22,8 @@ interface Revision {
 }
 
 const TEXT_EXT = new Set([
-  "md",
-  "txt",
-  "json",
-  "yaml",
-  "yml",
-  "html",
-  "css",
-  "js",
-  "jsx",
-  "ts",
-  "tsx",
-  "py",
-  "sh",
-  "csv",
-  "xml",
-  "toml",
-  "ini",
-  "env",
-  "log",
-  "svg",
-  "sql",
+  "md", "txt", "json", "yaml", "yml", "html", "css", "js", "jsx", "ts", "tsx",
+  "py", "sh", "csv", "xml", "toml", "ini", "env", "log", "svg", "sql",
 ]);
 
 function fmtSize(n: number): string {
@@ -47,6 +31,9 @@ function fmtSize(n: number): string {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
+
+const DirIcon: Icon = FolderSimple;
+const FileIcon: Icon = FileDoc;
 
 function TreeRow({
   node,
@@ -64,26 +51,30 @@ function TreeRow({
   return (
     <>
       <button
-        className="file-row"
-        data-dir={isDir ? "" : undefined}
-        data-sel={sel === node.relPath ? "" : undefined}
+        aria-selected={sel === node.relPath ? true : undefined}
+        className={`flex w-full cursor-pointer items-center gap-1.5 rounded-md2 px-1.5 py-1 text-left text-[13px] leading-5 transition-colors ${
+          sel === node.relPath ? "bg-hover font-semibold text-primary" : "text-secondary hover:bg-hover hover:text-primary"
+        }`}
         style={{ paddingLeft: 6 + depth * 14 }}
         onClick={() => (isDir ? setOpen(!open) : onPick(node))}
       >
-        <span className="file-ico">{isDir ? (open ? "▾" : "▸") : "•"}</span>
-        <span className="file-name">{node.name}</span>
-        {!isDir && <small className="file-size">{fmtSize(node.size)}</small>}
+        <span className="w-3.5 shrink-0 self-center">
+          {isDir ? (
+            open ? <CaretDown size={11} aria-hidden className="text-dim" /> : <CaretRight size={11} aria-hidden className="text-dim" />
+          ) : null}
+        </span>
+        {isDir ? (
+          <DirIcon size={13} aria-hidden className="shrink-0 self-center text-dim" />
+        ) : (
+          <FileIcon size={13} aria-hidden className="shrink-0 self-center text-dim" />
+        )}
+        <span className="truncate">{node.name}</span>
+        {!isDir && <small className="ml-auto shrink-0 text-[11px] text-dim">{fmtSize(node.size)}</small>}
       </button>
       {isDir &&
         open &&
         node.children?.map((c) => (
-          <TreeRow
-            key={c.relPath}
-            node={c}
-            depth={depth + 1}
-            sel={sel}
-            onPick={onPick}
-          />
+          <TreeRow key={c.relPath} node={c} depth={depth + 1} sel={sel} onPick={onPick} />
         ))}
     </>
   );
@@ -109,8 +100,7 @@ export function FileTab({ projectId }: { projectId: string }) {
       if (r.ok) setTree(((await r.json()) as { tree: FileNode[] }).tree);
       else
         setErr(
-          (((await r.json()) as { error?: string }).error ??
-            "gagal memuat file") + "",
+          (((await r.json()) as { error?: string }).error ?? "gagal memuat file") + "",
         );
     } catch {
       setErr("gagal menghubungi server");
@@ -119,18 +109,12 @@ export function FileTab({ projectId }: { projectId: string }) {
     if (sel) {
       try {
         const [c, rv] = await Promise.all([
-          fetch(
-            `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`,
-          ),
-          fetch(
-            `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`,
-          ),
+          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`),
+          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`),
         ]);
         if (c.ok) setContent((await c.json()) as Content);
         if (rv.ok)
-          setRevisions(
-            ((await rv.json()) as { revisions: Revision[] }).revisions,
-          );
+          setRevisions(((await rv.json()) as { revisions: Revision[] }).revisions);
       } catch {
         /* biarkan state lama */
       }
@@ -175,12 +159,8 @@ export function FileTab({ projectId }: { projectId: string }) {
     setErr(null);
     try {
       const [c, r] = await Promise.all([
-        fetch(
-          `/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`,
-        ),
-        fetch(
-          `/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`,
-        ),
+        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`),
+        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`),
       ]);
       const cd = (await c.json()) as Content & { error?: string };
       if (!c.ok) setErr(cd.error ?? "gagal membaca file");
@@ -215,10 +195,7 @@ export function FileTab({ projectId }: { projectId: string }) {
     setErr(null);
     const r = await fetch(
       `/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`,
-      {
-        method: "POST",
-        body: await f.arrayBuffer(),
-      },
+      { method: "POST", body: await f.arrayBuffer() },
     );
     if (!r.ok) {
       setErr(((await r.json()) as { error?: string }).error ?? "gagal upload");
@@ -227,14 +204,15 @@ export function FileTab({ projectId }: { projectId: string }) {
     await loadTree();
   }
 
+  const pane = "overflow-y-auto rounded-lg2 border border-line bg-inset p-2 max-h-[60vh]";
+
   return (
-    <section className="file-tab" aria-label="File project">
-      <div className="file-toolbar">
-        <label
-          className="btn secondary"
-          title="Upload dokumen (pdf/xlsx/csv/…) → folder uploads/, dibaca agent via doc_read"
-        >
-          ⬆ Upload dokumen
+    <section aria-label="File project" className="flex flex-col gap-2.5">
+      <div className="flex justify-end gap-2">
+        <label title="Upload dokumen (pdf/xlsx/csv/…) → folder uploads/, dibaca agent via doc_read">
+          <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line-strong px-3 py-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-hover hover:text-primary">
+            <UploadSimple size={13} aria-hidden /> Upload dokumen
+          </span>
           <input
             type="file"
             hidden
@@ -246,101 +224,81 @@ export function FileTab({ projectId }: { projectId: string }) {
             }}
           />
         </label>
-        <button
-          className="btn secondary"
-          onClick={() => void loadTree()}
-          title="Muat ulang daftar file"
-        >
-          ↻ Segarkan
-        </button>
+        <Button size="sm" onClick={() => void loadTree()} title="Muat ulang daftar file">
+          <ArrowsClockwise size={12} aria-hidden /> Segarkan
+        </Button>
       </div>
-      <div className="file-split">
-        <div className="file-tree" role="tree">
+      <div className="grid min-h-[320px] grid-cols-[minmax(200px,260px)_minmax(0,1fr)] gap-3">
+        <div className={pane} role="tree">
           {tree === null ? (
             <SkeletonRows rows={5} />
           ) : tree.length === 0 ? (
-            <p className="dim">Project belum punya file.</p>
+            <p className="text-caption text-dim">Project belum punya file.</p>
           ) : (
             tree.map((n) => (
-              <TreeRow
-                key={n.relPath}
-                node={n}
-                depth={0}
-                sel={sel}
-                onPick={pick}
-              />
+              <TreeRow key={n.relPath} node={n} depth={0} sel={sel} onPick={pick} />
             ))
           )}
         </div>
-        <div className="file-view">
+        <div className={pane}>
           {loadingContent && <SkeletonRows rows={4} />}
-          {!loadingContent && err && <p className="project-err">{err}</p>}
+          {!loadingContent && err && (
+            <p className="text-caption text-danger">{err}</p>
+          )}
           {!loadingContent && !err && sel && content?.truncated && (
-            <p className="dim">
-              File terlalu besar untuk dibaca ({fmtSize(content.size)} &gt; 256
-              KB) — buka di file explorer.
+            <p className="text-caption text-dim">
+              File terlalu besar untuk dibaca ({fmtSize(content.size)} &gt; 256 KB) — buka di file explorer.
             </p>
           )}
-          {!loadingContent &&
-            !err &&
-            sel &&
-            content &&
-            !content.truncated &&
-            !isText && (
-              <p className="dim">
-                Bukan file teks ({fmtSize(content.size)}) — preview teks tidak
-                tersedia.
-              </p>
-            )}
-          {!loadingContent &&
-            !err &&
-            sel &&
-            content &&
-            !content.truncated &&
-            isText && (
-              <>
-                <header className="file-view-head">
-                  <b>{sel}</b>
-                  <span className="file-view-tools">
-                    {revisions.length > 0 && (
-                      <select
-                        value={diffRev}
-                        onChange={(e) => void showDiff(e.target.value)}
-                        aria-label="Bandingkan dengan revisi"
-                      >
-                        <option value="">revisi…</option>
-                        {revisions.map((r) => (
-                          <option key={r.rev} value={r.rev}>
-                            r{r.rev} ·{" "}
-                            {new Date(r.createdAt).toLocaleTimeString()}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    <small>{fmtSize(content.size)}</small>
-                  </span>
-                </header>
-                {diff ? (
-                  <div className="file-diff" aria-label="Diff vs revisi">
-                    <p className="file-diff-stat">
-                      vs r{diffRev}: <b className="add">+{diff.added}</b>{" "}
-                      <b className="del">−{diff.removed}</b> baris
-                    </p>
-                    <pre className="file-pre">
-                      {diff.ops.map((o, i) => (
-                        <span key={i} className={`dl-${o.t}`}>
-                          {o.t === "+" ? "+" : o.t === "-" ? "−" : " "} {o.line}
-                          {"\n"}
-                        </span>
-                      ))}
-                    </pre>
-                  </div>
-                ) : (
-                  <pre className="file-pre">{content.content}</pre>
+          {!loadingContent && !err && sel && content && !content.truncated && !isText && (
+            <p className="text-caption text-dim">
+              Bukan file teks ({fmtSize(content.size)}) — preview teks tidak tersedia.
+            </p>
+          )}
+          {!loadingContent && !err && sel && content && !content.truncated && isText && (
+            <>
+              <header className="mb-2 flex items-center gap-2 border-b border-line pb-2">
+                <b className="min-w-0 flex-1 truncate font-mono text-caption font-semibold text-primary">{sel}</b>
+                {revisions.length > 0 && (
+                  <Select value={diffRev} onChange={(e) => void showDiff(e.target.value)} aria-label="Bandingkan dengan revisi" className="h-7">
+                    <option value="">revisi…</option>
+                    {revisions.map((r) => (
+                      <option key={r.rev} value={r.rev}>
+                        r{r.rev} · {new Date(r.createdAt).toLocaleTimeString()}
+                      </option>
+                    ))}
+                  </Select>
                 )}
-              </>
-            )}
-          {!sel && <p className="dim">Pilih file di kiri.</p>}
+                <small className="shrink-0 text-caption text-dim">{fmtSize(content.size)}</small>
+              </header>
+              {diff ? (
+                <div aria-label="Diff vs revisi">
+                  <p className="mb-1.5 text-caption text-secondary">
+                    vs r{diffRev}: <b className="text-success">+{diff.added}</b> <b className="text-danger">−{diff.removed}</b> baris
+                  </p>
+                  <pre className="overflow-x-auto font-mono text-[12.5px] leading-5">
+                    {diff.ops.map((o, i) => (
+                      <span
+                        key={i}
+                        className={`block ${
+                          o.t === "+"
+                            ? "bg-success/10 text-success"
+                            : o.t === "-"
+                              ? "bg-danger/10 text-danger"
+                              : "text-muted"
+                        }`}
+                      >
+                        {o.t === "+" ? "+" : o.t === "-" ? "−" : " "} {o.line}
+                      </span>
+                    ))}
+                  </pre>
+                </div>
+              ) : (
+                <pre className="overflow-x-auto font-mono text-[12.5px] leading-5 text-secondary">{content.content}</pre>
+              )}
+            </>
+          )}
+          {!sel && <p className="text-caption text-dim">Pilih file di kiri.</p>}
         </div>
       </div>
     </section>
