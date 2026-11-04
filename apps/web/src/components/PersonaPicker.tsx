@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
 import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
 import { OrinPortrait } from "./OrinPortrait";
-import { Modal } from "./ui";
+import { Button, Modal } from "./ui";
 
 export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
 
@@ -35,7 +35,10 @@ export function usePersonaGrowth(): Map<string, PersonaGrowth> {
 /** Badge level kecil (P1-PER-4) — dipakai di kartu & baris persona. */
 export function GrowthBadge({ g }: { g?: PersonaGrowth }) {
   if (!g) return null;
-  const pct = g.nextLevelAt === null ? 100 : Math.min(100, Math.round((g.turns / g.nextLevelAt) * 100));
+  const pct =
+    g.nextLevelAt === null
+      ? 100
+      : Math.min(100, Math.round((g.turns / g.nextLevelAt) * 100));
   return (
     <span
       className="flex items-center gap-1.5 rounded-pill bg-inset px-2 py-0.5 text-caption text-muted"
@@ -43,7 +46,10 @@ export function GrowthBadge({ g }: { g?: PersonaGrowth }) {
     >
       <b className="font-semibold text-secondary">Lv {g.level}</b>
       <span className="h-[3px] w-10 overflow-hidden rounded-pill bg-line-strong">
-        <span className="block h-full rounded-pill bg-accent" style={{ width: `${pct}%` }} />
+        <span
+          className="block h-full rounded-pill bg-accent"
+          style={{ width: `${pct}%` }}
+        />
       </span>
       <small className="text-dim">{g.turns} turn</small>
     </span>
@@ -106,7 +112,7 @@ export function PersonaOrbit({
   const cardBase =
     "flex cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui hover:animate-none";
   return (
-    <div className="relative mt-6 h-[380px] w-full max-w-[620px] sm:h-[430px]">
+    <div className="relative mt-2 h-[460px] w-full max-w-[720px] sm:h-[500px]">
       {/* pusat: maskot INTERAKTIF persona terpilih + deskripsi (muncul saat hover
           kartu — mata mengikuti kursor & bisa diklik, OrinPortrait v4) */}
       {active && (
@@ -115,9 +121,13 @@ export function PersonaOrbit({
           aria-live="polite"
           className="msg-in absolute inset-0 flex flex-col items-center justify-center gap-2 px-16 text-center sm:px-20"
         >
-          <OrinPortrait state="idle" personaId={active.id} size={150} />
-          <b className="text-title font-semibold text-primary">{active.name}</b>
-          <p className="max-w-[320px] text-body leading-6 text-muted">{active.description}</p>
+          <OrinPortrait state="idle" personaId={active.id} size={200} />
+          <b className="text-title font-semibold text-primary border">
+            {active.name}
+          </b>
+          <p className="max-w-[320px] text-body leading-6 text-muted">
+            {active.description}
+          </p>
           <GrowthBadge g={growth.get(active.id)} />
         </div>
       )}
@@ -128,7 +138,10 @@ export function PersonaOrbit({
           <div
             key={p.id}
             className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${50 + 42 * Math.cos(a)}%`, top: `${50 + 37 * Math.sin(a)}%` }}
+            style={{
+              left: `${50 + 46 * Math.cos(a)}%`,
+              top: `${50 + 40 * Math.sin(a)}%`,
+            }}
           >
             <button
               onMouseEnter={() => setFocus(i)}
@@ -142,18 +155,19 @@ export function PersonaOrbit({
               }`}
             >
               <PersonaFace personaId={p.id} size={40} />
-              <b className="text-caption font-semibold text-secondary">{p.name}</b>
+              <b className="text-caption font-semibold text-secondary">
+                {p.name}
+              </b>
             </button>
           </div>
         );
       })}
-      {/* katalog bentuk — aksi sunyi di bawah orbit */}
-      <button
-        onClick={() => setShowShapes(true)}
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 cursor-pointer rounded-md2 border border-dashed border-line px-3 py-1 text-caption text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-secondary"
-      >
-        15 Bentuk Orin — katalog maskot
-      </button>
+      {/* katalog bentuk — aksi sekunder di pojok kanan atas orbit */}
+      <div className="absolute top-0 right-0">
+        <Button variant="primary" size="sm" onClick={() => setShowShapes(true)}>
+          Lihat Lainnya
+        </Button>
+      </div>
       {showShapes && <ShapeGalleryModal onClose={() => setShowShapes(false)} />}
     </div>
   );
@@ -166,13 +180,16 @@ function ShapeGalleryModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal open onClose={onClose} title="15 Bentuk Orin" wide>
       <p className="mb-3 max-w-[560px] text-caption leading-5 text-muted">
-        Satu rig mata dipakai semua bentuk — urutan = indeks <code className="font-mono">shape</code> 0–14 di Rive.
-        Bertanda = sudah dipakai persona; sisanya bebas untuk persona mendatang.
+        Satu rig mata dipakai semua bentuk — urutan = indeks{" "}
+        <code className="font-mono">shape</code> 0–14 di Rive. Bertanda = sudah
+        dipakai persona; sisanya bebas untuk persona mendatang.
       </p>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
         {SHAPE_ORDER.map((k, i) => {
           const s = SHAPES[k];
-          const owner = Object.entries(PERSONA_SHAPE).find(([, v]) => v === k)?.[0];
+          const owner = Object.entries(PERSONA_SHAPE).find(
+            ([, v]) => v === k,
+          )?.[0];
           return (
             <div
               key={k}
@@ -180,7 +197,13 @@ function ShapeGalleryModal({ onClose }: { onClose: () => void }) {
                 owner ? "border-accent/50 bg-inset" : "border-line bg-inset"
               }`}
             >
-              <svg width={64} height={64} viewBox="-150 -150 300 300" aria-hidden focusable="false">
+              <svg
+                width={64}
+                height={64}
+                viewBox="-150 -150 300 300"
+                aria-hidden
+                focusable="false"
+              >
                 <g fill={s.color} style={{ color: s.color }}>
                   {s.geom}
                 </g>

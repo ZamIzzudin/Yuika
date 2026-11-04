@@ -639,7 +639,7 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <h1 className="mt-4 text-display font-semibold text-primary">Pilih partner untuk sesi Workspace</h1>
+                    <h1 className="sr-only">Pilih partner untuk sesi Workspace</h1>
                     {personas.length === 0 ? (
                       <div className="mt-4 grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
                         {Array.from({ length: 4 }, (_, i) => (

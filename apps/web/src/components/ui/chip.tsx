@@ -44,7 +44,7 @@ export function ChipToggle({
       title={title}
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border px-2.5 py-0.5 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
         active ? "border-accent bg-accent-soft text-accent-text" : `${TONES[tone]} hover:border-line-strong hover:text-primary`
       } ${className}`}
     >

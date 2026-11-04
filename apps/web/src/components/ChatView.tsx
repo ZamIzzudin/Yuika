@@ -298,7 +298,7 @@ export function ChatView({
           {onToggleApprovalMode ? (
             <button
               type="button"
-              className={`mb-2 self-start rounded-md2 border px-2.5 py-0.5 text-caption transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] ${
+              className={`mb-2 self-start rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] ${
                 approvalMode === "auto"
                   ? "border-accent bg-accent/12 text-accent"
                   : "border-line-strong text-muted hover:text-secondary"
