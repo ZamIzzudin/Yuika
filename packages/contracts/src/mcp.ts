@@ -25,6 +25,10 @@ export const McpServerStatus = z.object({
   connected: z.boolean(),
   toolCount: z.number(),
   tools: z.array(z.string()),
+  /** P0-MCP-1: siklus hidup — down → reconnecting (backoff) → parked (retry manual). */
+  state: z.enum(["connected", "reconnecting", "parked", "off"]).default("off"),
+  lastError: z.string().nullable().default(null),
+  nextRetryAt: z.number().nullable().default(null),
 });
 export type McpServerStatus = z.infer<typeof McpServerStatus>;
 

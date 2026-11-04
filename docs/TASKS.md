@@ -193,7 +193,7 @@
 
 - [ ] **P0-DATA-1** Migrasi SQLite → Postgres (Drizzle): sessions/messages/events/jobs + migration script · *B · 2d · dep P0-INF-5*
 - [ ] **P0-DATA-2** Retention & housekeeping (events > N hari → arsip) · *B · 1d · dep P0-DATA-1*
-- [ ] **P0-DATA-3** Approval pending persist (survive restart — ganti Map in-process) · *A · 1d*
+- [x] **P0-DATA-3** Approval pending persist (survive restart — ganti Map in-process) · *A · 1d* → ✅ dev-10: tabel `approvals` + `approval_memory` (SQLite) — request pending tercatat; restart → sweep `expirePendingApprovals()` menandai **expired** + event `approval.expired` (kartu UI “Kedaluwarsa — server direstart”, bukan 404); **“Setujui & ingat” lintas restart** (dimuat ulang per engine); live promise tetap in-process (turn mati bersama proses — resume turn = pekerjaan P1)
 
 ### P0-CORE (loop robustness)
 
@@ -207,7 +207,7 @@
 
 - [ ] **P0-DEL-1** Delegation job persist (queue di DB, survive restart, status) · *A · 2d*
 - [ ] **P0-DEL-2** Cancel/steer anak dasar dari parent · *A · 1d · dep P0-DEL-1*
-- [ ] **P0-MCP-1** MCP lifecycle: health check + reconnect backoff + park · *C · 2d* → server mati → reconnect otomatis tanpa crash turn
+- [x] **P0-MCP-1** MCP lifecycle: health check + reconnect backoff + park · *C · 2d* → server mati → reconnect otomatis tanpa crash turn — ✅ dev-10: `transport.onclose/onerror → onDown` (penutupan disengaja difilter flag) → lepas tools + **reconnect backoff 2s/5s/15s/60s/5mnt**; gagal 5× → **PARKED** (badge + tombol ↻ `POST /api/mcp/servers` bypass backoff); **health check ping 30 dtk** (deteksi hang tanpa crash); status `state/lastError/nextRetryAt` di panel MCP
 - [ ] **P0-MCP-2** Schema nyata MCP (`t.inputSchema`) menggantikan passthrough · *C · 1d*
 
 ### P0-QA & G-P0

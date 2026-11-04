@@ -59,6 +59,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   fs.mkdirSync(paths.workspacePath, { recursive: true });
 
   const store = new SessionStore(paths.dbPath);
+  // P0-DATA-3: approval pending dari proses sebelumnya → expired (turn-nya mati
+  // bersama proses lama); kartu di UI ditandai lewat event approval.expired.
+  store.expirePendingApprovals();
   const projectStore = new ProjectStore(paths.dbPath);
   // Settings: provider & model bisa di-swap panas (updateProviderSettings) —
   // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
@@ -124,7 +127,21 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return raw;
   };
   mcpConfig = reloadMcpConfig();
-  const mcpConns = new Map<string, { close: () => Promise<void>; toolNames: string[] }>();
+  /** P0-MCP-1: state koneksi — connected → (mati) reconnecting backoff → parked
+   *  (retry manual); penutupan disengaja (uninstall/toggle) tidak memicu retry. */
+  const mcpConns = new Map<
+    string,
+    { close: () => Promise<void>; toolNames: string[]; ping: () => Promise<boolean>; state: "connected" | "reconnecting" | "parked"; lastError: string | null; nextRetryAt: number | null }
+  >();
+  const mcpRetry = new Map<string, { timer: NodeJS.Timeout; attempt: number }>();
+  const deliberateClose = new Set<string>();
+  const RETRY_DELAYS = [2_000, 5_000, 15_000, 60_000, 300_000]; // backoff, cap 5 mnt
+
+  function clearMcpRetry(name: string): void {
+    const r = mcpRetry.get(name);
+    if (r) clearTimeout(r.timer);
+    mcpRetry.delete(name);
+  }
 
   function trustConfig() {
     return loadTrust(paths.workspacePath);
@@ -141,19 +158,62 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         declared: Boolean(mcpConfig?.mcpServers[name]),
         trusted: entry?.trusted ?? false,
         denyTools: entry?.denyTools ?? [],
-        connected: Boolean(conn),
+        connected: conn?.state === "connected",
         toolCount: conn?.toolNames.length ?? 0,
         tools: conn?.toolNames.map((t) => t.replace(`mcp__${name}__`, "")) ?? [],
+        state: conn?.state ?? "off",
+        lastError: conn?.lastError ?? null,
+        nextRetryAt: conn?.nextRetryAt ?? null,
       };
     });
   }
 
   async function disconnectMcp(name: string): Promise<void> {
+    deliberateClose.add(name); // onclose transitif tak memicu auto-reconnect
+    clearMcpRetry(name);
     const conn = mcpConns.get(name);
-    if (!conn) return;
+    if (conn) {
+      mcpConns.delete(name);
+      conn.toolNames.forEach((t) => registry.unregister(t));
+      await conn.close().catch(() => undefined);
+    }
+    deliberateClose.delete(name);
+  }
+
+  /** P0-MCP-1: server mati/crash → lepas tools, jadwalkan reconnect backoff;
+   *  setelah 5 percobaan gagal → PARKED (naikkan lagi manual dari panel MCP). */
+  function onMcpDown(name: string, reason: string): void {
+    if (deliberateClose.has(name)) return; // ditutup disengaja (toggle/uninstall)
+    const conn = mcpConns.get(name);
+    if (!conn || conn.state !== "connected") return; // sudah dalam siklus retry
     mcpConns.delete(name);
     conn.toolNames.forEach((t) => registry.unregister(t));
-    await conn.close().catch(() => undefined);
+    void conn.close().catch(() => undefined);
+    scheduleMcpRetry(name, reason);
+  }
+
+  function scheduleMcpRetry(name: string, err: string): void {
+    const prev = mcpRetry.get(name);
+    const attempt = (prev?.attempt ?? 0) + 1;
+    if (attempt > RETRY_DELAYS.length) {
+      clearMcpRetry(name);
+      mcpConns.set(name, { close: async () => undefined, toolNames: [], ping: async () => false, state: "parked", lastError: err, nextRetryAt: null });
+      console.warn(`[yui] MCP '${name}' PARKED setelah ${RETRY_DELAYS.length}× reconnect gagal (${err}) — aktifkan ulang dari panel MCP`);
+      return;
+    }
+    const delay = RETRY_DELAYS[Math.min(attempt - 1, RETRY_DELAYS.length - 1)]!;
+    const nextRetryAt = Date.now() + delay;
+    mcpConns.set(name, { close: async () => undefined, toolNames: [], ping: async () => false, state: "reconnecting", lastError: err, nextRetryAt });
+    console.warn(`[yui] MCP '${name}' down (${err}) — reconnect #${attempt} dalam ${Math.round(delay / 1000)}s`);
+    const timer = setTimeout(
+      () => {
+        void connectMcp(name)
+          .then(() => clearMcpRetry(name))
+          .catch((e: unknown) => scheduleMcpRetry(name, e instanceof Error ? e.message : String(e)));
+      },
+      delay,
+    );
+    mcpRetry.set(name, { timer, attempt });
   }
 
   async function connectMcp(name: string): Promise<boolean> {
@@ -161,8 +221,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     if (!cfg) throw new Error(`server MCP tidak dideklarasikan di mcp.json: ${name}`);
     const entry = trustOf(trustConfig(), name);
     if (!entry?.trusted) throw new Error(`server MCP belum di-trust: ${name}`);
-    const conn = await connectMcpServer(name, cfg, { denyTools: entry.denyTools, onCall: onMcpCall });
-    mcpConns.set(name, conn);
+    const conn = await connectMcpServer(name, cfg, {
+      denyTools: entry.denyTools,
+      onCall: onMcpCall,
+      onDown: (reason) => onMcpDown(name, reason),
+    });
+    clearMcpRetry(name);
+    mcpConns.set(name, { ...conn, state: "connected", lastError: null, nextRetryAt: null });
     console.log(`[yui] MCP '${name}' terhubung (${conn.toolCount} tools)`);
     return true;
   }
@@ -172,6 +237,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   for (const name of Object.keys(mcpConfig?.mcpServers ?? {})) {
     void connectMcp(name).catch((e) => console.warn(`[yui] ${e instanceof Error ? e.message : e}`));
   }
+
+  // P0-MCP-1: health check — ping tiap 30 dtk; hang/zombie tanpa crash proses
+  // tetap terdeteksi → jalur reconnect backoff yang sama.
+  const mcpHealthTimer = setInterval(() => {
+    for (const [name, conn] of mcpConns) {
+      if (conn.state !== "connected") continue;
+      void conn.ping().then((ok) => {
+        if (!ok) onMcpDown(name, "health check: ping gagal");
+      });
+    }
+  }, 30_000);
+  mcpHealthTimer.unref?.();
 
   function listPersonaInfos(): PersonaInfo[] {
     return listPersonas(paths.personasDir).map((p) => ({
@@ -262,7 +339,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     const cached = loopCache.get(sessionId);
     if (cached) return cached;
     const emit = makeEmitter(store, EventBus, sessionId);
-    const approvals = new ApprovalEngine(emit);
+    const approvals = new ApprovalEngine(emit, { sessionId, store }); // P0-DATA-3: persist
     const loop = new AgentLoop({
       store,
       provider,
@@ -401,6 +478,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // ---- MCP trust/audit (P1-MCP-3) ----
     /** Status semua server: deklarasi mcp.json + trust workspace + koneksi live. */
     mcpServerStatuses: serverStatuses,
+    /** P0-MCP-1: hubungkan ulang sekarang (tombol ↻ di panel — bypass backoff). */
+    mcpRetryConnect: async (name: string) => {
+      await disconnectMcp(name); // pastikan entry lama (parked/karius) dilepas
+      await connectMcp(name);
+    },
     /** Ubah trust (upsert file) → connect/disconnect/re-register handler deny baru. */
     setMcpTrust: async (input: { server: string; trusted: boolean; denyTools: string[] }) => {
       if (input.trusted && !mcpConfig?.mcpServers[input.server]) {

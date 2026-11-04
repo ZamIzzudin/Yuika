@@ -95,6 +95,14 @@ export const ApprovalResolvedEvent = EventMeta.extend({
   tool: z.string().optional(),
 });
 
+/** P0-DATA-3: approval pending saat server restart — turn-nya ikut mati,
+ *  kartu approval di UI ditandai kedaluwarsa (bukan 404 diam-diam). */
+export const ApprovalExpiredEvent = EventMeta.extend({
+  type: z.literal("approval.expired"),
+  requestId: z.string(),
+  tool: z.string(),
+});
+
 export const SessionErrorEvent = EventMeta.extend({
   type: z.literal("session.error"),
   message: z.string(),
@@ -139,6 +147,7 @@ export const YuiEvent = z.discriminatedUnion("type", [
   SkillProposedEvent,
   TurnCancelledEvent,
   ApprovalResolvedEvent,
+  ApprovalExpiredEvent,
   SessionErrorEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;

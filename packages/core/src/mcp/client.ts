@@ -33,8 +33,8 @@ export interface McpCallInfo {
 export async function connectMcpServer(
   serverName: string,
   cfg: McpServerConfig,
-  opts: { denyTools?: string[]; onCall?: (info: McpCallInfo) => void } = {},
-): Promise<{ close: () => Promise<void>; toolCount: number; toolNames: string[] }> {
+  opts: { denyTools?: string[]; onCall?: (info: McpCallInfo) => void; onDown?: (reason: string) => void } = {},
+): Promise<{ close: () => Promise<void>; toolCount: number; toolNames: string[]; ping: () => Promise<boolean> }> {
   const client = new Client({ name: "your-yui", version: "0.1.0" }, { capabilities: {} });
   // Server Python (uvx): bila uvx tak di PATH (mis. baru di-install via UI dan
   // PATH proses belum menyegarkan), pakai path absolut — tanpa restart server.
@@ -48,6 +48,10 @@ export async function connectMcpServer(
     env: cfg.env as Record<string, string> | undefined,
   });
   await client.connect(transport);
+  // P0-MCP-1: proses server mati / crash → beri tahu runtime (reconnect backoff).
+  // onclose juga terpicu saat penutupan disengaja — runtime memfilter lewat flag.
+  transport.onclose = () => opts.onDown?.("transport closed");
+  transport.onerror = (e) => opts.onDown?.(e instanceof Error ? e.message : String(e));
 
   const { tools } = await client.listTools();
   const registered: string[] = [];
@@ -96,6 +100,7 @@ export async function connectMcpServer(
     close: () => client.close(),
     toolCount: tools.length,
     toolNames: registered,
+    ping: () => client.ping().then(() => true).catch(() => false),
   };
 }
 

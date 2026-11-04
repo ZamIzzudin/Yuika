@@ -70,5 +70,8 @@ export function statusOfDecl(name: string, _decl: McpServerConfig): McpServerSta
     connected: false,
     toolCount: 0,
     tools: [],
+    state: "off" as const,
+    lastError: null,
+    nextRetryAt: null,
   };
 }

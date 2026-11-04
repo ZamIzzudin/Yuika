@@ -263,6 +263,11 @@ export default function Home() {
           ),
         );
         break;
+      case "approval.expired":
+        setItems((prev) =>
+          prev.map((it) => (it.kind === "approval" && it.requestId === e.requestId ? { ...it, resolved: "expired" as const } : it)),
+        );
+        break;
       case "memory.noted":
         setItems((prev) => [
           ...prev,

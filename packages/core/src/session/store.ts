@@ -50,6 +50,24 @@ export class SessionStore {
         ts INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, id);
+      CREATE TABLE IF NOT EXISTS approvals (
+        request_id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        tool TEXT NOT NULL,
+        args TEXT NOT NULL DEFAULT '{}',
+        reason TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'pending', -- pending|approved|denied|expired
+        remember INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        resolved_at INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS idx_approvals_session ON approvals(session_id);
+      CREATE TABLE IF NOT EXISTS approval_memory (
+        session_id TEXT NOT NULL,
+        tool TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (session_id, tool)
+      );
     `);
     // Migration ringan (idempotent): kolom project_id untuk sesi yang melekat ke project
     const cols = this.db.prepare("PRAGMA table_info(sessions)").all() as { name: string }[];
@@ -168,6 +186,47 @@ export class SessionStore {
       const payload = JSON.parse(r.payload) as Record<string, unknown>;
       return YuiEvent.parse({ ...payload, id: r.id, ts: r.ts, sessionId });
     });
+  }
+
+  /** P0-DATA-3: approval persist — kartu pending survive restart (jika mati →
+   *  expired), dan "Setujui & ingat" lintas restart via approval_memory. */
+  insertApproval(row: { requestId: string; sessionId: string; tool: string; args: Record<string, unknown>; reason: string }): void {
+    this.db
+      .prepare("INSERT INTO approvals (request_id, session_id, tool, args, reason, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', ?)")
+      .run(row.requestId, row.sessionId, row.tool, JSON.stringify(row.args), row.reason, Date.now());
+  }
+
+  settleApproval(requestId: string, status: "approved" | "denied" | "expired", remember = false): boolean {
+    const info = this.db
+      .prepare("UPDATE approvals SET status = ?, remember = ?, resolved_at = ? WHERE request_id = ?")
+      .run(status, remember ? 1 : 0, Date.now(), requestId);
+    return info.changes > 0;
+  }
+
+  listPendingApprovals(): { requestId: string; sessionId: string; tool: string; reason: string }[] {
+    return (this.db
+      .prepare("SELECT request_id, session_id, tool, reason FROM approvals WHERE status = 'pending'")
+      .all() as { request_id: string; session_id: string; tool: string; reason: string }[])
+      .map((r) => ({ requestId: r.request_id, sessionId: r.session_id, tool: r.tool, reason: r.reason }));
+  }
+
+  rememberApproval(sessionId: string, tool: string): void {
+    this.db.prepare("INSERT OR REPLACE INTO approval_memory (session_id, tool, created_at) VALUES (?, ?, ?)").run(sessionId, tool, Date.now());
+  }
+
+  getRememberedTools(sessionId: string): string[] {
+    return (this.db.prepare("SELECT tool FROM approval_memory WHERE session_id = ?").all(sessionId) as { tool: string }[]).map((r) => r.tool);
+  }
+
+  /** Sweep saat runtime start: approval pending dari proses lama → expired +
+   *  event approval.expired ke sesi terkait (UI menampilkan kartu kedaluwarsa). */
+  expirePendingApprovals(): number {
+    const pending = this.listPendingApprovals();
+    for (const p of pending) {
+      this.settleApproval(p.requestId, "expired");
+      this.appendEvent(p.sessionId, { type: "approval.expired", requestId: p.requestId, tool: p.tool });
+    }
+    return pending.length;
   }
 
   close(): void {

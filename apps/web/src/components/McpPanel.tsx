@@ -80,6 +80,23 @@ export function McpPanel() {
     }
   }
 
+  /** P0-MCP-1: coba hubungkan ulang server parked/reconnecting sekarang. */
+  async function retry(name: string) {
+    setBusy(name);
+    setErr(null);
+    try {
+      const res = await fetch("/api/mcp/servers", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ server: name }),
+      });
+      if (!res.ok) setErr((((await res.json()) as { error?: string }).error ?? "gagal reconnect") + "");
+      await refresh();
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function install(c: McpCatalogEntry) {
     setBusy(c.id);
     setErr(null);
@@ -138,8 +155,31 @@ export function McpPanel() {
             <span className="mcp-dot" data-on={s.connected || undefined} />
             <span className="mcp-body">
               <b>{s.name}</b>
-              <small>{s.connected ? `${s.toolCount} tools` : s.trusted ? "menghubungkan…" : s.declared ? "untrusted" : "tak terpasang"}</small>
+              <small>
+                {s.state === "reconnecting"
+                  ? `sambung ulang… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}d)` : ""}`
+                  : s.state === "parked"
+                    ? "parkir — 5× gagal"
+                    : s.connected
+                      ? `${s.toolCount} tools`
+                      : s.trusted
+                        ? "menghubungkan…"
+                        : s.declared
+                          ? "untrusted"
+                          : "tak terpasang"}
+              </small>
+              {s.lastError && s.state !== "connected" && <small className="mcp-err">⚠ {s.lastError.slice(0, 64)}</small>}
             </span>
+            {(s.state === "parked" || s.state === "reconnecting") && (
+              <button
+                className="btn secondary"
+                disabled={busy === s.name}
+                onClick={() => void retry(s.name)}
+                title="Coba hubungkan ulang sekarang"
+              >
+                ↻
+              </button>
+            )}
             <button
               className="btn mcp-toggle"
               onClick={() => void toggle(s)}

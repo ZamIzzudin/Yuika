@@ -30,7 +30,7 @@ export interface ChatItem {
   // approval
   requestId?: string;
   reason?: string;
-  resolved?: "approved" | "denied" | null;
+  resolved?: "approved" | "denied" | "expired" | null;
   // noted (P1-MEM-2: hasil learn nudge)
   scope?: "user" | "project";
 }
@@ -183,7 +183,9 @@ export function ChatView({
                     <b>Perlu persetujuan · <code>{it.name}</code></b>
                     <p className="why">{it.reason}</p>
                     {it.resolved ? (
-                      <p className="verdict">{it.resolved === "approved" ? "Disetujui" : "Ditolak"}</p>
+                      <p className="verdict">
+                        {it.resolved === "approved" ? "Disetujui" : it.resolved === "expired" ? "Kedaluwarsa — server direstart saat menunggu" : "Ditolak"}
+                      </p>
                     ) : (
                       <div className="actions">
                         <button className="btn" onClick={() => onApprove(it.requestId!, true, true)} title="Setujui + tool ini bebas-approval untuk sisa sesi (dianjurkan)">
