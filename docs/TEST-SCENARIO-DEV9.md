@@ -3,6 +3,9 @@
 > Durasi ±25 menit · Semua fitur sesi dev 8 + 9 · DB & workspace sudah dibersihkan total.
 > Saat menemukan masalah, catat huruf skenario + screenshot. Kirim potongan log
 > `[yui:trace]` dari terminal untuk analisis performa.
+>
+> **Reset ulang kapan saja**: matikan dev server → `npm run data:clean` → `npm run dev`
+> (`npm run data:status` untuk lihat saja; opsi `--keep-mcp --keep-user`).
 
 ## 0. Persiapan (1 menit)
 
