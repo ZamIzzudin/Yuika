@@ -11,6 +11,13 @@ const OWNER = `rt-${Date.now().toString(36)}-${Math.random().toString(36).slice(
 
 export function getRuntime(): YuiRuntime {
   if (g.__yuiRuntimeOwner !== OWNER || !g.__yuiRuntime) {
+    // Runtime lama (module instance sebelumnya) dimatikan TOTAL — tanpa ini,
+    // proses MCP stdio lama jadi zombie & menumpuk tiap recompile (beban server).
+    if (g.__yuiRuntime) {
+      void g.__yuiRuntime.dispose?.().catch((e: unknown) =>
+        console.warn("[yui] dispose runtime lama gagal:", e instanceof Error ? e.message : e)
+      );
+    }
     const baseUrl = process.env.YUI_OPENAI_BASE_URL;
     const apiKey = process.env.YUI_OPENAI_API_KEY;
     const model = process.env.YUI_MODEL;

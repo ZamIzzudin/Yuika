@@ -466,6 +466,21 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     paths,
     store,
     bus: EventBus,
+    /** Matikan runtime dengan rapi — dipanggil saat runtime DI-REPLACE (HMR dev:
+     *  module lib/runtime di-reval → runtime baru; yang lama harus mati total,
+     *  kalau tidak proses MCP stdio lama jadi ZOMBIE yang menumpuk tiap recompile
+     *  — feedback user dev-10: armada MCP reconnect penuh berulang kali).
+     *  Turn yang masih berjalan di loop lama tetap menyelesaikan dirinya
+     *  (data lewat file DB yang sama; event lewat bus globalThis). */
+    dispose: async () => {
+      clearInterval(mcpHealthTimer);
+      for (const name of [...mcpConns.keys()]) await disconnectMcp(name); // matikan proses stdio anak + unregister tools
+      for (const r of mcpRetry.values()) clearTimeout(r.timer); // retry tertunda (parked/reconnecting)
+      mcpRetry.clear();
+      // DELIBERAT: koneksi sqlite TIDAK ditutup — turn yang masih berjalan di
+      // loop lama memakai objek store ini (WAL aman multi-handle; kebocoran
+      // handle per HMR jauh lebih ringan daripada mematikan turn in-flight).
+    },
     listPersonas: listPersonaInfos,
     createSession,
     listProjectSessions,
