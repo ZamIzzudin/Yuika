@@ -9,6 +9,10 @@
 > Format laporan: `GT-<babak>.<langkah> ✅/❌ — <yang terjadi>`
 > Prasyarat: **restart dev server** (core banyak berubah), lalu buka
 > http://localhost:3000.
+>
+> **Branch untuk Grand Tour: `dev/p0-kernel`** — superset dari `dev/w5-polish`
+> (semua babak di bawah) + fitur baru kernel: kompresi konteks 🗜 (M15),
+> delegation job persist & schema MCP nyata (M16) — detail di TEST-PLAN §M15/M16.
 
 ---
 
