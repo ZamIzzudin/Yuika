@@ -1,2 +1,2 @@
-can_spawn: [yui-scholar, yui-scribe, yui-coder, yui_designer]
+can_spawn: [yui-scholar, yui-scribe, yui-coder, yui-designer, yui-analyst, yui-operator]
 spawnable_by: [user]

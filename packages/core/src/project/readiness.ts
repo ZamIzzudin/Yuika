@@ -9,7 +9,7 @@ import { WORKFLOW_PHASES } from "@yui/contracts";
  *  memakai category: research / design / software-development / productivity).
  *  planning & delivery tidak digating: kemampuan inti semua persona. */
 export const PHASE_CATEGORIES: Partial<Record<WorkflowPhase, string[]>> = {
-  research: ["research"],
+  research: ["research", "data"],
   design: ["design"],
   develop: ["software-development", "develop", "coding", "code"],
   testing: ["testing", "qa"],

@@ -508,6 +508,10 @@ Satu sesi = satu persona utama; persona lain hadir sebagai **delegation target**
 > Mulai 4–6 persona; Conductor + 3 spesialis adalah minimum untuk demo cerita delegation.
 > v0.5: **Yui Designer** ditambahkan (putusan user — D9 jadi 7) sebagai persona inti studio
 > desain→kode (§13.9); skill seed-nya dilatih lewat dungeon (P1-DUN, P1-PER-7).
+>
+> **Status (dev-10):** roster D9 LENGKAP — 7 persona ter-load & teruji
+> (persona-roster.test). Analyst (data; skill seed `data-analysis-basics`) dan
+> Operator (otomasi; binding MCP) aktif; cron/monitoring berulang = v1.
 
 ### 7.5 Arsitektur memori per persona
 

@@ -201,3 +201,11 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
 4. **Assign gating**: tab Roster project → persona dengan fase aktif menampilkan
    chip per fase (`research ✓` / `research ✕`) — ✕ = belum ada skill siap,
    tooltip menyarankan latih di Dungeon (tab Skill).
+* L lanjutan: persona baru (Analyst & Operator) — 5 menit
+5. **Persona baru muncul**: refresh → picker persona memuat 7 persona; pilih
+   **Yui Analyst** → wajah Orin bentuk diamond; minta ia baca upload CSV
+   (doc_read) & hitung via `run_command node` (muncul approval command).
+6. **Yui Operator**: pilih → bentuk hex; minta `ts_status` (bila Tailscale MCP
+   di-trust & di-bind) atau cek `list_files` — gaya kerja verifikasi post-aksi.
+7. **Roster**: Conductor kini bisa mendelegasi ke Analyst/Operator ("minta
+   yui-analyst analisis file X") tanpa error persona tak dikenal.
