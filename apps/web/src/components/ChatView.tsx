@@ -68,6 +68,7 @@ export function ChatView({
   personaId,
   personaName,
   onSend,
+  onCancel,
   onApprove,
   busy,
   emptySlot,
@@ -77,6 +78,8 @@ export function ChatView({
   personaId: string;
   personaName: string;
   onSend: (text: string) => void;
+  /** P0-CORE-1: tombol Stop — batalkan turn aktif (progres tersimpan). */
+  onCancel?: () => void;
   /** Konten state kosong (hero + saran) — composer tetap tampil, user bisa langsung menulis. */
   emptySlot?: ReactNode;
   onApprove: (requestId: string, approved: boolean, remember?: boolean) => void;
@@ -255,6 +258,11 @@ export function ChatView({
           <button className="send-btn" type="submit" disabled={busy || !input.trim()} aria-label="Kirim">
             <SendIcon />
           </button>
+          {busy && onCancel && (
+            <button className="send-btn stop-btn" type="button" onClick={onCancel} aria-label="Hentikan turn" title="Hentikan turn (progres tersimpan)">
+              ■
+            </button>
+          )}
         </form>
       </div>
     </>

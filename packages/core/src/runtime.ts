@@ -249,6 +249,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   /** Loop di-cache per sesi: engine approval ("Setujui & ingat") bertahan antar turn
    *  sesi yang sama — prompt/toolset toh frozen per sesi. */
   const loopCache = new Map<string, AgentLoop>();
+  /** P0-CORE-1: satu turn aktif per sesi — AbortController untuk Stop (HTTP + loop checks). */
+  const turnAborts = new Map<string, AbortController>();
 
   function makeLoopFor(sessionId: string): AgentLoop {
     const cached = loopCache.get(sessionId);
@@ -278,7 +280,21 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     listPersonas: listPersonaInfos,
     createSession,
     listProjectSessions,
-    runTurn: (sessionId: string, text: string) => makeLoopFor(sessionId).runTurn(sessionId, text),
+    runTurn: (sessionId: string, text: string) => {
+      const ac = new AbortController();
+      turnAborts.set(sessionId, ac);
+      return makeLoopFor(sessionId)
+        .runTurn(sessionId, text, { signal: ac.signal })
+        .finally(() => turnAborts.delete(sessionId));
+    },
+    /** Batalkan turn sesi (tombol Stop). true bila ada turn aktif yang dibatalkan. */
+    cancelTurn: (sessionId: string) => {
+      const ac = turnAborts.get(sessionId);
+      if (!ac) return false;
+      ac.abort();
+      turnAborts.delete(sessionId);
+      return true;
+    },
     resolveApproval: (requestId: string, approved: boolean, remember = false) =>
       resolvePendingApproval(requestId, approved, remember),
     emitSessionError: (sessionId: string, message: string) => {

@@ -213,3 +213,46 @@ describe("AgentLoop (fake provider)", () => {
     store.close();
   });
 });
+
+  // P0-CORE-1: Stop ditekan saat provider streaming → abort → graceful cancel
+  // (parsial tersimpan, turn.cancelled + persona.state idle, BUKAN error).
+  it("P0-CORE-1: abort saat streaming → turn.cancelled graceful + parsial tersimpan", async () => {
+    resetRegistryForTests();
+    const ac = new AbortController();
+    class HangingProvider implements ProviderAdapter {
+      readonly id = "hang";
+      async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
+        onChunk({ type: "text_delta", delta: "sebagian " });
+        await new Promise((_res, rej) => {
+          req.signal?.addEventListener("abort", () => rej(new Error("aborted")));
+          setTimeout(rej, 5_000, new Error("timeout tes"));
+        });
+        throw new Error("unreachable");
+      }
+    }
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-ab-"));
+    const store = new SessionStore(path.join(dir, "t.db"));
+    const events: YuiEvent[] = [];
+    const makeEmit = (sid: string) => (draft: EventDraft) => events.push(store.appendEvent(sid, draft));
+    const sid = "s_abort";
+    store.createSession(sid, "yui-coder", "SYS", []);
+    const loop = new AgentLoop({
+      store,
+      provider: new HangingProvider(),
+      model: "m",
+      workspacePath: dir,
+      approvals: new ApprovalEngine(makeEmit(sid)),
+      emit: makeEmit(sid),
+    });
+    const p = loop.runTurn(sid, "kerjakan", { signal: ac.signal });
+    setTimeout(() => ac.abort(), 50);
+    await p;
+    expect(events.some((e) => e.type === "turn.cancelled")).toBe(true);
+    expect(events.some((e) => e.type === "session.error")).toBe(false);
+    const last = [...store.getMessages(sid)].reverse().find((m) => m.role === "assistant");
+    expect(last?.content).toContain("sebagian");
+    expect(last?.content).toContain("dibatalkan");
+    const states = events.filter((e) => e.type === "persona.state").map((e) => e.state);
+    expect(states[states.length - 1]).toBe("idle");
+    store.close();
+  });

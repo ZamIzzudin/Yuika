@@ -11,9 +11,19 @@ import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { SettingsModal } from "@/components/SettingsModal";
-import { ProjectTabs, type LiveDelegation, type WorkspaceTab } from "@/components/TaskDrawer";
+import {
+  ProjectTabs,
+  type LiveDelegation,
+  type WorkspaceTab,
+} from "@/components/TaskDrawer";
 import { Skeleton } from "@/components/Skeleton";
-import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, YuiEvent } from "@yui/contracts";
+import type {
+  PersonaInfo,
+  PersonaState,
+  ProjectInfo,
+  ProjectSessionSummary,
+  YuiEvent,
+} from "@yui/contracts";
 
 /** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
 const SUGGESTIONS: Record<string, string[]> = {
@@ -60,7 +70,9 @@ export default function Home() {
       if (!r.ok) return;
       const d = (await r.json()) as { projects: ProjectInfo[] };
       setProjects(d.projects);
-      setActiveProjectId((cur) => (cur && d.projects.some((p) => p.id === cur) ? cur : null));
+      setActiveProjectId((cur) =>
+        cur && d.projects.some((p) => p.id === cur) ? cur : null,
+      );
     } catch {
       /* biarkan kosong */
     } finally {
@@ -69,13 +81,17 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? window.localStorage.getItem("yui.projectId") : null;
+    const saved =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("yui.projectId")
+        : null;
     if (saved) setActiveProjectId(saved);
     void loadProjects();
   }, [loadProjects]);
 
   useEffect(() => {
-    if (activeProjectId) window.localStorage.setItem("yui.projectId", activeProjectId);
+    if (activeProjectId)
+      window.localStorage.setItem("yui.projectId", activeProjectId);
     else window.localStorage.removeItem("yui.projectId");
   }, [activeProjectId]);
 
@@ -103,11 +119,17 @@ export default function Home() {
           const idx = openAssistant.current;
           if (idx !== null && prev[idx]?.kind === "msg") {
             const next = [...prev];
-            next[idx] = { ...next[idx]!, text: (next[idx]!.text ?? "") + e.delta };
+            next[idx] = {
+              ...next[idx]!,
+              text: (next[idx]!.text ?? "") + e.delta,
+            };
             return next;
           }
           openAssistant.current = prev.length;
-          return [...prev, { kind: "msg", role: "assistant", text: e.delta, streaming: true }];
+          return [
+            ...prev,
+            { kind: "msg", role: "assistant", text: e.delta, streaming: true },
+          ];
         });
         break;
       case "message.done":
@@ -123,7 +145,16 @@ export default function Home() {
         });
         break;
       case "tool.call":
-        setItems((prev) => [...prev, { kind: "activity", name: e.name, callId: e.callId, detail: short(JSON.stringify(e.args)), done: false }]);
+        setItems((prev) => [
+          ...prev,
+          {
+            kind: "activity",
+            name: e.name,
+            callId: e.callId,
+            detail: short(JSON.stringify(e.args)),
+            done: false,
+          },
+        ]);
         if (e.name.startsWith("todo_")) setTaskRev((r) => r + 1); // drawer tasklist refresh
         break;
       case "tool.result":
@@ -132,21 +163,46 @@ export default function Home() {
           const next = [...prev];
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i]!.kind === "activity" && next[i]!.callId === e.callId) {
-              next[i] = { ...next[i]!, detail: short(JSON.stringify(e.result)), isError: e.isError, done: true };
+              next[i] = {
+                ...next[i]!,
+                detail: short(JSON.stringify(e.result)),
+                isError: e.isError,
+                done: true,
+              };
               return next;
             }
           }
-          return [...prev, { kind: "activity", name: e.callId, detail: short(JSON.stringify(e.result)), isError: e.isError }];
+          return [
+            ...prev,
+            {
+              kind: "activity",
+              name: e.callId,
+              detail: short(JSON.stringify(e.result)),
+              isError: e.isError,
+            },
+          ];
         });
         break;
       case "delegation.started":
-        setItems((prev) => [...prev, { kind: "delegation", personaId: e.personaId, childSessionId: e.childSessionId, goal: e.goal }]);
+        setItems((prev) => [
+          ...prev,
+          {
+            kind: "delegation",
+            personaId: e.personaId,
+            childSessionId: e.childSessionId,
+            goal: e.goal,
+          },
+        ]);
         break;
       case "delegation.progress":
         setItems((prev) => {
           const next = [...prev];
           for (let i = next.length - 1; i >= 0; i--) {
-            if (next[i]!.kind === "delegation" && next[i]!.childSessionId === e.childSessionId && !next[i]!.text) {
+            if (
+              next[i]!.kind === "delegation" &&
+              next[i]!.childSessionId === e.childSessionId &&
+              !next[i]!.text
+            ) {
               next[i] = { ...next[i]!, childState: e.state };
               break;
             }
@@ -158,7 +214,10 @@ export default function Home() {
         setItems((prev) => {
           const next = [...prev];
           for (let i = next.length - 1; i >= 0; i--) {
-            if (next[i]!.kind === "delegation" && next[i]!.personaId /* match last open */) {
+            if (
+              next[i]!.kind === "delegation" &&
+              next[i]!.personaId /* match last open */
+            ) {
               if (next[i]!.text) continue; // sudah ada summary → cari yang belum
               next[i] = { ...next[i]!, text: e.summary, childState: "done" };
               break;
@@ -169,27 +228,59 @@ export default function Home() {
         break;
       case "persona.state":
         setPersonaState(e.state);
-        if (e.state === "done" || e.state === "celebrating" || e.state === "error" || e.state === "idle") {
+        if (
+          e.state === "done" ||
+          e.state === "celebrating" ||
+          e.state === "error" ||
+          e.state === "idle"
+        ) {
           setBusy(false);
         }
         break;
       case "approval.requested":
-        setItems((prev) => [...prev, { kind: "approval", requestId: e.requestId, name: e.tool, reason: e.reason, resolved: null }]);
+        setItems((prev) => [
+          ...prev,
+          {
+            kind: "approval",
+            requestId: e.requestId,
+            name: e.tool,
+            reason: e.reason,
+            resolved: null,
+          },
+        ]);
         break;
       case "approval.resolved":
         setItems((prev) =>
           prev.map((it) =>
             it.kind === "approval" && it.requestId === e.requestId
-              ? { ...it, resolved: e.approved ? ("approved" as const) : ("denied" as const) }
+              ? {
+                  ...it,
+                  resolved: e.approved
+                    ? ("approved" as const)
+                    : ("denied" as const),
+                }
               : it,
           ),
         );
         break;
       case "memory.noted":
-        setItems((prev) => [...prev, { kind: "noted", text: e.note, scope: e.scope }]);
+        setItems((prev) => [
+          ...prev,
+          { kind: "noted", text: e.note, scope: e.scope },
+        ]);
         break;
       case "skill.proposed":
-        setItems((prev) => [...prev, { kind: "skill", text: `${e.name} — ${e.description}` }]);
+        setItems((prev) => [
+          ...prev,
+          { kind: "skill", text: `${e.name} — ${e.description}` },
+        ]);
+        break;
+      case "turn.cancelled":
+        setItems((prev) => [
+          ...prev,
+          { kind: "noted", text: "turn dibatalkan — progres & parsial tersimpan", scope: "project" },
+        ]);
+        setBusy(false);
         break;
       case "session.error":
         setItems((prev) => [...prev, { kind: "error", text: e.message }]);
@@ -201,7 +292,9 @@ export default function Home() {
   // SSE: buka saat sesi ada; reconnect bawaan browser; replay pakai ?since=
   useEffect(() => {
     if (!sessionId) return;
-    const es = new EventSource(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}`);
+    const es = new EventSource(
+      `/api/sessions/${sessionId}/stream?since=${lastEventId.current}`,
+    );
     es.onmessage = (m) => {
       try {
         applyEvent(JSON.parse(m.data) as YuiEvent);
@@ -209,7 +302,9 @@ export default function Home() {
         console.error("event parse gagal", err);
       }
     };
-    es.onerror = () => {/* EventSource auto-reconnect; state replay via ?since */};
+    es.onerror = () => {
+      /* EventSource auto-reconnect; state replay via ?since */
+    };
     return () => es.close();
   }, [sessionId, applyEvent]);
 
@@ -219,7 +314,8 @@ export default function Home() {
     setPersonaState("idle");
     openAssistant.current = null;
     lastEventId.current = 0;
-    const projectId = projectIdOverride !== undefined ? projectIdOverride : activeProjectId;
+    const projectId =
+      projectIdOverride !== undefined ? projectIdOverride : activeProjectId;
     const res = await fetch("/api/sessions", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -247,12 +343,15 @@ export default function Home() {
     if (list.length > 0) {
       openSession(list[0]!);
     } else {
-      const lead = personas.find((p) => p.id === "yui-conductor") ?? personas[0];
+      const lead =
+        personas.find((p) => p.id === "yui-conductor") ?? personas[0];
       if (lead) void pick(lead, id);
     }
   }
 
-  async function loadProjectSessions(projectId: string): Promise<ProjectSessionSummary[]> {
+  async function loadProjectSessions(
+    projectId: string,
+  ): Promise<ProjectSessionSummary[]> {
     const res = await fetch(`/api/sessions?projectId=${projectId}`);
     const d = (await res.json()) as { sessions: ProjectSessionSummary[] };
     setProjSessions(d.sessions);
@@ -304,9 +403,19 @@ export default function Home() {
     });
   }
 
+  /** P0-CORE-1: tombol Stop — abort turn aktif; progres & parsial tersimpan. */
+  async function cancelTurn() {
+    if (!sessionId) return;
+    await fetch(`/api/sessions/${sessionId}/cancel`, { method: "POST" });
+  }
+
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  async function approve(requestId: string, approved: boolean, remember = false) {
+  async function approve(
+    requestId: string,
+    approved: boolean,
+    remember = false,
+  ) {
     await fetch(`/api/approvals/${requestId}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -328,7 +437,10 @@ export default function Home() {
           onCreated={loadProjects}
         />
         <div className="side-foot">
-          <button className="side-settings" onClick={() => setSettingsOpen(true)}>
+          <button
+            className="side-settings"
+            onClick={() => setSettingsOpen(true)}
+          >
             ⚙ Pengaturan
           </button>
         </div>
@@ -338,19 +450,21 @@ export default function Home() {
         {!active ? (
           <div className="empty-state">
             <div className="portrait-hero">
-              <OrinPortrait state="idle" personaId={activeProject ? undefined : "yui-conductor"} />
+              <OrinPortrait
+                state="idle"
+                personaId={activeProject ? undefined : "yui-conductor"}
+              />
             </div>
             {activeProject ? (
               <>
                 <h1>Menyiapkan {activeProject.name}…</h1>
-                <p className="pitch">Conductor sebagai project lead sedang dibuka.</p>
+                <p className="pitch">
+                  Conductor sebagai project lead sedang dibuka.
+                </p>
               </>
             ) : (
               <>
                 <h1>Pilih partner untuk sesi Workspace</h1>
-                <p className="pitch">
-                  Scope Workspace bebas — atau pilih project di kiri untuk langsung dipandu Conductor.
-                </p>
                 {personas.length === 0 ? (
                   <div className="persona-grid">
                     {Array.from({ length: 4 }, (_, i) => (
@@ -358,7 +472,10 @@ export default function Home() {
                     ))}
                   </div>
                 ) : (
-                  <PersonaGrid personas={personas} onPick={(p) => void pick(p)} />
+                  <PersonaGrid
+                    personas={personas}
+                    onPick={(p) => void pick(p)}
+                  />
                 )}
               </>
             )}
@@ -396,9 +513,12 @@ export default function Home() {
                     onClick={() => setMainTab(t.id)}
                   >
                     {t.label}
-                    {t.id === "team" && items.some((it) => it.kind === "delegation" && !it.text) && (
-                      <span className="tab-dot" title="delegasi berjalan" />
-                    )}
+                    {t.id === "team" &&
+                      items.some(
+                        (it) => it.kind === "delegation" && !it.text,
+                      ) && (
+                        <span className="tab-dot" title="delegasi berjalan" />
+                      )}
                   </button>
                 ))}
             </nav>
@@ -406,75 +526,109 @@ export default function Home() {
               {mainTab === "chat" && (
                 <>
                   <header className="chat-header">
-              <details className="persona-switch">
-                <summary>
-                  <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="compact" />
-                  <span className="who">
-                    <b>{active.name}</b>
-                    <span>{active.expertise}</span>
-                  </span>
-                </summary>
-                <div className="persona-menu">
-                  {personas.map((p) => (
-                    <button key={p.id} data-active={p.id === active.id ? "" : undefined} onClick={() => void switchPersona(p)}>
-                      <PersonaFace personaId={p.id} size={20} />
-                      <span>{p.name}</span>
-                      {activeProjectId && <small>{activeProjectId ? "sesi baru di project ini" : ""}</small>}
-                    </button>
-                  ))}
-                </div>
-              </details>
-              {activeProject && (
-                <button className="project-chip" onClick={() => setMainTab("team")} title="Buka tab Tim (struktur delegasi)">
-                  <i /> {activeProject.name}
-                </button>
-              )}
-              <span className="state-chip" data-s={personaState}>
-                <i />
-                {STATE_LABEL[personaState]}
-              </span>
-            </header>
-            {items.length === 0 ? (
-              <ChatView
-                items={items}
-                personaState={personaState}
-                personaId={active.id}
-                personaName={active.name}
-                onSend={send}
-                onApprove={approve}
-                busy={busy}
-                emptySlot={
-                  <>
-                    <div className="portrait-hero">
-                      <PersonaPortrait name={active.name} state={personaState} personaId={active.id} variant="hero" />
-                    </div>
-                    <h1>{activeProject ? `${active.name} memimpin ${activeProject.name}` : `${active.name} siap`}</h1>
-                    <p className="pitch">
-                      {activeProject
-                        ? `Sebutkan tugasnya — ${active.name} akan mengerjakan atau mendelegasikan ke spesialis sesuai keahlian. Semua file & task terikat ke project ini.`
-                        : active.description}
-                    </p>
-                    <div className="suggest-row">
-                      {(SUGGESTIONS[active.id] ?? []).map((s) => (
-                        <button key={s} className="suggest" onClick={() => send(s)}>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                }
-              />
-            ) : (
-              <ChatView
-                items={items}
-                personaState={personaState}
-                personaId={active.id}
-                personaName={active.name}
-                onSend={send}
-                onApprove={approve}
-                busy={busy}
-              />
-            )}
+                    <details className="persona-switch">
+                      <summary>
+                        <PersonaPortrait
+                          name={active.name}
+                          state={personaState}
+                          personaId={active.id}
+                          variant="compact"
+                        />
+                        <span className="who">
+                          <b>{active.name}</b>
+                          <span>{active.expertise}</span>
+                        </span>
+                      </summary>
+                      <div className="persona-menu">
+                        {personas.map((p) => (
+                          <button
+                            key={p.id}
+                            data-active={p.id === active.id ? "" : undefined}
+                            onClick={() => void switchPersona(p)}
+                          >
+                            <PersonaFace personaId={p.id} size={20} />
+                            <span>{p.name}</span>
+                            {activeProjectId && (
+                              <small>
+                                {activeProjectId
+                                  ? "sesi baru di project ini"
+                                  : ""}
+                              </small>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
+                    {activeProject && (
+                      <button
+                        className="project-chip"
+                        onClick={() => setMainTab("team")}
+                        title="Buka tab Tim (struktur delegasi)"
+                      >
+                        <i /> {activeProject.name}
+                      </button>
+                    )}
+                    <span className="state-chip" data-s={personaState}>
+                      <i />
+                      {STATE_LABEL[personaState]}
+                    </span>
+                  </header>
+                  {items.length === 0 ? (
+                    <ChatView
+                      items={items}
+                      personaState={personaState}
+                      personaId={active.id}
+                      personaName={active.name}
+                      onSend={send}
+                      onCancel={cancelTurn}
+                      onApprove={approve}
+                      busy={busy}
+                      emptySlot={
+                        <>
+                          <div className="portrait-hero">
+                            <PersonaPortrait
+                              name={active.name}
+                              state={personaState}
+                              personaId={active.id}
+                              variant="hero"
+                            />
+                          </div>
+                          <h1>
+                            {activeProject
+                              ? `${active.name} memimpin ${activeProject.name}`
+                              : `${active.name} siap`}
+                          </h1>
+                          <p className="pitch">
+                            {activeProject
+                              ? `Sebutkan tugasnya — ${active.name} akan mengerjakan atau mendelegasikan ke spesialis sesuai keahlian. Semua file & task terikat ke project ini.`
+                              : active.description}
+                          </p>
+                          <div className="suggest-row">
+                            {(SUGGESTIONS[active.id] ?? []).map((s) => (
+                              <button
+                                key={s}
+                                className="suggest"
+                                onClick={() => send(s)}
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      }
+                    />
+                  ) : (
+                    <ChatView
+                      items={items}
+                      personaState={personaState}
+                      personaId={active.id}
+                      personaName={active.name}
+                      onSend={send}
+                      onCancel={cancelTurn}
+                      onApprove={approve}
+                      busy={busy}
+                    />
+                  )}
                 </>
               )}
               {activeProject && mainTab !== "chat" && (

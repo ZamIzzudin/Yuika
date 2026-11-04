@@ -52,8 +52,9 @@ export interface LoopDeps {
 export class AgentLoop {
   constructor(private deps: LoopDeps) {}
 
-  async runTurn(sessionId: string, userText: string): Promise<void> {
+  async runTurn(sessionId: string, userText: string, opts?: { signal?: AbortSignal }): Promise<void> {
     const t0 = Date.now();
+    const signal = opts?.signal;
     const { store, provider, emit } = this.deps;
     const session = store.getSession(sessionId);
     if (!session) throw new Error(`session ${sessionId} tidak ditemukan`);
@@ -78,12 +79,27 @@ export class AgentLoop {
 
     let usedDelegation = false;
     let usedTools = false; // P1-MEM-2: turn yang melibatkan tool = kandidat nudge belajar
+    // P0-CORE-1: teks parsial yang sudah mengalir ke UI — dipakai saat cancel
+    // supaya history tetap koheren (pesan assistant tidak menggantung).
+    let streamedText = "";
+    const cancelledExit = (): void => {
+      const note = "_(turn dibatalkan user)_";
+      const content = streamedText.trim() ? `${streamedText.trim()}\n\n${note}` : note;
+      store.appendMessage(sessionId, { role: "assistant", content });
+      emit({ type: "message.delta", turnId, delta: streamedText.trim() ? `\n\n${note}` : note });
+      emit({ type: "message.done", turnId });
+      emit({ type: "turn.cancelled", turnId });
+      emit({ type: "persona.state", personaId: session.personaId, state: "idle" });
+      trace(`turn=${turnId.slice(0, 10)} DIBATALKAN user total=${Date.now() - t0}ms iter parsial tersimpan`);
+      return;
+    };
     // Repetition guard: tool round identik 3× berturut → injek nudge agar agent
     // keluar dari loop verifikasi tanpa progres (diamati di test: todo_list/read_file berulang).
     let lastRoundSig = "";
     let repeatRounds = 0;
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
+      if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop ditekan sebelum iterasi dimulai
       // 3) api phase — rantai attempt: primary → fallback (P0-CORE-2). Provider
       // sudah retry transien ×2 di dalam (maxRetries); sampai sini = model itu
       // benar-benar gagal → tandai unhealthy (cooldown) & coba fallback SEKALI.
@@ -94,8 +110,11 @@ export class AgentLoop {
       for (let ai = 0; ai < attempts.length; ai++) {
         try {
           const attemptModel = attempts[ai]!;
-          done = await provider.chatStream({ model: attemptModel, messages, tools }, (chunk) => {
-            if (chunk.type === "text_delta") emit({ type: "message.delta", turnId, delta: chunk.delta });
+          done = await provider.chatStream({ model: attemptModel, messages, tools, signal }, (chunk) => {
+            if (chunk.type === "text_delta") {
+              streamedText += chunk.delta; // P0-CORE-1: simpan parsial untuk jalur cancel
+              emit({ type: "message.delta", turnId, delta: chunk.delta });
+            }
           });
           if (ai > 0) {
             trace(`turn=${turnId.slice(0, 10)} FALLBACK AKTIF: ${attempts[0]} → ${attemptModel} (cooldown 5 mnt)`);
@@ -104,6 +123,8 @@ export class AgentLoop {
           lastErr = undefined;
           break;
         } catch (err) {
+          // P0-CORE-1: abort oleh user BUKAN error provider — keluar graceful.
+          if (signal?.aborted) return cancelledExit();
           lastErr = err;
           if (ai < attempts.length - 1) route.markUnhealthy?.(attempts[ai]!);
         }
@@ -161,6 +182,7 @@ export class AgentLoop {
           };
           messages.push(toolMsg);
           store.appendMessage(sessionId, toolMsg);
+          if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop antar tool round
         }
         emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
         const sig = JSON.stringify(done.toolCalls.map((c) => [c.name, c.args]));

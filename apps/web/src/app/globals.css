@@ -1055,3 +1055,4 @@ html, body {
 .shape-cell[data-owned] { border-color: var(--yui-accent); }
 .shape-cell b { font-weight: 600; font-size: var(--yui-text-sm); }
 .shape-cell small { color: var(--yui-text-dim); font-size: 11px; }
+.stop-btn { margin-left: 2px; color: var(--yui-warn, #e6a23c); }

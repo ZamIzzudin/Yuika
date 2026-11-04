@@ -66,12 +66,16 @@ export class OpenAICompatProvider implements ProviderAdapter {
   }
 
   async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
-    const stream = await this.client.chat.completions.create({
-      model: req.model,
-      messages: toApiMessages(req.messages),
-      tools: req.tools.length ? toApiTools(req.tools) : undefined,
-      stream: true,
-    });
+    const stream = await this.client.chat.completions.create(
+      {
+        model: req.model,
+        messages: toApiMessages(req.messages),
+        tools: req.tools.length ? toApiTools(req.tools) : undefined,
+        stream: true,
+      },
+      // P0-CORE-1: abort HTTP in-flight saat user menekan Stop (tanpa menunggu timeout).
+      { signal: req.signal },
+    );
 
     let text = "";
     let finishReason: ProviderDone["finishReason"] = "stop";
