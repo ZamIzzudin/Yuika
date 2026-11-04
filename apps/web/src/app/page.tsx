@@ -398,6 +398,7 @@ export default function Home() {
     setActiveProjectId(id);
     setMainTab("chat");
     setDungeonOpen(false); // pilih project = keluar dari halaman Dungeon
+    setTraceOpen(false); // …dan dari halaman Trace — sesi berganti, trace lama menyesatkan
     if (!id) {
       // Workspace global: persona dipilih dari kartu di tengah layar
       resetSession();
@@ -516,8 +517,8 @@ export default function Home() {
             className="side-settings"
             data-active={dungeonOpen ? "" : undefined}
             onClick={() => {
+              setTraceOpen(false); // buka Dungeon = tutup Trace (mutual exclusive)
               setDungeonOpen((v) => !v);
-              if (dungeonOpen) setTraceOpen(false);
             }}
           >
             Dungeon
@@ -525,8 +526,10 @@ export default function Home() {
           <button
             className="side-settings"
             data-active={traceOpen ? "" : undefined}
-            disabled={!sessionId}
-            onClick={() => setTraceOpen((v) => !v)}
+            onClick={() => {
+              setDungeonOpen(false); // buka Trace = tutup Dungeon (mutual exclusive)
+              setTraceOpen((v) => !v);
+            }}
           >
             Trace
           </button>
@@ -540,7 +543,7 @@ export default function Home() {
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <main className="yui-main">
-        {traceOpen && sessionId ? (
+        {traceOpen ? (
           <TracePanel sessionId={sessionId} onBack={() => setTraceOpen(false)} />
         ) : dungeonOpen ? (
           <DungeonView

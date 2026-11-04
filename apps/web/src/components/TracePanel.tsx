@@ -27,13 +27,20 @@ const STATUS_LABEL: Record<string, string> = {
   error: "error",
 };
 
-export function TracePanel({ sessionId, onBack }: { sessionId: string; onBack: () => void }) {
+export function TracePanel({ sessionId, onBack }: { sessionId: string | null; onBack: () => void }) {
   const [trace, setTrace] = useState<SessionTrace | null>(null);
+  const [missing, setMissing] = useState(false);
 
   const load = useCallback(async () => {
+    if (!sessionId) return;
     try {
       const r = await fetch(`/api/sessions/${sessionId}/trace`);
-      if (r.ok) setTrace(await r.json());
+      if (r.ok) {
+        setTrace(await r.json());
+        setMissing(false);
+      } else if (r.status === 404) {
+        setMissing(true); // sesi terhapus (mis. hapus project) — jangan skeleton selamanya
+      }
     } catch {
       /* coba lagi di tick berikutnya */
     }
@@ -52,14 +59,20 @@ export function TracePanel({ sessionId, onBack }: { sessionId: string; onBack: (
     <div className="trace-view">
       <header className="trace-head">
         <b>🧭 Trace sesi</b>
-        <small className="dim">
-          <code>{sessionId.slice(0, 14)}…</code>
-        </small>
+        {sessionId && (
+          <small className="dim">
+            <code>{sessionId.slice(0, 14)}…</code>
+          </small>
+        )}
         <button className="btn secondary" onClick={onBack}>
           ← Kembali ke chat
         </button>
       </header>
-      {trace === null ? (
+      {sessionId === null ? (
+        <p className="pane-hint">Belum ada percakapan aktif — buka atau mulai sesi chat dulu, lalu kembali ke sini untuk melihat jejak langkahnya.</p>
+      ) : missing ? (
+        <p className="pane-hint">Sesi ini tidak ditemukan (mungkin terhapus bersama project-nya). Pilih sesi lain dari sidebar.</p>
+      ) : trace === null ? (
         <Skeleton lines={6} />
       ) : trace.turns.length === 0 ? (
         <p className="pane-hint">Belum ada turn di sesi ini.</p>
