@@ -1,9 +1,49 @@
 "use client";
 import { useEffect, useState } from "react";
-import type { PersonaInfo } from "@yui/contracts";
+import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
 import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
 
 export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
+
+/** P1-PER-4: hook growth persona — fetch + refresh ringan (dipakai picker & grid). */
+export function usePersonaGrowth(): Map<string, PersonaGrowth> {
+  const [growth, setGrowth] = useState<Map<string, PersonaGrowth>>(new Map());
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/personas/growth");
+        if (!r.ok || !alive) return;
+        const list = (await r.json()) as PersonaGrowth[];
+        if (alive) setGrowth(new Map(list.map((g) => [g.id, g])));
+      } catch {
+        /* biarkan kosong — badge hilang saja */
+      }
+    };
+    void load();
+    const t = setInterval(() => void load(), 15_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+  return growth;
+}
+
+/** Badge level kecil (P1-PER-4) — dipakai di kartu & baris persona. */
+export function GrowthBadge({ g }: { g?: PersonaGrowth }) {
+  if (!g) return null;
+  const pct = g.nextLevelAt === null ? 100 : Math.min(100, Math.round((g.turns / g.nextLevelAt) * 100));
+  return (
+    <span className="growth-badge" title={`${g.turns} turn selesai · ${g.sessions} sesi · ${g.tasksDone} task done — level dari kerja nyata`}>
+      <b>{g.level}</b>
+      <span className="growth-bar">
+        <span className="growth-fill" style={{ width: `${pct}%` }} />
+      </span>
+      <small>{g.turns} turn</small>
+    </span>
+  );
+}
 
 /**
  * Wajah kecil persona (list/header) — mini-maskot Orin v4: bentuk + mata kapsul statis,
@@ -49,6 +89,7 @@ export function PersonaGrid({
   onPick: (p: PersonaInfo) => void;
 }) {
   const [showShapes, setShowShapes] = useState(false);
+  const growth = usePersonaGrowth();
   return (
     <>
       <div className="persona-grid">
@@ -61,6 +102,7 @@ export function PersonaGrid({
               <b>{p.name}</b>
             </div>
             <p>{p.description}</p>
+            <GrowthBadge g={growth.get(p.id)} />
           </button>
         ))}
         {/* Kartu katalog bentuk — satu sel grid, ukurannya identik kartu persona */}
@@ -173,6 +215,7 @@ export function PersonaPicker({
   activeId: string | null;
   onPick: (p: PersonaInfo) => void;
 }) {
+  const growth = usePersonaGrowth();
   return (
     <nav className="persona-list" aria-label="Persona">
       {personas.map((p) => (
@@ -188,6 +231,7 @@ export function PersonaPicker({
           <span>
             <h3>{p.name}</h3>
             <p>{p.description}</p>
+            <GrowthBadge g={growth.get(p.id)} />
           </span>
         </button>
       ))}

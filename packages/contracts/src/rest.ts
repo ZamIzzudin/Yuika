@@ -14,6 +14,28 @@ export const PersonaInfo = z.object({
 });
 export type PersonaInfo = z.infer<typeof PersonaInfo>;
 
+/** P1-PER-4: growth persona — DIKURASI dari data nyata (sesi/turn/task), bukan
+ *  state gamifikasi palsu. Level dari `turns` (aktivitas paling jujur). */
+export const PersonaGrowth = z.object({
+  id: z.string(),
+  name: z.string(),
+  domain: z.string(),
+  /** Sesi yang pernah dibuat persona ini. */
+  sessions: z.number().int().nonnegative(),
+  /** Turn selesai (event persona.state done milik persona). */
+  turns: z.number().int().nonnegative(),
+  /** Task project berstatus done yang di-assign ke persona. */
+  tasksDone: z.number().int().nonnegative(),
+  /** Nama level saat ini (dari kurva thresholds). */
+  level: z.string(),
+  /** Index level 0..levelCount-1 — untuk progress bar. */
+  levelIndex: z.number().int().nonnegative(),
+  levelCount: z.number().int().positive(),
+  /** Batas `turns` untuk naik ke level berikutnya; null = level maksimum. */
+  nextLevelAt: z.number().int().nonnegative().nullable(),
+});
+export type PersonaGrowth = z.infer<typeof PersonaGrowth>;
+
 // POST /api/sessions
 export const CreateSessionRequest = z.object({
   personaId: z.string().min(1),

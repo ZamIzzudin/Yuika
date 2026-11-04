@@ -318,7 +318,9 @@ export default function Home() {
     let attempt = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const open = () => {
-      es = new EventSource(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}`);
+      es = new EventSource(
+        `/api/sessions/${sessionId}/stream?since=${lastEventId.current}`,
+      );
       es.onmessage = (m) => {
         attempt = 0;
         try {
@@ -351,7 +353,9 @@ export default function Home() {
     const resync = async () => {
       if (!sessionId) return;
       try {
-        const r = await fetch(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`);
+        const r = await fetch(
+          `/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`,
+        );
         if (!r.ok) return;
         const text = await r.text();
         for (const block of text.split("\n\n")) {
@@ -588,16 +592,7 @@ export default function Home() {
                     )}
                     {busy && <span className="tab-dot" title="agent bekerja" />}
                   </button>
-                  <button
-                    role="tab"
-                    aria-selected={mainTab === "trace"}
-                    data-active={mainTab === "trace" ? "" : undefined}
-                    onClick={() => setMainTab("trace")}
-                    title={sessionId ? "Jejak langkah per turn sesi aktif" : "Mulai sesi dulu untuk melihat trace"}
-                  >
-                    🧭 Trace
-                    {sessionId && busy && <span className="tab-dot" title="turn berjalan — trace ikut live" />}
-                  </button>
+
                   {activeProject &&
                     (
                       [
@@ -630,6 +625,25 @@ export default function Home() {
                           )}
                       </button>
                     ))}
+                  <button
+                    role="tab"
+                    aria-selected={mainTab === "trace"}
+                    data-active={mainTab === "trace" ? "" : undefined}
+                    onClick={() => setMainTab("trace")}
+                    title={
+                      sessionId
+                        ? "Jejak langkah per turn sesi aktif"
+                        : "Mulai sesi dulu untuk melihat trace"
+                    }
+                  >
+                    Trace
+                    {sessionId && busy && (
+                      <span
+                        className="tab-dot"
+                        title="turn berjalan — trace ikut live"
+                      />
+                    )}
+                  </button>
                 </nav>
                 <div className="workspace-body">
                   {mainTab === "chat" && (
@@ -734,35 +748,40 @@ export default function Home() {
                     </>
                   )}
                   {mainTab === "trace" && (
-                    <TracePanel sessionId={sessionId} onBack={() => setMainTab("chat")} />
-                  )}
-                  {activeProject && mainTab !== "chat" && mainTab !== "trace" && (
-                    <ProjectTabs
-                      project={activeProject}
-                      sessions={projSessions}
-                      activeSessionId={sessionId}
-                      onOpenSession={openSession}
-                      onNewSession={() => void newProjectSession()}
-                      personas={personas}
-                      activeTab={mainTab}
-                      rev={taskRev}
-                      live={{
-                        parentPersonaId: active.id,
-                        parentState: personaState,
-                        delegations: items
-                          .filter((it) => it.kind === "delegation")
-                          .map(
-                            (it): LiveDelegation => ({
-                              personaId: it.personaId ?? "yui-scholar",
-                              childSessionId: it.childSessionId ?? "",
-                              goal: it.goal ?? "",
-                              childState: it.childState,
-                              summary: it.text,
-                            }),
-                          ),
-                      }}
+                    <TracePanel
+                      sessionId={sessionId}
+                      onBack={() => setMainTab("chat")}
                     />
                   )}
+                  {activeProject &&
+                    mainTab !== "chat" &&
+                    mainTab !== "trace" && (
+                      <ProjectTabs
+                        project={activeProject}
+                        sessions={projSessions}
+                        activeSessionId={sessionId}
+                        onOpenSession={openSession}
+                        onNewSession={() => void newProjectSession()}
+                        personas={personas}
+                        activeTab={mainTab}
+                        rev={taskRev}
+                        live={{
+                          parentPersonaId: active.id,
+                          parentState: personaState,
+                          delegations: items
+                            .filter((it) => it.kind === "delegation")
+                            .map(
+                              (it): LiveDelegation => ({
+                                personaId: it.personaId ?? "yui-scholar",
+                                childSessionId: it.childSessionId ?? "",
+                                goal: it.goal ?? "",
+                                childState: it.childState,
+                                summary: it.text,
+                              }),
+                            ),
+                        }}
+                      />
+                    )}
                 </div>
               </div>
             )}

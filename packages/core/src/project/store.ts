@@ -121,8 +121,15 @@ export class ProjectStore {
     return { id: input.id, projectId: input.projectId, title: input.title, status: "todo", assignee: input.assignee ?? null, refs: [], createdAt: now, updatedAt: now };
   }
 
-  listTasks(projectId: string): TaskItem[] {
+  /** P1-PER-4: jumlah task DONE per assignee persona (lintas semua project). */
+  taskDoneCountsByAssignee(): Map<string, number> {
     const rows = this.db
+      .prepare(`SELECT assignee, COUNT(*) AS n FROM project_tasks WHERE status = 'done' AND assignee IS NOT NULL GROUP BY assignee`)
+      .all() as Array<{ assignee: string; n: number }>;
+    return new Map(rows.map((r) => [r.assignee, r.n]));
+  }
+
+  listTasks(projectId: string): TaskItem[] {    const rows = this.db
       .prepare("SELECT * FROM project_tasks WHERE project_id = ? ORDER BY created_at ASC, rowid ASC")
       .all(projectId) as { id: string; project_id: string; title: string; status: string; assignee: string | null; refs: string; created_at: number; updated_at: number }[];
     return rows.map((r) => ({

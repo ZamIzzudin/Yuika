@@ -467,3 +467,29 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
 2. Buka PR ke main.
   - ✅ CI jalan di PR; merge di-gate hasil CI. Turbo cache aktif (run kedua
      lebih cepat — task tak berubah dilewati).
+
+### M13 (P1) — Persona yang Tumbuh: memory per-domain + growth (P1-MEM-6/PER-4)
+> Satu flow; detail lengkap ada di **docs/TEST-GRAND-TOUR.md Babak 4**.
+
+1. Chat Scholar, minta ia mencatat preferensi kerja ("sumber APA, perbandingan
+   biaya dalam tabel") → `memory_append` scope **domain**.
+  - ✅ Tab Memori/file: `workspace/memory/domains/research.md` berisi catatan;
+     USER.md & MEMORY.md project tidak tercampur.
+2. Sesi Scholar BARU (project lain/global) → minta riset kecil.
+  - ✅ Preferensi APA/tabel dipakai tanpa diulang (recall domain frozen
+     per sesi baru — catatan baru berlaku mulai sesi BERIKUTNYA).
+3. Kartu persona picker: badge level (Baru/Berkembang/Mahir/Ahli) + progress
+   bar + `n turn` — naik setelah turn selesai (poll 15 dtk; refresh cepat:
+   tutup-buka picker).
+  - ✅ Tooltip: turn/sesi/task done — semua dari data nyata, tidak ada level
+     palsu.
+4. Kontrol: hapus project → memori domain persona TETAP ada (milik persona,
+   lintas project).
+
+### M14 (P1) — MCP tool list changed (P1-MCP-6)
+1. Panel MCP terbuka → perhatikan jumlah tool server aktif.
+2. Edit server MCP dev Anda (tambah/hapus tool) sehingga mengirim
+   notifikasi `tools/list_changed`.
+  - ✅ Log server yui: `MCP '<name>' daftar tool berubah: +1 -0`; panel
+     (poll 10 dtk) menampilkan daftar baru; tool baru bisa dipakai persona
+     pada turn berikutnya TANPA restart app.

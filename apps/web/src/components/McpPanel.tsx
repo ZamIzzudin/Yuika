@@ -41,6 +41,10 @@ export function McpPanel() {
 
   useEffect(() => {
     void refresh();
+    // P1-MCP-6: daftar tool server bisa berubah kapan pun (notifikasi
+    // tools/list_changed di core) — poll ringan agar panel selalu segar.
+    const t = setInterval(() => void refresh(), 10_000);
+    return () => clearInterval(t);
   }, [refresh]);
 
   /** One-click install uv (installer resmi astral.sh) — konfirmasi eksplisit UI. */

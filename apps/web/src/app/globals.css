@@ -745,6 +745,21 @@ html, body {
 .persona-card-name b { font-size: var(--yui-text-lg); font-weight: 600;}
 .persona-card p { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim); line-height: 1.5; text-align: justify; }
 
+/* ── P1-PER-4: badge growth persona (level + progres turn nyata) ── */
+.growth-badge {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 2px;
+  font-size: 11px; color: var(--yui-text-dim);
+  background: var(--yui-hover); border-radius: 999px; padding: 3px 10px;
+}
+.persona-row .growth-badge { padding: 1px 8px; }
+.growth-badge b { font-weight: 600; color: var(--yui-text-secondary); }
+.growth-bar {
+  display: inline-block; width: 54px; height: 4px; border-radius: 2px;
+  background: var(--yui-border); overflow: hidden;
+}
+.growth-fill { display: block; height: 100%; border-radius: 2px; background: var(--yui-accent, #7c9cff); }
+.growth-badge small { color: var(--yui-text-dim); }
+
 /* ── Switcher persona di chat-header (dropdown) ────────────────── */
 .persona-switch { position: relative; }
 .persona-switch summary { display: flex; align-items: center; gap: var(--yui-space-2); list-style: none; cursor: pointer; padding: 4px 6px; border-radius: 8px; }

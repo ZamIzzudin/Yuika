@@ -182,10 +182,8 @@
 > (dep P0-INF-5) → P0-DATA-2 retention · P1-MCP-2 OAuth (menyusul server OAuth-capable:
 > Penpot/Figma di P2-DSN) · P1-INF-1 auth (desain tenant, pasca-demo).
 > **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-2/3/4 · P0-CORE-4/5 ·
-> P0-QA-1/2 · P1-MCP-5/6 · P1-MEM-6 · P1-DEL-1 (parsial: cap paralel
-> dinamis via budget CRED-3 + consult paralel sudah jalan; sisa config per-plan) ·
-> P1-DEL-4 (konteks anak FAKTUAL sudah terisolasi — sesi anak fresh; sisa audit+
-> test formal) · P1-PER-4 growth.
+> P0-QA-1/2 · P1-MCP-5 · P1-DEL-1 (parsial: cap paralel
+> dinamis via budget CRED-3 + consult paralel sudah jalan; sisa config per-plan).
 >
 > Tujuan: kernel production-grade. Grep `DEMO-SHORTCUT` di repo = daftar utang.
 
@@ -243,7 +241,7 @@
 - [x] **P1-MCP-3** Trust gate per-workspace + izin granular per tool + audit log panggilan · *C+A · 3d* — ✅ sesi dev 7: `workspace/mcp-trust.json` deklaratif **fail-closed** (tanpa trust = server TIDAK dihubungkan; file rusak → tetap tertutup), deny list per tool dievaluasi di handler + REST PUT memicu connect/disconnect dinamis + re-register, setiap panggilan tool MCP ter-audit (server/tool/sesi/hasil/durasi), REST `/api/mcp/servers` + `/api/mcp/audit`, panel MCP di sidebar (toggle trust, status live, audit tail); +8 test; smoke live: untrust→putus, trust→14 tools, deny→ditolak, audit terisi. (Katalog install UI = P1-MCP-1; OAuth = P1-MCP-2)
 - [ ] **P1-MCP-4** MCP worker per-tenant di sandbox (bukan stdio bare) + egress policy · *A · 4d · dep P0-SEC-1*
 - [ ] **P1-MCP-5** Sampling & elicitation MCP → server_requests ke klien (pola Hermes) · *C+B · 3d*
-- [ ] **P1-MCP-6** Tool list changed → refresh registry next-session + notif UI · *C · 1d*
+- [x] **P1-MCP-6** Tool list changed → refresh registry next-session + notif UI · *C · 1d* — ✅ v0 dev-10: `mcp/client.ts` `syncTools()` — handler SDK `ToolListChangedNotificationSchema` → re-list + re-register baru + `unregister` tool hilang, LANGSUNG (bukan next-session — persona bisa pakai tool baru di turn berikutnya tanpa restart app); runtime perbarui snapshot status (McpPanel poll 10 dtk menampilkan daftar terbaru + log perubahan `+n -n`)
 
 ### P1-MEM (prioritas #2 — learning loop)
 
@@ -252,14 +250,14 @@
 - [x] **P1-MEM-3** Skill-create-from-experience: flow penuh (draft → validasi lint → simpan ke domain persona) · *C+A · 3d* — ✅ sesi dev 9 (v0, scope global dulu): `skills/manager.ts` (propose → draf `skills/drafts/<slug>/SKILL.md` status draft; **Terima** = lint parse frontmatter + pindah aktif + buang status; **Tolak** = hapus; duplikat nama ditolak), tool **`skill_propose`** (bar tinggi: pola terbukti & reusable, bukan preferensi → itu memory_append; tanpa approval — validasi user eksplisit di UI) + event `skill.proposed` (chip "🛠 Yui mengusulkan skill" di chat), tab **Skill** (draf: lihat/edit inline → Terima/Tolak; siap pakai: daftar aktif), REST `/api/skills` GET/PUT/POST/DELETE, `skill_propose` di 4 toolsets + hint Learning di PERSONA.md conductor. Fix: `YAML.stringify({})` → "{}" (truthy trap), `listSkills` exclude folder drafts/. "Domain persona" (skill milik persona tertentu, P1-DUN-2) menyusul. +7 test
 - [x] **P1-MEM-4** Usage tracking per skill (use/view/patch; `.usage.json` per home) · *C · 1d* — ✅ sesi dev 10 (`75a1ad5`): `.usage.json` per folder skill (views ← `skill_view`, patches ← edit draft & accept — ikut pindah folder saat aktif; used menyusul dihubungkan dungeon/P1-DUN-2), tampil di tab Skill (👁 n · ✎ n · ⚑ n), +1 test
 - [x] **P1-MEM-5** `session_search` tool (FTS) — agent menelusuri riwayatnya sendiri · *A · 2d* — ✅ v0 sesi dev 10: `SessionStore.searchMessages` (LIKE, recency, snippet ±60 char, hanya user/assistant — tool result dikecualikan) + tool `session_search` (scope project default / all lintas proyek, hint kapan dipakai) di 5 toolsets persona; FTS5 menyusul bila volume riwayat membesar; +1 test
-- [ ] **P1-MEM-6** Memory per-domain persona + blok recall di prompt (frozen per sesi!) · *A · 2d*
+- [x] **P1-MEM-6** Memory per-domain persona + blok recall di prompt (frozen per sesi!) · *A · 2d* — ✅ v0 dev-10: scope "domain" di manager (`workspace/memory/domains/<domain>.md`, slug aman; milik persona & lintas project — TIDAK ikut terhapus saat hapus project, konsisten kebijakan skill) + `memoryPromptSection` bagian "Memori bidang kamu" di-inject saat sesi DIBUAT (frozen, juga untuk sesi delegasi anak via manifest domain persona anak); tool `memory_append` scope domain menulis ke file domain persona PEMANGGIL (resolver dari manifest); +4 test
 
 ### P1-DEL (prioritas #3 — delegation penuh)
 
 - [ ] **P1-DEL-1** Batch paralel (cap per plan) + `delegation.max_concurrent` config · *A · 2d*
 - [ ] **P1-DEL-2** Background jobs + notifikasi selesai (web push) · *A+B · 2d*
 - [ ] **P1-DEL-3** Steering UI (arahkan/pause anak dari web) · *B · 2d · dep P0-DEL-2*
-- [ ] **P1-DEL-4** Isolasi & redaksi konteks anak (anak tidak melihat tool call parent) — audit + test · *A · 1d*
+- [x] **P1-DEL-4** Isolasi & redaksi konteks anak (anak tidak melihat tool call parent) — audit + test · *A · 1d* — ✅ v0 dev-10: `delegation-isolation.test.ts` — anak = sesi FRESH (bukan asumsi): diverifikasi 3 lapis — messages anak tanpa jejak history parent, systemPrompt anak tanpa konten parent, dan WIRE request ke provider (req yang benar-benar terkirim) bersih dari rahasia parent
 
 ### P1-PER (persona v1 penuh — pilar produk)
 
@@ -267,7 +265,7 @@
 - [ ] **P1-PER-2** Aset Rive 6 persona × 7 state (batch: Conductor+Scholar+Scribe dulu) · *artist · berjalan paralel*
   - ✎ dev-10: **Scribe berevolusi jadi persona dokumen** — upload (pdf/xlsx/csv) via tab File → `uploads/`, tool `doc_read` (unpdf + SheetJS), PERSONA.md: baca-dulu-baru-tulis. Menyusul: docx, offset paging doc_read, tabel hasil ekstraksi di UI.
 - [ ] **P1-PER-3** Ganti PersonaPortrait fallback → Rive runtime + pre-load · *B · 2d · dep P1-PER-2*
-- [ ] **P1-PER-4** Growth tracking (usage → level → varian gratis unlock) + timeline UI · *C+B · 3d*
+- [x] **P1-PER-4** Growth tracking (usage → level → varian gratis unlock) + timeline UI · *C+B · 3d* — ✅ v0 dev-10 (growth v0 tanpa unlock-varian — menyusul CRED-5): `personas/growth.ts` — level dikurasi dari KERJA NYATA (turn done via events persona.state, sesi, task done per assignee; kurva Baru→Berkembang 15→Mahir 50→Ahli 150 turn, tanpa jalur inflate); REST `GET /api/personas/growth` (kontrak `PersonaGrowth`); badge level + progress bar + tooltip di kartu PersonaGrid & baris PersonaPicker (poll 15 dtk); +5 test
 - [ ] **P1-PER-5** Persona acceptance test blind (perilaku beda nyata antar persona — anti "hanya kosmetik") · *S · 2d* → ≥80% penguji menebak persona benar dari output
 - [x] **P1-PER-6** 2 persona tambahan (Analyst, Operator) sesuai roster D9 · *C · 1d* — ✅ v0 dev-10: **Yui Analyst** (expertise data: doc_read + run_command script reproducible, PERSONA.md inspeksi→bersih→hitung→lapor) + **Yui Operator** (otomasi/devops: run_command + mcp__* binding Tailscale, disiplin approval & verifikasi post-aksi); skill seed **data-analysis-basics** (category data, persona analyst) + kategori `data` masuk gating fase research; conductor can_spawn diperbaiki (typo `yui_designer` → hyphen) + 2 persona baru; bentuk Orin: Analyst=diamond, Operator=hex; +3 test roster D9 (manifest valid, delegation koheren, toolset benar)
 - [x] **P1-PER-7** **Persona Yui Designer** (roster ke-7 — putusan user v0.5, §7.4): manifest + PERSONA.md + skill seed (design-system basics, design→code handoff, Penpot operation) + potret/tint · *C · 1d* → GET /api/personas menampilkan Designer; delegasi dari Conductor jalan — ✅ sesi dev 10: persona.yaml (spawnable_by conductor) + PERSONA.md (fase design, handoff = HTML satu-file ke `code/` + memo keputusan ke `reports/`) + toolsets + 2 skill seed aktif (`design-system-basics`, `design-to-code-handoff` — format SKILL.md, tags personas yui-designer); shape "tri" Orin sudah tersedia sejak rig v4. Skill Penpot operation menyusul P2-DSN-2

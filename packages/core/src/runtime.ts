@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
+import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
 import { SessionStore } from "./session/store.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
@@ -15,6 +15,7 @@ import { AgentLoop } from "./loop.js";
 import { registry } from "./registry.js";
 import { ApprovalEngine, resolvePendingApproval } from "./approval/engine.js";
 import { listPersonas } from "./personas/loader.js";
+import { buildPersonaGrowth } from "./personas/growth.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
 import { registerFileTools } from "./tools/file-tools.js";
 import { registerWebTools } from "./tools/web-tools.js";
@@ -154,7 +155,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)
   registerRunCommandTool();
   registerTodoTools({ sessionStore: store, projects: projectStore });
-  registerMemoryTools({ sessionStore: store, projects: projectStore, workspacePath: paths.workspacePath });
+  registerMemoryTools({
+    sessionStore: store,
+    projects: projectStore,
+    workspacePath: paths.workspacePath,
+    // P1-MEM-6: domain persona pemanggil tool (dari manifest, cache-friendly).
+    domainOfPersona: (personaId) => listPersonas(paths.personasDir).find((p) => p.manifest.id === personaId)?.manifest.memory.domain ?? null,
+  });
   // Objek deps delegasi DI-MUTASI saat provider swap (spread terjadi di call time).
   // P1-MDL-1: router model per persona — override file (Settings) → persona.yaml → default.
   const modelRouter = buildModelRouter({
@@ -308,6 +315,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       denyTools: entry.denyTools,
       onCall: onMcpCall,
       onDown: (reason) => onMcpDown(name, reason),
+      // P1-MCP-6: daftar tool server berubah (notifikasi) → perbarui snapshot
+      // status (McpPanel polling) — persona mengambil tool baru tanpa restart.
+      onToolsChanged: (r) => {
+        const c = mcpConns.get(name);
+        if (c) c.toolNames = r.toolNames;
+        console.log(`[yui] MCP '${name}' daftar tool berubah: +${r.added.length} -${r.removed.length} (total ${r.toolNames.length})`);
+      },
     });
     clearMcpRetry(name);
     mcpConns.set(name, { ...conn, state: "connected", lastError: null, nextRetryAt: null });
@@ -344,6 +358,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     }));
   }
 
+  /** P1-PER-4: growth persona — dikurasi dari sesi/turn/task nyata. */
+  function personaGrowth(): PersonaGrowth[] {
+    return buildPersonaGrowth(
+      listPersonas(paths.personasDir).map((p) => ({ id: p.manifest.id, name: p.manifest.name, domain: p.manifest.memory.domain })),
+      store,
+      projectStore,
+    );
+  }
+
   function createSession(
     personaId: string,
     projectId?: string | null,
@@ -356,9 +379,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     const sessionId = `s_${randomUUID()}`;
     // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline).
     // P1-MEM-1: USER.md + MEMORY.md project di-inject saat sesi dibuat (frozen).
+    // P1-MEM-6: + memori DOMAIN persona (lintas project) — juga frozen.
     const memExtra = memoryPromptSection(
       paths.workspacePath,
       projectId ? projectRoot(projectId) : null,
+      persona.manifest.memory?.domain ?? null,
     );
     createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null, memExtra);
     // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru — learning-loop P1
@@ -518,6 +543,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       // handle per HMR jauh lebih ringan daripada mematikan turn in-flight).
     },
     listPersonas: listPersonaInfos,
+    personaGrowth,
     createSession,
     listProjectSessions,
     runTurn: (sessionId: string, text: string) => runTurnInternal(sessionId, text),

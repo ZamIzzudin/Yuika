@@ -110,6 +110,30 @@ export class SessionStore {
     return rows.map((r) => ({ id: r.id, personaId: r.persona_id, createdAt: r.created_at, lastEventAt: r.last_event_at, lastEventId: r.last_event_id }));
   }
 
+  /** P1-PER-4: jumlah sesi per persona (lintas project — growth tracking). */
+  personaSessionCounts(): Map<string, number> {
+    const rows = this.db.prepare(`SELECT persona_id, COUNT(*) AS n FROM sessions GROUP BY persona_id`).all() as Array<{ persona_id: string; n: number }>;
+    return new Map(rows.map((r) => [r.persona_id, r.n]));
+  }
+
+  /** P1-PER-4: jumlah turn SELESAI per persona (event persona.state done).
+   *  Scan events sekali — cukup cepat di skala demo; index menyusul bila perlu. */
+  personaDoneTurnCounts(): Map<string, number> {
+    const rows = this.db
+      .prepare(`SELECT payload FROM events WHERE type = 'persona.state'`)
+      .all() as Array<{ payload: string }>;
+    const out = new Map<string, number>();
+    for (const r of rows) {
+      try {
+        const p = JSON.parse(r.payload) as { state?: string; personaId?: string };
+        if (p.state === "done" && p.personaId) out.set(p.personaId, (out.get(p.personaId) ?? 0) + 1);
+      } catch {
+        /* payload rusak — skip */
+      }
+    }
+    return out;
+  }
+
   appendMessage(sessionId: string, msg: InternalMessage): void {
     this.db
       .prepare("INSERT INTO messages (session_id, role, content, tool_calls, tool_call_id, created_at) VALUES (?, ?, ?, ?, ?, ?)")

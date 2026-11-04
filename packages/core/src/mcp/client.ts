@@ -3,6 +3,7 @@
 // semuanya P1 (TASKS.md §MCP). Jangan pernah resolve tool MCP di import-time.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { McpTrustConfig } from "@yui/contracts";
 import { registry } from "../registry.js";
@@ -33,8 +34,22 @@ export interface McpCallInfo {
 export async function connectMcpServer(
   serverName: string,
   cfg: McpServerConfig,
-  opts: { denyTools?: string[]; onCall?: (info: McpCallInfo) => void; onDown?: (reason: string) => void } = {},
-): Promise<{ close: () => Promise<void>; toolCount: number; toolNames: string[]; ping: () => Promise<boolean> }> {
+  opts: {
+    denyTools?: string[];
+    onCall?: (info: McpCallInfo) => void;
+    onDown?: (reason: string) => void;
+    /** P1-MCP-6: server menambah/menghapus tool (notifikasi tools/list_changed).
+     *  Dipanggil SETELAH re-register selesai — runtime memperbarui status/allowlist. */
+    onToolsChanged?: (info: { toolNames: string[]; added: string[]; removed: string[] }) => void;
+  } = {},
+): Promise<{
+  close: () => Promise<void>;
+  toolCount: number;
+  toolNames: string[];
+  ping: () => Promise<boolean>;
+  /** P1-MCP-6: tarik ulang daftar tool (dipanggil saat notifikasi list_changed). */
+  refreshTools: () => Promise<{ toolNames: string[]; added: string[]; removed: string[] }>;
+}> {
   const client = new Client({ name: "your-yui", version: "0.1.0" }, { capabilities: {} });
   // Server Python (uvx): bila uvx tak di PATH (mis. baru di-install via UI dan
   // PATH proses belum menyegarkan), pakai path absolut — tanpa restart server.
@@ -53,12 +68,26 @@ export async function connectMcpServer(
   transport.onclose = () => opts.onDown?.("transport closed");
   transport.onerror = (e) => opts.onDown?.(e instanceof Error ? e.message : String(e));
 
+  // P1-MCP-6: server mengubah daftar tool (mis. dev tambah tool tanpa restart)
+  // → re-fetch + re-register otomatis — TIDAK perlu restart app.
+  client.setNotificationHandler(ToolListChangedNotificationSchema, () => {
+    void syncTools().then((r) => {
+      if (r.added.length || r.removed.length) opts.onToolsChanged?.(r);
+    });
+  });
+
   const { tools } = await client.listTools();
-  const registered: string[] = [];
-  for (const t of tools) {
-    const fullName = `mcp__${serverName}__${t.name}`;
-    registry.register({
-      name: fullName,
+  let current = new Set<string>();
+
+  /** Daftar ulang tool server → register baru, unregister yang hilang.
+   *  Dipakai saat connect PERTAMA dan setiap notifikasi tools/list_changed (P1-MCP-6). */
+  async function syncTools(): Promise<{ toolNames: string[]; added: string[]; removed: string[] }> {
+    const { tools } = await client.listTools();
+    const fresh = new Set<string>();
+    for (const t of tools) {
+      const fullName = `mcp__${serverName}__${t.name}`;
+      registry.register({
+        name: fullName,
       description: `[MCP:${serverName}] ${t.description ?? t.name}`,
       parameters: passthrough, // TODO(P1): schema nyata dari t.inputSchema
       handler: async (args: Record<string, unknown>, ctx) => {
@@ -94,13 +123,23 @@ export async function connectMcpServer(
         }
       },
     });
-    registered.push(fullName);
+      fresh.add(fullName);
+    }
+    const added = [...fresh].filter((n) => !current.has(n));
+    const removed = [...current].filter((n) => !fresh.has(n));
+    for (const n of removed) registry.unregister(n); // tool hilang → tidak bisa dipanggil lagi
+    current = fresh;
+    return { toolNames: [...fresh], added, removed };
   }
+
+  await syncTools(); // initial sync — snapshot awal untuk return
+  const initial = [...current];
   return {
     close: () => client.close(),
-    toolCount: tools.length,
-    toolNames: registered,
+    toolCount: initial.length,
+    toolNames: initial,
     ping: () => client.ping().then(() => true).catch(() => false),
+    refreshTools: syncTools,
   };
 }
 

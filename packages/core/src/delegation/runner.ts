@@ -60,12 +60,17 @@ export function runChildPersona(
   const childSessionId = `s_${randomUUID()}`;
   // Toolset anak = toolset persona MINUS delegate_task (kedalaman 1 utk demo) — TODO(P1): depth policy
   const childTools = persona.manifest.tools.filter((t) => t !== "delegate_task");
-  // P1-MEM-1: anak mewarisi projectId parent (binding roster MCP anak jalan;
-  // tool memory_append scope project valid). USER.md di-inject ke prompt anak
-  // (frozen). MEMORY.md project untuk anak menyusul bersama projectRootFor di deps.
+  // P1-MEM-6: anak mewarisi projectId parent (binding roster MCP anak jalan;
+  // tool memory_append scope project valid). USER.md + memori DOMAIN persona anak
+  // di-inject ke prompt anak (frozen). MEMORY.md project untuk anak menyusul
+  // bersama projectRootFor di deps.
   const parentSession = deps.store.getSession(parent.sessionId);
   const childProjectId = parentSession?.projectId ?? null;
-  const memExtra = memoryPromptSection(deps.workspaceGlobalPath ?? deps.workspacePath, null);
+  const memExtra = memoryPromptSection(
+    deps.workspaceGlobalPath ?? deps.workspacePath,
+    null,
+    persona.manifest.memory?.domain ?? null,
+  );
 
   // Reuse pembuatan sesi dari AgentLoop factory (prompt frozen, skills index persona anak)
   createSessionWithPrompt(deps.store, persona, childSessionId, childTools, deps.skillsDir, childProjectId, memExtra);
