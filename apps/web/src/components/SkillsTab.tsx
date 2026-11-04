@@ -18,18 +18,12 @@ interface SkillRow {
   personas?: string[];
   eval?: { verdict: "pending" | "pass" | "fail"; reason: string | null; judgeSessionId: string; at: number } | null;
 }
-interface DungeonRow {
-  mission: { id: string; title: string; persona: string; goal: string; resources: string[]; acceptance: string[]; targetSkill: { name: string; description: string } };
-  runs: { id: string; status: "running" | "done" | "failed"; startedAt: number; endedAt: number | null; summary: string | null }[];
-}
 
 const STATUS_LABEL: Record<string, string> = { tested: "◐ diuji manusia", ready: "✓ siap", draft: "draf" };
 
 export function SkillsTab() {
   const [drafts, setDrafts] = useState<DraftRow[]>([]);
   const [skills, setSkills] = useState<SkillRow[]>([]);
-  const [dungeons, setDungeons] = useState<DungeonRow[] | null>(null);
-  const [runErr, setRunErr] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [edit, setEdit] = useState<{ name: string; description: string; body: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -43,8 +37,6 @@ export function SkillsTab() {
         setDrafts(d.drafts);
         setSkills(d.skills);
       }
-      const dr = await fetch("/api/dungeons");
-      if (dr.ok) setDungeons(((await dr.json()) as { dungeons: DungeonRow[] }).dungeons);
     } catch {
       /* refresh berikutnya */
     }
@@ -52,40 +44,24 @@ export function SkillsTab() {
 
   useEffect(() => {
     void refresh();
-    // Dungeon run jalan async — polling 5 dtk saat tab terbuka.
+    // Eval buta jalan async — polling 5 dtk agar statusnya hidup.
     const t = setInterval(() => void refresh(), 5_000);
     return () => clearInterval(t);
   }, [refresh]);
 
-  /** P1-DUN-1: jalankan misi — sesi sandbox persona, skill target diusulkan di akhir. */
-  async function runMission(missionId: string) {
-    setRunErr(null);
-    try {
-      const r = await fetch("/api/dungeons", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ missionId }),
-      });
-      if (!r.ok) setRunErr((((await r.json()) as { error?: string }).error ?? "gagal menjalankan misi") + "");
-      await refresh();
-    } catch {
-      setRunErr("gagal menghubungi server");
-    }
-  }
-
   /** P1-DUN-3: eval buta skill tested — lulus → ready (polling 5 dtk mengambil hasil). */
   async function evalSkill(name: string) {
-    setRunErr(null);
+    setErr(null);
     try {
       const r = await fetch("/api/skills/eval", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug: name }),
       });
-      if (!r.ok) setRunErr((((await r.json()) as { error?: string }).error ?? "gagal memulai eval") + "");
+      if (!r.ok) setErr((((await r.json()) as { error?: string }).error ?? "gagal memulai eval") + "");
       await refresh();
     } catch {
-      setRunErr("gagal menghubungi server");
+      setErr("gagal menghubungi server");
     }
   }
 
@@ -245,41 +221,6 @@ export function SkillsTab() {
           </ul>
         )}
       </div>
-
-      {dungeons !== null && dungeons.length > 0 && (
-        <div className="dungeon-arena">
-          <header className="project-head">
-            <span className="project-title">Dungeon — arena latihan ({dungeons.length})</span>
-          </header>
-          <p className="pane-hint">
-            Misi menjalankan persona di ruang sandbox terisolasi (<code>workspace/dungeons/</code>) — hasilnya skill draf lewat
-            <code> skill_propose</code>. Terima drafnya di atas untuk melihatnya jadi <b>tested</b>.
-          </p>
-          {dungeons.map((d) => {
-            const active = d.runs.find((r) => r.status === "running");
-            const last = d.runs[d.runs.length - 1];
-            return (
-              <div key={d.mission.id} className="dungeon-mission">
-                <div className="dungeon-head">
-                  <b>{d.mission.title}</b>
-                  <span className="dungeon-persona">{d.mission.persona.replace("yui-", "")}</span>
-                  <button className="btn" disabled={Boolean(active)} onClick={() => void runMission(d.mission.id)}>
-                    {active ? "berjalan…" : "Jalankan"}
-                  </button>
-                </div>
-                <small className="dungeon-goal">{d.mission.goal.trim().split("\n")[0]}</small>
-                {last && (
-                  <small className="dungeon-run" data-s={last.status}>
-                    {last.status === "running" ? "◐ berjalan" : last.status === "done" ? "✓ selesai" : "✕ gagal"}
-                    {last.summary ? ` — ${last.summary.slice(0, 140)}` : ""}
-                  </small>
-                )}
-              </div>
-            );
-          })}
-          {runErr && <p className="project-err">{runErr}</p>}
-        </div>
-      )}
       {err && <p className="project-err">{err}</p>}
     </section>
   );

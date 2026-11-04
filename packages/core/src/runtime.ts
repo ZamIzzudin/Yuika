@@ -43,7 +43,7 @@ import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
 import { computeReadiness } from "./project/readiness.js";
 import { taskTreeFromEvents } from "./project/tasktree.js";
-import { loadMissions, missionDir } from "./dungeon/mission.js";
+import { loadMissions, missionDir, createMission as writeMission, appendMissionResource, deleteMission, dungeonsDir, sanitizeMaterialName } from "./dungeon/mission.js";
 import { createDungeonRunner, sweepStaleRuns } from "./dungeon/runner.js";
 import { createSkillEvaluator, missionForSkill, readEval } from "./dungeon/eval.js";
 import { setSkillStatus } from "./skills/manager.js";
@@ -480,6 +480,38 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       if (!m) throw new Error(`misi dungeon tidak ditemukan: ${missionId}`);
       return dungeonRunner.start(m);
     },
+    // ---- P1-DUN-4: latihan buatan user (halaman Dungeon) ----
+    createDungeonMission: (input: {
+      personaId: string;
+      title: string;
+      goal: string;
+      skillName: string;
+      skillDescription: string;
+      resources?: string[];
+      acceptance: string[];
+    }) => {
+      if (!listPersonas(paths.personasDir).some((p) => p.manifest.id === input.personaId)) throw new Error(`persona '${input.personaId}' tidak dikenal`);
+      return writeMission(paths.workspacePath, {
+        title: input.title,
+        persona: input.personaId,
+        goal: input.goal,
+        resources: input.resources?.filter((r) => r.trim()).map((r) => r.trim()),
+        acceptance: input.acceptance,
+        skillName: input.skillName,
+        skillDescription: input.skillDescription,
+      });
+    },
+    /** Simpan bahan ajar user ke <dungeon>/materials/<nama> + catat sebagai sumber misi. */
+    writeDungeonMaterial: (slug: string, name: string, bytes: Buffer) => {
+      const safe = sanitizeMaterialName(name);
+      if (!safe || safe.includes("..")) throw new Error("nama file tidak valid");
+      const dir = path.join(dungeonsDir(paths.workspacePath), slug, "materials");
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, safe), bytes);
+      appendMissionResource(paths.workspacePath, slug, `materials/${safe}`);
+      return `materials/${safe}`;
+    },
+    deleteDungeonMission: (slug: string) => deleteMission(paths.workspacePath, slug),
     listProjects: () => projectStore.listProjects(),
     getProject: (id: string) => projectStore.getProject(id),
     // P2-STU-3 v0: tab File — tree + baca file, scoped dir project (anti traversal).

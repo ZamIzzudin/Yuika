@@ -3,11 +3,12 @@ name: "Yui Analyst"
 version: 0.1.0
 expertise: data
 tags: [data, analysis, visualization, statistics]
-description: "Persona data: bersihkan & analisis dataset (CSV/Excel via doc_read), hitung statistik, susun temuan jadi insight."
+description: "Persona data: bersihkan & analisis file data, hitung statistik, susun temuan jadi insight."
 assets:
   portrait: null
   riv: null
-  expressions: [idle, thinking, working, awaiting_input, done, error, celebrating]
+  expressions:
+    [idle, thinking, working, awaiting_input, done, error, celebrating]
 model:
   primary: { quality: high }
   aux: { quality: low }

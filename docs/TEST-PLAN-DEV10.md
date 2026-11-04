@@ -1,0 +1,258 @@
+# TEST PLAN — Batch Dev-10 (fitur sejak fix #3, belum diuji user)
+
+> Dokumen ini = skema testing lengkap untuk **semua fitur yang belum Anda uji**.
+> Fix batch #1–#3 (s/d commit `13068e7`) sudah Anda konfirmasi — tidak diulang di sini,
+> hanya dicek regresinya singkat (Batch M6).
+>
+> Skenario L di `TEST-SCENARIO-DEV9.md` sudah diperluas & digantikan dokumen ini.
+
+## Batch yang belum diuji (5 commit, 9 fitur)
+
+| Batch | Fitur | Commit | Prioritas | Est. waktu |
+|---|---|---|---|---|
+| M1 | Approval persist (P0-DATA-3) | `5a1ccf6` | **P0** | 10 mnt |
+| M2 | MCP reconnect otomatis (P0-MCP-1) | `5a1ccf6` | **P0** | 10 mnt (+opsional 8 mtn) |
+| M3 | Dungeon + lifecycle skill + gating (DUN-1/2/3/5) | `7a238cc` `306313c` | **P1 inti** | 30–45 mnt |
+| M4 | Persona Analyst & Operator (PER-6) | `e12a3d5` | P1 | 15 mnt |
+| M5 | Smoke test model (MDL-2) | `6ea3b6f` | P1 | 10 mnt |
+| M6 | Regresi cepat area tersentuh | — | P1 | 5 mnt |
+
+**Total: ±80–95 menit** (M3 paling lama karena menunggu LLM bekerja).
+
+---
+
+## 0. Persiapan (WAJIB — 2 menit)
+
+1. **Restart dev server** (`npm run dev`). Semua batch ini menyentuh `@yui/core`
+   — quirk runtime singleton: perubahan core TIDAK ter-apply via HMR.
+2. Pastikan `.env` punya `YUI_API_KEY` aktif (M3/M4/M5 memanggil model sungguhan).
+3. **Jangan** `npm run data:clean` — M1 butuh approval yang menggantung lintas
+   restart, dan dungeon run lama (bila ada) ikut terhapus.
+4. Siapkan 1 file kecil untuk M4: `contoh-data.csv` berisi ~10 baris, kolom
+   `nama,kategori,jumlah`. (Buat manual di Notepad bila perlu.)
+
+Format laporan per kasus: `M1.1 ✅` / `M1.2 ❌ — <yang terjadi>`.
+
+---
+
+## Batch M1 — Approval persist (P0-DATA-3)
+
+> Yang diuji: approval tercatat di SQLite, bertahan restart, dan
+> "Setujui & ingat" diingat lintas restart.
+
+- [ ] **M1.1 (P0) — Approval kedaluwarsa saat server direstart**
+  1. Buat sesi persona **Coder** (atau persona lain punya `run_command`).
+  2. Kirim: `jalankan node -e "console.log(42)"` → muncul **kartu approval**
+     (tool `run_command`).
+  3. **JANGAN klik apa pun.** Matikan dev server (Ctrl+C), nyalakan lagi.
+  4. Buka kembali sesi yang sama → refresh browser.
+  - ✅ Kartu approval berubah **"Kedaluwarsa — server direstart saat menunggu"**
+    (bukan error, bukan kartu yang masih bisa diklik).
+  - ✅ Chat tetap bisa dipakai untuk turn baru.
+
+- [ ] **M1.2 (P0) — "Setujui & ingat" bertahan restart**
+  1. Minta agent menjalankan perintah `node` lagi → kartu approval muncul.
+  2. Klik **"Setujui & ingat"** → perintah jalan.
+  3. Restart dev server, refresh browser.
+  4. Minta `node` lagi di sesi yang sama.
+  - ✅ TIDAK muncul kartu approval lagi — perintah langsung jalan
+    (keputusan diingat dari DB, bukan memori proses).
+
+- [ ] **M1.3 (P1) — Approval biasa tetap normal**
+  1. Minta perintah `node` baru → kartu muncul → klik "Tolak".
+  - ✅ Perintah dibatalkan dengan pesan rapi; minta lagi → kartu muncul LAGI
+    (tolak tidak diingat permanen, hanya "setujui & ingat").
+
+---
+
+## Batch M2 — MCP reconnect otomatis (P0-MCP-1)
+
+> Yang diuji: server MCP mati → terdeteksi → tools dilepas → reconnect backoff;
+> 5× gagal → parkir + tombol retry.
+
+- [ ] **M2.1 (P0) — Mati → "sambung ulang…" → hidup lagi otomatis**
+  1. Panel MCP (Settings → MCP): pastikan satu server **connected**
+    (mis. `tailscale` in-repo).
+  2. Buka Task Manager → cari proses anak server MCP (node yang menjalankan
+     `mcp-servers/.../index.mjs`) → **End task**.
+  3. Lihat panel MCP (refresh bila perlu).
+  - ✅ Badge berubah **"sambung ulang… (Ns)"** — N turun mundur (backoff
+    2→5→15→60 dtk) dan alat MCP hilang dari toolset agent.
+  4. Tunggu hitungan habis (maks 60 dtk) — reconnect otomatis.
+  - ✅ Kembali **connected** dan tools MCP bisa dipakai lagi
+    (minta agent `ts_status` bila Tailscale ter-bind).
+
+- [ ] **M2.2 (P1) — Health check: hang tanpa crash ikut terdeteksi**
+  - Cukup amati 30–60 dtk: server yang hidup tapi diam (zombie) juga
+    ditandai turun oleh ping berkala — badge tidak bohong "connected".
+  - ✅ (informasional — tak perlu aksi khusus)
+
+- [ ] **M2.3 (P2, opsional — butuh ±8 menit) — Parkir setelah 5× gagal**
+  1. Ulangi M2.1, tapi JANGAN hidupkan server lagi; biarkan retry berjalan
+     sampai ke-5 (total ±7 menit: 2+5+15+60+300 dtk → ganti jadi coba lagi cepat).
+  - ✅ Badge **"parkir — 5× gagal"** + `lastError` tampil; retry berhenti
+    (tidak spam permintaan).
+  2. Hidupkan/klik **↻** → coba lagi langsung (tanpa menunggu backoff).
+
+---
+
+## Batch M3 — Dungeon (halaman terpisah) + lifecycle skill + gating (DUN-1/2/3/4/5) — INTI
+
+> Yang diuji: Dungeon kini **HALAMAN TERPISAH** (tombol ⚔ Dungeon di sidebar,
+> bukan di tab Skill). Anda bisa MEMBUAT latihan sendiri: pilih persona, mode
+> riset mandiri ATAU upload bahan ajar → persona belajar → skill draf →
+> diterima (tested) → eval buta (ready) → roster gating ikut berubah.
+
+### Bagian 1 — Halaman Dungeon & misi bawaan (DUN-1 + DUN-4)
+
+- [ ] **M3.1 (P0) — Halaman Dungeon terbuka & misi seed tampil**
+  1. Sidebar → tombol **⚔ Dungeon** (di atas ⚙ Pengaturan).
+  - ✅ Halaman "Dungeon — arena latihan persona" terbuka (main berganti,
+    sidebar tetap). Ada form "Buat latihan baru" + list **Latihan bawaan**
+    berisi "Riset dokumentasi Phaser".
+  2. Cek `workspace/dungeons/phaser-research/mission.yaml` ada.
+
+- [ ] **M3.2 (P0) — Buat latihan sendiri: MODE RISET MANDIRI**
+  1. Form: pilih persona (mis. **Scholar**) → nama skill `tailwind-spacing` →
+     deskripsi singkat → mode **🔍 Riset mandiri** → (opsional isi URL awal) →
+     kriteria lulus biarkan default → **Buat & latih**.
+  - ✅ Kartu baru muncul di **Latihan Anda** (badge persona, skill target),
+    `workspace/dungeons/tailwind-spacing/mission.yaml` dibuat.
+  2. Klik **Jalankan** → "berjalan…" → tunggu selesai.
+  - ✅ Status **"✓ selesai"** + ringkasan; file kerja HANYA di folder misi
+    (sandbox terisolasi — tidak bocor ke workspace produksi).
+
+- [ ] **M3.3 (P0) — MODE BAHAN AJAR: upload file → persona pelajari**
+  1. Siapkan file bahan (mis. `panduan-css.md` berisi materi apa pun).
+  2. Form: persona **Scribe** → skill `css-panduan-internal` → mode **📚 Bahan
+     ajar (file)** → **Buat latihan**.
+  3. Di kartu misi → **⬃ Bahan ajar** → pilih file → unggah.
+  - ✅ Chip `materials/panduan-css.md` muncul di kartu (tercatat sebagai
+    sumber misi di mission.yaml).
+  4. **Jalankan** → tunggu selesai.
+  - ✅ Persona membaca file tsb (read_file/doc_read) dan skill hasilnya
+    merangkum ISI FILE (cek draf skill di tab Skill).
+
+- [ ] **M3.4 (P1) — Hapus latihan & guard 1 run aktif + restart sweep**
+  1. Jalankan misi → saat "berjalan" klik Jalankan lagi → ditolak "sedang
+     berjalan". 🗑 pada latihan user → terhapus dari list & disk.
+  2. Restart dev server saat misi berjalan → refresh.
+  - ✅ Status berubah "✕ gagal — server direstart saat misi berjalan".
+
+### Bagian 2 — Lifecycle skill (DUN-2 + DUN-3)
+
+- [ ] **M3.5 (P0) — Misi menghasilkan DRAF skill**
+  1. Setelah M3.2/M3.3 selesai, buka project apa pun → tab **Skill**.
+  - ✅ Ada draf dari misi (nama = skill target). Persona pemilik & "draft".
+  2. Buka draf → isi body = prosedur hasil praktik (bukan teori kosong).
+
+- [ ] **M3.6 (P0) — Terima draf → status "tested"**
+  1. Klik **Terima** pada draf.
+  - ✅ Pindah ke "Siap pakai" dengan chip **"◐ diuji manusia"**.
+
+- [ ] **M3.7 (P0) — Eval buta → verdict**
+  1. Klik tombol **"Eval buta"** pada skill tested tadi.
+  - ✅ Chip **"◐ evaluasi buta berjalan… (hakim sedang memeriksa bukti)"**;
+    tombol disabled. (5–10 menit — hakim membaca bukti di folder misi.)
+  2. Setelah selesai, salah satu:
+  - ✅ **"✓ lulus eval buta"** → chip status jadi **"✓ siap"** (ready); ATAU
+  - ✅ **"✕ belum lulus — <alasan konkret>"** → status tetap "◐ diuji manusia",
+    tombol Eval buta bisa diklik lagi.
+  3. Cek `packages/skills/…` atau folder data skill: ada file `.eval.json`
+    (verdict + alasan + judgeSessionId).
+
+### Bagian 3 — Gating roster (DUN-5)
+
+- [ ] **M3.8 (P0) — Roster menampilkan readiness per fase**
+  1. Buka project apa pun → tab **Roster** → assign persona dengan fase
+    (mis. Scholar, role "peneliti", fase `research`).
+  - ✅ Baris roster menampilkan chip **`research ✓`** ( Scholar punya skill
+    research siap: web-research / phaser-basics) — hover = nama skillnya.
+  2. Assign persona TANPA skill fase tsb (mis. Coder + fase `design`).
+  - ✅ Chip **`design ✕`** merah — hover = saran "latih persona di Dungeon".
+  3. Jika M3.7 lulus: persona pemilik skill latihan kini siap di fasenya —
+    chip ✓ konsisten dengan inventory.
+
+---
+
+## Batch M4 — Persona Analyst & Operator (PER-6)
+
+- [ ] **M4.1 (P0) — 7 persona muncul + bentuk Orin benar**
+  1. Refresh → persona picker.
+  - ✅ 7 persona: Conductor, Scholar, Scribe, Coder, Designer, **Analyst**,
+    **Operator**.
+  2. Pilih **Analyst** → maskot Orin **bentuk diamond**; pilih **Operator** →
+    **bentuk hex**. (Warna beda dari 5 persona lama.)
+
+- [ ] **M4.2 (P0) — Analyst: doc_read + analisis CSV**
+  1. Buat project → tab File → **⬆ Upload** `contoh-data.csv`.
+  2. Sesi persona **Analyst**, minta: `analisis file contoh-data.csv di uploads — berapa baris per kategori?`
+  - ✅ Memakai `doc_read` (bukan read_file mentah) membaca CSV.
+  - ✅ Menulis script kecil di `code/` lalu `run_command node …` → **kartu
+    approval muncul** untuk perintah (disiplin approval tetap jalan).
+  - ✅ Jawaban menyebut jumlah baris/missing data secara eksplisit
+    (PERSONA.md: inspeksi dulu, angka reproducible).
+
+- [ ] **M4.3 (P1) — Operator: gaya verifikasi + MCP**
+  1. Sesi persona **Operator**:
+     `cek status tailscale` (asumsi Tailscale MCP di-trust & binding di roster).
+  - ✅ Memakai tool `ts_status` / `ts_serve_status` (binding `mcp__*`), dan
+    MENUTUP jawaban dengan bukti ("Selesai. Verifikasi: …"), bukan janji.
+  2. Jika Tailscale tidak dipasang: minta `list_files` + ringkas isi folder —
+    cukup untuk melihat gaya kerjanya (read-before-run).
+
+- [ ] **M4.4 (P0) — Delegasi ke persona baru sah**
+  1. Sesi **Conductor** di project: `minta yui-analyst menghitung jumlah baris uploads/contoh-data.csv di project ini`.
+  - ✅ Delegasi jalan (node baru di tab Tim), TANPA error "persona tidak dikenal"
+    (typo lama `yui_designer` juga sudah diperbaiki — Designer kini sah pula).
+
+---
+
+## Batch M5 — Smoke test model (MDL-2)
+
+- [ ] **M5.1 (P0) — Tombol "Uji semua model"**
+  1. Settings → seksi model → klik **"Uji semua model"**.
+  - ✅ Daftar model aktif (default + fallback + route tiap persona) muncul
+    dengan badge **✓/✕ + latensi** (mis. `✓ glm/glm-5.1 · 3.2s`).
+  2. Setiap model ✓ = tool-call 2 langkah benar-benar lulus
+    (bukan sekadar ping HTTP).
+
+- [ ] **M5.2 (P0) — Model rusak → fallback otomatis aktif**
+  1. Settings → isi kolom model default dengan nama **yang salah** (mis.
+    `glm/model-hantu`) → simpan (blur).
+  - ✅ Smoke otomatis jalan di background setelah simpan provider/model.
+  2. Buka kembali seksi model → hasil: `✕ glm/model-hantu …` + keterangan
+    **"fallback otomatis aktif"**.
+  3. Chat 1 turn → tetap dapat jawaban (router memakai fallback karena model
+    utama di-cap unhealthy 5 menit).
+  4. **Pulihkan**: kembalikan nama model benar → "Uji semua model" → ✓ kembali.
+  - ✅ Setelah lulus, model utama dipakai lagi (cooldown dibersihkan).
+
+---
+
+## Batch M6 — Regresi cepat area yang tersentung (5 menit)
+
+- [ ] **M6.1** Tab File: klik file → tetap terbuka + revisi/diff jalan
+  (fix #3 tidak regresi oleh perubahan TaskDrawer/roster).
+- [ ] **M6.2** Tab Tim: hold-drag pan + Ctrl+scroll zoom tetap jalan.
+- [ ] **M6.3** Settings → "Model per persona": blur-save masih tersimpan
+  (panel smoke baru tidak merusak editor lama).
+- [ ] **M6.4** Chat biasa 1 turn persona lama (mis. Scribe) — jalan normal.
+
+---
+
+## Format laporan balik
+
+Cukup salin & isi:
+
+```
+M1.1 ✅   M1.2 ✅   M1.3 ✅
+M2.1 ❌ — <yang terjadi>   M2.2 ✅   M2.3 (skip)
+M3.1 ✅ … M3.7 ✅
+M4.1 ✅ … M4.4 ✅
+M5.1 ✅   M5.2 ✅
+M6.1–M6.4 ✅
+```
+
+Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 → M5.2**
+(sisanya menyusul) — itu tulang punggung reliabilitas + alur dungeon penuh.

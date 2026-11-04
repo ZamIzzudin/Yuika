@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
 import { Mission, type Mission as MissionType } from "@yui/contracts";
+import { slugify } from "../skills/manager.js";
 
 export const DUNGEONS_DIRNAME = "dungeons";
 
@@ -59,4 +60,60 @@ export function loadMissions(workspacePath: string): MissionType[] {
 
 export function missionDir(workspacePath: string, missionId: string): string {
   return path.join(dungeonsDir(workspacePath), missionId);
+}
+
+// ---- P1-DUN-4: latihan buatan user (halaman Dungeon) ----
+
+export interface CreateMissionInput {
+  title: string;
+  persona: string;
+  goal: string;
+  resources?: string[];
+  acceptance: string[];
+  skillName: string;
+  skillDescription: string;
+}
+
+/** Buat misi baru milik user (folder + mission.yaml, origin: user).
+ *  Slug = slugify(skillName) — unik; bentrok → error jelas. */
+export function createMission(workspacePath: string, input: CreateMissionInput): MissionType {
+  const slug = slugify(input.skillName);
+  if (!slug) throw new Error("nama skill kosong setelah disanitasi");
+  const dir = missionDir(workspacePath, slug);
+  if (fs.existsSync(path.join(dir, "mission.yaml"))) throw new Error(`latihan '${slug}' sudah ada — pakai nama skill lain`);
+  const mission: MissionType = Mission.parse({
+    id: slug,
+    title: input.title.slice(0, 120),
+    persona: input.persona,
+    goal: input.goal,
+    resources: input.resources ?? [],
+    acceptance: input.acceptance,
+    targetSkill: { name: input.skillName, description: input.skillDescription },
+    origin: "user",
+  });
+  for (const sub of ["materials", "reports", "code"]) fs.mkdirSync(path.join(dir, sub), { recursive: true });
+  fs.writeFileSync(path.join(dir, "mission.yaml"), YAML.stringify(mission), "utf-8");
+  return mission;
+}
+
+/** Tambah sumber belajar ke misi (dipakai upload bahan ajar — dedupe). */
+export function appendMissionResource(workspacePath: string, slug: string, resource: string): void {
+  const file = path.join(missionDir(workspacePath, slug), "mission.yaml");
+  if (!fs.existsSync(file)) throw new Error(`latihan '${slug}' tidak ditemukan`);
+  const m = Mission.parse(YAML.parse(fs.readFileSync(file, "utf-8")));
+  if (!m.resources.includes(resource)) {
+    m.resources = [...m.resources, resource];
+    fs.writeFileSync(file, YAML.stringify(m), "utf-8");
+  }
+}
+
+export function deleteMission(workspacePath: string, slug: string): void {
+  const dir = missionDir(workspacePath, slug);
+  if (!fs.existsSync(path.join(dir, "mission.yaml"))) throw new Error(`latihan '${slug}' tidak ditemukan`);
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+/** Sanitasi nama file bahan ajar (dipakai REST upload — mirror project uploads). */
+export function sanitizeMaterialName(name: string): string {
+  return name.replace(/[\\/:*?"<>|]/g, "_").trim();
 }

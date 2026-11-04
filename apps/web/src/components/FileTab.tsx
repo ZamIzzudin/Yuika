@@ -19,8 +19,27 @@ interface Revision {
 }
 
 const TEXT_EXT = new Set([
-  "md", "txt", "json", "yaml", "yml", "html", "css", "js", "jsx", "ts", "tsx", "py", "sh",
-  "csv", "xml", "toml", "ini", "env", "log", "svg", "sql",
+  "md",
+  "txt",
+  "json",
+  "yaml",
+  "yml",
+  "html",
+  "css",
+  "js",
+  "jsx",
+  "ts",
+  "tsx",
+  "py",
+  "sh",
+  "csv",
+  "xml",
+  "toml",
+  "ini",
+  "env",
+  "log",
+  "svg",
+  "sql",
 ]);
 
 function fmtSize(n: number): string {
@@ -29,7 +48,17 @@ function fmtSize(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function TreeRow({ node, depth, sel, onPick }: { node: FileNode; depth: number; sel: string | null; onPick: (n: FileNode) => void }) {
+function TreeRow({
+  node,
+  depth,
+  sel,
+  onPick,
+}: {
+  node: FileNode;
+  depth: number;
+  sel: string | null;
+  onPick: (n: FileNode) => void;
+}) {
   const [open, setOpen] = useState(depth < 2);
   const isDir = node.dir;
   return (
@@ -47,7 +76,15 @@ function TreeRow({ node, depth, sel, onPick }: { node: FileNode; depth: number; 
       </button>
       {isDir &&
         open &&
-        node.children?.map((c) => <TreeRow key={c.relPath} node={c} depth={depth + 1} sel={sel} onPick={onPick} />)}
+        node.children?.map((c) => (
+          <TreeRow
+            key={c.relPath}
+            node={c}
+            depth={depth + 1}
+            sel={sel}
+            onPick={onPick}
+          />
+        ))}
     </>
   );
 }
@@ -58,7 +95,11 @@ export function FileTab({ projectId }: { projectId: string }) {
   const [content, setContent] = useState<Content | null>(null);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [diffRev, setDiffRev] = useState<string>("");
-  const [diff, setDiff] = useState<{ ops: { t: string; line: string }[]; added: number; removed: number } | null>(null);
+  const [diff, setDiff] = useState<{
+    ops: { t: string; line: string }[];
+    added: number;
+    removed: number;
+  } | null>(null);
   const [loadingContent, setLoadingContent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -66,7 +107,11 @@ export function FileTab({ projectId }: { projectId: string }) {
     try {
       const r = await fetch(`/api/projects/${projectId}/files`);
       if (r.ok) setTree(((await r.json()) as { tree: FileNode[] }).tree);
-      else setErr((((await r.json()) as { error?: string }).error ?? "gagal memuat file") + "");
+      else
+        setErr(
+          (((await r.json()) as { error?: string }).error ??
+            "gagal memuat file") + "",
+        );
     } catch {
       setErr("gagal menghubungi server");
     }
@@ -74,11 +119,18 @@ export function FileTab({ projectId }: { projectId: string }) {
     if (sel) {
       try {
         const [c, rv] = await Promise.all([
-          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`),
-          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`),
+          fetch(
+            `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`,
+          ),
+          fetch(
+            `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`,
+          ),
         ]);
         if (c.ok) setContent((await c.json()) as Content);
-        if (rv.ok) setRevisions(((await rv.json()) as { revisions: Revision[] }).revisions);
+        if (rv.ok)
+          setRevisions(
+            ((await rv.json()) as { revisions: Revision[] }).revisions,
+          );
       } catch {
         /* biarkan state lama */
       }
@@ -123,13 +175,18 @@ export function FileTab({ projectId }: { projectId: string }) {
     setErr(null);
     try {
       const [c, r] = await Promise.all([
-        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`),
-        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`),
+        fetch(
+          `/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`,
+        ),
+        fetch(
+          `/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`,
+        ),
       ]);
       const cd = (await c.json()) as Content & { error?: string };
       if (!c.ok) setErr(cd.error ?? "gagal membaca file");
       else setContent(cd);
-      if (r.ok) setRevisions(((await r.json()) as { revisions: Revision[] }).revisions);
+      if (r.ok)
+        setRevisions(((await r.json()) as { revisions: Revision[] }).revisions);
     } finally {
       setLoadingContent(false);
     }
@@ -140,22 +197,29 @@ export function FileTab({ projectId }: { projectId: string }) {
     setDiffRev(rev);
     setDiff(null);
     if (!sel || !rev || !content) return;
-    const r = await fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&rev=${rev}`);
+    const r = await fetch(
+      `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&rev=${rev}`,
+    );
     if (!r.ok) return;
     const old = ((await r.json()) as { content: string | null }).content ?? "";
     const ops = diffLines(old, content.content);
     setDiff({ ops, ...diffStat(ops) });
   }
 
-  const isText = sel ? TEXT_EXT.has(sel.split(".").pop()!.toLowerCase()) : false;
+  const isText = sel
+    ? TEXT_EXT.has(sel.split(".").pop()!.toLowerCase())
+    : false;
 
   /** Upload dokumen user → uploads/ (lalu minta scribe membacanya via doc_read). */
   async function upload(f: File) {
     setErr(null);
-    const r = await fetch(`/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`, {
-      method: "POST",
-      body: await f.arrayBuffer(),
-    });
+    const r = await fetch(
+      `/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`,
+      {
+        method: "POST",
+        body: await f.arrayBuffer(),
+      },
+    );
     if (!r.ok) {
       setErr(((await r.json()) as { error?: string }).error ?? "gagal upload");
       return;
@@ -166,7 +230,10 @@ export function FileTab({ projectId }: { projectId: string }) {
   return (
     <section className="file-tab" aria-label="File project">
       <div className="file-toolbar">
-        <label className="btn secondary" title="Upload dokumen (pdf/xlsx/csv/…) → folder uploads/, dibaca agent via doc_read">
+        <label
+          className="btn secondary"
+          title="Upload dokumen (pdf/xlsx/csv/…) → folder uploads/, dibaca agent via doc_read"
+        >
           ⬆ Upload dokumen
           <input
             type="file"
@@ -179,58 +246,100 @@ export function FileTab({ projectId }: { projectId: string }) {
             }}
           />
         </label>
-        <button className="btn secondary" onClick={() => void loadTree()} title="Muat ulang daftar file">
+        <button
+          className="btn secondary"
+          onClick={() => void loadTree()}
+          title="Muat ulang daftar file"
+        >
           ↻ Segarkan
         </button>
       </div>
-      <p className="pane-hint">
-        Artefak sesi di <code>reports/</code> dan <code>code/</code>. Klik folder untuk buka/tutup; klik file untuk melihat isinya. Daftar menyegarkan otomatis tiap 5 detik.
-      </p>
       <div className="file-split">
         <div className="file-tree" role="tree">
-          {tree === null ? <SkeletonRows rows={5} /> : tree.length === 0 ? <p className="dim">Project belum punya file.</p> : tree.map((n) => <TreeRow key={n.relPath} node={n} depth={0} sel={sel} onPick={pick} />)}
+          {tree === null ? (
+            <SkeletonRows rows={5} />
+          ) : tree.length === 0 ? (
+            <p className="dim">Project belum punya file.</p>
+          ) : (
+            tree.map((n) => (
+              <TreeRow
+                key={n.relPath}
+                node={n}
+                depth={0}
+                sel={sel}
+                onPick={pick}
+              />
+            ))
+          )}
         </div>
         <div className="file-view">
           {loadingContent && <SkeletonRows rows={4} />}
           {!loadingContent && err && <p className="project-err">{err}</p>}
           {!loadingContent && !err && sel && content?.truncated && (
-            <p className="dim">File terlalu besar untuk dibaca ({fmtSize(content.size)} &gt; 256 KB) — buka di file explorer.</p>
+            <p className="dim">
+              File terlalu besar untuk dibaca ({fmtSize(content.size)} &gt; 256
+              KB) — buka di file explorer.
+            </p>
           )}
-          {!loadingContent && !err && sel && content && !content.truncated && !isText && (
-            <p className="dim">Bukan file teks ({fmtSize(content.size)}) — preview teks tidak tersedia.</p>
-          )}
-          {!loadingContent && !err && sel && content && !content.truncated && isText && (
-            <>
-              <header className="file-view-head">
-                <b>{sel}</b>
-                <span className="file-view-tools">
-                  {revisions.length > 0 && (
-                    <select value={diffRev} onChange={(e) => void showDiff(e.target.value)} aria-label="Bandingkan dengan revisi">
-                      <option value="">revisi…</option>
-                      {revisions.map((r) => (
-                        <option key={r.rev} value={r.rev}>
-                          r{r.rev} · {new Date(r.createdAt).toLocaleTimeString()}
-                        </option>
+          {!loadingContent &&
+            !err &&
+            sel &&
+            content &&
+            !content.truncated &&
+            !isText && (
+              <p className="dim">
+                Bukan file teks ({fmtSize(content.size)}) — preview teks tidak
+                tersedia.
+              </p>
+            )}
+          {!loadingContent &&
+            !err &&
+            sel &&
+            content &&
+            !content.truncated &&
+            isText && (
+              <>
+                <header className="file-view-head">
+                  <b>{sel}</b>
+                  <span className="file-view-tools">
+                    {revisions.length > 0 && (
+                      <select
+                        value={diffRev}
+                        onChange={(e) => void showDiff(e.target.value)}
+                        aria-label="Bandingkan dengan revisi"
+                      >
+                        <option value="">revisi…</option>
+                        {revisions.map((r) => (
+                          <option key={r.rev} value={r.rev}>
+                            r{r.rev} ·{" "}
+                            {new Date(r.createdAt).toLocaleTimeString()}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <small>{fmtSize(content.size)}</small>
+                  </span>
+                </header>
+                {diff ? (
+                  <div className="file-diff" aria-label="Diff vs revisi">
+                    <p className="file-diff-stat">
+                      vs r{diffRev}: <b className="add">+{diff.added}</b>{" "}
+                      <b className="del">−{diff.removed}</b> baris
+                    </p>
+                    <pre className="file-pre">
+                      {diff.ops.map((o, i) => (
+                        <span key={i} className={`dl-${o.t}`}>
+                          {o.t === "+" ? "+" : o.t === "-" ? "−" : " "} {o.line}
+                          {"\n"}
+                        </span>
                       ))}
-                    </select>
-                  )}
-                  <small>{fmtSize(content.size)}</small>
-                </span>
-              </header>
-              {diff ? (
-                <div className="file-diff" aria-label="Diff vs revisi">
-                  <p className="file-diff-stat">
-                    vs r{diffRev}: <b className="add">+{diff.added}</b> <b className="del">−{diff.removed}</b> baris
-                  </p>
-                  <pre className="file-pre">{diff.ops.map((o, i) => (
-                    <span key={i} className={`dl-${o.t}`}>{o.t === "+" ? "+" : o.t === "-" ? "−" : " "} {o.line}{"\n"}</span>
-                  ))}</pre>
-                </div>
-              ) : (
-                <pre className="file-pre">{content.content}</pre>
-              )}
-            </>
-          )}
+                    </pre>
+                  </div>
+                ) : (
+                  <pre className="file-pre">{content.content}</pre>
+                )}
+              </>
+            )}
           {!sel && <p className="dim">Pilih file di kiri.</p>}
         </div>
       </div>

@@ -6,6 +6,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaGrid, PersonaFace } from "@/components/PersonaPicker";
+import { DungeonView } from "@/components/DungeonView";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
@@ -47,6 +48,8 @@ const SUGGESTIONS: Record<string, string[]> = {
 
 export default function Home() {
   const [personas, setPersonas] = useState<PersonaInfo[]>([]);
+  /** P1-DUN-4: halaman Dungeon (arena latihan persona) — view terpisah di main. */
+  const [dungeonOpen, setDungeonOpen] = useState(false);
   const [active, setActive] = useState<PersonaInfo | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [items, setItems] = useState<ChatItem[]>([]);
@@ -338,6 +341,7 @@ export default function Home() {
   async function pickProject(id: string | null) {
     setActiveProjectId(id);
     setMainTab("chat");
+    setDungeonOpen(false); // pilih project = keluar dari halaman Dungeon
     if (!id) {
       // Workspace global: persona dipilih dari kartu di tengah layar
       resetSession();
@@ -444,6 +448,13 @@ export default function Home() {
         <div className="side-foot">
           <button
             className="side-settings"
+            data-active={dungeonOpen ? "" : undefined}
+            onClick={() => setDungeonOpen((v) => !v)}
+          >
+            ⚔ Dungeon
+          </button>
+          <button
+            className="side-settings"
             onClick={() => setSettingsOpen(true)}
           >
             ⚙ Pengaturan
@@ -452,6 +463,10 @@ export default function Home() {
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <main className="yui-main">
+        {dungeonOpen ? (
+          <DungeonView personas={personas} onBack={() => setDungeonOpen(false)} />
+        ) : (
+        <>
         {!active ? (
           <div className="empty-state">
             <div className="portrait-hero">
@@ -668,6 +683,8 @@ export default function Home() {
               )}
             </div>
           </div>
+        )}
+        </>
         )}
       </main>
     </div>

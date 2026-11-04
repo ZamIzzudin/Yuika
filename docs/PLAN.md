@@ -1031,6 +1031,11 @@ pilih persona → jalankan MISI (mission.yaml: goal, sumber belajar, acceptance,
 > acceptance + bukti folder + skill_view; verdict baris terakhir), lulus →
 > ready, hasil di `.eval.json`; roster menampilkan readiness per fase (chip ✓/✕
 > dengan hint latih di Dungeon).
+> **DUN-4 (dev-10, revisi arah user):** Dungeon = **halaman terpisah** (⚔ di
+> sidebar) — user MEMILIH persona & MENENTUKAN apa yang dilatih: mode riset
+> mandiri (URL opsional) atau bahan ajar file (upload → `materials/`);
+> acceptance editable jadi kriteria eval buta. Metafora: mengajar manusia —
+> beri materi → persona belajar → internalisasi jadi skill miliknya.
      ASSIGN GATING: roster project menampilkan skill readiness —
      persona tanpa skill yang dibutuhkan fase ditandai “belum siap”
 ```

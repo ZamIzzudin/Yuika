@@ -159,7 +159,7 @@ html, body {
 .workspace-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .pane-scroll {
   flex: 1; min-height: 0; overflow-y: auto;
-  width: 100%; max-width: 880px; margin: 0 auto;
+  width: 100%; margin: 0 auto;
   padding: var(--yui-space-5) var(--yui-space-6);
 }
 .pane-hint { margin: 0 0 var(--yui-space-3); color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
@@ -740,9 +740,10 @@ html, body {
   background: var(--yui-bg-surface); border: 1px solid var(--yui-border); border-radius: 14px;
   padding: var(--yui-space-5) var(--yui-space-4);
 }
+.persona-card-name{ display: flex; align-items: center; width: 100%; gap: 5%;}
 .persona-card:hover { border-color: var(--yui-border-strong); background: var(--yui-bg-surface-raised); color: var(--yui-text-primary); }
-.persona-card b { font-size: var(--yui-text-lg); font-weight: 600; }
-.persona-card p { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim); line-height: 1.5; }
+.persona-card-name b { font-size: var(--yui-text-lg); font-weight: 600;}
+.persona-card p { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim); line-height: 1.5; text-align: justify; }
 
 /* ── Switcher persona di chat-header (dropdown) ────────────────── */
 .persona-switch { position: relative; }
@@ -1177,3 +1178,32 @@ html, body {
 .smoke-list li { font-size: var(--yui-text-sm); color: var(--yui-danger, #e5484d); }
 .smoke-list li[data-ok] { color: var(--yui-ok); }
 .smoke-list small { color: var(--yui-text-dim); }
+
+/* ── Dungeon page (P1-DUN-4): halaman terpisah arena latihan persona ── */
+.dungeon-page { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--yui-space-5); padding: var(--yui-space-6) var(--yui-space-6) var(--yui-space-8); max-width: 860px; width: 100%; margin: 0 auto; }
+.dungeon-hero h1 { margin: var(--yui-space-3) 0 var(--yui-space-2); font-size: var(--yui-text-xl); }
+.dungeon-hero .dim { margin: 0; max-width: 640px; }
+.dungeon-create, .dungeon-list {
+  display: flex; flex-direction: column; gap: 10px;
+  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card);
+  background: var(--yui-bg-surface); padding: var(--yui-space-4);
+}
+.dungeon-mode { display: flex; gap: 2px; }
+.dungeon-mode button {
+  font: inherit; font-size: var(--yui-text-md); cursor: pointer;
+  padding: 7px 14px; border: 1px solid var(--yui-border); border-radius: 999px;
+  background: var(--yui-bg-inset); color: var(--yui-text-secondary);
+}
+.dungeon-mode button[data-active] { border-color: var(--yui-border-focus); background: var(--yui-bg-surface-raised); color: var(--yui-text-primary); font-weight: 600; }
+.dungeon-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 4px; }
+.dungeon-form label { display: flex; flex-direction: column; gap: 4px; font-size: var(--yui-text-sm); color: var(--yui-text-secondary); }
+.dungeon-full { grid-column: 1 / -1; }
+.dungeon-persona-pick .dungeon-persona-row { display: flex; align-items: center; gap: 8px; }
+.dungeon-persona-pick select { flex: 1; }
+.dungeon-submit { display: flex; justify-content: flex-end; }
+.dungeon-title { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dungeon-materials { display: flex; flex-wrap: wrap; gap: 6px; }
+.dungeon-materials code { font-size: var(--yui-text-sm); color: var(--yui-text-secondary); border: 1px solid var(--yui-border); border-radius: 999px; padding: 1px 8px; }
+.dungeon-actions { display: flex; gap: 8px; }
+.dungeon-note { max-width: 640px; }
+.side-settings[data-active] { border-color: var(--yui-border-focus); color: var(--yui-text-primary); }

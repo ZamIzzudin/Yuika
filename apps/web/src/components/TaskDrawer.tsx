@@ -1,6 +1,15 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, RosterEntry, TaskItem, TaskNode, TaskStatus } from "@yui/contracts";
+import type {
+  PersonaInfo,
+  PersonaState,
+  ProjectInfo,
+  ProjectSessionSummary,
+  RosterEntry,
+  TaskItem,
+  TaskNode,
+  TaskStatus,
+} from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
 import { TeamTree, fmtDur } from "./TeamTree";
 import { Skeleton } from "./Skeleton";
@@ -8,11 +17,35 @@ import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
 
 /** Status cycle: klik chip = maju satu langkah. */
-const NEXT: Record<TaskStatus, TaskStatus> = { todo: "doing", doing: "review", review: "done", done: "todo" };
-const LABEL: Record<TaskStatus, string> = { todo: "Belum", doing: "Kerja", review: "Reviu", done: "Selesai" };
-const DOT: Record<TaskStatus, string> = { todo: "○", doing: "◐", review: "◑", done: "●" };
+const NEXT: Record<TaskStatus, TaskStatus> = {
+  todo: "doing",
+  doing: "review",
+  review: "done",
+  done: "todo",
+};
+const LABEL: Record<TaskStatus, string> = {
+  todo: "Belum",
+  doing: "Kerja",
+  review: "Reviu",
+  done: "Selesai",
+};
+const DOT: Record<TaskStatus, string> = {
+  todo: "○",
+  doing: "◐",
+  review: "◑",
+  done: "●",
+};
 
-export type WorkspaceTab = "chat" | "team" | "files" | "board" | "tree" | "roster" | "sessions" | "memory" | "skills";
+export type WorkspaceTab =
+  | "chat"
+  | "team"
+  | "files"
+  | "board"
+  | "tree"
+  | "roster"
+  | "sessions"
+  | "memory"
+  | "skills";
 
 /** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
 export interface LiveDelegation {
@@ -29,7 +62,10 @@ function relTime(ts: number): string {
   if (s < 60) return `${s} dtk lalu`;
   if (s < 3600) return `${Math.round(s / 60)} mnt lalu`;
   if (s < 86400) return `${Math.round(s / 3600)} jam lalu`;
-  return new Date(ts).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  return new Date(ts).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 const PERSONA_NAME: Record<string, string> = {
@@ -64,9 +100,17 @@ function OrgCard({
   summary?: string;
   root?: boolean;
 }) {
-  const label = state === "done" ? "selesai" : state ? STATE_LABEL[state as PersonaState] : "menunggu";
+  const label =
+    state === "done"
+      ? "selesai"
+      : state
+        ? STATE_LABEL[state as PersonaState]
+        : "menunggu";
   return (
-    <div className={"org-card" + (root ? " org-root" : "")} data-s={state ?? "idle"}>
+    <div
+      className={"org-card" + (root ? " org-root" : "")}
+      data-s={state ?? "idle"}
+    >
       <span className="face">
         <PersonaFace personaId={personaId} size={root ? 34 : 26} />
       </span>
@@ -85,17 +129,36 @@ function OrgCard({
 }
 
 /** Satu simpul pohon task (rekursif) — proyeksi event `task.node.*` (D19). */
-function TreeNode({ node, depth, now }: { node: TaskNode; depth: number; now: number }) {
+function TreeNode({
+  node,
+  depth,
+  now,
+}: {
+  node: TaskNode;
+  depth: number;
+  now: number;
+}) {
   const running = node.status === "doing" || node.status === "review";
   return (
-    <li className="tree-node" data-s={node.status} style={{ marginLeft: depth > 0 ? 16 : 0 }}>
+    <li
+      className="tree-node"
+      data-s={node.status}
+      style={{ marginLeft: depth > 0 ? 16 : 0 }}
+    >
       <span className="tree-dot" title={LABEL[node.status]}>
         {DOT[node.status]}
       </span>
       <span className="tree-title">{node.title}</span>
-      {node.assignee && <small className="tree-assignee">{node.assignee.replace("yui-", "")}</small>}
+      {node.assignee && (
+        <small className="tree-assignee">
+          {node.assignee.replace("yui-", "")}
+        </small>
+      )}
       {running && node.startedAt && (
-        <small className="tree-dur running" title="sudah berjalan sejak status doing">
+        <small
+          className="tree-dur running"
+          title="sudah berjalan sejak status doing"
+        >
           ◐ {fmtDur(now - node.startedAt)}
         </small>
       )}
@@ -143,7 +206,11 @@ export function ProjectTabs({
   activeSessionId: string | null;
   onOpenSession: (s: ProjectSessionSummary) => void;
   onNewSession: () => void;
-  live: { parentPersonaId: string | null; parentState: PersonaState; delegations: LiveDelegation[] };
+  live: {
+    parentPersonaId: string | null;
+    parentState: PersonaState;
+    delegations: LiveDelegation[];
+  };
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
@@ -154,12 +221,20 @@ export function ProjectTabs({
     return () => clearInterval(t);
   }, []);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
-  const [readiness, setReadiness] = useState<{ personaId: string; ready: boolean; phases: { phase: string; ready: boolean; skills: string[] }[] }[]>([]);
+  const [readiness, setReadiness] = useState<
+    {
+      personaId: string;
+      ready: boolean;
+      phases: { phase: string; ready: boolean; skills: string[] }[];
+    }[]
+  >([]);
   const [title, setTitle] = useState("");
   const [pick, setPick] = useState("");
   const [role, setRole] = useState("");
   const [mcpServer, setMcpServer] = useState("");
-  const [mcpServers, setMcpServers] = useState<{ name: string; declared: boolean }[]>([]);
+  const [mcpServers, setMcpServers] = useState<
+    { name: string; declared: boolean }[]
+  >([]);
   const [busy, setBusy] = useState(false);
   const [userMd, setUserMd] = useState("");
   const [projMd, setProjMd] = useState("");
@@ -175,13 +250,20 @@ export function ProjectTabs({
       ]);
       if (t.ok) setTasks(((await t.json()) as { tasks: TaskItem[] }).tasks);
       if (r.ok) {
-        const rd = (await r.json()) as { roster: RosterEntry[]; readiness?: typeof readiness };
+        const rd = (await r.json()) as {
+          roster: RosterEntry[];
+          readiness?: typeof readiness;
+        };
         setRoster(rd.roster);
         if (rd.readiness) setReadiness(rd.readiness);
       }
       if (m.ok)
         setMcpServers(
-          ((await m.json()) as { servers: { name: string; declared: boolean }[] }).servers.filter((s) => s.declared),
+          (
+            (await m.json()) as {
+              servers: { name: string; declared: boolean }[];
+            }
+          ).servers.filter((s) => s.declared),
         );
       setLoaded(true);
     } catch {
@@ -206,13 +288,16 @@ export function ProjectTabs({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ roster: next }),
       });
-      if (res.ok) setRoster(((await res.json()) as { roster: RosterEntry[] }).roster);
+      if (res.ok)
+        setRoster(((await res.json()) as { roster: RosterEntry[] }).roster);
     } finally {
       setBusy(false);
     }
   }
 
-  const available = personas.filter((p) => !roster.some((r) => r.personaId === p.id));
+  const available = personas.filter(
+    (p) => !roster.some((r) => r.personaId === p.id),
+  );
 
   useEffect(() => {
     void refresh();
@@ -243,27 +328,15 @@ export function ProjectTabs({
     const res = await fetch("/api/memory", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ scope, projectId: scope === "project" ? project.id : null, content: scope === "user" ? userMd : projMd }),
+      body: JSON.stringify({
+        scope,
+        projectId: scope === "project" ? project.id : null,
+        content: scope === "user" ? userMd : projMd,
+      }),
     });
     if (res.ok) {
       setSavedFlash(scope);
       setTimeout(() => setSavedFlash(null), 1500);
-    }
-  }
-
-  async function add() {
-    if (!title.trim() || busy) return;
-    setBusy(true);
-    try {
-      await fetch(`/api/projects/${project.id}/tasks`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title: title.trim() }),
-      });
-      setTitle("");
-      await refresh();
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -283,15 +356,6 @@ export function ProjectTabs({
         mcp: server ? [{ server, tools: [] }] : [],
       },
     ]);
-  }
-
-  async function cycle(t: TaskItem) {
-    await fetch(`/api/projects/${project.id}/tasks/${t.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ status: NEXT[t.status] }),
-    });
-    await refresh();
   }
 
   /** P2-FLOW-7: pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
@@ -322,7 +386,10 @@ export function ProjectTabs({
     ...treeFlat,
     ...tasks
       .filter((t) => !inTree.has(t.id))
-      .map((t) => ({ node: { ...t, artefak: [], children: [] } as unknown as TaskNode, depth: 0 })),
+      .map((t) => ({
+        node: { ...t, artefak: [], children: [] } as unknown as TaskNode,
+        depth: 0,
+      })),
   ];
 
   return (
@@ -339,7 +406,12 @@ export function ProjectTabs({
             <ul className="session-list">
               {sessions.map((s) => (
                 <li key={s.sessionId}>
-                  <button data-active={s.sessionId === activeSessionId ? "" : undefined} onClick={() => onOpenSession(s)}>
+                  <button
+                    data-active={
+                      s.sessionId === activeSessionId ? "" : undefined
+                    }
+                    onClick={() => onOpenSession(s)}
+                  >
                     <PersonaFace personaId={s.personaId} size={18} />
                     <span className="who">{s.personaName}</span>
                     <span className="when">{relTime(s.lastEventAt)}</span>
@@ -354,17 +426,25 @@ export function ProjectTabs({
       {loaded && activeTab === "roster" && (
         <section aria-label="Roster proyek">
           <p className="pane-hint">
-            {done}/{tasks.length} task selesai · roster tersimpan deklaratif di <code>project.yaml</code>
+            {done}/{tasks.length} task selesai · roster tersimpan deklaratif di{" "}
+            <code>project.yaml</code>
           </p>
           {roster.length === 0 ? (
-            <p className="task-empty">Belum ada persona di roster — assign di bawah untuk membentuk tim proyek.</p>
+            <p className="task-empty">
+              Belum ada persona di roster — assign di bawah untuk membentuk tim
+              proyek.
+            </p>
           ) : (
             <ul className="roster-list">
               {roster.map((r) => {
                 const p = personas.find((x) => x.id === r.personaId);
                 return (
                   <li key={r.personaId} className="roster-row">
-                    {p ? <PersonaFace personaId={p.id} size={24} /> : <span className="face" />}
+                    {p ? (
+                      <PersonaFace personaId={p.id} size={24} />
+                    ) : (
+                      <span className="face" />
+                    )}
                     <span className="roster-body">
                       <b>{p?.name ?? r.personaId}</b>
                       <small>{r.role}</small>
@@ -372,9 +452,20 @@ export function ProjectTabs({
                       {/* P1-DUN-5: gating per fase — ✕ = belum ada skill siap (latih di Dungeon) */}
                       {readiness
                         .find((x) => x.personaId === r.personaId)
-                        ?.phases.filter((ph) => ph.skills.length > 0 || !ph.ready)
+                        ?.phases.filter(
+                          (ph) => ph.skills.length > 0 || !ph.ready,
+                        )
                         .map((ph) => (
-                          <em key={ph.phase} className="roster-phase" data-r={ph.ready ? "ok" : "gap"} title={ph.ready ? `skill siap: ${ph.skills.join(", ")}` : "belum ada skill siap untuk fase ini — latih persona di Dungeon (tab Skill)"}>
+                          <em
+                            key={ph.phase}
+                            className="roster-phase"
+                            data-r={ph.ready ? "ok" : "gap"}
+                            title={
+                              ph.ready
+                                ? `skill siap: ${ph.skills.join(", ")}`
+                                : "belum ada skill siap untuk fase ini — latih persona di Dungeon (tab Skill)"
+                            }
+                          >
                             {ph.phase} {ph.ready ? "✓" : "✕"}
                           </em>
                         ))}
@@ -387,7 +478,11 @@ export function ProjectTabs({
                     </span>
                     <button
                       className="task-close"
-                      onClick={() => void saveRoster(roster.filter((x) => x.personaId !== r.personaId))}
+                      onClick={() =>
+                        void saveRoster(
+                          roster.filter((x) => x.personaId !== r.personaId),
+                        )
+                      }
                       aria-label={`Keluarkan ${p?.name ?? r.personaId}`}
                       disabled={busy}
                     >
@@ -400,7 +495,11 @@ export function ProjectTabs({
           )}
           {available.length > 0 && (
             <div className="roster-assign">
-              <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Persona">
+              <select
+                value={pick}
+                onChange={(e) => setPick(e.target.value)}
+                aria-label="Persona"
+              >
                 <option value="">Persona…</option>
                 {available.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -416,7 +515,11 @@ export function ProjectTabs({
                 onKeyDown={(e) => e.key === "Enter" && assign()}
               />
               {mcpServers.length > 0 && (
-                <select value={mcpServer} onChange={(e) => setMcpServer(e.target.value)} aria-label="Binding MCP (opsional)">
+                <select
+                  value={mcpServer}
+                  onChange={(e) => setMcpServer(e.target.value)}
+                  aria-label="Binding MCP (opsional)"
+                >
                   <option value="">Tanpa binding MCP…</option>
                   {mcpServers.map((s) => (
                     <option key={s.name} value={s.name}>
@@ -425,7 +528,11 @@ export function ProjectTabs({
                   ))}
                 </select>
               )}
-              <button className="btn" onClick={assign} disabled={!pick || !role.trim() || busy}>
+              <button
+                className="btn"
+                onClick={assign}
+                disabled={!pick || !role.trim() || busy}
+              >
                 Assign
               </button>
             </div>
@@ -435,7 +542,10 @@ export function ProjectTabs({
 
       {loaded && activeTab === "board" && (
         <section aria-label="Papan kanban task">
-          <p className="pane-hint">Seret kartu antar kolom untuk mengubah status — sinkron dengan tasklist agent & TaskTree.</p>
+          <p className="pane-hint">
+            Seret kartu antar kolom untuk mengubah status — sinkron dengan
+            tasklist agent & TaskTree.
+          </p>
           <div className="board">
             {(["todo", "doing", "review", "done"] as const).map((col) => {
               const cards = flattenCards.filter((c) => c.node.status === col);
@@ -462,15 +572,23 @@ export function ProjectTabs({
                         className="board-card"
                         style={{ marginLeft: depth * 10 }}
                         draggable
-                        onDragStart={(e) => e.dataTransfer.setData("text/yui-task", node.id)}
+                        onDragStart={(e) =>
+                          e.dataTransfer.setData("text/yui-task", node.id)
+                        }
                         title={depth > 0 ? "subtask" : undefined}
                       >
                         {depth > 0 && <span className="board-sub">↳</span>}
                         <span className="board-title">{node.title}</span>
                         {node.assignee && (
-                          <small className="board-assignee">{node.assignee.replace("yui-", "")}</small>
+                          <small className="board-assignee">
+                            {node.assignee.replace("yui-", "")}
+                          </small>
                         )}
-                        {node.artefak.length > 0 && <small className="board-art">+{node.artefak.length}</small>}
+                        {node.artefak.length > 0 && (
+                          <small className="board-art">
+                            +{node.artefak.length}
+                          </small>
+                        )}
                       </article>
                     ))}
                   </div>
@@ -484,28 +602,48 @@ export function ProjectTabs({
       {loaded && activeTab === "memory" && (
         <section aria-label="Memori — apa yang Yui ketahui">
           <p className="pane-hint">
-            Catatan ini dibaca agent di setiap <b>sesi baru</b> (frozen per sesi). Agent menambah catatan lewat tool
-            <code> memory_append</code> (dedupe otomatis); Anda bebas mengedit langsung.
+            Catatan ini dibaca agent di setiap <b>sesi baru</b> (frozen per
+            sesi). Agent menambah catatan lewat tool
+            <code> memory_append</code> (dedupe otomatis); Anda bebas mengedit
+            langsung.
           </p>
           <div className="memory-doc">
             <header>
               <b>Tentang Anda — USER.md</b>
-              <button className="btn" onClick={() => void saveMemoryDoc("user")}>
+              <button
+                className="btn"
+                onClick={() => void saveMemoryDoc("user")}
+              >
                 {savedFlash === "user" ? "✓ Tersimpan" : "Simpan"}
               </button>
             </header>
-            <textarea value={userMd} onChange={(e) => setUserMd(e.target.value)} rows={9} spellCheck={false} />
+            <textarea
+              value={userMd}
+              onChange={(e) => setUserMd(e.target.value)}
+              rows={9}
+              spellCheck={false}
+            />
             <small>Lintas proyek: preferensi gaya, bahasa, batasan.</small>
           </div>
           <div className="memory-doc">
             <header>
               <b>Proyek ini — MEMORY.md</b>
-              <button className="btn" onClick={() => void saveMemoryDoc("project")}>
+              <button
+                className="btn"
+                onClick={() => void saveMemoryDoc("project")}
+              >
                 {savedFlash === "project" ? "✓ Tersimpan" : "Simpan"}
               </button>
             </header>
-            <textarea value={projMd} onChange={(e) => setProjMd(e.target.value)} rows={9} spellCheck={false} />
-            <small>Keputusan, pelajaran, konteks yang berlaku di {project.name}.</small>
+            <textarea
+              value={projMd}
+              onChange={(e) => setProjMd(e.target.value)}
+              rows={9}
+              spellCheck={false}
+            />
+            <small>
+              Keputusan, pelajaran, konteks yang berlaku di {project.name}.
+            </small>
           </div>
         </section>
       )}
@@ -518,8 +656,9 @@ export function ProjectTabs({
         <section aria-label="Pohon task (TaskTree)">
           {tree.length === 0 ? (
             <p className="task-empty">
-              Pohon task masih kosong — simpul terbentuk dari event task (REST / tools <code>todo_*</code>) sejak TaskTree
-              aktif. Task pra-migrasi hanya tampil di tab Tasklist.
+              Pohon task masih kosong — simpul terbentuk dari event task (REST /
+              tools <code>todo_*</code>) sejak TaskTree aktif. Task pra-migrasi
+              hanya tampil di tab Tasklist.
             </p>
           ) : (
             <ul className="tree-root">
@@ -546,7 +685,8 @@ export function ProjectTabs({
                 {bench.map((r) => (
                   <span key={r.personaId} className="bench-chip" title={r.role}>
                     <PersonaFace personaId={r.personaId} size={16} />
-                    {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ?? r.personaId.replace("yui-", "")}
+                    {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ??
+                      r.personaId.replace("yui-", "")}
                   </span>
                 ))}
               </div>

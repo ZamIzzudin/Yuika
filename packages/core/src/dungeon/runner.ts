@@ -27,13 +27,15 @@ export function buildMissionPrompt(m: Mission): string {
     `SKILL TARGET: "${m.targetSkill.name}" — ${m.targetSkill.description}`,
     "",
     "CARA KERJA:",
-    "1. Baca/pelajari sumber di atas (atau sumber lebih baik yang kamu temukan).",
-    "2. Praktikkan di folder misi ini (sandbox — semua file di sini aman).",
-    "3. Tulis hasil riset sebagai laporan di reports/ folder misi ini.",
-    "4. AKHIRI dengan tool `skill_propose` untuk skill target di atas — isi body",
+    "1. Sumber di atas bisa URL (ambil via web_fetch) ATAU path file di folder misi",
+    "   ini (file teks → read_file; PDF/Excel → doc_read bila tool tersedia).",
+    "2. Pelajari sumber sampai paham — boleh cari tambahan bila kurang.",
+    "3. Praktikkan di folder misi ini (sandbox — semua file di sini aman).",
+    "4. Tulis hasil belajar sebagai laporan di reports/ folder misi ini.",
+    "5. AKHIRI dengan tool `skill_propose` untuk skill target di atas — isi body",
     "   dengan prosedur yang kamu PRAKTIKKAN, bukan teori kosong. Tanpa itu",
     "   misi dianggap belum selesai.",
-    "5. Tutup dengan ringkasan singkat: apa yang dipelajari & bukti di folder.",
+    "6. Tutup dengan ringkasan singkat: apa yang dipelajari & bukti di folder.",
   ].join("\n");
 }
 

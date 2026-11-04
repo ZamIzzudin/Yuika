@@ -194,8 +194,26 @@ export const Mission = z.object({
   /** Kriteria lulus — dievaluasi blind (P1-DUN-3), v0: dibaca agent sebagai target. */
   acceptance: z.array(z.string()).min(1),
   targetSkill: z.object({ name: z.string().min(3), description: z.string().min(10) }),
+  /** seed = bawaan; user = dibuat lewat halaman Dungeon (P1-DUN-4). */
+  origin: z.enum(["seed", "user"]).default("seed"),
 });
 export type Mission = z.infer<typeof Mission>;
+
+/** POST /api/dungeons/mission — latihan buatan user (P1-DUN-4):
+ *  mode `research` = persona riset mandiri (sumber URL);
+ *  mode `documents` = bahan ajar file (diunggah setelah misi dibuat). */
+export const CreateMissionRequest = z.object({
+  personaId: z.string().min(3),
+  title: z.string().min(3).max(120),
+  goal: z.string().min(10),
+  skillName: z.string().min(3).max(64),
+  skillDescription: z.string().min(10).max(200),
+  mode: z.enum(["research", "documents"]).default("research"),
+  /** URL sumber (mode research, opsional — agent boleh cari sendiri). */
+  resources: z.array(z.string()).max(12).default([]),
+  acceptance: z.array(z.string()).min(1).max(8),
+});
+export type CreateMissionRequest = z.infer<typeof CreateMissionRequest>;
 
 /** Satu eksekusi misi (sesi sandbox; status dipolling UI). */
 export const DungeonRun = z.object({
