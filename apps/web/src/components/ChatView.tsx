@@ -186,10 +186,10 @@ export function ChatView({
                       <p className="verdict">{it.resolved === "approved" ? "Disetujui" : "Ditolak"}</p>
                     ) : (
                       <div className="actions">
-                        <button className="btn" onClick={() => onApprove(it.requestId!, true)}>Setujui</button>
-                        <button className="btn secondary" onClick={() => onApprove(it.requestId!, true, true)} title="Tool ini bebas-approval untuk sisa sesi">
+                        <button className="btn" onClick={() => onApprove(it.requestId!, true, true)} title="Setujui + tool ini bebas-approval untuk sisa sesi (dianjurkan)">
                           Setujui &amp; ingat
                         </button>
+                        <button className="btn secondary" onClick={() => onApprove(it.requestId!, true)}>Setujui sekali</button>
                         <button className="btn secondary" onClick={() => onApprove(it.requestId!, false)}>Tolak</button>
                       </div>
                     )}

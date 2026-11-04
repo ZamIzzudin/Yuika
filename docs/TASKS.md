@@ -249,6 +249,7 @@
 
 - [ ] **P1-PER-1** Art direction doc + pipeline Rive (spec: dimensi, state machine, input, penamaan) · *S+artist · 3d*
 - [ ] **P1-PER-2** Aset Rive 6 persona × 7 state (batch: Conductor+Scholar+Scribe dulu) · *artist · berjalan paralel*
+  - ✎ dev-10: **Scribe berevolusi jadi persona dokumen** — upload (pdf/xlsx/csv) via tab File → `uploads/`, tool `doc_read` (unpdf + SheetJS), PERSONA.md: baca-dulu-baru-tulis. Menyusul: docx, offset paging doc_read, tabel hasil ekstraksi di UI.
 - [ ] **P1-PER-3** Ganti PersonaPortrait fallback → Rive runtime + pre-load · *B · 2d · dep P1-PER-2*
 - [ ] **P1-PER-4** Growth tracking (usage → level → varian gratis unlock) + timeline UI · *C+B · 3d*
 - [ ] **P1-PER-5** Persona acceptance test blind (perilaku beda nyata antar persona — anti "hanya kosmetik") · *S · 2d* → ≥80% penguji menebak persona benar dari output
@@ -352,6 +353,7 @@
 - [ ] **P2-STU-1** Tab shell v0: tab chat/file/board/monitor dalam project home (state per tab; layout kolom desktop) · *B · 2d · dep P1-PRJ-6* → pindah tab tanpa kehilangan state chat
 - [ ] **P2-STU-2** Terminal tab: `xterm.js` ↔ PTY di sandbox (generalisasi `run_command`); user & agent share sesi terminal; approval untuk perintah berisiko · *A+B · 4d · dep P0-SEC-1* → agent menjalankan CLI & output muncul di tab yang user lihat
 - [x] **P2-STU-3** File tab: tree + viewer + diff hasil edit agent (di atas file tools) · *B · 2d · dep P1-PRJ-2* → diff write_file agent terlihat — ✅ v0 sesi dev 10 (`75a1ad5`) + diff penuh (`4136722`): tab **File** (tree + viewer ≤256 KB, `safeProjectPath` anti-traversal) & **`FileRevisionStore`** — write_file merekam snapshot isi LAMA pra-timpan (cap 20/file, no-op & >256 KB skip) → dropdown "revisi…" di viewer → `diffLines` (LCS, subpath `@yui/core/project/diff`) → diff ±N baris berwarna; +11 test
+  - ✎ fix test-user: tree kini via `projectRoot()` absolut (dulu readdir relatif cwd Next → selalu `[]`); auto-refresh 5 dtk + tombol ↻ + ⬆ Upload dokumen.
 - [ ] **P2-STU-4** Browser tab v0 read-only: server-side proxy + render (screenshot/DOM), domain allowlist per project, **security review = gerbang** (risiko §11) · *A · 4d · dep P0-SEC-1* → agent membuka URL riset & user melihat halaman yang sama
 - [ ] **P2-STU-5** MCP Figma connector (OAuth P1-MCP-2; bind ke persona design — D17) · *C · 2d · dep P1-PRJ-5* → persona design membaca frame Figma di fase desain
 - [ ] **P2-STU-6** ~~Eksplorasi pen.dev~~ → **digantikan Penpot** (pen.dev tidak open source — keputusan D18): pindah ke **P2-DSN-1** (eksplorasi repo `D:\projects\penpot`; deliverable sama: laporan referensi)

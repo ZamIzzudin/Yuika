@@ -142,9 +142,36 @@ export function FileTab({ projectId }: { projectId: string }) {
 
   const isText = sel ? TEXT_EXT.has(sel.split(".").pop()!.toLowerCase()) : false;
 
+  /** Upload dokumen user → uploads/ (lalu minta scribe membacanya via doc_read). */
+  async function upload(f: File) {
+    setErr(null);
+    const r = await fetch(`/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`, {
+      method: "POST",
+      body: await f.arrayBuffer(),
+    });
+    if (!r.ok) {
+      setErr(((await r.json()) as { error?: string }).error ?? "gagal upload");
+      return;
+    }
+    await loadTree();
+  }
+
   return (
     <section className="file-tab" aria-label="File project">
       <div className="file-toolbar">
+        <label className="btn secondary" title="Upload dokumen (pdf/xlsx/csv/…) → folder uploads/, dibaca agent via doc_read">
+          ⬆ Upload dokumen
+          <input
+            type="file"
+            hidden
+            accept=".pdf,.xlsx,.xls,.csv,.md,.txt,.json,.html,.htm,.xml,.yaml,.yml"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void upload(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
         <button className="btn secondary" onClick={() => void loadTree()} title="Muat ulang daftar file">
           ↻ Segarkan
         </button>

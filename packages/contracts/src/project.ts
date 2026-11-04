@@ -82,6 +82,9 @@ export interface TaskNode {
   refs: string[];
   /** Artefak nyata yang dihasilkan node (path file, link). */
   artefak: string[];
+  /** Waktu mulai/diakhiri (ts event transisi status) — untuk tampilan durasi. */
+  startedAt?: number;
+  doneAt?: number;
   children: TaskNode[];
 }
 
@@ -93,6 +96,8 @@ export const TaskNode: z.ZodType<TaskNode> = z.object({
   assignee: z.string().nullable(),
   refs: z.array(z.string()),
   artefak: z.array(z.string()),
+  startedAt: z.number().optional(),
+  doneAt: z.number().optional(),
   children: z.array(z.lazy(() => TaskNode)),
 });
 
@@ -120,6 +125,24 @@ export const ProjectEvent = z.discriminatedUnion("type", [
   }),
 ]);
 export type ProjectEvent = z.infer<typeof ProjectEvent>;
+
+/** Edge delegasi antar-sesi (graf nyata dari event delegation.*) — sumber diagram Tim. */
+export const DelegationEdge = z.object({
+  /** Sesi pemberi tugas. */
+  parentSessionId: z.string(),
+  parentPersonaId: z.string(),
+  /** Sesi anak yang mengerjakan (node di bawah pemberi tugas). */
+  childSessionId: z.string(),
+  personaId: z.string(),
+  goal: z.string(),
+  status: z.enum(["running", "done"]),
+  /** State persona anak terakhir (thinking/working/idle) bila masih hidup. */
+  state: z.string().nullish(),
+  summary: z.string().nullish(),
+  startedAt: z.number(),
+  doneAt: z.number().nullish(),
+});
+export type DelegationEdge = z.infer<typeof DelegationEdge>;
 
 // Tasklist per project (P1-PRJ-4 memakai kontrak ini; TaskTree = D19 menyusul).
 // TaskList flat (P1-PRJ-4) — row di project_tasks.

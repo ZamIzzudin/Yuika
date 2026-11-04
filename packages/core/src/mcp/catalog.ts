@@ -9,6 +9,20 @@ const ws = "{workspace}";
 
 export const MCP_CATALOG: McpCatalogEntry[] = [
   {
+    id: "tailscale",
+    name: "Tailscale Tunnel",
+    description:
+      "Ekspos dev lokal ke tailnet VPN (serve) atau Internet publik (funnel) — mis. localhost:3000 jadi https://<host>.ts.net. Membungkus CLI tailscale.",
+    category: "dev",
+    risk: "tinggi",
+    command: "node",
+    args: [`${ws}/../mcp-servers/tailscale/index.mjs`],
+    envKeys: [],
+    setupNote:
+      "Butuh Tailscale terpasang & login (tailscale up). Funnel (akses publik) harus diizinkan admin tailnet — risiko tinggi, gunakan sadar.",
+    docsUrl: "https://tailscale.com/kb/1242/tailscale-serve",
+  },
+  {
     id: "filesystem",
     name: "Filesystem",
     description: "Baca/tulis/pindah file dalam folder yang diizinkan (scoped ke workspace).",

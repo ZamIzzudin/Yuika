@@ -26,7 +26,12 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
       const n = nodes.get(e.taskId);
       if (!n) continue; // event untuk task pra-TaskTree — skip
       if (e.title !== undefined) n.title = e.title;
-      if (e.status !== undefined) n.status = e.status;
+      if (e.status !== undefined) {
+        // catat transisi waktu untuk durasi (tab Pohon: "running Xm Ys")
+        if (e.status === "doing" || e.status === "review") n.startedAt = e.ts;
+        if (e.status === "done") n.doneAt = e.ts;
+        n.status = e.status;
+      }
       if (e.assignee !== undefined) n.assignee = e.assignee;
       if (e.addRefs?.length) n.refs = [...new Set([...n.refs, ...e.addRefs])];
       if (e.addArtefak?.length) n.artefak = [...new Set([...n.artefak, ...e.addArtefak])];

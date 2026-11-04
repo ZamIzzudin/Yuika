@@ -160,3 +160,22 @@ terutama `turn=… SELESAI total=…ms iter=…` dan `nudge turn=…` — lalu k
 
 ✅ Lolos bila: stop tanpa error + lanjut mulus; diff akurat; riwayat ditemukan
    lintas sesi dalam proyek yang sama.
+
+## K. Fix batch #2 — file tree, diagram Tim, dokumen scribe, tailscale (10 menit)
+
+1. **File tree**: buka proyek lama → tab File → file & folder (assets/code/docs/
+   reports/scripts) kini TAMPIL (bug: dulu readdir relatif cwd Next → selalu
+   kosong). Tombol ↻ Segarkan + auto-refresh 5 dtk.
+2. **read_file paging**: minta coder baca file besar → respons menyertakan
+   `nextOffset` — agent lanjut paging, TIDAK menulis script node ekstra
+   (pola tail-mockup.js hilang). Tool baru `search_files` (grep).
+3. **Tim = diagram hierarki**: conductor root tengah; anak sejajar; delegasi
+   designer→coder tampil sebagai cabang di bawah designer dengan label
+   "dari Yui Designer"; tugas + durasi (◐ 3m 12d) di tiap cabang.
+4. **Pohon**: node doing/review menampilkan durasi berjalan.
+5. **Scribe dokumen**: tab File → ⬆ Upload dokumen (pdf/xlsx/csv) → pilih
+   persona Yui Scribe → "rangkum uploads/laporan.pdf" → scribe memanggil
+   `doc_read` dan merangkum isinya.
+6. **Tailscale MCP**: panel MCP → katalog → install "Tailscale Tunnel" →
+   Trust → tanya agent "cek status tailscale" → tool ts_status.
+   (Butuh tailscale CLI terpasang & login.)

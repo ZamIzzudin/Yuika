@@ -28,6 +28,7 @@ import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js";
 import { registerMemoryTools } from "./tools/memory-tools.js";
 import { registerSessionSearchTools } from "./tools/session-search.js";
+import { registerDocTools } from "./tools/doc-tools.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
 import { findUvx, installUv } from "./mcp/uv.js";
@@ -74,6 +75,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerWebTools();
   registerSkillTools(paths.skillsDir);
   registerSessionSearchTools(store); // P1-MEM-5: riwayat sesi bisa ditelusuri agent
+  registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)
   registerRunCommandTool();
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({ sessionStore: store, projects: projectStore, workspacePath: paths.workspacePath });
@@ -322,23 +324,67 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     listProjectFiles: (id: string) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
-      return buildFileTree(p.rootPath);
+      // rootPath relatif thd workspace — WAJIB lewat projectRoot (fix: dulu readdir
+      // relatif terhadap cwd Next apps/web → tree selalu kosong).
+      return buildFileTree(projectRoot(id));
     },
     readProjectFile: (id: string, relPath: string) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
-      return readProjectFile(p.rootPath, relPath);
+      return readProjectFile(projectRoot(id), relPath);
     },
     // P2-STT-3: revisi & diff — snapshot lama direkam otomatis oleh write_file.
     listFileRevisions: (id: string, relPath: string) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
-      return fileRevisions.listRevisions(safeProjectPath(p.rootPath, relPath));
+      return fileRevisions.listRevisions(safeProjectPath(projectRoot(id), relPath));
     },
     readFileRevision: (id: string, relPath: string, rev: number) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
-      return fileRevisions.getRevision(safeProjectPath(p.rootPath, relPath), rev);
+      return fileRevisions.getRevision(safeProjectPath(projectRoot(id), relPath), rev);
+    },
+    /** dev-10: simpan file upload user (pdf/xlsx/…) ke root proyek (uploads/…). */
+    writeProjectUpload: async (id: string, rel: string, data: Buffer) => {
+      const p = projectStore.getProject(id);
+      if (!p) throw new Error("project tidak ditemukan");
+      const abs = safeProjectPath(projectRoot(id), rel);
+      await fs.promises.mkdir(path.dirname(abs), { recursive: true });
+      await fs.promises.writeFile(abs, data);
+    },
+    /** Diagram Tim: SEMUA edge delegasi lintas sesi di proyek (grandchild ikut,
+     *  relasi nyata dari event — bukan asumsi urutan persona). */
+    getProjectDelegations: (id: string) => {
+      const p = projectStore.getProject(id);
+      if (!p) throw new Error("project tidak ditemukan");
+      const sessions = store.listProjectSessions(id);
+      const edges = new Map<string, import("@yui/contracts").DelegationEdge>();
+      for (const s of sessions) {
+        for (const e of store.getEvents(s.id)) {
+          if (e.type === "delegation.started") {
+            edges.set(e.childSessionId, {
+              parentSessionId: s.id,
+              parentPersonaId: s.personaId,
+              childSessionId: e.childSessionId,
+              personaId: e.personaId,
+              goal: e.goal,
+              status: "running",
+              startedAt: e.ts,
+            });
+          } else if (e.type === "delegation.progress") {
+            const t = edges.get(e.childSessionId);
+            if (t) t.state = e.state;
+          } else if (e.type === "delegation.done") {
+            const t = edges.get(e.childSessionId);
+            if (t) {
+              t.status = "done";
+              t.doneAt = e.ts;
+              t.summary = e.summary;
+            }
+          }
+        }
+      }
+      return [...edges.values()];
     },
     updateProject: (id: string, patch: { name?: string; description?: string; status?: "active" | "archived" }) =>
       projectStore.updateProject(id, patch),

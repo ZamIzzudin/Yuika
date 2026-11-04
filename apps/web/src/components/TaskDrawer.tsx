@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PersonaInfo, PersonaState, ProjectInfo, ProjectSessionSummary, RosterEntry, TaskItem, TaskNode, TaskStatus } from "@yui/contracts";
 import { PersonaFace } from "./PersonaPicker";
+import { TeamTree, fmtDur } from "./TeamTree";
 import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
@@ -84,7 +85,8 @@ function OrgCard({
 }
 
 /** Satu simpul pohon task (rekursif) — proyeksi event `task.node.*` (D19). */
-function TreeNode({ node, depth }: { node: TaskNode; depth: number }) {
+function TreeNode({ node, depth, now }: { node: TaskNode; depth: number; now: number }) {
+  const running = node.status === "doing" || node.status === "review";
   return (
     <li className="tree-node" data-s={node.status} style={{ marginLeft: depth > 0 ? 16 : 0 }}>
       <span className="tree-dot" title={LABEL[node.status]}>
@@ -92,6 +94,16 @@ function TreeNode({ node, depth }: { node: TaskNode; depth: number }) {
       </span>
       <span className="tree-title">{node.title}</span>
       {node.assignee && <small className="tree-assignee">{node.assignee.replace("yui-", "")}</small>}
+      {running && node.startedAt && (
+        <small className="tree-dur running" title="sudah berjalan sejak status doing">
+          ◐ {fmtDur(now - node.startedAt)}
+        </small>
+      )}
+      {node.status === "done" && node.startedAt && (
+        <small className="tree-dur" title="total durasi pengerjaan">
+          {fmtDur((node.doneAt ?? now) - node.startedAt)}
+        </small>
+      )}
       {node.artefak.map((a) => (
         <small key={a} className="tree-artefak" title={a}>
           {a.split("/").pop()}
@@ -100,7 +112,7 @@ function TreeNode({ node, depth }: { node: TaskNode; depth: number }) {
       {node.children.length > 0 && (
         <ul className="tree-children">
           {node.children.map((c) => (
-            <TreeNode key={c.id} node={c} depth={depth + 1} />
+            <TreeNode key={c.id} node={c} depth={depth + 1} now={now} />
           ))}
         </ul>
       )}
@@ -135,6 +147,12 @@ export function ProjectTabs({
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
+  // Jam live untuk durasi "sudah berjalan Xm" (tab Pohon & Tim)
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 5_000);
+    return () => clearInterval(t);
+  }, []);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [title, setTitle] = useState("");
   const [pick, setPick] = useState("");
@@ -492,73 +510,36 @@ export function ProjectTabs({
           ) : (
             <ul className="tree-root">
               {tree.map((n) => (
-                <TreeNode key={n.id} node={n} depth={0} />
+                <TreeNode key={n.id} node={n} depth={0} now={now} />
               ))}
             </ul>
           )}
         </section>
       )}
 
-      {loaded && activeTab === "team" && (() => {
-        // FIX test user: Tim = kartu per PERSONA (agregat status + daftar tugasnya),
-        // bukan kartu per tugas — detail status tugas ada di Papan/Pohon.
-        const byPersona = new Map<string, LiveDelegation[]>();
-        for (const d of live.delegations) {
-          const arr = byPersona.get(d.personaId) ?? [];
-          arr.push(d);
-          byPersona.set(d.personaId, arr);
-        }
-        const groups = [...byPersona.entries()].map(([personaId, ds]) => {
-          const working = ds.some((d) => d.childState === "thinking" || d.childState === "working");
-          const doneCount = ds.filter((d) => d.summary).length;
-          const state: PersonaState | "done" = working ? "working" : doneCount === ds.length ? "done" : "idle";
-          return { personaId, ds, working, doneCount, state };
-        });
-        return (
-        <section aria-label="Tim — persona & status pengerjaan">
-          {live.parentPersonaId ? (
-            <div className="org-chart">
-              <OrgCard personaId={live.parentPersonaId} subtitle="lead sesi ini" state={live.parentState} root />
-              {groups.length > 0 && <div className="org-connector" aria-hidden />}
-              <ul className="org-children">
-                {groups.map(({ personaId, ds, working, doneCount, state }) => (
-                  <li key={personaId}>
-                    <OrgCard
-                      personaId={personaId}
-                      subtitle={ds.length > 1 ? `${ds.length} tugas · ${doneCount} selesai` : ds.length === 1 ? "1 tugas" : undefined}
-                      state={state}
-                    />
-                    <div className="org-tasks">
-                      {ds.map((d, j) => (
-                        <span key={d.childSessionId ?? j} className="org-task" title={d.goal}>
-                          <span className="dot">{working && !d.summary && d.childState === "working" || d.childState === "thinking" ? "◐" : d.summary ? "✓" : "○"}</span>
-                          <span>{d.goal.length > 70 ? d.goal.slice(0, 70) + "…" : d.goal}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </li>
+      {loaded && activeTab === "team" && (
+        <section aria-label="Tim — diagram hierarki delegasi">
+          <TeamTree
+            projectId={project.id}
+            rootSessionId={activeSessionId}
+            rootPersonaId={live.parentPersonaId}
+            rootState={live.parentState}
+          />
+          {bench.length > 0 && (
+            <div className="org-bench">
+              <small>Siaga (di roster, belum didelegasi):</small>
+              <div className="bench-row">
+                {bench.map((r) => (
+                  <span key={r.personaId} className="bench-chip" title={r.role}>
+                    <PersonaFace personaId={r.personaId} size={16} />
+                    {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ?? r.personaId.replace("yui-", "")}
+                  </span>
                 ))}
-              </ul>
-              {bench.length > 0 && (
-                <div className="org-bench">
-                  <small>Siaga (di roster, belum didelegasi):</small>
-                  <div className="bench-row">
-                    {bench.map((r) => (
-                      <span key={r.personaId} className="bench-chip" title={r.role}>
-                        <PersonaFace personaId={r.personaId} size={16} />
-                        {PERSONA_NAME[r.personaId]?.replace("Yui ", "") ?? r.personaId.replace("yui-", "")}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
-          ) : (
-            <p className="task-empty">Buka sesi untuk melihat struktur delegasi live.</p>
           )}
         </section>
-        );
-      })()}
+      )}
     </div>
   );
 }

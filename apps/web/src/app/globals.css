@@ -1089,3 +1089,30 @@ html, body {
 /* Tombol refresh file tree */
 .file-toolbar { display: flex; justify-content: flex-end; }
 .tab-dot.warn { background: var(--yui-warn); animation: pulse 1.2s ease-in-out infinite; }
+
+/* Diagram hierarki Tim v2 (dev-10): tree bercabang klasik — root tengah,
+   anak sejajar, konektor CSS murni (tanpa dep), horizontal scroll bila lebar. */
+.org-scroll { overflow-x: auto; padding: 4px 0 12px; }
+.org-tree { display: flex; justify-content: center; min-width: max-content; margin: 0 auto; padding: 8px 24px 16px; }
+.org-node { display: flex; flex-direction: column; align-items: center; }
+.org-hint { margin: 10px 0 0; text-align: center; }
+.org-branches { list-style: none; display: flex; justify-content: center; margin: 0; padding: 28px 0 0; position: relative; }
+.org-branches::before { content: ""; position: absolute; top: 0; left: 50%; height: 28px; border-left: 1px solid var(--yui-border-strong); }
+.org-branch { position: relative; padding: 28px 16px 0; display: flex; flex-direction: column; align-items: center; }
+.org-branch::before, .org-branch::after { content: ""; position: absolute; top: 0; width: 50%; height: 28px; border-top: 1px solid var(--yui-border-strong); }
+.org-branch::before { right: 50%; }
+.org-branch::after { left: 50%; border-left: 1px solid var(--yui-border-strong); }
+.org-branch:first-child::before { border-top: none; }
+.org-branch:last-child::after { border-top: none; }
+.org-branch:only-child::before, .org-branch:only-child::after { display: none; }
+.org-branch:only-child { padding-top: 28px; }
+.org-branch:only-child .org-link { display: block; }
+.org-link { display: none; position: absolute; top: 0; left: 50%; height: 28px; border-left: 1px solid var(--yui-border-strong); }
+.org-branch .org-card { min-width: 210px; max-width: 280px; }
+.org-branch .org-branches { margin-top: 4px; }
+.org-task .goal-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.org-task .dur { flex: none; font-variant-numeric: tabular-nums; color: var(--yui-text-dim); }
+
+/* Durasi di tab Pohon */
+.tree-dur { font-variant-numeric: tabular-nums; color: var(--yui-text-dim); }
+.tree-dur.running { color: var(--yui-warn); }

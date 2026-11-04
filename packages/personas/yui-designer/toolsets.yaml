@@ -3,6 +3,7 @@ tools:
   - skill_view
   - skill_propose
   - read_file
+  - search_files
   - write_file
   - list_files
   - todo_list

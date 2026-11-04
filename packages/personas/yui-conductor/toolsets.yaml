@@ -3,6 +3,7 @@ tools:
   - skill_view
   - delegate_task
   - read_file
+  - search_files
   - write_file
   - list_files
   - web_fetch
