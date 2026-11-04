@@ -22,6 +22,10 @@ loadRootEnv();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // distDir bisa dipisah (NEXT_DIST_DIR=.next-pi) agar verifikasi/CI paralel
+  // TIDAK menghapus cache dev server yang sedang berjalan (kejadian 2026-11:
+  // rm -rf .next saat server hidup -> _document.js ENOENT, semua route 500).
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   transpilePackages: ["@yui/contracts", "@yui/core"],
   serverExternalPackages: ["better-sqlite3"],
   // Workspace packages pakai specifier ESM TS ("./foo.js" → foo.ts); webpack butuh
