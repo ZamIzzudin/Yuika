@@ -2,7 +2,10 @@
 // Tab Skill (P1-MEM-3): pengalaman → draf skill → validasi user → siap pakai.
 // Draf: agent usulkan via tool skill_propose; user edit bebas → Terima (lint +
 // aktif, langsung terlihat agent via skills_list) atau Tolak (hapus).
+// DS-1: ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
+import { Check, CircleNotch, Eye, Flag, Info, PencilSimple, X } from "@phosphor-icons/react";
+import { Button, Card, Field, TextArea, TextInput } from "./ui";
 
 interface DraftRow {
   slug: string;
@@ -25,8 +28,8 @@ interface SkillRow {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  tested: "◐ diuji manusia",
-  ready: "✓ siap",
+  tested: "diuji manusia",
+  ready: "siap",
   draft: "draf",
 };
 
@@ -147,35 +150,36 @@ export function SkillsTab() {
   }
 
   return (
-    <section aria-label="Skill — draf dan siap pakai">
-      <p className="dim skill-activation-note">
-        ℹ Skill baru <b>langsung tersimpan & bisa dijalankan agent</b> via
-        <code> skills_list</code>/<code>skill_view</code> — tapi baru <b>diperkenalkan
-        otomatis di prompt pada SESI BARU</b> (prompt sesi berjalan beku by design).
+    <section aria-label="Skill — draf dan siap pakai" className="flex flex-col gap-4">
+      <p className="flex items-start gap-2 rounded-md2 border border-line bg-inset px-3 py-2 text-caption leading-5 text-muted">
+        <Info size={14} aria-hidden className="mt-0.5 shrink-0 text-accent" />
+        <span>
+          Skill baru <b className="text-secondary">langsung tersimpan &amp; bisa dijalankan agent</b> via
+          <code className="font-mono"> skills_list</code>/<code className="font-mono">skill_view</code> — tapi baru{" "}
+          <b className="text-secondary">diperkenalkan otomatis di prompt pada SESI BARU</b> (prompt sesi berjalan beku by
+          design).
+        </span>
       </p>
       {drafts.length === 0 ? (
-        <p className="dim">
-          Belum ada draf. Sebut di chat — mis. &quot;jadikan skill cara kerja
-          barusan&quot; — atau agent\n mengusulkan sendiri setelah alur terbukti
-          berhasil.
+        <p className="text-caption leading-5 text-dim">
+          Belum ada draf. Sebut di chat — mis. &quot;jadikan skill cara kerja barusan&quot; — atau agent mengusulkan
+          sendiri setelah alur terbukti berhasil.
         </p>
       ) : (
         drafts.map((d) => (
-          <div key={d.slug} className="memory-doc skill-draft">
-            <header>
-              <b>{open === d.slug && edit ? edit.name : d.name}</b>
-              <span className="skill-actions">
+          <Card key={d.slug} className="flex flex-col gap-2.5">
+            <header className="flex flex-wrap items-center justify-between gap-2">
+              <b className="text-body font-semibold text-primary">
+                {open === d.slug && edit ? edit.name : d.name}
+              </b>
+              <span className="flex gap-1.5">
                 {open === d.slug ? (
-                  <button
-                    className="btn"
-                    onClick={() => void saveDraft(d)}
-                    disabled={busy}
-                  >
+                  <Button size="sm" onClick={() => void saveDraft(d)} disabled={busy}>
                     Simpan
-                  </button>
+                  </Button>
                 ) : (
-                  <button
-                    className="btn"
+                  <Button
+                    size="sm"
                     onClick={() => {
                       setOpen(d.slug);
                       setEdit({
@@ -186,119 +190,104 @@ export function SkillsTab() {
                     }}
                   >
                     Edit
-                  </button>
+                  </Button>
                 )}
-                <button
-                  className="btn"
-                  onClick={() => void accept(d.slug)}
-                  disabled={busy}
-                  title="Validasi & aktifkan skill ini"
-                >
+                <Button size="sm" variant="primary" onClick={() => void accept(d.slug)} disabled={busy} title="Validasi & aktifkan skill ini">
                   Terima
-                </button>
-                <button
-                  className="btn secondary"
-                  onClick={() => void reject(d.slug)}
-                  disabled={busy}
-                  title="Hapus draf"
-                >
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => void reject(d.slug)} disabled={busy} title="Hapus draf">
                   Tolak
-                </button>
+                </Button>
               </span>
             </header>
             {open === d.slug && edit ? (
-              <>
-                <input
-                  value={edit.name}
-                  onChange={(e) => setEdit({ ...edit, name: e.target.value })}
-                  placeholder="Nama skill"
-                />
-                <input
-                  value={edit.description}
-                  onChange={(e) =>
-                    setEdit({ ...edit, description: e.target.value })
-                  }
-                  placeholder="Kapan skill ini dipakai"
-                />
-                <textarea
-                  value={edit.body}
-                  onChange={(e) => setEdit({ ...edit, body: e.target.value })}
-                  rows={10}
-                  spellCheck={false}
-                />
-              </>
+              <div className="flex flex-col gap-2.5">
+                <Field label="Nama skill">
+                  <TextInput value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} placeholder="Nama skill" />
+                </Field>
+                <Field label="Kapan dipakai">
+                  <TextInput
+                    value={edit.description}
+                    onChange={(e) => setEdit({ ...edit, description: e.target.value })}
+                    placeholder="Kapan skill ini dipakai"
+                  />
+                </Field>
+                <Field label="Isi (markdown)">
+                  <TextArea value={edit.body} onChange={(e) => setEdit({ ...edit, body: e.target.value })} rows={10} spellCheck={false} />
+                </Field>
+              </div>
             ) : (
               <>
-                <small className="skill-desc">{d.description}</small>
-                <pre className="skill-body">{d.body}</pre>
+                <small className="text-caption leading-5 text-muted">{d.description}</small>
+                <pre className="overflow-x-auto rounded-md2 bg-inset px-3 py-2.5 font-mono text-[12.5px] leading-5 text-secondary">{d.body}</pre>
               </>
             )}
-          </div>
+          </Card>
         ))
       )}
 
-      <div className="skill-active">
-        <header className="project-head">
-          <span className="project-title">Siap pakai ({skills.length})</span>
-        </header>
+      <div className="flex flex-col gap-2">
+        <b className="text-body font-semibold text-primary">Siap pakai ({skills.length})</b>
         {skills.length === 0 ? (
-          <p className="dim">Belum ada skill aktif.</p>
+          <p className="text-caption text-dim">Belum ada skill aktif.</p>
         ) : (
-          <ul className="skill-list">
+          <ul className="flex flex-col gap-2.5">
             {skills.map((s) => (
-              <li key={s.name}>
-                <b>
+              <li key={s.name} className="flex flex-col gap-0.5 border-l-2 border-line pl-3">
+                <b className="flex flex-wrap items-baseline gap-x-2 text-body font-semibold text-primary">
                   {s.name}
                   {s.usage && (
-                    <small
-                      className="skill-usage"
-                      title="dilihat · diedit · dipakai"
-                    >
-                      👁 {s.usage.views} · ✎ {s.usage.patches} · ⚑{" "}
-                      {s.usage.used}
+                    <small className="flex items-center gap-2 text-caption font-normal text-dim" title="dilihat · diedit · dipakai">
+                      <span className="flex items-center gap-0.5">
+                        <Eye size={11} aria-hidden /> {s.usage.views}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <PencilSimple size={11} aria-hidden /> {s.usage.patches}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <Flag size={11} aria-hidden /> {s.usage.used}
+                      </span>
                     </small>
                   )}
                 </b>
-                <small>
+                <small className="text-caption leading-5 text-muted">
                   {s.description}
                   {s.status && s.status !== "ready" && (
-                    <span
-                      className="skill-status"
-                      data-s={s.status}
-                      title="Lifecycle P1-DUN-2: draft → tested (direview) → ready (siap assign)"
-                    >
-                      {" "}
-                      · {STATUS_LABEL[s.status]}
+                    <span className="ml-1 inline-flex items-center gap-0.5 align-baseline text-warn" title="Lifecycle P1-DUN-2: draft → tested (direview) → ready (siap assign)">
+                      ·{" "}
+                      {s.status === "tested" && <CircleNotch size={11} aria-hidden />} {STATUS_LABEL[s.status]}
                     </span>
                   )}
                   {s.personas && s.personas.length > 0 && (
-                    <span className="skill-personas">
-                      {" "}
-                      ·{" "}
-                      {s.personas.map((p) => p.replace("yui-", "")).join(", ")}
-                    </span>
+                    <span className="ml-1 text-dim">· {s.personas.map((p) => p.replace("yui-", "")).join(", ")}</span>
                   )}
                 </small>
                 {(s.status === "tested" || s.eval) && (
                   <small
-                    className="skill-eval"
-                    data-v={s.eval?.verdict ?? "none"}
+                    className={`flex flex-wrap items-center gap-1.5 text-caption leading-5 ${
+                      s.eval?.verdict === "pass" ? "text-success" : s.eval?.verdict === "fail" ? "text-danger" : "text-muted"
+                    }`}
                   >
-                    {s.eval?.verdict === "pending"
-                      ? "◐ evaluasi buta berjalan… (hakim sedang memeriksa bukti)"
-                      : s.eval?.verdict === "pass"
-                        ? `✓ lulus eval buta${s.eval.reason ? ` — ${s.eval.reason.slice(0, 120)}` : ""}`
-                        : s.eval?.verdict === "fail"
-                          ? `✕ belum lulus — ${s.eval.reason?.slice(0, 160) ?? "tanpa alasan"}`
-                          : "belum pernah dieval"}
+                    {s.eval?.verdict === "pending" ? (
+                      <>
+                        <CircleNotch size={11} aria-hidden className="animate-pulse" /> evaluasi buta berjalan… (hakim sedang memeriksa bukti)
+                      </>
+                    ) : s.eval?.verdict === "pass" ? (
+                      <>
+                        <Check size={11} weight="bold" aria-hidden /> lulus eval buta
+                        {s.eval.reason ? ` — ${s.eval.reason.slice(0, 120)}` : ""}
+                      </>
+                    ) : s.eval?.verdict === "fail" ? (
+                      <>
+                        <X size={11} weight="bold" aria-hidden /> belum lulus — {s.eval.reason?.slice(0, 160) ?? "tanpa alasan"}
+                      </>
+                    ) : (
+                      "belum pernah dieval"
+                    )}
                     {s.status === "tested" && s.eval?.verdict !== "pending" && (
-                      <button
-                        className="btn secondary skill-eval-btn"
-                        disabled={busy}
-                        onClick={() => void evalSkill(s.name)}
-                      >
+                      <Button size="sm" onClick={() => void evalSkill(s.name)} disabled={busy}>
                         Eval buta
-                      </button>
+                      </Button>
                     )}
                   </small>
                 )}
@@ -307,7 +296,11 @@ export function SkillsTab() {
           </ul>
         )}
       </div>
-      {err && <p className="project-err">{err}</p>}
+      {err && (
+        <p className="flex items-center gap-1.5 text-caption text-danger">
+          <X size={12} weight="bold" aria-hidden /> {err}
+        </p>
+      )}
     </section>
   );
 }

@@ -185,8 +185,7 @@ sendiri (portret persona & Orin = seni, bukan ikon — tetap).
 | `components/ChatView.tsx` | ✅ batch 2 — timeline, composer, kartu approval/delegasi/reasoning |
 | `components/SettingsModal.tsx` | ✅ batch 2 — ui Modal/Field/Button + tabel metering |
 | `page.tsx` shell | ✅ batch 2 — sidebar, header persona, TabList, empty state |
-| `components/Skeleton.tsx` | ✅ sederhana (tetap dipakai) |
-| `SkillsTab.tsx` / `ProjectPanel.tsx` / `PersonaPicker.tsx` | ⏳ batch 3 |
+| `SkillsTab.tsx` / `ProjectPanel.tsx` / `PersonaPicker.tsx` | ✅ batch 3 — draf skill (Field/TextArea), sidebar project (konfirmasi hapus), grid persona + galeri bentuk (ui Modal) |
 | `TaskDrawer.tsx` / `FileTab.tsx` / `McpPanel.tsx` / `TeamTree.tsx` / `TracePanel.tsx` / `Markdown.tsx` | ⏳ batch 4 |
 | `OrinPortrait.tsx` / `orinShapes.tsx` / `PersonaPortrait.tsx` | ✅ tetap (SVG art, bukan layout) |
 

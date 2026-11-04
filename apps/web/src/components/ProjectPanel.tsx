@@ -1,13 +1,16 @@
 "use client";
 import { useState } from "react";
 import { DeleteProjectResult, type ProjectInfo } from "@yui/contracts";
+import { Plus, Trash, X } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
+import { Button, Card, Field, TextInput } from "./ui";
 
 /**
  * Panel Proyek (sidebar) — project = entitas first-class di atas workspace (D14).
  * Scope aktif menentukan tempat file & task sesi berada: null = workspace global.
  * v0 (P1-PRJ-6): pilih + buat · P1-PRJ-8: hapus project + artefak terkait
  * (sesi, file, memory project) — skill persona & metering DIPERTAHANKAN.
+ * DS-1: ui/* + Tailwind semantik (docs/DESIGN-SYSTEM.md).
  */
 export function ProjectPanel({
   projects,
@@ -84,124 +87,133 @@ export function ProjectPanel({
     }
   }
 
+  const rowBase =
+    "flex w-full cursor-pointer items-center gap-2.5 rounded-md2 border px-2.5 py-2 text-left transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)]";
+
   return (
-    <section className="project-section" aria-label="Proyek">
-      <div className="project-head">
-        <span className="project-title">Proyek</span>
+    <section aria-label="Proyek" className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between px-2.5">
+        <span className="text-caption font-semibold tracking-wide text-dim uppercase">Proyek</span>
         <button
-          className="project-add"
+          className="flex cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1 text-dim transition-colors hover:bg-hover hover:text-primary disabled:cursor-default disabled:opacity-40"
           onClick={() => setOpen((v) => !v)}
           aria-label="Proyek baru"
           disabled={open}
         >
-          +
+          <Plus size={13} weight="bold" aria-hidden />
         </button>
       </div>
 
       {open && (
-        <div className="project-form">
-          <input
-            autoFocus
-            placeholder="Nama proyek"
-            value={name}
-            maxLength={80}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && create()}
-          />
-          <input
-            placeholder="Deskripsi (opsional)"
-            value={desc}
-            maxLength={280}
-            onChange={(e) => setDesc(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && create()}
-          />
-          {err && <p className="project-err">{err}</p>}
-          <div className="project-form-actions">
-            <button className="btn secondary" onClick={() => setOpen(false)}>
+        <Card variant="inset" className="flex flex-col gap-2.5 p-3">
+          <Field label="Nama">
+            <TextInput
+              autoFocus
+              placeholder="Nama proyek"
+              value={name}
+              maxLength={80}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && create()}
+            />
+          </Field>
+          <Field label="Deskripsi (opsional)">
+            <TextInput
+              placeholder="Deskripsi"
+              value={desc}
+              maxLength={280}
+              onChange={(e) => setDesc(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && create()}
+            />
+          </Field>
+          {err && (
+            <p className="flex items-center gap-1.5 text-caption text-danger">
+              <X size={12} weight="bold" aria-hidden /> {err}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button size="sm" onClick={() => setOpen(false)}>
               Batal
-            </button>
-            <button
-              className="btn"
-              onClick={create}
-              disabled={!name.trim() || busy}
-            >
+            </Button>
+            <Button size="sm" variant="primary" onClick={create} disabled={!name.trim() || busy}>
               {busy ? "Menyimpan…" : "Buat"}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="project-list">
+      <div className="flex flex-col gap-0.5">
         <button
-          className="project-row"
-          data-active={activeId === null ? "" : undefined}
+          className={`${rowBase} ${
+            activeId === null
+              ? "border-line bg-hover text-primary"
+              : "border-transparent text-secondary hover:bg-hover hover:text-primary"
+          }`}
           onClick={() => onPick(null)}
         >
-          <i className="project-dot" />
-          <span>
-            <b>Workspace</b>
-            <small>Freespace</small>
+          <i className="h-[7px] w-[7px] shrink-0 rounded-pill bg-accent" aria-hidden />
+          <span className="flex min-w-0 flex-col">
+            <b className="text-body font-semibold">Workspace</b>
+            <small className="text-caption text-dim">Freespace</small>
           </span>
         </button>
         {!booted && <SkeletonRows rows={3} />}
         {projects.map((p) => (
-          <div key={p.id} className="project-row-wrap">
-            <button
-              className="project-row"
-              data-active={p.id === activeId ? "" : undefined}
-              data-archived={p.status === "archived" ? "" : undefined}
-              onClick={() => onPick(p.id)}
-            >
-              <i className="project-dot" />
-              <span>
-                <b>{p.name}</b>
-                <small>
-                  {p.status === "archived"
-                    ? "arsip"
-                    : p.description || "proyek"}
-                </small>
-              </span>
-            </button>
-            <button
-              className="project-del"
-              aria-label={`Hapus proyek ${p.name}`}
-              title={`Hapus proyek ${p.name} + semua artefaknya`}
-              disabled={deleting === p.id}
-              onClick={() => setConfirmId(confirmId === p.id ? null : p.id)}
-            >
-              ✕
-            </button>
-            {confirmId === p.id && (
-              <div className="project-del-confirm">
-                <p>
-                  Hapus <b>“{p.name}”</b> permanen? Sesi, task, file, memory
-                  project & audit ikut dibersihkan.
-                  <br />
-                  <small>
-                    Skill yang dipelajari persona & metering tetap tersimpan.
+          <div key={p.id} className="relative flex flex-col gap-0.5">
+            <div className="group flex items-center gap-0.5">
+              <button
+                className={`${rowBase} min-w-0 flex-1 ${
+                  p.id === activeId
+                    ? "border-line bg-hover text-primary"
+                    : "border-transparent text-secondary hover:bg-hover hover:text-primary"
+                } ${p.status === "archived" ? "opacity-60" : ""}`}
+                onClick={() => onPick(p.id)}
+              >
+                <i
+                  className={`h-[7px] w-[7px] shrink-0 rounded-pill ${p.id === activeId ? "bg-accent" : "bg-line-strong"}`}
+                  aria-hidden
+                />
+                <span className="flex min-w-0 flex-col">
+                  <b className="truncate text-body font-semibold">{p.name}</b>
+                  <small className="truncate text-caption text-dim">
+                    {p.status === "archived" ? "arsip" : p.description || "proyek"}
                   </small>
+                </span>
+              </button>
+              <button
+                className="flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1.5 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
+                aria-label={`Hapus proyek ${p.name}`}
+                title={`Hapus proyek ${p.name} + semua artefaknya`}
+                disabled={deleting === p.id}
+                onClick={() => setConfirmId(confirmId === p.id ? null : p.id)}
+              >
+                <Trash size={13} aria-hidden />
+              </button>
+            </div>
+            {confirmId === p.id && (
+              <div className="flex flex-col gap-2 rounded-md2 border border-danger/30 bg-danger-soft px-3 py-2.5">
+                <p className="text-caption leading-5 text-danger">
+                  Hapus <b>“{p.name}”</b> permanen? Sesi, task, file, memory project &amp; audit ikut dibersihkan.
+                  <br />
+                  <small className="text-danger/70">Skill yang dipelajari persona &amp; metering tetap tersimpan.</small>
                 </p>
-                <div className="project-form-actions">
-                  <button
-                    className="btn secondary"
-                    onClick={() => setConfirmId(null)}
-                  >
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" onClick={() => setConfirmId(null)}>
                     Batal
-                  </button>
-                  <button
-                    className="btn danger"
-                    onClick={() => void remove(p)}
-                    disabled={deleting === p.id}
-                  >
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => void remove(p)} disabled={deleting === p.id}>
                     {deleting === p.id ? "Menghapus…" : "Hapus permanen"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
           </div>
         ))}
-        {note && <p className="project-note">{note}</p>}
-        {err && !open && <p className="project-err">{err}</p>}
+        {note && <p className="px-2.5 py-1 text-caption leading-5 text-success">{note}</p>}
+        {err && !open && (
+          <p className="flex items-center gap-1.5 px-2.5 py-1 text-caption text-danger">
+            <X size={12} weight="bold" aria-hidden /> {err}
+          </p>
+        )}
       </div>
     </section>
   );

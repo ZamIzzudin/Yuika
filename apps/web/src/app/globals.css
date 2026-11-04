@@ -63,6 +63,7 @@
   --radius-card: 14px;
   --radius-xl2: 20px;
   --radius-bubble: 22px;
+  --radius-pill: 999px;    /* kapsul — chip, dot, bar progress */
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35);
   --shadow-pop: 0 8px 28px rgb(0 0 0 / 0.45);
 
@@ -198,7 +199,6 @@ html, body {
 
 /* ── Shell ─────────────────────────────────────────────────────── */
 
-
 /* ── Workspace: satu area konten + tab bar (Chat juga tab) ────── */
 .workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 @keyframes yui-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
@@ -210,44 +210,6 @@ html, body {
 .pane-hint { margin: 0 0 var(--yui-space-3); color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 
 /* ── Persona list (pola agent-row OpenBot) ─────────────────────── */
-.persona-list { display: flex; flex-direction: column; gap: 1px; }
-.persona-row {
-  display: grid;
-  grid-template-columns: 30px 1fr;
-  column-gap: var(--yui-space-3);
-  align-items: center;
-  width: 100%;
-  border: 0;
-  border-radius: var(--yui-radius-md);
-  background: transparent;
-  padding: var(--yui-space-2) var(--yui-space-2);
-  color: var(--yui-text-secondary);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background var(--yui-dur-fast) ease, color var(--yui-dur-fast) ease;
-}
-.persona-row:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
-.persona-row[data-active] { background: var(--yui-bg-control-active); color: var(--yui-text-primary); }
-.persona-row .face {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--yui-radius-md);
-  background: var(--yui-bg-surface-raised);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.persona-row h3 { margin: 0; font-size: var(--yui-text-md); font-weight: 500; }
-.persona-row p {
-  margin: 0;
-  font-size: var(--yui-text-sm);
-  color: var(--yui-text-dim);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
 
 /* ── Header percakapan ─────────────────────────────────────────── */
 .state-chip {
@@ -368,7 +330,6 @@ html, body {
 }
 
 /* ── Project panel (P1-PRJ-6 shell v0) ─────────────────────────── */
-.project-section { display: flex; flex-direction: column; gap: 1px; padding: 0 var(--yui-space-2) var(--yui-space-4); }
 .project-head { display: flex; align-items: center; justify-content: space-between; padding: 0 var(--yui-space-2) var(--yui-space-2); }
 .project-title { font-size: var(--yui-text-sm); letter-spacing: 0.08em; text-transform: uppercase; color: var(--yui-text-dim); }
 .project-add {
@@ -377,24 +338,7 @@ html, body {
   display: grid; place-items: center; cursor: pointer;
 }
 .project-add:hover { color: var(--yui-text-primary); border-color: var(--yui-border-strong); }
-.project-form { display: flex; flex-direction: column; gap: var(--yui-space-2); padding: var(--yui-space-2); background: var(--yui-bg-inset); border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card, 10px); margin-bottom: var(--yui-space-2); }
-.project-form input { width: 100%; }
 .project-err { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-danger); }
-.project-form-actions { display: flex; justify-content: flex-end; gap: var(--yui-space-2); }
-.project-list { display: flex; flex-direction: column; gap: 1px; }
-.project-row {
-  display: flex; align-items: center; gap: var(--yui-space-2); width: 100%;
-  font: inherit; text-align: left; color: var(--yui-text-secondary);
-  background: none; border: none; border-radius: 8px; padding: 7px var(--yui-space-2); cursor: pointer;
-}
-.project-row b { display: block; font-size: var(--yui-text-md); font-weight: 500; }
-.project-row small { display: block; font-size: var(--yui-text-sm); color: var(--yui-text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.project-row:hover { background: var(--yui-hover); color: var(--yui-text-primary); }
-.project-row[data-active] { background: var(--yui-bg-control-active); color: var(--yui-text-primary); }
-.project-row[data-active] small { color: var(--yui-accent-text); }
-.project-row[data-archived] { opacity: 0.55; }
-.project-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--yui-text-dim); }
-.project-row[data-active] .project-dot { background: var(--yui-accent); }
 
 /* Badge project di chat-header */
 .project-chip {
@@ -520,32 +464,8 @@ html, body {
 .chat-empty h1 { margin: 0; }
 
 /* ── Pemilihan persona di tengah layar (scope Workspace) ───────── */
-.persona-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--yui-space-3); width: 100%; max-width: 720px; margin-top: var(--yui-space-4); }
-.persona-card {
-  display: flex; flex-direction: column; align-items: center; gap: var(--yui-space-2); text-align: center;
-  font: inherit; color: var(--yui-text-secondary); cursor: pointer;
-  background: var(--yui-bg-surface); border: 1px solid var(--yui-border); border-radius: 14px;
-  padding: var(--yui-space-5) var(--yui-space-4);
-}
-.persona-card-name{ display: flex; align-items: center; width: 100%; gap: 5%;}
-.persona-card:hover { border-color: var(--yui-border-strong); background: var(--yui-bg-surface-raised); color: var(--yui-text-primary); }
-.persona-card-name b { font-size: var(--yui-text-lg); font-weight: 600;}
-.persona-card p { margin: 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim); line-height: 1.5; text-align: justify; }
 
 /* ── P1-PER-4: badge growth persona (level + progres turn nyata) ── */
-.growth-badge {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 2px;
-  font-size: 11px; color: var(--yui-text-dim);
-  background: var(--yui-hover); border-radius: 999px; padding: 3px 10px;
-}
-.persona-row .growth-badge { padding: 1px 8px; }
-.growth-badge b { font-weight: 600; color: var(--yui-text-secondary); }
-.growth-bar {
-  display: inline-block; width: 54px; height: 4px; border-radius: 2px;
-  background: var(--yui-border); overflow: hidden;
-}
-.growth-fill { display: block; height: 100%; border-radius: 2px; background: var(--yui-accent, #7c9cff); }
-.growth-badge small { color: var(--yui-text-dim); }
 
 /* ── Switcher persona di chat-header (dropdown) ────────────────── */
 
@@ -635,24 +555,7 @@ html, body {
 
 /* ── Sidebar footer + Settings modal ────────────────────────────── */
 
-.settings-overlay {
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--yui-space-6);
-}
   /* Glass ala menu macOS (disetujui user): bg semi-transparan + blur di belakang */
-.settings-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: var(--yui-space-3) var(--yui-space-5);
-  border-bottom: 1px solid var(--yui-border); flex: none;
-}
-.settings-head b { font-size: var(--yui-text-lg, 16px); font-weight: 650; }
-.settings-close {
-  font: inherit; background: none; border: none; color: var(--yui-text-dim);
-  cursor: pointer; padding: 4px 8px; border-radius: 6px;
-}
-.settings-close:hover { color: var(--yui-text-primary); background: var(--yui-hover); }
 .catalog-runtime {
   font-size: 10px; color: #d29922; border: 1px solid #d29922;
   border-radius: 999px; padding: 1px 6px; margin-left: 4px; white-space: nowrap;
@@ -702,23 +605,6 @@ html, body {
 }
 
 /* ── Tab Skill (P1-MEM-3) ───────────────────────────────────────── */
-.skill-draft input { margin-bottom: var(--yui-space-2); }
-.skill-desc { color: var(--yui-text-muted); }
-.skill-body {
-  margin: 0; white-space: pre-wrap; font-family: var(--yui-font-mono);
-  font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
-  background: var(--yui-bg-inset); border-radius: var(--yui-radius-md);
-  padding: var(--yui-space-3); max-height: 260px; overflow-y: auto;
-}
-.skill-actions { display: flex; gap: var(--yui-space-2); }
-.skill-active { margin-top: var(--yui-space-4); }
-.skill-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.skill-list li {
-  display: flex; flex-direction: column; gap: 1px; padding: 8px 10px;
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
-}
-.skill-list b { font-size: var(--yui-text-md); font-weight: 600; }
-.skill-list small { color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
 
 /* ── Model per persona (P1-MDL) di Settings ─────────────────────── */
 .model-routes .field-title { font-weight: 600; display: block; margin-bottom: 2px; }
@@ -746,39 +632,9 @@ html, body {
   margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--yui-font-mono);
   font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
 }
-.skill-usage { margin-left: 8px; color: var(--yui-text-dim); font-weight: 400; font-size: 11px; }
 
 /* ── Galeri 15 bentuk Orin (dev 10) ──────────────────────────────── */
 /* ── Kartu & modal galeri 15 bentuk Orin (dev 10) ────────────────── */
-.shape-card .shape-trio { display: flex; align-items: center; gap: 2px; height: 44px; }
-.shape-card .shape-trio svg { opacity: 0.95; }
-.shape-card .shape-trio svg:nth-child(2) { margin: 0 -7px; }
-.shape-modal {
-  width: min(680px, 94vw); max-height: min(620px, 88vh);
-  display: flex; flex-direction: column;
-  background: var(--yui-glass); backdrop-filter: var(--yui-glass-blur);
-  -webkit-backdrop-filter: var(--yui-glass-blur);
-  border: 1px solid var(--yui-glass-border); border-radius: var(--yui-radius-xl);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-.shape-modal-hint {
-  margin: 0; padding: var(--yui-space-3) var(--yui-space-5) 0;
-  color: var(--yui-text-dim); font-size: var(--yui-text-sm);
-}
-.shape-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--yui-space-2);
-  padding: var(--yui-space-4) var(--yui-space-5) var(--yui-space-5);
-  overflow-y: auto;
-}
-.shape-cell {
-  display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
-  padding: var(--yui-space-2) 4px;
-}
-.shape-cell[data-owned] { border-color: var(--yui-accent); }
-.shape-cell b { font-weight: 600; font-size: var(--yui-text-sm); }
-.shape-cell small { color: var(--yui-text-dim); font-size: 11px; }
 .stop-btn { margin-left: 2px; color: var(--yui-warn, #e6a23c); }
 
 /* Diff file (P2-STU-3) */
@@ -865,11 +721,6 @@ html, body {
 
 /* Dungeon (P1-DUN-1..2): arena latihan persona di tab Skill. */
 
-.skill-personas { color: var(--yui-text-dim); }
-.skill-eval { color: var(--yui-text-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.skill-eval[data-v="pass"] { color: var(--yui-ok); }
-.skill-eval[data-v="fail"] { color: var(--yui-danger, #e5484d); }
-.skill-eval-btn { padding: 1px 10px; font-size: var(--yui-text-sm); }
 /* P1-DUN-5: gating fase roster — siap/belum per fase workflow. */
 .roster-phase[data-r="ok"] { color: var(--yui-ok); }
 .roster-phase[data-r="gap"] { color: var(--yui-danger, #e5484d); font-style: normal; }
@@ -900,37 +751,9 @@ html, body {
 
 /* P1-CRED-2/3/4: panel saldo & batas */
 
-
 /* ---- P1-PRJ-8: hapus project (konfirmasi dua langkah) ---- */
-.project-row-wrap { position: relative; display: block; }
-.project-del {
-  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
-  width: 22px; height: 22px; line-height: 1;
-  border: 0; border-radius: var(--yui-radius-sm);
-  background: transparent; color: var(--yui-text-dim);
-  font-size: 12px; cursor: pointer; opacity: 0;
-  transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
-}
-.project-row-wrap:hover .project-del, .project-del:focus-visible { opacity: 1; }
-.project-del:hover { color: var(--yui-danger); background: rgba(255, 80, 80, 0.12); }
-.project-del:disabled { opacity: 0.4; cursor: wait; }
-.project-del-confirm {
-  margin: 2px 0 6px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 90, 90, 0.35);
-  border-left: 3px solid var(--yui-danger);
-  border-radius: var(--yui-radius-md);
-  background: rgba(255, 80, 80, 0.06);
-  font-size: var(--yui-text-sm);
-}
-.project-del-confirm p { margin: 0 0 6px; color: var(--yui-text); }
-.project-del-confirm small { color: var(--yui-text-dim); }
 .btn.danger { background: var(--yui-danger); color: #fff; }
 .btn.danger:hover { filter: brightness(1.08); }
-.project-note {
-  margin: 6px 0 0; font-size: var(--yui-text-sm); color: var(--yui-text-dim);
-  border-top: 1px solid var(--yui-border); padding-top: 6px;
-}
 
 /* Mode approval chip (fix dev-10): toggle cepat di atas composer */
 

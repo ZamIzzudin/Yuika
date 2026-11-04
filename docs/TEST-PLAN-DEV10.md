@@ -90,3 +90,16 @@
    tabel metering & editor harga rapi; ikon ✓/✕/⚠/⛔ Phosphor.
 5. Smoke umum: kirim chat 1 turn, buka Trace, buka Dungeon (3 tab), Mapping Skill,
    Pengaturan (3 seksi) — tak ada layout rusak/konsol error.
+
+### M22 (P1) — DS-1 batch 3: SkillsTab + ProjectPanel + PersonaPicker
+1. **Hapus folder `.next` lalu `npm run dev`** (token radius baru `--radius-pill`).
+2. Sidebar kiri: seksi Proyek — baris Workspace/proyek dengan titik indikator;
+   tombol + → form inline (Field rapi); ikon 🗑 muncul saat hover baris →
+   panel merah konfirmasi "Hapus permanen" (2 langkah).
+3. Pemilih persona (saat tanpa project): kartu grid + badge level (bar mini);
+   kartu "15 Bentuk Orin" membuka modal galeri bergaya modal pengaturan.
+4. Tab Skill (dengan project aktif): kartu draf (Edit/Terima/Tolak), edit inline
+   Field+TextArea; daftar siap pakai pakai ikon Eye/PencilSimple/Flag untuk
+   usage dan CircleNotch/Check/X untuk status eval.
+5. Cek visual: semua chip/badge/bar kini BENERAN kapsul (rounded-pill — token
+   baru; sebelumnya diam-diam kotak).

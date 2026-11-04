@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
 import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
+import { Modal } from "./ui";
 
 export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
 
@@ -35,12 +36,15 @@ export function GrowthBadge({ g }: { g?: PersonaGrowth }) {
   if (!g) return null;
   const pct = g.nextLevelAt === null ? 100 : Math.min(100, Math.round((g.turns / g.nextLevelAt) * 100));
   return (
-    <span className="growth-badge" title={`${g.turns} turn selesai · ${g.sessions} sesi · ${g.tasksDone} task done — level dari kerja nyata`}>
-      <b>{g.level}</b>
-      <span className="growth-bar">
-        <span className="growth-fill" style={{ width: `${pct}%` }} />
+    <span
+      className="flex items-center gap-1.5 rounded-pill bg-inset px-2 py-0.5 text-caption text-muted"
+      title={`${g.turns} turn selesai · ${g.sessions} sesi · ${g.tasksDone} task done — level dari kerja nyata`}
+    >
+      <b className="font-semibold text-secondary">Lv {g.level}</b>
+      <span className="h-[3px] w-10 overflow-hidden rounded-pill bg-line-strong">
+        <span className="block h-full rounded-pill bg-accent" style={{ width: `${pct}%` }} />
       </span>
-      <small>{g.turns} turn</small>
+      <small className="text-dim">{g.turns} turn</small>
     </span>
   );
 }
@@ -90,37 +94,28 @@ export function PersonaGrid({
 }) {
   const [showShapes, setShowShapes] = useState(false);
   const growth = usePersonaGrowth();
+  const cardBase =
+    "flex cursor-pointer flex-col items-start gap-2 rounded-card border border-line bg-surface px-4 py-4 text-left transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:bg-hover";
   return (
     <>
-      <div className="persona-grid">
+      <div className="grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-3">
         {personas.map((p) => (
-          <button key={p.id} className="persona-card" onClick={() => onPick(p)}>
-            <div className="persona-card-name">
-              <span className="face">
-                <PersonaFace personaId={p.id} size={44} />
-              </span>
-              <b>{p.name}</b>
-            </div>
-            <p>{p.description}</p>
+          <button key={p.id} className={cardBase} onClick={() => onPick(p)}>
+            <span className="flex items-center gap-2.5">
+              <PersonaFace personaId={p.id} size={44} />
+              <b className="text-body font-semibold text-primary">{p.name}</b>
+            </span>
+            <p className="text-caption leading-5 text-muted">{p.description}</p>
             <GrowthBadge g={growth.get(p.id)} />
           </button>
         ))}
         {/* Kartu katalog bentuk — satu sel grid, ukurannya identik kartu persona */}
-        <button
-          className="persona-card shape-card"
-          onClick={() => setShowShapes(true)}
-        >
-          <span className="face shape-trio" aria-hidden>
+        <button className={cardBase} onClick={() => setShowShapes(true)}>
+          <span className="flex items-center gap-2.5" aria-hidden>
             {(["pill", "star", "flower"] as const).map((k) => {
               const s = SHAPES[k];
               return (
-                <svg
-                  key={k}
-                  width={30}
-                  height={30}
-                  viewBox="-150 -150 300 300"
-                  focusable="false"
-                >
+                <svg key={k} width={30} height={30} viewBox="-150 -150 300 300" focusable="false">
                   <g fill={s.color} style={{ color: s.color }}>
                     {s.geom}
                   </g>
@@ -128,8 +123,8 @@ export function PersonaGrid({
               );
             })}
           </span>
-          <b>15 Bentuk Orin</b>
-          <p>Katalog bentuk maskot — identitas persona mendatang.</p>
+          <b className="text-body font-semibold text-primary">15 Bentuk Orin</b>
+          <p className="text-caption leading-5 text-muted">Katalog bentuk maskot — identitas persona mendatang.</p>
         </button>
       </div>
       {showShapes && <ShapeGalleryModal onClose={() => setShowShapes(false)} />}
@@ -141,68 +136,37 @@ export function PersonaGrid({
  *  pilihan identitas persona mendatang (Analyst, Operator, dst.). Pemetaan
  *  persona ada di PERSONA_SHAPE; pemilihan bebas user menyusul. */
 function ShapeGalleryModal({ onClose }: { onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
   return (
-    <div
-      className="settings-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Galeri bentuk Orin"
-      onClick={onClose}
-    >
-      <div className="shape-modal" onClick={(e) => e.stopPropagation()}>
-        <header className="settings-head">
-          <b>15 Bentuk Orin</b>
-          <button
-            className="settings-close"
-            onClick={onClose}
-            aria-label="Tutup"
-          >
-            ✕
-          </button>
-        </header>
-        <p className="shape-modal-hint">
-          Satu rig mata dipakai semua bentuk — urutan = indeks{" "}
-          <code>shape</code> 0–14 di Rive. Bertanda = sudah dipakai persona;
-          sisanya bebas untuk persona mendatang.
-        </p>
-        <div className="shape-grid">
-          {SHAPE_ORDER.map((k, i) => {
-            const s = SHAPES[k];
-            const owner = Object.entries(PERSONA_SHAPE).find(
-              ([, v]) => v === k,
-            )?.[0];
-            return (
-              <div
-                key={k}
-                className="shape-cell"
-                data-owned={owner ? "" : undefined}
-              >
-                <svg
-                  width={64}
-                  height={64}
-                  viewBox="-150 -150 300 300"
-                  aria-hidden
-                  focusable="false"
-                >
-                  <g fill={s.color} style={{ color: s.color }}>
-                    {s.geom}
-                  </g>
-                </svg>
-                <b>{s.name}</b>
-                <small>
-                  {owner ? owner.replace("yui-", "yui · ") : `bebas · ${i}`}
-                </small>
-              </div>
-            );
-          })}
-        </div>
+    <Modal open onClose={onClose} title="15 Bentuk Orin" wide>
+      <p className="mb-3 max-w-[560px] text-caption leading-5 text-muted">
+        Satu rig mata dipakai semua bentuk — urutan = indeks <code className="font-mono">shape</code> 0–14 di Rive.
+        Bertanda = sudah dipakai persona; sisanya bebas untuk persona mendatang.
+      </p>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
+        {SHAPE_ORDER.map((k, i) => {
+          const s = SHAPES[k];
+          const owner = Object.entries(PERSONA_SHAPE).find(([, v]) => v === k)?.[0];
+          return (
+            <div
+              key={k}
+              className={`flex flex-col items-center gap-1 rounded-lg2 border px-2 py-3 text-center ${
+                owner ? "border-accent/50 bg-inset" : "border-line bg-inset"
+              }`}
+            >
+              <svg width={64} height={64} viewBox="-150 -150 300 300" aria-hidden focusable="false">
+                <g fill={s.color} style={{ color: s.color }}>
+                  {s.geom}
+                </g>
+              </svg>
+              <b className="text-body font-semibold text-primary">{s.name}</b>
+              <small className="text-caption text-dim">
+                {owner ? owner.replace("yui-", "yui · ") : `bebas · ${i}`}
+              </small>
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -217,20 +181,22 @@ export function PersonaPicker({
 }) {
   const growth = usePersonaGrowth();
   return (
-    <nav className="persona-list" aria-label="Persona">
+    <nav aria-label="Persona" className="flex flex-col gap-0.5">
       {personas.map((p) => (
         <button
           key={p.id}
-          className="persona-row"
-          data-active={p.id === activeId ? "" : undefined}
+          aria-current={p.id === activeId ? "true" : undefined}
+          className={`flex w-full cursor-pointer items-center gap-2.5 rounded-md2 border px-2 py-1.5 text-left transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+            p.id === activeId
+              ? "border-line bg-hover"
+              : "border-transparent hover:bg-hover"
+          }`}
           onClick={() => onPick(p)}
         >
-          <span className="face">
-            <PersonaFace personaId={p.id} size={22} />
-          </span>
-          <span>
-            <h3>{p.name}</h3>
-            <p>{p.description}</p>
+          <PersonaFace personaId={p.id} size={22} />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <h3 className="text-body font-semibold text-primary">{p.name}</h3>
+            <p className="truncate text-caption text-dim">{p.description}</p>
             <GrowthBadge g={growth.get(p.id)} />
           </span>
         </button>
