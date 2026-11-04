@@ -8,6 +8,7 @@ import type { McpAuditEntry, McpCatalogEntry, McpServerStatus } from "@yui/contr
 import { ArrowsClockwise, ArrowClockwise, Check, Warning, X } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
 import { Button, Chip, Dot, SectionTitle, TextInput } from "./ui";
+import { toastErr, toastOk } from "./ui/toast";
 
 const RISK_LABEL: Record<string, { label: string; tone: "ok" | "warn" | "danger" }> = {
   rendah: { label: "aman", tone: "ok" },
@@ -23,7 +24,6 @@ export function McpPanel() {
   const [openForm, setOpenForm] = useState<string | null>(null); // id katalog dengan form env terbuka
   const [envVals, setEnvVals] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const [uvx, setUvx] = useState<string | null | "loading">("loading");
   const [uvConfirm, setUvConfirm] = useState(false);
   const [uvInstalling, setUvInstalling] = useState(false);
@@ -57,19 +57,21 @@ export function McpPanel() {
   /** One-click install uv (installer resmi astral.sh) — konfirmasi eksplisit UI. */
   async function installUv() {
     setUvInstalling(true);
-    setErr(null);
     setUvLog(null);
     try {
       const res = await fetch("/api/mcp/runtime", { method: "POST" });
       const j = (await res.json()) as { ok: boolean; uvxPath: string | null; log: string };
-      if (j.ok) setUvx(j.uvxPath ?? "uvx");
+      if (j.ok) {
+        setUvx(j.uvxPath ?? "uvx");
+        toastOk("uv terpasang — server Python/uvx siap dipakai.");
+      }
       else {
-        setErr("installer selesai tapi uvx belum terdeteksi — coba restart dev server");
+        toastErr("installer selesai tapi uvx belum terdeteksi — coba restart dev server");
         setUvLog(j.log || null);
       }
       setUvConfirm(false);
     } catch {
-      setErr("gagal menjalankan installer");
+      toastErr("gagal menjalankan installer");
     } finally {
       setUvInstalling(false);
     }
@@ -77,14 +79,13 @@ export function McpPanel() {
 
   async function toggle(s: McpServerStatus) {
     setBusy(s.name);
-    setErr(null);
     try {
       const res = await fetch("/api/mcp/servers", {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ server: s.name, trusted: !s.trusted, denyTools: s.denyTools }),
       });
-      if (!res.ok) setErr((((await res.json()) as { error?: string }).error ?? "gagal") + "");
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal");
       await refresh();
     } finally {
       setBusy(null);
@@ -94,14 +95,13 @@ export function McpPanel() {
   /** P0-MCP-1: coba hubungkan ulang server parked/reconnecting sekarang. */
   async function retry(name: string) {
     setBusy(name);
-    setErr(null);
     try {
       const res = await fetch("/api/mcp/servers", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ server: name }),
       });
-      if (!res.ok) setErr((((await res.json()) as { error?: string }).error ?? "gagal reconnect") + "");
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal reconnect");
       await refresh();
     } finally {
       setBusy(null);
@@ -110,17 +110,17 @@ export function McpPanel() {
 
   async function install(c: McpCatalogEntry) {
     setBusy(c.id);
-    setErr(null);
     try {
       const res = await fetch("/api/mcp/install", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ catalogId: c.id, env: envVals }),
       });
-      if (!res.ok) setErr((((await res.json()) as { error?: string }).error ?? "gagal") + "");
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal");
       else {
         setOpenForm(null);
         setEnvVals({});
+        toastOk(`${c.name} ditambahkan ke mcp.json — Trust untuk menghubungkan.`);
       }
       await refresh();
     } finally {
@@ -130,10 +130,10 @@ export function McpPanel() {
 
   async function uninstall(c: McpCatalogEntry) {
     setBusy(c.id);
-    setErr(null);
     try {
       const res = await fetch(`/api/mcp/install?name=${encodeURIComponent(c.id)}`, { method: "DELETE" });
-      if (!res.ok) setErr((((await res.json()) as { error?: string }).error ?? "gagal") + "");
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal");
+      else toastOk(`${c.name} dilepas dari mcp.json.`);
       await refresh();
     } finally {
       setBusy(null);
@@ -141,7 +141,7 @@ export function McpPanel() {
   }
 
   const declared = new Set(servers.filter((s) => s.declared).map((s) => s.name));
-  const booting = servers.length === 0 && catalog.length === 0 && !err;
+  const booting = servers.length === 0 && catalog.length === 0;
   const q = query.trim().toLowerCase();
   const shown = catalog.filter(
     (c) => !q || c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q) || c.category.includes(q),
@@ -210,11 +210,6 @@ export function McpPanel() {
               </li>
             ))}
           </ul>
-          {err && (
-            <p className="flex items-center gap-1.5 text-caption text-danger">
-              <X size={12} weight="bold" aria-hidden /> {err}
-            </p>
-          )}
           {audit.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <SectionTitle>Audit</SectionTitle>

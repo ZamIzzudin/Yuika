@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
-import { ArrowLeft, Sword } from "@phosphor-icons/react";
+import { CommandIcon, Gear, Sword } from "@phosphor-icons/react";
 import { DungeonView } from "@/components/DungeonView";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
@@ -19,7 +19,7 @@ import {
   type WorkspaceTab,
 } from "@/components/TaskDrawer";
 import { Skeleton } from "@/components/Skeleton";
-import { Button, Dot, StateChip, TabList } from "@/components/ui";
+import { Dot, StateChip, TabList } from "@/components/ui";
 import type {
   PersonaInfo,
   PersonaState,
@@ -117,7 +117,11 @@ export default function Home() {
     // dedupe by id; id monotonic per sesi).
     if (e.id <= lastEventId.current) return;
     lastEventId.current = Math.max(lastEventId.current, e.id);
-    if (e.type !== "message.delta" && e.type !== "reasoning.delta" && e.type !== "delegation.delta") {
+    if (
+      e.type !== "message.delta" &&
+      e.type !== "reasoning.delta" &&
+      e.type !== "delegation.delta"
+    ) {
       setTraceTick((t) => t + 1); // delta streaming tak mengubah struktur trace
     }
     switch (e.type) {
@@ -150,7 +154,11 @@ export default function Home() {
           const rIdx = openReasoning.current;
           openReasoning.current = null;
           let next = prev;
-          if (rIdx !== null && prev[rIdx]?.kind === "reasoning" && prev[rIdx]?.streaming) {
+          if (
+            rIdx !== null &&
+            prev[rIdx]?.kind === "reasoning" &&
+            prev[rIdx]?.streaming
+          ) {
             next = [...prev];
             next[rIdx] = { ...next[rIdx]!, streaming: false };
           }
@@ -167,11 +175,17 @@ export default function Home() {
           const idx = openReasoning.current;
           if (idx !== null && prev[idx]?.kind === "reasoning") {
             const next = [...prev];
-            next[idx] = { ...next[idx]!, text: (next[idx]!.text ?? "") + e.delta };
+            next[idx] = {
+              ...next[idx]!,
+              text: (next[idx]!.text ?? "") + e.delta,
+            };
             return next;
           }
           openReasoning.current = prev.length;
-          return [...prev, { kind: "reasoning", text: e.delta, streaming: true }];
+          return [
+            ...prev,
+            { kind: "reasoning", text: e.delta, streaming: true },
+          ];
         });
         break;
       case "tool.call":
@@ -218,11 +232,21 @@ export default function Home() {
         setItems((prev) => {
           const next = [...prev];
           for (let i = next.length - 1; i >= 0; i--) {
-            if (next[i]!.kind === "delegation" && next[i]!.childSessionId === e.childSessionId && !next[i]!.text) {
-              const buf = next[i]!.liveKind === e.kind ? (next[i]!.liveText ?? "") : "";
-              let live = (buf + e.delta);
+            if (
+              next[i]!.kind === "delegation" &&
+              next[i]!.childSessionId === e.childSessionId &&
+              !next[i]!.text
+            ) {
+              const buf =
+                next[i]!.liveKind === e.kind ? (next[i]!.liveText ?? "") : "";
+              let live = buf + e.delta;
               if (live.length > 600) live = live.slice(-600); // ekor saja — ringan
-              next[i] = { ...next[i]!, liveText: live, liveKind: e.kind, childState: "working" };
+              next[i] = {
+                ...next[i]!,
+                liveText: live,
+                liveKind: e.kind,
+                childState: "working",
+              };
               break;
             }
           }
@@ -328,7 +352,12 @@ export default function Home() {
         // P0-CORE-4: transparansi — user tahu konteks lama diringkas (riwayat asli utuh).
         setItems((prev) => [
           ...prev,
-          { kind: "compressed", n: e.messagesSummarized, before: e.estTokensBefore, after: e.estTokensAfter },
+          {
+            kind: "compressed",
+            n: e.messagesSummarized,
+            before: e.estTokensBefore,
+            after: e.estTokensAfter,
+          },
         ]);
         break;
       case "skill.proposed":
@@ -566,11 +595,20 @@ export default function Home() {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         setItems((prev) => [
           ...prev,
-          { kind: "error", text: `Keputusan approval gagal terkirim (${res.status}): ${body.error ?? "tidak diketahui"}` },
+          {
+            kind: "error",
+            text: `Keputusan approval gagal terkirim (${res.status}): ${body.error ?? "tidak diketahui"}`,
+          },
         ]);
       }
     } catch {
-      setItems((prev) => [...prev, { kind: "error", text: "Keputusan approval gagal terkirim (jaringan/server) — coba lagi." }]);
+      setItems((prev) => [
+        ...prev,
+        {
+          kind: "error",
+          text: "Keputusan approval gagal terkirim (jaringan/server) — coba lagi.",
+        },
+      ]);
     }
   }
 
@@ -578,7 +616,8 @@ export default function Home() {
     <div className="flex h-screen bg-canvas text-body text-secondary">
       <aside className="flex w-[272px] shrink-0 flex-col overflow-y-auto border-r border-line bg-sidebar px-2 py-3">
         <div className="flex items-baseline gap-2 px-2 pb-4 text-body font-semibold tracking-tight text-primary">
-          Your-Yui <span className="text-caption font-normal text-dim">demo</span>
+          Your-Yui{" "}
+          <span className="text-caption font-normal text-dim">demo</span>
         </div>
         <ProjectPanel
           projects={projects.filter((p) => p.kind !== "dungeon")}
@@ -600,18 +639,20 @@ export default function Home() {
         <div className="mt-auto flex flex-col gap-1 border-t border-line pt-3">
           <button
             className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-              dungeonOpen ? "bg-hover text-primary" : "text-dim hover:bg-hover hover:text-primary"
+              dungeonOpen
+                ? "bg-hover text-primary"
+                : "text-dim hover:bg-hover hover:text-primary"
             }`}
             aria-current={dungeonOpen ? "page" : undefined}
             onClick={() => setDungeonOpen((v) => !v)}
           >
-            <Sword size={15} aria-hidden /> Dungeon
+            <CommandIcon size={20} aria-hidden /> Enhancer
           </button>
           <button
             className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
             onClick={() => setSettingsOpen(true)}
           >
-            <Dot tone="muted" /> Pengaturan
+            <Gear size={20} /> Pengaturan
           </button>
         </div>
       </aside>
@@ -632,14 +673,18 @@ export default function Home() {
               <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
                 {activeProject ? (
                   <>
-                    <h1 className="mt-4 text-display font-semibold text-primary">Menyiapkan {activeProject.name}…</h1>
+                    <h1 className="mt-4 text-display font-semibold text-primary">
+                      Menyiapkan {activeProject.name}…
+                    </h1>
                     <p className="max-w-[420px] text-body text-muted">
                       Conductor sebagai project lead sedang dibuka.
                     </p>
                   </>
                 ) : (
                   <>
-                    <h1 className="sr-only">Pilih partner untuk sesi Workspace</h1>
+                    <h1 className="sr-only">
+                      Pilih partner untuk sesi Workspace
+                    </h1>
                     {personas.length === 0 ? (
                       <div className="mt-4 grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
                         {Array.from({ length: 4 }, (_, i) => (
@@ -667,14 +712,26 @@ export default function Home() {
                       label: (
                         <>
                           <PersonaFace personaId={active.id} size={16} /> Chat
-                          {items.some((it) => it.kind === "approval" && !it.resolved) && <Dot tone="warn" pulse className="ml-1" />}
+                          {items.some(
+                            (it) => it.kind === "approval" && !it.resolved,
+                          ) && <Dot tone="warn" pulse className="ml-1" />}
                           {busy && <Dot tone="accent" pulse className="ml-1" />}
                         </>
                       ),
                     },
                     ...(activeProject
                       ? ([
-                          { id: "team", label: <span>Tim{items.some((it) => it.kind === "delegation" && !it.text) && <Dot pulse className="ml-1" />}</span> },
+                          {
+                            id: "team",
+                            label: (
+                              <span>
+                                Tim
+                                {items.some(
+                                  (it) => it.kind === "delegation" && !it.text,
+                                ) && <Dot pulse className="ml-1" />}
+                              </span>
+                            ),
+                          },
                           { id: "files", label: "File" },
                           { id: "board", label: "Papan" },
                           { id: "tree", label: "Pohon" },
@@ -686,8 +743,15 @@ export default function Home() {
                       : []),
                     {
                       id: "trace",
-                      label: <span>Trace{sessionId && busy && <Dot pulse className="ml-1" />}</span>,
-                      title: sessionId ? "Jejak langkah per turn sesi aktif" : "Mulai sesi dulu untuk melihat trace",
+                      label: (
+                        <span>
+                          Trace
+                          {sessionId && busy && <Dot pulse className="ml-1" />}
+                        </span>
+                      ),
+                      title: sessionId
+                        ? "Jejak langkah per turn sesi aktif"
+                        : "Mulai sesi dulu untuk melihat trace",
                     },
                   ]}
                 />
@@ -704,24 +768,34 @@ export default function Home() {
                               variant="compact"
                             />
                             <span className="flex min-w-0 flex-col text-left">
-                              <b className="text-body font-semibold text-primary">{active.name}</b>
-                              <span className="text-caption text-dim">{active.expertise}</span>
+                              <b className="text-body font-semibold text-primary">
+                                {active.name}
+                              </b>
+                              <span className="text-caption text-dim">
+                                {active.expertise}
+                              </span>
                             </span>
                           </summary>
                           <div className="glass-panel absolute top-full left-0 z-30 mt-1 flex w-64 flex-col gap-px rounded-lg2 p-1 shadow-pop">
                             {personas.map((p) => (
                               <button
                                 key={p.id}
-                                aria-current={p.id === active.id ? "true" : undefined}
+                                aria-current={
+                                  p.id === active.id ? "true" : undefined
+                                }
                                 className={`flex cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2 py-1.5 text-left text-body transition-colors ${
-                                  p.id === active.id ? "bg-hover text-primary" : "text-secondary hover:bg-hover"
+                                  p.id === active.id
+                                    ? "bg-hover text-primary"
+                                    : "text-secondary hover:bg-hover"
                                 }`}
                                 onClick={() => void switchPersona(p)}
                               >
                                 <PersonaFace personaId={p.id} size={20} />
                                 <span className="flex-1">{p.name}</span>
                                 {activeProjectId && (
-                                  <small className="text-caption text-dim">sesi baru</small>
+                                  <small className="text-caption text-dim">
+                                    sesi baru
+                                  </small>
                                 )}
                               </button>
                             ))}

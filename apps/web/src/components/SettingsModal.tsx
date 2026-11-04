@@ -8,6 +8,7 @@ import type { ModelRoutes, ProviderSettings } from "@yui/contracts";
 import { Check, Prohibit, Warning, X } from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
 import { Skeleton } from "./Skeleton";
+import { toastErr, toastOk } from "./ui/toast";
 import { Button, Card, Field, Modal, Select, TextInput } from "./ui";
 
 type Section = "provider" | "mcp" | "usage";
@@ -27,8 +28,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const [fallback, setFallback] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [aux, setAux] = useState("");
-  const [flash, setFlash] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -52,8 +51,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   }, [load]);
 
   async function save() {
-    setErr(null);
-    setFlash(null);
     try {
       const res = await fetch("/api/settings/provider", {
         method: "PUT",
@@ -68,14 +65,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         }),
       });
       if (!res.ok) {
-        setErr((((await res.json()) as { error?: string }).error ?? "gagal menyimpan") + "");
+        toastErr((((await res.json()) as { error?: string }).error ?? "gagal menyimpan") + "");
         return;
       }
       setApiKey("");
-      setFlash("Tersimpan — sesi & turn berikutnya memakai config baru (.env diperbarui).");
+      toastOk("Tersimpan — sesi & turn berikutnya memakai config baru (.env diperbarui).");
       await load();
     } catch {
-      setErr("gagal menghubungi server");
+      toastErr("gagal menghubungi server");
     }
   }
 
@@ -153,8 +150,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                     <Button variant="primary" onClick={() => void save()} disabled={!dirty}>
                       Simpan
                     </Button>
-                    {flash && <small className="text-caption text-success">{flash}</small>}
-                    {err && <small className="text-caption text-danger">{err}</small>}
                   </div>
                 </>
               )}

@@ -117,7 +117,8 @@ export function PersonaOrbit({
           ring dalam + glow lembut di belakang maskot — anti "terlalu sepi" */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/2 left-1/2 h-[80%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
-        <div className="absolute top-1/2 left-1/2 h-[52%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/40" />
+        <div className="absolute top-1/2 left-1/2 h-[52%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
+        <div className="absolute top-1/2 left-1/2 h-[35%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
       </div>
       {/* pusat: maskot INTERAKTIF persona terpilih + deskripsi (muncul saat hover
           kartu — mata mengikuti kursor & bisa diklik, OrinPortrait v4) */}
@@ -132,7 +133,7 @@ export function PersonaOrbit({
           <p className="max-w-[320px] text-body leading-6 text-muted">
             {active.description}
           </p>
-          <GrowthBadge g={growth.get(active.id)} />
+          {/* <GrowthBadge g={growth.get(active.id)} /> */}
         </div>
       )}
       {/* ring kartu mengambang (posisi elips dari sudut i·360°/n, mulai dari atas) */}

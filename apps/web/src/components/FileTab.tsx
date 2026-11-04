@@ -8,6 +8,7 @@ import type { Icon } from "@phosphor-icons/react";
 import { ArrowsClockwise, CaretDown, CaretRight, FileDoc, FolderSimple, UploadSimple } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
 import { Button, Select, TextInput } from "./ui";
+import { toastErr, toastOk } from "./ui/toast";
 import { diffLines, diffStat } from "@yui/core/project/diff";
 
 interface Content {
@@ -92,18 +93,15 @@ export function FileTab({ projectId }: { projectId: string }) {
     removed: number;
   } | null>(null);
   const [loadingContent, setLoadingContent] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
 
   const loadTree = useCallback(async () => {
     try {
       const r = await fetch(`/api/projects/${projectId}/files`);
       if (r.ok) setTree(((await r.json()) as { tree: FileNode[] }).tree);
       else
-        setErr(
-          (((await r.json()) as { error?: string }).error ?? "gagal memuat file") + "",
-        );
+        toastErr((((await r.json()) as { error?: string }).error ?? "gagal memuat file") + "");
     } catch {
-      setErr("gagal menghubungi server");
+      toastErr("gagal menghubungi server");
     }
     // sinkronkan file yang sedang dibuka bila ditimpa agent di background
     if (sel) {
@@ -156,15 +154,17 @@ export function FileTab({ projectId }: { projectId: string }) {
     setDiff(null);
     setDiffRev("");
     setLoadingContent(true);
-    setErr(null);
     try {
       const [c, r] = await Promise.all([
         fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`),
         fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`),
       ]);
       const cd = (await c.json()) as Content & { error?: string };
-      if (!c.ok) setErr(cd.error ?? "gagal membaca file");
-      else setContent(cd);
+      if (!c.ok) {
+        toastErr(cd.error ?? "gagal membaca file");
+        return;
+      }
+      setContent(cd);
       if (r.ok)
         setRevisions(((await r.json()) as { revisions: Revision[] }).revisions);
     } finally {
@@ -192,15 +192,15 @@ export function FileTab({ projectId }: { projectId: string }) {
 
   /** Upload dokumen user → uploads/ (lalu minta scribe membacanya via doc_read). */
   async function upload(f: File) {
-    setErr(null);
     const r = await fetch(
       `/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`,
       { method: "POST", body: await f.arrayBuffer() },
     );
     if (!r.ok) {
-      setErr(((await r.json()) as { error?: string }).error ?? "gagal upload");
+      toastErr(((await r.json()) as { error?: string }).error ?? "gagal upload");
       return;
     }
+    toastOk(`${f.name} terunggah — minta Poe Yui membacanya via doc_read.`);
     await loadTree();
   }
 
@@ -242,20 +242,17 @@ export function FileTab({ projectId }: { projectId: string }) {
         </div>
         <div className={pane}>
           {loadingContent && <SkeletonRows rows={4} />}
-          {!loadingContent && err && (
-            <p className="text-caption text-danger">{err}</p>
-          )}
-          {!loadingContent && !err && sel && content?.truncated && (
+          {!loadingContent && sel && content?.truncated && (
             <p className="text-caption text-dim">
               File terlalu besar untuk dibaca ({fmtSize(content.size)} &gt; 256 KB) — buka di file explorer.
             </p>
           )}
-          {!loadingContent && !err && sel && content && !content.truncated && !isText && (
+          {!loadingContent && sel && content && !content.truncated && !isText && (
             <p className="text-caption text-dim">
               Bukan file teks ({fmtSize(content.size)}) — preview teks tidak tersedia.
             </p>
           )}
-          {!loadingContent && !err && sel && content && !content.truncated && isText && (
+          {!loadingContent && sel && content && !content.truncated && isText && (
             <>
               <header className="mb-2 flex items-center gap-2 border-b border-line pb-2">
                 <b className="min-w-0 flex-1 truncate font-mono text-caption font-semibold text-primary">{sel}</b>

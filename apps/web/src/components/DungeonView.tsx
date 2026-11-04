@@ -6,6 +6,7 @@ import type { PersonaInfo } from "@yui/contracts";
 import { ArrowLeft, Books, Check, CircleNotch, Clock, MagnifyingGlass, Sparkle, Sword, Trash, UploadSimple, X } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { Skeleton } from "./Skeleton";
+import { toastErr, toastOk } from "./ui/toast";
 import { Button, Chip, Card, Modal, Field, TextInput, TextArea, Select, TabList, EmptyState, MetaRow, SectionTitle } from "./ui";
 
 /** Baris GET /api/dungeons. */
@@ -50,7 +51,6 @@ interface BindingsPayload {
 function SkillMapping() {
   const [data, setData] = useState<BindingsPayload | null>(null);
   const [sel, setSel] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -93,16 +93,14 @@ function SkillMapping() {
         body: JSON.stringify({ personaId, skill, action }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "gagal");
-      setErr(null);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "gagal menyimpan");
+      } catch (e) {
+      toastErr(e instanceof Error ? e.message : "gagal menyimpan");
       void load();
     }
   }
 
   /** Draf → terima (lint + pindah aktif) → langsung pasang ke persona terpilih. */
   async function acceptAndAttach(personaId: string, slug: string, name: string) {
-    setErr(null);
     try {
       const res = await fetch("/api/skills", {
         method: "POST",
@@ -112,8 +110,9 @@ function SkillMapping() {
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "gagal menerima draf");
       await load(); // status baru dari server
       await toggle(personaId, name, "attach");
+      toastOk(`Skill "${name}" diterima & dipasang ke persona terpilih.`);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "gagal menerima draf");
+      toastErr(e instanceof Error ? e.message : "gagal menerima draf");
       void load();
     }
   }
@@ -127,7 +126,6 @@ function SkillMapping() {
         <code className="font-mono">skills.yaml</code> persona (bisa dilepas). Skill <b className="text-secondary">draf</b> dari hasil
         latihan bisa diterima langsung di sini.
       </p>
-      {err && <p className="rounded-md2 border border-danger/30 bg-danger-soft px-3 py-1.5 text-caption text-danger">{err}</p>}
 
       <div className="flex flex-wrap gap-2">
         {data.personas.map((p) => (
@@ -196,7 +194,6 @@ function SkillMapping() {
 
 export function DungeonView({ personas, onBack, onOpenProject }: { personas: PersonaInfo[]; onBack: () => void; onOpenProject?: (projectId: string) => void }) {
   const [dungeons, setDungeons] = useState<DungeonRow[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -238,7 +235,6 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
   }
 
   async function create() {
-    setErr(null);
     setBusy(true);
     try {
       const fallbackGoal =
@@ -260,7 +256,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
         }),
       });
       if (!r.ok) {
-        setErr((((await r.json()) as { error?: string }).error ?? "gagal membuat latihan") + "");
+        toastErr((((await r.json()) as { error?: string }).error ?? "gagal membuat latihan") + "");
         return;
       }
       // reset form ringan
@@ -278,24 +274,22 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
   }
 
   async function run(missionId: string) {
-    setErr(null);
     try {
       const r = await fetch("/api/dungeons", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ missionId }),
       });
-      if (!r.ok) setErr((((await r.json()) as { error?: string }).error ?? "gagal menjalankan misi") + "");
+      if (!r.ok) toastErr((((await r.json()) as { error?: string }).error ?? "gagal menjalankan misi") + "");
       await refresh();
     } catch {
-      setErr("gagal menghubungi server");
+      toastErr("gagal menghubungi server");
     }
   }
 
   /** Unggah bahan ajar (multi-file) → <dungeon>/materials/ + jadi sumber misi. */
   async function upload(slug: string, files: FileList) {
     setUploading(slug);
-    setErr(null);
     try {
       for (const f of Array.from(files)) {
         const r = await fetch(`/api/dungeons/${encodeURIComponent(slug)}/materials?name=${encodeURIComponent(f.name)}`, {
@@ -303,7 +297,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
           body: await f.arrayBuffer(),
         });
         if (!r.ok) {
-          setErr((((await r.json()) as { error?: string }).error ?? "gagal mengunggah") + ` (${f.name})`);
+          toastErr((((await r.json()) as { error?: string }).error ?? "gagal mengunggah") + ` (${f.name})`);
           break;
         }
       }
@@ -315,10 +309,9 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
   }
 
   async function remove(slug: string) {
-    setErr(null);
     try {
       const r = await fetch(`/api/dungeons/${encodeURIComponent(slug)}`, { method: "DELETE" });
-      if (!r.ok) setErr((((await r.json()) as { error?: string }).error ?? "gagal menghapus latihan") + "");
+      if (!r.ok) toastErr((((await r.json()) as { error?: string }).error ?? "gagal menghapus latihan") + "");
       await refresh();
     } finally {
       /* void */
@@ -529,8 +522,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
                   <TextArea value={accText} rows={3} spellCheck={false} onChange={(e) => { setAccText(e.target.value); setAccDirty(true); }} />
                 </Field>
               </div>
-              {err && <p className="rounded-md2 border border-danger/30 bg-danger-soft px-3 py-1.5 text-caption text-danger">{err}</p>}
-              <div className="flex justify-end">
+                      <div className="flex justify-end">
                 <Button variant="primary" disabled={!canCreate} onClick={() => void create()}>
                   {busy ? "membuat…" : mode === "research" ? "Buat & latih" : "Buat latihan (lalu unggah bahan)"}
                 </Button>

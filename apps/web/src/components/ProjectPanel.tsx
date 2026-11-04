@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import { DeleteProjectResult, type ProjectInfo } from "@yui/contracts";
-import { Plus, Trash, X } from "@phosphor-icons/react";
+import { Plus, Trash } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
 import { Button, Card, Field, TextInput } from "./ui";
+import { toastErr, toastOk } from "./ui/toast";
 
 /**
  * Panel Proyek (sidebar) — project = entitas first-class di atas workspace (D14).
@@ -33,16 +34,13 @@ export function ProjectPanel({
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   // P1-PRJ-8: konfirmasi dua langkah — klik 🗑 → baris konfirmasi merah → Hapus.
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [note, setNote] = useState<string | null>(null);
 
   async function create() {
     if (!name.trim() || busy) return;
     setBusy(true);
-    setErr(null);
     try {
       const res = await fetch("/api/projects", {
         method: "POST",
@@ -58,7 +56,7 @@ export function ProjectPanel({
       setOpen(false);
       onCreated();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      toastErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -76,12 +74,12 @@ export function ProjectPanel({
         .catch(() => ({}))) as DeleteProjectResult & { error?: string };
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
       setConfirmId(null);
-      setNote(
-        `“${p.name}” dihapus — ${body.deleted.sessions} sesi, ${body.deleted.tasks} task, file & memory project dibersihkan. Skill persona & metering tetap tersimpan.`,
+      toastOk(
+        `“${p.name}” dihapus — ${body.deleted.sessions} sesi, ${body.deleted.tasks} task dibersihkan. Skill persona & metering tetap tersimpan.`,
       );
       onDeleted(p.id, DeleteProjectResult.parse(body));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      toastErr(e instanceof Error ? e.message : String(e));
     } finally {
       setDeleting(null);
     }
@@ -125,11 +123,6 @@ export function ProjectPanel({
               onKeyDown={(e) => e.key === "Enter" && create()}
             />
           </Field>
-          {err && (
-            <p className="flex items-center gap-1.5 text-caption text-danger">
-              <X size={12} weight="bold" aria-hidden /> {err}
-            </p>
-          )}
           <div className="flex justify-end gap-2">
             <Button size="sm" onClick={() => setOpen(false)}>
               Batal
@@ -208,12 +201,6 @@ export function ProjectPanel({
             )}
           </div>
         ))}
-        {note && <p className="px-2.5 py-1 text-caption leading-5 text-success">{note}</p>}
-        {err && !open && (
-          <p className="flex items-center gap-1.5 px-2.5 py-1 text-caption text-danger">
-            <X size={12} weight="bold" aria-hidden /> {err}
-          </p>
-        )}
       </div>
     </section>
   );

@@ -26,6 +26,7 @@ import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
+import { toastErr, toastOk } from "./ui/toast";
 
 /** Status cycle: klik chip = maju satu langkah. */
 const NEXT: Record<TaskStatus, TaskStatus> = {
@@ -202,7 +203,6 @@ export function ProjectTabs({
   const [busy, setBusy] = useState(false);
   const [userMd, setUserMd] = useState("");
   const [projMd, setProjMd] = useState("");
-  const [savedFlash, setSavedFlash] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false); // skeleton hanya untuk load pertama
 
   const refresh = useCallback(async () => {
@@ -298,10 +298,8 @@ export function ProjectTabs({
         content: scope === "user" ? userMd : projMd,
       }),
     });
-    if (res.ok) {
-      setSavedFlash(scope);
-      setTimeout(() => setSavedFlash(null), 1500);
-    }
+    if (res.ok) toastOk(scope === "user" ? "USER.md tersimpan — berlaku di sesi baru berikutnya." : "MEMORY.md proyek tersimpan.");
+    else toastErr("gagal menyimpan memori");
   }
 
   function assign() {
@@ -571,13 +569,7 @@ export function ProjectTabs({
               <header className="flex items-center justify-between gap-2">
                 <b className="text-body font-semibold text-primary">{d.title}</b>
                 <Button size="sm" onClick={() => void saveMemoryDoc(d.scope)}>
-                  {savedFlash === d.scope ? (
-                    <>
-                      <Check size={12} weight="bold" aria-hidden /> Tersimpan
-                    </>
-                  ) : (
-                    "Simpan"
-                  )}
+                  Simpan
                 </Button>
               </header>
               <TextArea

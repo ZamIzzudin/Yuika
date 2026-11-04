@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, CircleNotch, Eye, Flag, Info, PencilSimple, X } from "@phosphor-icons/react";
 import { Button, Card, Field, TextArea, TextInput } from "./ui";
+import { toastErr, toastOk } from "./ui/toast";
 
 interface DraftRow {
   slug: string;
@@ -42,7 +43,6 @@ export function SkillsTab() {
     description: string;
     body: string;
   } | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -70,7 +70,6 @@ export function SkillsTab() {
 
   /** P1-DUN-3: eval buta skill tested — lulus → ready (polling 5 dtk mengambil hasil). */
   async function evalSkill(name: string) {
-    setErr(null);
     try {
       const r = await fetch("/api/skills/eval", {
         method: "POST",
@@ -78,20 +77,16 @@ export function SkillsTab() {
         body: JSON.stringify({ slug: name }),
       });
       if (!r.ok)
-        setErr(
-          (((await r.json()) as { error?: string }).error ??
-            "gagal memulai eval") + "",
-        );
+        toastErr(((await r.json()) as { error?: string }).error ?? "gagal memulai eval");
       await refresh();
     } catch {
-      setErr("gagal menghubungi server");
+      toastErr("gagal menghubungi server");
     }
   }
 
   async function saveDraft(d: DraftRow) {
     if (!edit) return;
     setBusy(true);
-    setErr(null);
     try {
       const r = await fetch("/api/skills", {
         method: "PUT",
@@ -99,10 +94,7 @@ export function SkillsTab() {
         body: JSON.stringify({ slug: d.slug, ...edit }),
       });
       if (!r.ok)
-        setErr(
-          (((await r.json()) as { error?: string }).error ??
-            "gagal menyimpan") + "",
-        );
+        toastErr(((await r.json()) as { error?: string }).error ?? "gagal menyimpan");
       else setOpen(null);
       await refresh();
     } finally {
@@ -112,7 +104,6 @@ export function SkillsTab() {
 
   async function accept(slug: string) {
     setBusy(true);
-    setErr(null);
     try {
       const r = await fetch("/api/skills", {
         method: "POST",
@@ -120,10 +111,8 @@ export function SkillsTab() {
         body: JSON.stringify({ slug }),
       });
       if (!r.ok)
-        setErr(
-          (((await r.json()) as { error?: string }).error ?? "gagal menerima") +
-            "",
-        );
+        toastErr(((await r.json()) as { error?: string }).error ?? "gagal menerima");
+      else toastOk(`Draf ${slug} diterima & dipasang ke persona terkait.`);
       await refresh();
     } finally {
       setBusy(false);
@@ -132,16 +121,12 @@ export function SkillsTab() {
 
   async function reject(slug: string) {
     setBusy(true);
-    setErr(null);
     try {
       const r = await fetch(`/api/skills?slug=${encodeURIComponent(slug)}`, {
         method: "DELETE",
       });
       if (!r.ok)
-        setErr(
-          (((await r.json()) as { error?: string }).error ??
-            "gagal menghapus") + "",
-        );
+        toastErr(((await r.json()) as { error?: string }).error ?? "gagal menghapus");
       setOpen(null);
       await refresh();
     } finally {
@@ -296,11 +281,6 @@ export function SkillsTab() {
           </ul>
         )}
       </div>
-      {err && (
-        <p className="flex items-center gap-1.5 text-caption text-danger">
-          <X size={12} weight="bold" aria-hidden /> {err}
-        </p>
-      )}
     </section>
   );
 }
