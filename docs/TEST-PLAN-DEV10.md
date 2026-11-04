@@ -349,3 +349,22 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
      tool-call dieksekusi; Metering mencatat token (usage Anthropic terparse).
 3. (Opsional, butuh key Gemini) jenis Gemini + key AI Studio + model
    `gemini-2.5-flash` → sama seperti langkah 2 (tool-call + metering).
+
+### M8.2 (P2) — Trace view per turn (P1-INF-4)
+> Prasyarat: minimal satu sesi dengan ≥2 turn (ada tool-call lebih bagus,
+> mis. minta persona menulis file / Conductor mendelegasi).
+
+1. Buka sesi chat apa pun → tombol **Trace** di sidebar (aktif setelah sesi
+   dipilih).
+  - ✅ Panel "🧭 Trace sesi" terbuka; daftar turn TERBARU di atas dengan status
+     (selesai/berjalan/error), jam mulai→selesai, ringkasan "N langkah · M×
+     model · X+Y tok".
+2. Buka (expand) satu turn.
+  - ✅ Langkah kronologis: 🧠 panggilan model (nama model + durasi ms), 🔧 tool
+     (nama + argumen ringkas), 🤝 delegasi, ❌ error bila ada.
+3. Kirim chat baru → biarkan berjalan → panel Trace terbuka.
+  - ✅ Turn baru muncul dengan status "berjalan…" ter-expanse & langkah
+     bertambah otomatis (poll 3 dtk) tanpa refresh.
+4. Bandingkan token per turn di Trace vs angka di Settings → Metering.
+  - ✅ Konsisten (sumber sama: ledger).
+5. Tombol "← Kembali ke chat" menutup panel; chat state tidak hilang.

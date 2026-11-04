@@ -8,3 +8,4 @@ export * from "./memory.js";
 export * from "./settings.js";
 export * from "./usage.js";
 export * from "./budget.js";
+export * from "./trace.js";

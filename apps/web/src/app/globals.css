@@ -1211,6 +1211,25 @@ html, body {
 /* ── Metering panel (P1-CRED-1) ── */
 .usage-panel { display: flex; flex-direction: column; gap: 12px; }
 
+/* P1-INF-4: trace view */
+.trace-view { display: flex; flex-direction: column; gap: 14px; max-width: 860px; margin: 0 auto; width: 100%; padding: 18px 8px; overflow-y: auto; }
+.trace-head { display: flex; align-items: center; gap: 12px; }
+.trace-head .btn { margin-left: auto; }
+.trace-turns { display: flex; flex-direction: column; gap: 8px; }
+.trace-turns details { border: 1px solid var(--yui-border); border-radius: 8px; padding: 8px 12px; }
+.trace-turns summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
+.trace-turns summary::-webkit-details-marker { display: none; }
+.trace-status { font-size: var(--yui-text-sm); padding: 1px 8px; border-radius: 999px; border: 1px solid var(--yui-border); }
+.trace-running { color: #e0af68; border-color: #e0af68; }
+.trace-error { color: #e06c75; border-color: #e06c75; }
+.trace-done { color: #9ece6a; border-color: #9ece6a; }
+.trace-cancelled { color: var(--yui-text-secondary); }
+.trace-steps { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: var(--yui-text-sm); }
+.trace-steps li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.trace-steps li[data-error] .trace-label { color: #e06c75; }
+.trace-steps code { color: var(--yui-text-secondary); font-size: 11px; }
+.trace-label { flex: 1; min-width: 220px; word-break: break-word; }
+
 /* P1-CRED-2/3/4: panel saldo & batas */
 .budget-panel { display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1px solid var(--yui-border); border-radius: 8px; margin-bottom: 4px; }
 .budget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }

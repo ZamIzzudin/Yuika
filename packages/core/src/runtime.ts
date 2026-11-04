@@ -29,6 +29,7 @@ import { McpAuditStore } from "./mcp/audit.js";
 import { UsageLedger } from "./usage/ledger.js";
 import { loadPriceBook, saveModelPrice } from "./model-prices.js";
 import { AdmissionControl, usageMatrixWithCost } from "./budget.js";
+import { buildTrace } from "./session/trace.js";
 import type { ModelPrice } from "@yui/contracts";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
@@ -702,6 +703,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return admission.status();
     },
     getUsageMatrix: (filter: UsageFilter = {}) => usageMatrixWithCost(usageLedger, modelPricesFile, filter),
+    /** P1-INF-4: trace per turn — event store + ledger digabung jadi timeline. */
+    getTrace: (sessionId: string) => buildTrace(store, usageLedger, sessionId),
     getModelRoutes: () => ({
       defaultModel: model,
       defaultFallback: process.env.YUI_MODEL_FALLBACK ?? "",

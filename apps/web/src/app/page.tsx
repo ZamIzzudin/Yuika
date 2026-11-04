@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaGrid, PersonaFace } from "@/components/PersonaPicker";
 import { DungeonView } from "@/components/DungeonView";
+import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, STATE_LABEL, type ChatItem } from "@/components/ChatView";
 import { OrinPortrait } from "@/components/OrinPortrait";
@@ -50,6 +51,7 @@ export default function Home() {
   const [personas, setPersonas] = useState<PersonaInfo[]>([]);
   /** P1-DUN-4: halaman Dungeon (arena latihan persona) — view terpisah di main. */
   const [dungeonOpen, setDungeonOpen] = useState(false);
+  const [traceOpen, setTraceOpen] = useState(false);
   const [active, setActive] = useState<PersonaInfo | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [items, setItems] = useState<ChatItem[]>([]);
@@ -503,9 +505,20 @@ export default function Home() {
           <button
             className="side-settings"
             data-active={dungeonOpen ? "" : undefined}
-            onClick={() => setDungeonOpen((v) => !v)}
+            onClick={() => {
+              setDungeonOpen((v) => !v);
+              if (dungeonOpen) setTraceOpen(false);
+            }}
           >
             Dungeon
+          </button>
+          <button
+            className="side-settings"
+            data-active={traceOpen ? "" : undefined}
+            disabled={!sessionId}
+            onClick={() => setTraceOpen((v) => !v)}
+          >
+            Trace
           </button>
           <button
             className="side-settings"
@@ -517,7 +530,9 @@ export default function Home() {
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <main className="yui-main">
-        {dungeonOpen ? (
+        {traceOpen && sessionId ? (
+          <TracePanel sessionId={sessionId} onBack={() => setTraceOpen(false)} />
+        ) : dungeonOpen ? (
           <DungeonView
             personas={personas}
             onBack={() => setDungeonOpen(false)}
