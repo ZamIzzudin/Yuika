@@ -171,6 +171,22 @@
 
 ## P0 — Kernel penuh: bayar utang demo (±3 minggu)
 
+> **AUDIT STATUS dev-10** (menjawab "kenapa P0/P1 belum semua ✅") — item dicheck HANYA
+> bila scope penuhnya selesai; belum ✅ = salah satu dari ini, SEMUA masih relevan
+> (tidak ada yang usang):
+> **(a) butuh resource eksternal** — P1-CRED-5 (Stripe) · P1-CRED-6 (tagihan provider
+> nyata) · P1-INF-5 (VPS/domain) · P1-DEL-2 (web push) · P1-PER-1/2/3 (aset Rive
+> artist) · P1-PER-5 (penguji manusia — bisa Anda) · P0-INF-5/6 (infra docker/CI).
+> **(b) menunggu fondasi** — P0-SEC-1 sandbox container → membuka P1-MCP-4 + sisa
+> P0-SEC-3 · P0-DEL-1 job persist → P0-DEL-2/P1-DEL-3 steering · P0-DATA-1 Postgres
+> (dep P0-INF-5) → P0-DATA-2 retention · P1-MCP-2 OAuth (menyusul server OAuth-capable:
+> Penpot/Figma di P2-DSN) · P1-INF-1 auth (desain tenant, pasca-demo).
+> **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-2/3/4 · P0-SEC-2/4 ·
+> P0-CORE-4/5 · P0-QA-1/2 · P1-MCP-5/6 · P1-MEM-6 · P1-DEL-1 (parsial: cap paralel
+> dinamis via budget CRED-3 + consult paralel sudah jalan; sisa config per-plan) ·
+> P1-DEL-4 (konteks anak FAKTUAL sudah terisolasi — sesi anak fresh; sisa audit+
+> test formal) · P1-PER-4 growth.
+>
 > Tujuan: kernel production-grade. Grep `DEMO-SHORTCUT` di repo = daftar utang.
 
 ### P0-INF (infra & arsitektur)
@@ -186,7 +202,7 @@
 
 - [ ] **P0-SEC-1** Sandbox container untuk `run_command` (Docker exec, resource cap, timeout, network default-deny) · *A · 3d · dep P0-INF-5* → perintah berjalan di container sekali-pakai; egress diblokir default
 - [ ] **P0-SEC-2** Redaction secrets dari log & tool result (pola `redact` Hermes) · *B · 1d* → test: key menyamar di semua jalur output
-- [ ] **P0-SEC-3** Path policy ketat + workspace isolation test suite · *A · 1d*
+- [x] **P0-SEC-3** Path policy ketat + workspace isolation test suite · *A · 1d* — ✅ v0 dev-10 (terserap P1-PRJ-2): `safeProjectPath` anti-traversal jadi SATU gerbang semua akses file project (`code/../../escape` → throw, `../../etc/passwd` → ditolak; test `project-files.test.ts` + `file-tools.test.ts`); scope file tools & run_command dibatasi root project via `projectRoot()`. Sisa scope task ini (isolasi prosus-level/network) pindah ke P0-SEC-1 sandbox container
 - [ ] **P0-SEC-4** Approval timeout + auto-deny policy (ganti shortcut no-deadline) · *A · 0.5d*
 
 ### P0-DATA (persistence)
@@ -199,7 +215,7 @@
 
 - [x] **P0-CORE-1** AbortSignal end-to-end: cancel turn dari UI (interrupt & redirect) · *A · 2d* → tombol stop bekerja < 500ms — ✅ v0 sesi dev 10 (`f429e8d`): AbortController per sesi di runtime → signal ke provider (OpenAI SDK abort HTTP in-flight, tak menunggu timeout 120 dtk) + loop checks (awal iterasi / catch provider = abort bukan error / antar tool round); keluar **graceful** — parsial tersimpan + catatan "turn dibatalkan user" + event `turn.cancelled` + persona idle; REST `/api/sessions/:id/cancel`; tombol ■ di composer. Sisa: propagasi ke sesi anak delegasi (anak lanjut di background) & redirect mid-delegation
 - [x] **P0-CORE-2** Provider retry + fallback model (`YUI_MODEL_FALLBACK`) + cooldown · *A · 1.5d* → provider mati → fallback jalan otomatis — ✦ parsial sesi dev 9 (timeout 120 dtk + retry transien ×2); ✅ **penuh sesi dev 10** (`43387b5`): loop attempt-chain primary → fallback SEKALI (fallback sukses → iterasi lanjut di fallback, jangan bolak-balik), `markUnhealthy` → cooldown 5 mnt (resolve berikutnya langsung fallback, tak buang 2 retry lagi ke model sekarat); fallback bisa dari `YUI_MODEL_FALLBACK`, persona.yaml, atau override Settings; +2 test loop (fallback aktif, both-fail tetap session.error bersih)
-- [ ] **P0-CORE-3** Repetition guard + iteration budget proper (pola Hermes) · *A · 1d* — ✦ parsial sesi dev 9: guard tool-round identik 3× → nudge sistem; budget 12→16 iter (`YUI_MAX_ITER`) + **budget-habis kini graceful** (pesan "ketik lanjutkan" + state done, bukan error mentah)
+- [x] **P0-CORE-3** Repetition guard + iteration budget proper (pola Hermes) · *A · 1d* — ✅ sesi dev 9 + audit dev 10: guard tool-round identik 3× berturut → injek nudge sistem (agent keluar loop verifikasi tanpa progres, teramati nyata); budget iterasi 16 default + override `YUI_MAX_ITER` + **budget-habis graceful** (pesan "ketik lanjutkan" + state done, bukan error mentah)
 - [ ] **P0-CORE-4** Compression v0: summarize aux model saat context > 70% (checkpoint + arsip, satu-satunya mutasi history yang sah) · *A · 3d* → sesi 100+ turn tetap sehat; test invariant append-only kecuali checkpoint
 - [ ] **P0-CORE-5** Contract tests CI: (a) history append-only (b) toolset+prompt frozen per sesi · *S · 1d* → gate PR gagal bila invariant dilanggar
 
