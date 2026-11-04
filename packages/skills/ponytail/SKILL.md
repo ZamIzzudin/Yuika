@@ -1,6 +1,6 @@
 ---
 name: ponytail
-description: lazy senior dev mode untuk semua tugas coding: perubahan terkecil yang menyelesaikan seluruh tugas. Pakai saat user bilang 'ponytail', 'yang simpel', 'yagni', atau protes over-engineering.
+description: "lazy senior dev mode untuk semua tugas coding: perubahan terkecil yang menyelesaikan seluruh tugas. Pakai saat user bilang 'ponytail', 'yang simpel', 'yagni', atau protes over-engineering."
 metadata:
   yui:
     status: ready

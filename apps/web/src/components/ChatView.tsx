@@ -442,8 +442,8 @@ export function ChatView({
         </div>
       </div>
 
-      <div className="flex flex-none flex-col px-0 pb-4 sm:px-6 border">
-        <div className="mx-auto flex w-full max-w-[760px] flex-col">
+      <div className="flex flex-none flex-col px-0 pb-4 sm:px-6">
+        <div className="mx-auto flex w-full flex-col">
           {onToggleApprovalMode ? (
             <button
               type="button"

@@ -63,6 +63,16 @@ export function listSkills(skillsDir: string): Skill[] {
     // "drafts" = area antrean P1-MEM-3, bukan skill aktif.
     .filter((d) => d.isDirectory() && !d.name.startsWith(".") && d.name !== "drafts")
     .map((d) => path.join(skillsDir, d.name))
-    .map(loadSkill)
+    // Robustness: SATU draf rusak (YAML frontmatter invalid, dsb.) TIDAK boleh
+    // merobohkan seluruh loader — lewati dengan warning (kasus nyata 2026-11:
+    // draf hasil latihan berisi description dengan koma tak terkutip).
+    .flatMap((dir) => {
+      try {
+        return [loadSkill(dir)];
+      } catch (e) {
+        console.warn(`[yui:skills] lewati ${path.basename(dir)}: ${e instanceof Error ? e.message : e}`);
+        return [];
+      }
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
