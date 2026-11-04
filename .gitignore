@@ -8,3 +8,7 @@ dist/
 workspace/
 next-env.d.ts
 demo.db*
+
+# Artefak runtime lokal (data user/jam kerja — bukan kode)
+model-overrides.json
+packages/skills/*/.usage.json
