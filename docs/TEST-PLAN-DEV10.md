@@ -368,3 +368,17 @@ Prioritas kalau waktu mepet: **M1.1 → M2.1 → M3.1–M3.3 → M3.5–M3.7 →
 4. Bandingkan token per turn di Trace vs angka di Settings → Metering.
   - ✅ Konsisten (sumber sama: ledger).
 5. Tombol "← Kembali ke chat" menutup panel; chat state tidak hilang.
+
+### M8.3 (P2) — Model aux & provider settings (P1-INF-3)
+1. Settings → Provider & Model → field baru **"Model aux"** (di bawah fallback).
+  - ✅ Isi model murah (mis. `glm/glm-5-flash`) → Simpan → buka Settings lagi /
+     refresh: tetap terisi (.env YUI_AUX_MODEL).
+2. Kirim satu turn yang memakai tool (mis. minta tulis file) — learn nudge jalan
+   pasca-turn.
+  - ✅ Terminal `[yui:trace] nudge …` tetap muncul; Settings → Metering: muncul
+     baris model aux (panggilan nudge kini ter-meter — dulu tak tercatat).
+3. Kosongkan Model aux → Simpan → refresh.
+  - ✅ Field kosong; .env baris YUI_AUX_MODEL hilang; nudge berikutnya pakai
+     model utama (Metering: tidak ada lagi baris model aux).
+4. (Bonus regression) kosongkan juga Model fallback → Simpan → restart server.
+  - ✅ Fallback tetap kosong (dulu: nilai lama "hidup lagi" dari .env).

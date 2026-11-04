@@ -237,12 +237,14 @@ export class AgentLoop {
         void runLearnNudge({
           provider: this.deps.provider,
           model,
+          personaId: session.personaId,
           personaName,
           transcript: messages,
           sessionId,
           turnId,
           workspacePath: this.deps.workspacePath,
           emit,
+          recordUsage: this.deps.recordUsage, // P1-INF-3: aux ter-meter
         })
           .then((r) =>
             trace(

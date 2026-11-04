@@ -689,6 +689,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       baseUrl: providerBaseUrl,
       model,
       fallbackModel: process.env.YUI_MODEL_FALLBACK ?? "",
+      auxModel: process.env.YUI_AUX_MODEL ?? process.env.YUI_LEARN_MODEL ?? "",
       hasApiKey: Boolean(process.env.YUI_API_KEY),
       keyPreview: process.env.YUI_API_KEY ? `…${process.env.YUI_API_KEY.slice(-4)}` : "",
     }),
@@ -720,9 +721,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     /** Update provider/model: swap in-memory (sesi baru langsung pakai; loopCache
      *  dikosongkan) + persist ke .env agar bertahan restart. apiKey kosong = keep. */
-    updateProviderSettings: (input: { kind?: string; baseUrl?: string; apiKey?: string; model?: string; fallbackModel?: string | null }) => {
+    updateProviderSettings: (input: { kind?: string; baseUrl?: string; apiKey?: string; model?: string; fallbackModel?: string | null; auxModel?: string | null }) => {
       const envFile = path.join(resolveRepoRoot(), ".env");
-      const toWrite: Record<string, string> = {};
+      const toWrite: Record<string, string | null> = {};
       if (input.kind && (input.kind === "openai-compat" || input.kind === "anthropic" || input.kind === "gemini") && input.kind !== providerKind) {
         providerKind = input.kind;
         provider = makeProvider(providerBaseUrl, process.env.YUI_API_KEY ?? cfg.provider.apiKey);
@@ -745,12 +746,35 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         toWrite.YUI_MODEL = model;
         process.env.YUI_MODEL = model;
       }
+      if (input.auxModel !== undefined) {
+        if (input.auxModel?.trim()) {
+          toWrite.YUI_AUX_MODEL = input.auxModel.trim();
+          process.env.YUI_AUX_MODEL = input.auxModel.trim();
+        } else {
+          delete process.env.YUI_AUX_MODEL;
+          delete process.env.YUI_LEARN_MODEL; // alias lama ikut bersih
+        }
+      }
       if (input.fallbackModel !== undefined) {
         if (input.fallbackModel?.trim()) {
           toWrite.YUI_MODEL_FALLBACK = input.fallbackModel.trim();
           process.env.YUI_MODEL_FALLBACK = input.fallbackModel.trim();
         } else {
+          toWrite.YUI_MODEL_FALLBACK = null; // hapus dari .env (dulu: nilai lama hidup lagi setelah restart)
           delete process.env.YUI_MODEL_FALLBACK;
+        }
+      }
+      if (input.auxModel !== undefined) {
+        if (input.auxModel?.trim()) {
+          toWrite.YUI_AUX_MODEL = input.auxModel.trim();
+          toWrite.YUI_LEARN_MODEL = null; // alias lama dibersihkan
+          process.env.YUI_AUX_MODEL = input.auxModel.trim();
+          delete process.env.YUI_LEARN_MODEL;
+        } else {
+          toWrite.YUI_AUX_MODEL = null;
+          toWrite.YUI_LEARN_MODEL = null;
+          delete process.env.YUI_AUX_MODEL;
+          delete process.env.YUI_LEARN_MODEL;
         }
       }
       if (Object.keys(toWrite).length > 0) {

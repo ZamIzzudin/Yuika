@@ -53,6 +53,7 @@ describe("learn nudge (P1-MEM-2)", () => {
     const res = await runLearnNudge({
       provider: fakeProvider('{"note":"user ingin jawaban ringkas bahasa Indonesia","scope":"user"}'),
       model: "m",
+      personaId: "yui-conductor",
       personaName: "Yui Conductor",
       transcript,
       sessionId: "s_1",
@@ -69,6 +70,7 @@ describe("learn nudge (P1-MEM-2)", () => {
     const res = await runLearnNudge({
       provider: fakeProvider('{"note":null,"scope":"user"}'),
       model: "m",
+      personaId: "yui-conductor",
       personaName: "Yui",
       transcript,
       sessionId: "s_1",
@@ -85,6 +87,7 @@ describe("learn nudge (P1-MEM-2)", () => {
     const res = await runLearnNudge({
       provider: fakeProvider("Maaf, saya tidak yakin harus mencatat apa."),
       model: "m",
+      personaId: "yui-conductor",
       personaName: "Yui",
       transcript,
       sessionId: "s_1",
@@ -101,6 +104,7 @@ describe("learn nudge (P1-MEM-2)", () => {
     const res = await runLearnNudge({
       provider: { id: "f", chatStream: async () => { called++; return { type: "done" } as never; } },
       model: "m",
+      personaId: "yui-conductor",
       personaName: "Yui",
       transcript,
       sessionId: "s_1",
@@ -116,6 +120,7 @@ describe("learn nudge (P1-MEM-2)", () => {
     const res = await runLearnNudge({
       provider: fakeProvider('```json\n{"note":"stack proyek: Next.js + SQLite","scope":"project"}\n```'),
       model: "m",
+      personaId: "yui-conductor",
       personaName: "Yui Conductor",
       transcript,
       sessionId: "s_1",
@@ -125,6 +130,40 @@ describe("learn nudge (P1-MEM-2)", () => {
     });
     expect(res.scope).toBe("project");
     expect(readMemory(ws, "project", path.join(ws, "projects/p_a"), "A")).toContain("Next.js");
+  });
+
+  it("P1-INF-3: model aux dipakai bila YUI_AUX_MODEL diset (preferensi aux > alias lama > model utama)", async () => {
+    process.env.YUI_AUX_MODEL = "m-aux-murah";
+    const seen: string[] = [];
+    const p: ProviderAdapter = {
+      id: "fake",
+      chatStream: async (req, onChunk) => {
+        seen.push(req.model);
+        onChunk({ type: "text_delta", delta: '{"note":null,"scope":"user"}' });
+        return { type: "done", text: '{"note":null,"scope":"user"}', finishReason: "stop", toolCalls: [] } as never;
+      },
+    };
+    const res = await runLearnNudge({ provider: p, model: "m", personaId: "yui-conductor", personaName: "Yui Conductor", transcript, sessionId: "s_1", turnId: "t1", workspacePath: ws, emit: emit as never });
+    expect(seen).toEqual(["m-aux-murah"]);
+    expect(res.skipped).toContain("none");
+    delete process.env.YUI_AUX_MODEL;
+  });
+
+  it("P1-INF-3/CRED: panggilan aux ter-meter lewat recordUsage (token jujur di ledger)", async () => {
+    const usages: { model: string; prompt: number; output: number }[] = [];
+    const p: ProviderAdapter = {
+      id: "fake",
+      chatStream: async (_req, onChunk) => {
+        onChunk({ type: "text_delta", delta: '{"note":null,"scope":"user"}' });
+        return { type: "done", text: '{"note":null,"scope":"user"}', finishReason: "stop", toolCalls: [], usage: { inputTokens: 42, outputTokens: 7 } } as never;
+      },
+    };
+    await runLearnNudge({
+      provider: p, model: "m", personaId: "yui-conductor", personaName: "Yui Conductor", transcript,
+      sessionId: "s_1", turnId: "t1", workspacePath: ws, emit: emit as never,
+      recordUsage: (u) => usages.push({ model: u.model, prompt: u.promptTokens, output: u.outputTokens }),
+    });
+    expect(usages).toEqual([{ model: "m", prompt: 42, output: 7 }]);
   });
 
   it("compactTranscript memotong & menyertakan nama tool assistant", () => {

@@ -24,6 +24,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const [model, setModel] = useState("");
   const [fallback, setFallback] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [aux, setAux] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -37,6 +38,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         setModel(c.model);
         setFallback(c.fallbackModel ?? "");
         setKind(c.kind ?? "openai-compat");
+        setAux(c.auxModel ?? "");
       }
     } catch {
       /* coba lagi saat buka */ 
@@ -65,7 +67,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           ...(baseUrl.trim() && baseUrl !== cfg?.baseUrl ? { baseUrl: baseUrl.trim() } : {}),
           ...(model.trim() && model !== cfg?.model ? { model: model.trim() } : {}),
           ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
-          ...(fallback.trim() ? { fallbackModel: fallback.trim() } : {}),
+          ...(fallback.trim() ? { fallbackModel: fallback.trim() } : cfg?.fallbackModel && !fallback.trim() ? { fallbackModel: null } : {}),
+          ...(aux !== (cfg?.auxModel ?? "") ? { auxModel: aux.trim() || null } : {}),
         }),
       });
       if (!res.ok) {
@@ -82,6 +85,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   const dirty = Boolean(
     kind !== (cfg?.kind ?? "openai-compat") ||
+    aux !== (cfg?.auxModel ?? "") ||
     (baseUrl.trim() && baseUrl !== cfg?.baseUrl) ||
       (model.trim() && model !== cfg?.model) ||
       apiKey.trim() ||
@@ -142,6 +146,10 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 <label className="settings-field">
                   <span>Model fallback (opsional — dipakai otomatis bila model utama gagal, P0-CORE-2)</span>
                   <input value={fallback} onChange={(e) => setFallback(e.target.value)} placeholder="glm/glm-5" spellCheck={false} />
+                </label>
+                <label className="settings-field">
+                  <span>Model aux (opsional — tugas ringan seperti pembelajaran memori; kosong = model utama, P1-INF-3)</span>
+                  <input value={aux} onChange={(e) => setAux(e.target.value)} placeholder="glm/glm-5-flash" spellCheck={false} />
                 </label>
                 <ModelRoutesEditor defaultModel={cfg.model} />
                 <div className="settings-actions">

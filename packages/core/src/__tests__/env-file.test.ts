@@ -34,4 +34,10 @@ describe("updateEnvFile (Settings)", () => {
     expect(out).toContain("K=c");
     expect(out).toContain("X=1");
   });
+
+  it("value NULL → key dihapus dari file (Settings: field dikosongkan tidak hidup lagi setelah restart)", () => {
+    const file = tmpEnv("A=1\nYUI_MODEL_FALLBACK=glm/glm-5\nB=2\n");
+    const out = updateEnvFile(file, { YUI_MODEL_FALLBACK: null, C: "3" });
+    expect(out).toBe("A=1\nB=2\nC=3");
+  });
 });

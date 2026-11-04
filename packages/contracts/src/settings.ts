@@ -11,6 +11,8 @@ export const ProviderSettings = z.object({
   baseUrl: z.string(),
   model: z.string(),
   fallbackModel: z.string().default(""),
+  /** P1-INF-3: model aux (tugas ringan — learn nudge); kosong = model utama. */
+  auxModel: z.string().default(""),
   hasApiKey: z.boolean(),
   keyPreview: z.string(),
 });
@@ -24,6 +26,8 @@ export const UpdateProviderSettingsRequest = z.object({
   model: z.string().min(1).optional(),
   /** String kosong = hapus fallback. */
   fallbackModel: z.string().nullable().optional(),
+  /** P1-INF-3: model aux — null/kosong = pakai model utama. */
+  auxModel: z.string().nullable().optional(),
 });
 export type UpdateProviderSettingsRequest = z.infer<typeof UpdateProviderSettingsRequest>;
 

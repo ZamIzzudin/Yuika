@@ -2,14 +2,17 @@
 // SATU catatan bila turn mengungkap preferensi user / pelajaran project yang
 // reusable, atau "none". Hasil masuk lewat tool memory_append (dedupe, kurasi
 // sama seperti agent). Non-blocking: fire-and-forget dari finalizer loop.
-// Matikan dengan YUI_LEARN=0; model aux via YUI_LEARN_MODEL (default: model utama).
+// Matikan dengan YUI_LEARN=0; model aux via YUI_AUX_MODEL (alias lama
+// YUI_LEARN_MODEL; default: model utama) — P1-INF-3: tugas ringan → model murah.
 import type { ProviderAdapter, InternalMessage } from "../provider/adapter.js";
 import type { Emit } from "../session/emit.js";
+import type { UsageEvent } from "@yui/contracts";
 import { registry } from "../registry.js";
 
 export interface LearnNudgeArgs {
   provider: ProviderAdapter;
   model: string;
+  personaId: string;
   personaName: string;
   /** Transkrip akhir turn (sudah dipotong pemanggil). */
   transcript: InternalMessage[];
@@ -17,6 +20,8 @@ export interface LearnNudgeArgs {
   turnId: string;
   workspacePath: string;
   emit: Emit;
+  /** P1-INF-3/CRED: panggilan aux ikut ter-meter (jujur — tanpa ini token nudge tak tercatat). */
+  recordUsage?: (u: UsageEvent) => void;
 }
 
 export interface LearnNudgeResult {
@@ -30,13 +35,13 @@ Tugasmu HANYA memutuskan: apakah turn ini mengungkap (a) preferensi user yang DU
 Aturan tinggi: kalau ragu → none. Jangan mencatat: tugas sesaat, konten percakapan, hal yang jelas sekali-pakai, atau hal yang sudah umum.
 Balas HANYA JSON satu baris: {"note": string|null, "scope": "user"|"project"} — note maksimal 200 karakter, bahasa user.`;
 
-/** Ekstrak teks final dari stream (abaikan reasoning_content). */
-async function completeText(provider: ProviderAdapter, model: string, messages: InternalMessage[]): Promise<string> {
+/** Ekstrak hasil final dari stream (kembalikan done — usage ikut ter-meter aux). */
+async function completeText(provider: ProviderAdapter, model: string, messages: InternalMessage[]) {
   let text = "";
   const done = await provider.chatStream({ model, messages, tools: [] }, (c) => {
     if (c.type === "text_delta") text += c.delta;
   });
-  return done.text || text;
+  return { ...done, text: done.text || text };
 }
 
 /** Parse JSON toleran (code fence / prefix teks). */
@@ -74,14 +79,25 @@ export function compactTranscript(messages: InternalMessage[], maxChars = 700): 
  */
 export async function runLearnNudge(args: LearnNudgeArgs): Promise<LearnNudgeResult> {
   if (process.env.YUI_LEARN === "0") return { skipped: "disabled (YUI_LEARN=0)" };
-  const model = process.env.YUI_LEARN_MODEL || args.model;
+  const model = process.env.YUI_AUX_MODEL || process.env.YUI_LEARN_MODEL || args.model;
 
   let raw = "";
   try {
-    raw = await completeText(args.provider, model, [
+    const tAux = Date.now();
+    const done = await completeText(args.provider, model, [
       { role: "system", content: SYSTEM },
       { role: "user", content: `Persona: ${args.personaName}\n\nTranskrip:\n${compactTranscript(args.transcript)}` },
     ]);
+    raw = done.text;
+    // P1-INF-3/CRED: aux call ter-meter — token/latensi/model aux jujur di ledger
+    // (provider tak melapor usage = tak tercatat — kebijakan sama seperti loop utama).
+    if (args.recordUsage && done.usage) {
+      args.recordUsage({
+        sessionId: args.sessionId, projectId: null, personaId: args.personaId, model,
+        promptTokens: done.usage.inputTokens ?? 0, outputTokens: done.usage.outputTokens ?? 0,
+        latencyMs: Date.now() - tAux, at: Date.now(),
+      });
+    }
   } catch (e) {
     return { skipped: `provider gagal: ${e instanceof Error ? e.message : String(e)}` };
   }
