@@ -140,7 +140,7 @@ export function ChatView({
   return (
     <>
       <div
-        className="min-h-0 flex-1 scroll-smooth overflow-y-auto px-4 py-4 sm:px-6 sm:pb-6"
+        className="min-h-0 flex-1 scroll-smooth overflow-y-auto px-4 my-4 sm:px-6 sm:my-6"
         ref={scrollRef}
         onScroll={() => {
           const el = scrollRef.current;
@@ -149,7 +149,7 @@ export function ChatView({
               el.scrollHeight - el.scrollTop - el.clientHeight < 160;
         }}
       >
-        <div className="mx-auto flex w-full max-w-[760px] flex-col gap-3">
+        <div className="mx-auto flex w-full flex-col gap-3">
           {items.length === 0 && emptySlot ? (
             <div className="flex min-h-full flex-col items-center justify-center gap-3 px-6 py-8 text-center">
               {emptySlot}
@@ -447,7 +447,7 @@ export function ChatView({
           {onToggleApprovalMode ? (
             <button
               type="button"
-              className={`mb-2 self-start rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] ${
+              className={`mb-2 flex items-center gap-2 self-start rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] ${
                 approvalMode === "auto"
                   ? "border-accent bg-accent/12 text-accent"
                   : "border-line-strong text-muted hover:text-secondary"
@@ -461,9 +461,7 @@ export function ChatView({
                 aria-hidden
                 className={approvalMode === "auto" ? "text-accent" : ""}
               />
-              {approvalMode === "auto"
-                ? "Auto-approve aktif"
-                : "Auto-approve mati"}
+              {approvalMode === "auto" ? "Hardcore Mode" : "Safety Mode"}
             </button>
           ) : null}
           <form

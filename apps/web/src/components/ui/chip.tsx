@@ -14,9 +14,19 @@ const TONES: Record<ChipTone, string> = {
   muted: "bg-hover text-muted border-line",
 };
 
-export function Chip({ tone = "muted", className = "", children }: { tone?: ChipTone; className?: string; children: ReactNode }) {
+export function Chip({
+  tone = "muted",
+  className = "",
+  children,
+}: {
+  tone?: ChipTone;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-pill border px-2 py-px text-caption leading-4 ${TONES[tone]} ${className}`}>
+    <span
+      className={`inline-flex items-center gap-2 rounded-pill border px-3 py-2 text-caption leading-4 ${TONES[tone]} ${className}`}
+    >
       {children}
     </span>
   );
@@ -45,7 +55,9 @@ export function ChipToggle({
       aria-pressed={active}
       onClick={onClick}
       className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-        active ? "border-accent bg-accent-soft text-accent-text" : `${TONES[tone]} hover:border-line-strong hover:text-primary`
+        active
+          ? "border-accent bg-accent-soft text-accent-text"
+          : `${TONES[tone]} hover:border-line-strong hover:text-primary`
       } ${className}`}
     >
       {children}
@@ -54,10 +66,31 @@ export function ChipToggle({
 }
 
 /** Titik status kecil (di judul tab, baris daftar). */
-export function Dot({ tone = "muted", pulse, className = "" }: { tone?: ChipTone; pulse?: boolean; className?: string }) {
+export function Dot({
+  tone = "muted",
+  pulse,
+  className = "",
+}: {
+  tone?: ChipTone;
+  pulse?: boolean;
+  className?: string;
+}) {
   const color =
-    tone === "ok" ? "bg-success" : tone === "warn" ? "bg-warn" : tone === "danger" ? "bg-danger" : tone === "accent" ? "bg-accent" : "bg-muted";
-  return <span aria-hidden className={`inline-block size-1.5 shrink-0 rounded-full ${color} ${pulse ? "animate-pulse" : ""} ${className}`} />;
+    tone === "ok"
+      ? "bg-success"
+      : tone === "warn"
+        ? "bg-warn"
+        : tone === "danger"
+          ? "bg-danger"
+          : tone === "accent"
+            ? "bg-accent"
+            : "bg-muted";
+  return (
+    <span
+      aria-hidden
+      className={`inline-block size-1.5 shrink-0 rounded-full ${color} ${pulse ? "animate-pulse" : ""} ${className}`}
+    />
+  );
 }
 
 /* ── State persona (idle/working/done/…) — dipakai header chat & kartu delegasi ── */
@@ -81,7 +114,13 @@ const STATE_TONE: Record<string, ChipTone> = {
 };
 
 /** Chip state persona dengan titik berdenyut saat bekerja. */
-export function StateChip({ state, className = "" }: { state: string; className?: string }) {
+export function StateChip({
+  state,
+  className = "",
+}: {
+  state: string;
+  className?: string;
+}) {
   const tone = STATE_TONE[state] ?? "muted";
   const pulse = state === "thinking" || state === "working";
   return (

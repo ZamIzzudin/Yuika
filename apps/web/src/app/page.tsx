@@ -760,7 +760,7 @@ export default function Home() {
                     <>
                       <header className="flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
                         <details className="group relative">
-                          <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill border border-transparent px-2 py-1 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
+                          <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill pl-3 pr-6 py-3 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
                             <PersonaPortrait
                               name={active.name}
                               state={personaState}
