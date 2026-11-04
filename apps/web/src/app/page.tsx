@@ -5,7 +5,7 @@
  * SEMUA tipe dari @yui/contracts (dilarang tipe tangan — PLAN §6.3).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PersonaGrid, PersonaFace } from "@/components/PersonaPicker";
+import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
 import { ArrowLeft, Sword } from "@phosphor-icons/react";
 import { DungeonView } from "@/components/DungeonView";
 import { TracePanel } from "@/components/TracePanel";
@@ -654,7 +654,7 @@ export default function Home() {
                         ))}
                       </div>
                     ) : (
-                      <PersonaGrid
+                      <PersonaOrbit
                         personas={personas}
                         onPick={(p) => void pick(p)}
                       />
