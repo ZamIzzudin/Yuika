@@ -801,7 +801,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // Mapping manual skill → persona (menu Dungeon): payload UI + toggle persist.
     getSkillBindings: () => {
       const bindings = skillBindingsFile();
-      const skills = listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description, status: s.status }));
+      // Skill siap pakai + DRAF (feedback user: hasil latihan mandiri harus bisa
+      // diterima & dipasang langsung dari sini — jalur terima di tab Skill hanya
+      // ada saat project aktif, jadikan mapping self-sufficient).
+      const skills = [
+        ...listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description, status: s.status, slug: null as string | null })),
+        ...listDrafts(paths.skillsDir).map((s) => ({
+          name: s.name,
+          description: s.description,
+          status: s.status,
+          slug: path.basename(s.dir),
+        })),
+      ];
       const personas = listPersonas(paths.personasDir).map((p) => {
         const bundled = p.manifest.skills.bundled;
         const b = bindings[p.manifest.id];

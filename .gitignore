@@ -16,3 +16,4 @@ packages/skills/*/.usage.json
 .tmp-*.log
 approval-mode.json
 skill-bindings.json
+*.tsbuildinfo

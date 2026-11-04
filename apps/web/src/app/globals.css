@@ -3,7 +3,83 @@
  * Sistem token diturunkan dari OpenBot (D:\projects\openbot, packages/brand/tokens.css):
  * palet netral monokrom, satu aksen hue-210, border super-samar, ukuran teks kecil rapat.
  * Semua nilai UI lewat token --yui-*; komponen tidak menulis warna sendiri.
+ *
+ * ── Tailwind v4 (DS-1) ─────────────────────────────────────────────────
+ * Komponen baru WAJIB pakai utility Tailwind semantik (bg-surface, text-muted,
+ * border-line, rounded-card, …) atau komponen ui/* — bukan CSS kustom.
+ * @theme di bawah meng-alias token --yui-* → utility, jadi nilai visual
+ * identik; CSS kelas lama (bagian bawah file) tetap hidup selama migrasi
+ * file demi file (docs/DESIGN-SYSTEM.md).
  */
+@import "tailwindcss" source(none);
+/* source(none): matikan deteksi sumber otomatis (Windows: glob ke junction
+ * AppData\Local\Application Data → EPERM acak → utility hilang diam-diam).
+ * HANYA @source eksplisit di bawah yang discan = deterministik. */
+@source "../../src/**/*.{ts,tsx,mdx}";
+
+@theme {
+  /* Warna semantik (alias token --yui-*) */
+  --color-canvas: var(--yui-bg-canvas);
+  --color-frame: var(--yui-bg-frame);
+  --color-sidebar: var(--yui-bg-sidebar);
+  --color-surface: var(--yui-bg-surface);
+  --color-raised: var(--yui-bg-surface-raised);
+  --color-control: var(--yui-bg-control);
+  --color-inset: var(--yui-bg-inset);
+  --color-line: var(--yui-border);
+  --color-line-strong: var(--yui-border-strong);
+  --color-hover: var(--yui-hover);
+  --color-primary: var(--yui-text-primary);
+  --color-secondary: var(--yui-text-secondary);
+  --color-muted: var(--yui-text-muted);
+  --color-dim: var(--yui-text-dim);
+  --color-onlight: var(--yui-text-on-light);
+  --color-accent: var(--yui-accent);
+  --color-accent-hover: var(--yui-accent-hover);
+  --color-accent-text: var(--yui-accent-text);
+  --color-accent-soft: var(--yui-accent-soft);
+  --color-success: var(--yui-success);
+  --color-success-soft: var(--yui-success-soft);
+  --color-warn: var(--yui-warning);
+  --color-warn-soft: var(--yui-warning-soft);
+  --color-danger: var(--yui-danger);
+  --color-danger-soft: var(--yui-danger-soft);
+  --color-glass: var(--yui-glass);
+  --color-glass-line: var(--yui-glass-border);
+
+  /* Tipografi semantik (yui: kecil-rapat) + font */
+  --font-sans: var(--yui-font-sans);
+  --font-mono: var(--yui-font-mono);
+  --text-caption: 12px;   /* yui-sm — meta, hint, chip */
+  --text-body: 13px;      /* yui-md — default UI */
+  --text-lead: 14px;      /* yui-lg — teks panel */
+  --text-title: 16px;     /* yui-xl — judul seksi */
+  --text-display: 18px;   /* yui-2xl — judul halaman */
+
+  /* Radius & bayangan */
+  --radius-sm2: 6px;
+  --radius-md2: 8px;
+  --radius-lg2: 12px;
+  --radius-card: 14px;
+  --radius-xl2: 20px;
+  --radius-bubble: 22px;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 8px 28px rgb(0 0 0 / 0.45);
+
+  /* Gerak */
+  --ease-out-yui: var(--yui-ease-out);
+  --ease-inout-yui: var(--yui-ease-in-out);
+}
+
+/* Utility kustom DS (v4 @utility — bisa dipakai bersama utility lain):
+ * .glass-panel = permukaan modal/dropdown (token --yui-glass) */
+@utility glass-panel {
+  background: var(--yui-glass);
+  backdrop-filter: var(--yui-glass-blur);
+  -webkit-backdrop-filter: var(--yui-glass-blur);
+  border: 1px solid var(--yui-glass-border);
+}
+
 :root {
   color-scheme: dark;
 
@@ -1220,23 +1296,7 @@ details.reasoning pre {
 .tree-dur.running { color: var(--yui-warn); }
 
 /* Dungeon (P1-DUN-1..2): arena latihan persona di tab Skill. */
-.dungeon-arena { margin-top: var(--yui-space-4); display: flex; flex-direction: column; gap: 10px; }
-.dungeon-mission {
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-md);
-  background: var(--yui-bg-inset); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;
-}
-.dungeon-head { display: flex; align-items: center; gap: 8px; }
-.dungeon-head b { flex: 1; }
-.dungeon-persona {
-  font-size: var(--yui-text-sm); color: var(--yui-text-dim);
-  border: 1px solid var(--yui-border); border-radius: 999px; padding: 1px 8px;
-}
-.dungeon-goal { color: var(--yui-text-dim); }
-.dungeon-run { color: var(--yui-text-dim); }
-.dungeon-run[data-s="running"] { color: var(--yui-warn); }
-.dungeon-run[data-s="done"] { color: var(--yui-ok); }
-.dungeon-run[data-s="failed"] { color: var(--yui-danger, #e5484d); }
-.skill-status[data-s="tested"] { color: var(--yui-warn); }
+
 .skill-personas { color: var(--yui-text-dim); }
 .skill-eval { color: var(--yui-text-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .skill-eval[data-v="pass"] { color: var(--yui-ok); }
@@ -1253,33 +1313,6 @@ details.reasoning pre {
 .smoke-list small { color: var(--yui-text-dim); }
 
 /* ── Dungeon page (P1-DUN-4): halaman terpisah arena latihan persona ── */
-.dungeon-page { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: var(--yui-space-5); padding: var(--yui-space-6) var(--yui-space-6) var(--yui-space-8); max-width: 860px; width: 100%; margin: 0 auto; }
-.dungeon-hero h1 { margin: var(--yui-space-3) 0 var(--yui-space-2); font-size: var(--yui-text-xl); }
-.dungeon-hero .dim { margin: 0; max-width: 640px; }
-.dungeon-create, .dungeon-list {
-  display: flex; flex-direction: column; gap: 10px;
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card);
-  background: var(--yui-bg-surface); padding: var(--yui-space-4);
-}
-.dungeon-mode { display: flex; gap: 2px; }
-.dungeon-mode button {
-  font: inherit; font-size: var(--yui-text-md); cursor: pointer;
-  padding: 7px 14px; border: 1px solid var(--yui-border); border-radius: 999px;
-  background: var(--yui-bg-inset); color: var(--yui-text-secondary);
-}
-.dungeon-mode button[data-active] { border-color: var(--yui-border-focus); background: var(--yui-bg-surface-raised); color: var(--yui-text-primary); font-weight: 600; }
-.dungeon-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 4px; }
-.dungeon-form label { display: flex; flex-direction: column; gap: 4px; font-size: var(--yui-text-sm); color: var(--yui-text-secondary); }
-.dungeon-full { grid-column: 1 / -1; }
-.dungeon-persona-pick .dungeon-persona-row { display: flex; align-items: center; gap: 8px; }
-.dungeon-persona-pick select { flex: 1; }
-.dungeon-submit { display: flex; justify-content: flex-end; }
-.dungeon-title { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.dungeon-materials { display: flex; flex-wrap: wrap; gap: 6px; }
-.dungeon-materials code { font-size: var(--yui-text-sm); color: var(--yui-text-secondary); border: 1px solid var(--yui-border); border-radius: 999px; padding: 1px 8px; }
-.dungeon-actions { display: flex; gap: 8px; }
-.dungeon-note { max-width: 640px; }
-.side-settings[data-active] { border-color: var(--yui-border-focus); color: var(--yui-text-primary); }
 
 /* ── Metering panel (P1-CRED-1) ── */
 .usage-panel { display: flex; flex-direction: column; gap: 12px; }
@@ -1378,76 +1411,3 @@ details.reasoning pre {
 }
 
 /* Dungeon: tab Misi/Riwayat + daftar riwayat sesi latihan (fix dev-10 user) */
-.dungeon-tabs { display: flex; gap: var(--yui-space-1); margin-top: var(--yui-space-2); }
-.dungeon-tabs button {
-  padding: 4px 12px; border-radius: 999px; border: 1px solid var(--yui-border);
-  background: transparent; color: var(--yui-text-muted); cursor: pointer;
-  font-size: var(--yui-text-sm);
-}
-.dungeon-tabs button[data-active] {
-  border-color: var(--yui-accent); color: var(--yui-accent);
-  background: color-mix(in oklab, var(--yui-accent) 10%, transparent);
-}
-.dungeon-history { display: flex; flex-direction: column; gap: var(--yui-space-2); }
-.dungeon-history-row {
-  display: flex; align-items: center; gap: var(--yui-space-3);
-  padding: var(--yui-space-2) var(--yui-space-3);
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card);
-  background: var(--yui-bg-surface);
-}
-.dungeon-history-row .dh-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.dungeon-history-row .dh-main small { color: var(--yui-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* Dungeon: tombol buka form (form kini modal — fix dev-10 user "UI lebih rapih") */
-.dungeon-create-actions {
-  display: flex; align-items: center; gap: var(--yui-space-3);
-  padding: var(--yui-space-2) var(--yui-space-3);
-  border: 1px dashed var(--yui-border-strong); border-radius: var(--yui-radius-card);
-}
-.dungeon-form-modal {
-  width: min(720px, 94vw); max-height: 88vh;
-  display: flex; flex-direction: column;
-  background: var(--yui-glass); backdrop-filter: var(--yui-glass-blur);
-  -webkit-backdrop-filter: var(--yui-glass-blur);
-  border: 1px solid var(--yui-glass-border); border-radius: var(--yui-radius-xl);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-  overflow: hidden;
-}
-.dungeon-form-body { overflow-y: auto; padding: var(--yui-space-3) var(--yui-space-4); }
-.dungeon-form-body .dungeon-create { border: none; padding: 0; }
-
-/* Dungeon: tab Mapping Skill (attach/detach manual skill → persona) */
-.skill-mapping { display: flex; flex-direction: column; gap: var(--yui-space-3); }
-.sm-personas { display: flex; flex-wrap: wrap; gap: var(--yui-space-2); }
-.sm-personas button {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 12px 5px 6px; border-radius: 999px;
-  border: 1px solid var(--yui-border); background: transparent;
-  color: var(--yui-text-secondary); cursor: pointer; font-size: var(--yui-text-sm);
-}
-.sm-personas button[data-active] {
-  border-color: var(--yui-accent); color: var(--yui-accent);
-  background: color-mix(in oklab, var(--yui-accent) 10%, transparent);
-}
-.sm-personas .sm-count {
-  min-width: 18px; text-align: center; border-radius: 999px;
-  background: var(--yui-hover); color: var(--yui-text-muted); font-size: 11px; padding: 1px 5px;
-}
-.sm-skills { display: flex; flex-direction: column; gap: var(--yui-space-2); }
-.sm-skill-row {
-  display: flex; align-items: center; gap: var(--yui-space-3);
-  padding: var(--yui-space-2) var(--yui-space-3);
-  border: 1px solid var(--yui-border); border-radius: var(--yui-radius-card);
-  background: var(--yui-bg-surface);
-}
-.sm-skill-row[data-on] { border-color: color-mix(in oklab, var(--yui-accent) 45%, var(--yui-border)); }
-.sm-skill-row .sm-skill-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.sm-skill-row .sm-skill-main small { color: var(--yui-text-muted); }
-.sm-native {
-  font-size: 10px; font-weight: 500; margin-left: 6px; padding: 1px 6px;
-  border-radius: 999px; background: var(--yui-hover); color: var(--yui-text-muted);
-}
-.sm-skill-row button[data-on] {
-  border-color: var(--yui-accent); color: var(--yui-accent);
-  background: color-mix(in oklab, var(--yui-accent) 10%, transparent);
-}

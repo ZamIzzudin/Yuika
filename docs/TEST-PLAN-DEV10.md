@@ -67,3 +67,13 @@
    (cek: minta ia sebut skills-nya, atau lihat system prompt sesi di DB).
    Sesi LAMA tidak berubah (prompt beku by design) — skill tetap bisa dibaca
    via `skills_list`.
+
+### M20 (P1) — Design System (DS-1) + fix mapping draf skill
+1. **Mapping draf**: menu ⚔ Dungeon → tab Mapping Skill → skill hasil latihan
+   Anda (status **draf**, chip oranye) tampil → tombol **"Terima & pasang"** →
+   setelah itu jadi "Terpasang ✓" (skill aktif + ter-attach persona terpilih).
+2. Layar Dungeon kini memakai komponen global (Button/Card/Modal/Field/TabList/
+   Chip/EmptyState) + Tailwind — visual serupa, lebih rapi; form tetap modal.
+3. **Panduan**: docs/DESIGN-SYSTEM.md — semua fitur baru wajib pakai komponen
+   `ui/*` + utility semantik (bg-surface, text-muted, rounded-card, …).
+   Verifikasi smoke: restart dev server, halaman Dungeon render normal.
