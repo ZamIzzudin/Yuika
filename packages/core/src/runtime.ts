@@ -32,7 +32,8 @@ import { updateEnvFile } from "./env-file.js";
 import { findUvx, installUv } from "./mcp/uv.js";
 import { buildModelRouter, loadModelOverrides, saveModelOverride } from "./model-router.js";
 import { acceptDraft, listDrafts, readUsage, rejectDraft, updateDraft } from "./skills/manager.js";
-import { buildFileTree, readProjectFile } from "./project/files.js";
+import { buildFileTree, readProjectFile, safeProjectPath } from "./project/files.js";
+import { FileRevisionStore } from "./project/revisions.js";
 import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
 import { loadRoster, saveRoster } from "./project/roster.js";
@@ -67,7 +68,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const modelOverridesFile = path.join(path.dirname(paths.dbPath), "model-overrides.json");
 
   // tools core (sekali per proses)
-  registerFileTools();
+  const fileRevisions = new FileRevisionStore(paths.dbPath);
+  registerFileTools(fileRevisions);
   registerWebTools();
   registerSkillTools(paths.skillsDir);
   registerRunCommandTool();
@@ -324,6 +326,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
       return readProjectFile(p.rootPath, relPath);
+    },
+    // P2-STT-3: revisi & diff — snapshot lama direkam otomatis oleh write_file.
+    listFileRevisions: (id: string, relPath: string) => {
+      const p = projectStore.getProject(id);
+      if (!p) throw new Error("project tidak ditemukan");
+      return fileRevisions.listRevisions(safeProjectPath(p.rootPath, relPath));
+    },
+    readFileRevision: (id: string, relPath: string, rev: number) => {
+      const p = projectStore.getProject(id);
+      if (!p) throw new Error("project tidak ditemukan");
+      return fileRevisions.getRevision(safeProjectPath(p.rootPath, relPath), rev);
     },
     updateProject: (id: string, patch: { name?: string; description?: string; status?: "active" | "archived" }) =>
       projectStore.updateProject(id, patch),

@@ -24,7 +24,7 @@ const CODE_EXT = new Set([
 ]);
 const listSchema = z.object({ dir: z.string().default(".") });
 
-export function registerFileTools(): void {
+export function registerFileTools(revisions?: import("../project/revisions.js").FileRevisionStore): void {
   registry.register({
     name: "read_file",
     description: "Baca isi file teks di workspace (relative path).",
@@ -52,6 +52,15 @@ export function registerFileTools(): void {
       }
       const p = safeResolve(ctx.workspacePath, target);
       await fs.mkdir(path.dirname(p), { recursive: true });
+      // P2-STU-3: snapshot isi LAMA sebelum ditimpa → tab File bisa menampilkan diff.
+      if (revisions) {
+        try {
+          const old = await fs.readFile(p, "utf-8");
+          if (old !== args.content) revisions.saveRevision(p, old);
+        } catch {
+          /* file baru — tidak ada revisi */
+        }
+      }
       await fs.writeFile(p, args.content, "utf-8");
       return {
         result: {

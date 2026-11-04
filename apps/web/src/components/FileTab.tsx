@@ -5,11 +5,17 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FileNode } from "@yui/contracts";
 import { SkeletonRows } from "./Skeleton";
+import { diffLines, diffStat } from "@yui/core/project/diff";
 
 interface Content {
   content: string;
   size: number;
   truncated: boolean;
+}
+interface Revision {
+  rev: number;
+  bytes: number;
+  createdAt: number;
 }
 
 const TEXT_EXT = new Set([
@@ -50,6 +56,9 @@ export function FileTab({ projectId }: { projectId: string }) {
   const [tree, setTree] = useState<FileNode[] | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [content, setContent] = useState<Content | null>(null);
+  const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [diffRev, setDiffRev] = useState<string>("");
+  const [diff, setDiff] = useState<{ ops: { t: string; line: string }[]; added: number; removed: number } | null>(null);
   const [loadingContent, setLoadingContent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -67,22 +76,43 @@ export function FileTab({ projectId }: { projectId: string }) {
     setTree(null);
     setSel(null);
     setContent(null);
+    setRevisions([]);
+    setDiff(null);
     void loadTree();
   }, [loadTree]);
 
   async function pick(n: FileNode) {
     setSel(n.relPath);
     setContent(null);
+    setRevisions([]);
+    setDiff(null);
+    setDiffRev("");
     setLoadingContent(true);
     setErr(null);
     try {
-      const r = await fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`);
-      const d = (await r.json()) as Content & { error?: string };
-      if (!r.ok) setErr(d.error ?? "gagal membaca file");
-      else setContent(d);
+      const [c, r] = await Promise.all([
+        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`),
+        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`),
+      ]);
+      const cd = (await c.json()) as Content & { error?: string };
+      if (!c.ok) setErr(cd.error ?? "gagal membaca file");
+      else setContent(cd);
+      if (r.ok) setRevisions(((await r.json()) as { revisions: Revision[] }).revisions);
     } finally {
       setLoadingContent(false);
     }
+  }
+
+  /** Diff isi sekarang vs satu revisi lama (server kirim konten revisi; diff lokal). */
+  async function showDiff(rev: string) {
+    setDiffRev(rev);
+    setDiff(null);
+    if (!sel || !rev || !content) return;
+    const r = await fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&rev=${rev}`);
+    if (!r.ok) return;
+    const old = ((await r.json()) as { content: string | null }).content ?? "";
+    const ops = diffLines(old, content.content);
+    setDiff({ ops, ...diffStat(ops) });
   }
 
   const isText = sel ? TEXT_EXT.has(sel.split(".").pop()!.toLowerCase()) : false;
@@ -109,9 +139,32 @@ export function FileTab({ projectId }: { projectId: string }) {
             <>
               <header className="file-view-head">
                 <b>{sel}</b>
-                <small>{fmtSize(content.size)}</small>
+                <span className="file-view-tools">
+                  {revisions.length > 0 && (
+                    <select value={diffRev} onChange={(e) => void showDiff(e.target.value)} aria-label="Bandingkan dengan revisi">
+                      <option value="">revisi…</option>
+                      {revisions.map((r) => (
+                        <option key={r.rev} value={r.rev}>
+                          r{r.rev} · {new Date(r.createdAt).toLocaleTimeString()}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <small>{fmtSize(content.size)}</small>
+                </span>
               </header>
-              <pre className="file-pre">{content.content}</pre>
+              {diff ? (
+                <div className="file-diff" aria-label="Diff vs revisi">
+                  <p className="file-diff-stat">
+                    vs r{diffRev}: <b className="add">+{diff.added}</b> <b className="del">−{diff.removed}</b> baris
+                  </p>
+                  <pre className="file-pre">{diff.ops.map((o, i) => (
+                    <span key={i} className={`dl-${o.t}`}>{o.t === "+" ? "+" : o.t === "-" ? "−" : " "} {o.line}{"\n"}</span>
+                  ))}</pre>
+                </div>
+              ) : (
+                <pre className="file-pre">{content.content}</pre>
+              )}
             </>
           )}
           {!sel && <p className="dim">Pilih file di kiri.</p>}

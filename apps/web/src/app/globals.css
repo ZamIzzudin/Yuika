@@ -1056,3 +1056,12 @@ html, body {
 .shape-cell b { font-weight: 600; font-size: var(--yui-text-sm); }
 .shape-cell small { color: var(--yui-text-dim); font-size: 11px; }
 .stop-btn { margin-left: 2px; color: var(--yui-warn, #e6a23c); }
+
+/* Diff file (P2-STU-3) */
+.file-view-tools { display: flex; align-items: center; gap: 8px; }
+.file-view-tools select { max-width: 180px; }
+.file-diff-stat { margin: 0 0 4px; color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
+.file-diff-stat .add { color: var(--yui-ok); }
+.file-diff-stat .del { color: var(--yui-warn); }
+.dl-plus, .dl-\+ { color: var(--yui-ok); background: color-mix(in srgb, var(--yui-ok) 8%, transparent); display: inline-block; width: 100%; }
+.dl-minus, .dl-\- { color: var(--yui-warn); background: color-mix(in srgb, var(--yui-warn) 8%, transparent); display: inline-block; width: 100%; }
