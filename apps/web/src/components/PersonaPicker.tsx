@@ -1,61 +1,9 @@
 
 "use client";
-import { apiUrl } from "@/lib/api";
-import { useEffect, useState } from "react";
-import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
+import { useState } from "react";
+import type { PersonaInfo } from "@yui/contracts";
 import { usePersonaShape } from "./orinShapes";
 import { OrinPortrait } from "./OrinPortrait";
-
-export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
-
-/** P1-PER-4: hook growth persona — fetch + refresh ringan (dipakai picker & grid). */
-export function usePersonaGrowth(): Map<string, PersonaGrowth> {
-  const [growth, setGrowth] = useState<Map<string, PersonaGrowth>>(new Map());
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const r = await fetch(apiUrl("/api/personas/growth"));
-        if (!r.ok || !alive) return;
-        const list = (await r.json()) as PersonaGrowth[];
-        if (alive) setGrowth(new Map(list.map((g) => [g.id, g])));
-      } catch {
-        /* biarkan kosong — badge hilang saja */
-      }
-    };
-    void load();
-    const t = setInterval(() => void load(), 15_000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, []);
-  return growth;
-}
-
-/** Badge level kecil (P1-PER-4) — dipakai di kartu & baris persona. */
-export function GrowthBadge({ g }: { g?: PersonaGrowth }) {
-  if (!g) return null;
-  const pct =
-    g.nextLevelAt === null
-      ? 100
-      : Math.min(100, Math.round((g.turns / g.nextLevelAt) * 100));
-  return (
-    <span
-      className="flex items-center gap-1.5 rounded-pill bg-inset px-2 py-0.5 text-caption text-muted"
-      title={`${g.turns} turn selesai · ${g.sessions} sesi · ${g.tasksDone} task done — level dari kerja nyata`}
-    >
-      <b className="font-semibold text-secondary">Lv {g.level}</b>
-      <span className="h-[3px] w-10 overflow-hidden rounded-pill bg-line-strong">
-        <span
-          className="block h-full rounded-pill bg-accent"
-          style={{ width: `${pct}%` }}
-        />
-      </span>
-      <small className="text-dim">{g.turns} turn</small>
-    </span>
-  );
-}
 
 /**
  * Wajah kecil persona (list/header) — mini-maskot Orin v8: bentuk + mata kapsul statis,
@@ -110,7 +58,6 @@ export function PersonaOrbit({
   onPick: (p: PersonaInfo) => void;
 }) {
   const [focus, setFocus] = useState(0);
-  const growth = usePersonaGrowth();
   const n = personas.length;
   const active = personas[Math.min(focus, n - 1)] ?? null;
   const cardBase =
@@ -137,7 +84,6 @@ export function PersonaOrbit({
           <p className="max-w-[320px] text-body leading-6 text-muted">
             {active.description}
           </p>
-          {/* <GrowthBadge g={growth.get(active.id)} /> */}
         </div>
       )}
       {/* ring kartu mengambang (posisi elips dari sudut i·360°/n, mulai dari atas) */}
@@ -176,37 +122,3 @@ export function PersonaOrbit({
   );
 }
 
-export function PersonaPicker({
-  personas,
-  activeId,
-  onPick,
-}: {
-  personas: PersonaInfo[];
-  activeId: string | null;
-  onPick: (p: PersonaInfo) => void;
-}) {
-  const growth = usePersonaGrowth();
-  return (
-    <nav aria-label="Persona" className="flex flex-col gap-0.5">
-      {personas.map((p) => (
-        <button
-          key={p.id}
-          aria-current={p.id === activeId ? "true" : undefined}
-          className={`flex w-full cursor-pointer items-center gap-2.5 rounded-md2 border px-2 py-1.5 text-left transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-            p.id === activeId
-              ? "border-line bg-hover"
-              : "border-transparent hover:bg-hover"
-          }`}
-          onClick={() => onPick(p)}
-        >
-          <PersonaFace personaId={p.id} size={22} />
-          <span className="flex min-w-0 flex-col gap-0.5">
-            <h3 className="text-body font-semibold text-primary">{p.name}</h3>
-            <p className="truncate text-caption text-dim">{p.description}</p>
-            <GrowthBadge g={growth.get(p.id)} />
-          </span>
-        </button>
-      ))}
-    </nav>
-  );
-}

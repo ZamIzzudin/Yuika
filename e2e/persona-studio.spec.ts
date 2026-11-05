@@ -57,9 +57,11 @@ test("CharacterStage: constellation stage, carousel, gallery, shape, skills, mis
   // 6) Setup model persona: tombol gear (card kiri) → modal form + tombol
   //    check connection (dipindah dari SettingsModal)
   await page.locator("[data-model-gear]").click();
-  const modelDlg = page.getByRole("dialog", { name: /^Model — / });
+  const modelDlg = page.getByRole("dialog", { name: /^Model \(/ });
   await expect(modelDlg).toBeVisible();
-  await expect(modelDlg.getByRole("button", { name: "Check connection" })).toBeVisible();
+  await expect(
+    modelDlg.getByRole("button", { name: "Check Connection" }),
+  ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(modelDlg).toBeHidden();
 

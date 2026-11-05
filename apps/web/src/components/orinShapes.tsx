@@ -292,14 +292,9 @@ export function MiniFace({ shape }: { shape: OrinShape }) {
 
 /** Kunci bentuk persona (fallback: orb) — dipakai aturan khusus per bentuk
  *  (v8: bola diskalakan seragam saat squash-stretch agar tetap bulat). */
-export function personaShapeKey(personaId?: string): OrinShapeKey {
+function personaShapeKey(personaId?: string): OrinShapeKey {
   if (!personaId) return "orb";
   return PERSONA_SHAPE[personaId] ?? "orb";
-}
-
-export function personaShape(personaId?: string): OrinShape {
-  const key = personaShapeKey(personaId);
-  return key in SHAPES ? SHAPES[key] : FALLBACK;
 }
 
 /** ===== Override bentuk per persona (menu Persona) =====

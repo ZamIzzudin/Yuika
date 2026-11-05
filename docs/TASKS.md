@@ -552,3 +552,16 @@
 > Spec Rive: `docs/ART-DIRECTION.md` (P1-PER-1).
 > **Konsep Runner masuk PLAN §13.5** (port registry + preview iframe + jembatan
 > Penpot) — belum dikerjakan, menunggu fase.
+
+### 2026-11 · Housekeeping penutup fase (post-P0, pasca character-select)
+- [x] **Bersih-bersih fase** (commit menyusul): PersonaPicker — hapus komponen
+  `PersonaPicker` (nav sidebar lama), `usePersonaGrowth` + `GrowthBadge`
+  (0 pemakai; level bar sudah di card Persona), re-export & import mati;
+  orinShapes — hapus `personaShape()` (pemanggil = usePersonaShape),
+  `personaShapeKey` jadi internal; ui — hapus `CardHead` (0 pemakai) +
+  ekspor index tak terpakai (buttonClass, TabItem, ButtonProps, ChipTone,
+  CardVariant); web deps — hapus `zod` (0 import) & `@rive-app/react-canvas`
+  (dipasang ulang saat P1-PER-2 runtime Rive); hapus artefak
+  `docs/favicon_io/` (duplikat public/), log tmp, `e2e/.tmp/*`;
+  SettingsModal — ModelRoutesEditor pindah penuh ke page Persona
+  (`PersonaModelModal`, tombol gear card identitas, "Check Connection").

@@ -33,26 +33,6 @@ export function Card({
   );
 }
 
-/** Header kartu seragam: judul kiri, aksi kanan. */
-export function CardHead({
-  title,
-  actions,
-  className = "",
-}: {
-  title: ReactNode;
-  actions?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 ${className}`}
-    >
-      <b className="text-lead text-primary">{title}</b>
-      <div className="flex items-center gap-2">{actions}</div>
-    </div>
-  );
-}
-
 export function Modal({
   open,
   onClose,

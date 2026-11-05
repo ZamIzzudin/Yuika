@@ -14,7 +14,12 @@ import { apiUrl } from "@/lib/api";
 
 type Smoke = {
   running: boolean;
-  results: { model: string; ok: boolean; latencyMs: number; error: string | null }[];
+  results: {
+    model: string;
+    ok: boolean;
+    latencyMs: number;
+    error: string | null;
+  }[];
 };
 
 /** Modal setup model untuk SATU persona (persona aktif di stage). */
@@ -81,7 +86,10 @@ export function PersonaModelModal({
           fallback: fallback.trim(),
         }),
       });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "failed to save");
+      if (!r.ok)
+        throw new Error(
+          (await r.json().catch(() => ({}))).error ?? "failed to save",
+        );
       setRoutes((await r.json()) as ModelRoutes);
       toastOk("Saved — the next session uses the new route.");
     } catch (e) {
@@ -94,7 +102,9 @@ export function PersonaModelModal({
   async function checkConnection() {
     setSmoke({ running: true, results: smoke?.results ?? [] });
     try {
-      const r = await fetch(apiUrl("/api/settings/provider/smoke"), { method: "POST" });
+      const r = await fetch(apiUrl("/api/settings/provider/smoke"), {
+        method: "POST",
+      });
       if (r.ok) setSmoke((await r.json()) as Smoke);
     } catch {
       setSmoke(null);
@@ -102,63 +112,75 @@ export function PersonaModelModal({
   }
 
   return (
-    <Modal open onClose={onClose} title={`Model — ${personaName}`}>
+    <Modal open onClose={onClose} title={`Model (${personaName})`}>
       {!routes ? (
         <Skeleton lines={3} />
       ) : (
         <div className="flex flex-col gap-4">
-          <p className="text-caption leading-5 text-muted">
-            Leave empty to follow the default (<code className="font-mono">{routes.defaultModel}</code>). Children in
-            delegations use their own persona&apos;s model.
-          </p>
           <Field label="Primary model">
             <TextInput
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder={routes.defaultModel}
+              placeholder={routes.defaultModel || "Model ID"}
               spellCheck={false}
             />
           </Field>
-          <Field
-            label="Fallback model (optional)"
-            hint="used automatically when the primary model fails"
-          >
+          <Field label="Fallback Model">
             <TextInput
               value={fallback}
               onChange={(e) => setFallback(e.target.value)}
-              placeholder={routes.defaultFallback || "—"}
+              placeholder={routes.defaultFallback || "Model ID (Optional)"}
               spellCheck={false}
             />
           </Field>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="primary" onClick={() => void save()} disabled={saving}>
-              {saving ? "Saving…" : "Save"}
-            </Button>
-            <Button onClick={() => void checkConnection()} disabled={smoke?.running}>
-              {smoke?.running ? "testing…" : "Check connection"}
-            </Button>
-          </div>
           {/* hasil smoke — per model aktif */}
           {smoke && smoke.results.length > 0 && (
-            <ul className="flex flex-col gap-1" aria-label="Connection check results">
+            <ul
+              className="flex flex-wrap gap-3 my-4"
+              aria-label="Connection check results"
+            >
               {smoke.results.map((s) => (
                 <li
                   key={s.model}
-                  className={`flex items-center gap-1.5 text-caption ${s.ok ? "text-secondary" : "text-danger"}`}
+                  className={`flex items-center gap-1.5 text-caption border px-3 py-2 rounded-full ${s.ok ? "text-accent bg-accent/10" : "text-danger bg-danger/10"}`}
                   title={s.error ?? undefined}
                 >
-                  {s.ok ? <Check size={12} weight="bold" aria-hidden /> : <X size={12} weight="bold" aria-hidden />}
-                  <code className="font-mono">{s.model}</code> · {(s.latencyMs / 1000).toFixed(1)}s
-                  {!s.ok && <small className="text-dim"> — automatic fallback engaged</small>}
+                  {s.ok ? (
+                    <Check size={14} weight="bold" aria-hidden />
+                  ) : (
+                    <X size={14} weight="bold" aria-hidden />
+                  )}
+                  <code className="font-mono text-sm">{s.model}</code>{" "}
+                  <span className="text-xs text-dim">
+                    ({(s.latencyMs / 1000).toFixed(1)}s)
+                  </span>
+                  {!s.ok && (
+                    <small className="text-dim">
+                      {" "}
+                      — automatic fallback engaged
+                    </small>
+                  )}
                 </li>
               ))}
             </ul>
           )}
-          {smoke && smoke.results.length === 0 && !smoke.running && (
-            <small className="text-caption text-dim">
-              No results yet — click “Check connection” to test every active model.
-            </small>
-          )}
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            <Button
+              variant="primary"
+              onClick={() => void save()}
+              disabled={saving}
+              className="flex-1"
+            >
+              {saving ? "Saving…" : "Save"}
+            </Button>
+            <Button
+              onClick={() => void checkConnection()}
+              disabled={smoke?.running}
+              className="flex-1"
+            >
+              {smoke?.running ? "Checking…" : "Check Connection"}
+            </Button>
+          </div>
         </div>
       )}
     </Modal>
