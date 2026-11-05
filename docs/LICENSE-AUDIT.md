@@ -1,6 +1,7 @@
 # Audit Lisensi & Pihak Ketiga — 2026-11
 
-> Cakupan: 259 package npm (26 deps langsung) + aset non-npm (ikon, art, MCP server,
+> Cakupan: 260 package npm (27 deps langsung — +pino 9.14 MIT, logging P0-INF-3)
+> + aset non-npm (ikon, art, MCP server,
 > skill, dokumen). Metode: enumerasi `license` field seluruh `node_modules` +
 > `npm audit` + inspeksi file sumber non-npm. Kesimpulan singkat:
 > **tidak ada lisensi copyleft kuat (GPL/AGPL/SSPL/NC) — aman jalur komersial,
@@ -116,4 +117,5 @@ LGPL-3.0 2 · MPL-2.0 2 · CC-BY-4.0 1 · dual (MIT OR WTFPL) 1.
 
 ---
 *Skrip audit (enumerasi license + histogram + flag) dijalankan lokal; hasil
-histogram di §2 adalah snapshot 2026-11 (259 package).*
+histogram di §2 adalah snapshot 2026-11 (259 package, sebelum +pino MIT
+2026-11 untuk P0-INF-3 — tidak mengubah kesimpulan).*

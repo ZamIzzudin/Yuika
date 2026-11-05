@@ -8,6 +8,7 @@ import type { Emit } from "../session/emit.js";
 import type { EventBus } from "../bus.js";
 import type { ProviderAdapter } from "../provider/adapter.js";
 import { AgentLoop, type LoopDeps } from "../loop.js";
+import { moduleLogger } from "../logger.js";
 import { makeApprovalEngineForSession, createSessionWithPrompt } from "../runtime-helpers.js";
 import { memoryPromptSection } from "../memory/manager.js";
 import type { SkillBinding } from "../skills/bindings.js";
@@ -194,7 +195,7 @@ export function runChildPersona(
       if (fatalError) throw new Error(`child gagal: ${fatalError.message}`);
       parentEmit({ type: "delegation.done", turnId: parent.turnId, childSessionId, summary: summaryText });
       if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: "done", summary: summaryText });
-      console.log(`[yui:trace] delegasi ${personaId} SELESAI total=${Date.now() - t0}ms (goal: ${goal.slice(0, 60)}…)`);
+      moduleLogger("delegation").info({ personaId, childSessionId, ms: Date.now() - t0 }, `delegation finished (goal: ${goal.slice(0, 60)}…)`);
       return summaryText;
     } catch (err) {
       // P0-DEL-2: dibatalkan (user/parent) BUKAN kegagalan — job interrupted +

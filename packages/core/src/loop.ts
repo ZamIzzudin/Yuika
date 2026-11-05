@@ -10,6 +10,8 @@ import { personaDisplayName } from "./personas/names.js";
 import type { SessionStore } from "./session/store.js";
 import { buildContextMessages } from "./session/compress.js";
 import { env } from "./env.js";
+import { getLogger } from "./logger.js";
+import { classifyError, ErrorCodes, YuiError } from "./errors.js";
 import type { Emit } from "./session/emit.js";
 import type { ApprovalEngine } from "./approval/engine.js";
 import type { UsageEvent } from "@yui/contracts";
@@ -19,9 +21,10 @@ import { getApprovalMode } from "./approval/engine.js";
 
 const MAX_ITERATIONS = env.maxIter;
 
-/** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0). */
+/** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0). P0-INF-3:
+ *  kini lewat pino — baris trace = logger.debug bermakna (JSON, machine-parseable). */
 function trace(msg: string): void {
-  if (env.trace) console.log(`[yui:trace] ${msg}`);
+  if (env.trace) getLogger().child({ mod: "loop.trace" }).debug(msg);
 }
 
 /** P1-PRJ-5 (D17): terapkan binding MCP pada daftar tool sesi — tool `mcp__*`
@@ -77,10 +80,14 @@ export class AgentLoop {
     let model = route.model;
 
     const turnId = `t_${randomUUID()}`;
+    // P0-INF-3: child logger per turn — traceId (=turnId) otomatis menempel di
+    // SEMUA log turn ini; satu id = satu alur penuh di stdout.
+    const log = getLogger().child({ mod: "loop", sessionId, turnId, persona: session.personaId });
 
     // 1) append user message (append-only) + announce
     store.appendMessage(sessionId, { role: "user", content: userText });
     emit({ type: "turn.started", turnId });
+    log.info({ model, projectId: session.projectId }, "turn started");
     emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
 
     // 2) assembly: system prompt FROZEN (dari sesi) + history — via view kompresi
@@ -143,6 +150,7 @@ export class AgentLoop {
       emit({ type: "message.done", turnId });
       emit({ type: "turn.cancelled", turnId });
       emit({ type: "persona.state", personaId: session.personaId, state: "idle" });
+      log.info({ ms: Date.now() - t0 }, "turn cancelled (user) — partial saved");
       trace(`turn=${turnId.slice(0, 10)} DIBATALKAN user total=${Date.now() - t0}ms iter parsial tersimpan`);
       return;
     };
@@ -210,15 +218,30 @@ export class AgentLoop {
         } catch (err) {
           // P0-CORE-1: abort oleh user BUKAN error provider — keluar graceful.
           if (signal?.aborted) return cancelledExit();
-          lastErr = err;
-          if (ai < attempts.length - 1) route.markUnhealthy?.(attempts[ai]!);
+          const ye = classifyError(err, "provider"); // P0-INF-4: kind/code/retryable
+          lastErr = ye;
+          if (ai < attempts.length - 1) {
+            route.markUnhealthy?.(attempts[ai]!);
+            log.warn(
+              { model: attempts[ai], kind: ye.kind, code: ye.code },
+              `provider gagal (${ye.message}) → fallback ${attempts[ai + 1]}`,
+            );
+          }
         }
       }
       if (lastErr || !done) {
+        // P0-INF-4: error diklasifikasi (provider/abort/…) → event + log satu bahasa.
+        const ye =
+          lastErr !== undefined
+            ? classifyError(lastErr, "provider")
+            : new YuiError("provider", ErrorCodes.PROVIDER_NO_RESPONSE, "provider tanpa respons");
+        log.error({ kind: ye.kind, code: ye.code, retryable: ye.retryable }, `turn gagal: ${ye.message}`);
         emit({
           type: "session.error",
-          message: lastErr instanceof Error ? lastErr.message : String(lastErr ?? "provider tanpa respons"),
+          message: ye.message,
           recoverable: false,
+          kind: ye.kind,
+          code: ye.code,
         });
         emit({ type: "persona.state", personaId: session.personaId, state: "error" });
         return;
@@ -273,6 +296,10 @@ export class AgentLoop {
           }),
         );
         for (const { call, res } of roundResults) {
+          if (res.isError) {
+            // P0-INF-4: kegagalan tool ter-log terstruktur (event tool.result sudah jujur isError).
+            log.warn({ tool: call.name, kind: "tool", code: ErrorCodes.TOOL_EXEC }, `tool ${call.name} returned error`);
+          }
           emit({ type: "tool.result", turnId, callId: call.id, result: res.result, isError: !!res.isError });
           const toolMsg: InternalMessage = {
             role: "tool",
@@ -303,6 +330,7 @@ export class AgentLoop {
       // 5) finalizer
       store.appendMessage(sessionId, { role: "assistant", content: done.text });
       emit({ type: "message.done", turnId });
+      log.info({ ms: Date.now() - t0, iters: i + 1, model, usedTools, usedDelegation }, "turn finished");
       trace(`turn=${turnId.slice(0, 10)} SELESAI total=${Date.now() - t0}ms iter=${i + 1}`);
       // celebrating bila turn ini melibatkan delegation (P1: juga saat skill baru dibuat)
       emit({
@@ -348,8 +376,9 @@ export class AgentLoop {
     store.appendMessage(sessionId, { role: "assistant", content: budgetMsg });
     emit({ type: "message.delta", turnId, delta: budgetMsg });
     emit({ type: "message.done", turnId });
-    emit({ type: "session.error", message: "iteration budget habis — progres tersimpan, ketik 'lanjutkan'", recoverable: true });
+    emit({ type: "session.error", message: "iteration budget reached — progress saved, ask the agent to continue", recoverable: true, kind: "budget", code: ErrorCodes.ITERATION_BUDGET_EXCEEDED });
     emit({ type: "persona.state", personaId: session.personaId, state: "done" });
+    log.warn({ ms: Date.now() - t0, iters: iterCap, kind: "budget" }, "iteration budget exhausted — graceful exit");
     trace(`turn=${turnId.slice(0, 10)} BUDGET-HABIS (graceful) total=${Date.now() - t0}ms`);
   }
 }

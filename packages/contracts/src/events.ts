@@ -132,10 +132,19 @@ export const ApprovalExpiredEvent = EventMeta.extend({
   tool: z.string(),
 });
 
+/** P0-INF-4: taksonomi error lintas core — sumber kebenaran wire. `kind` =
+ *  kategori penanganan (provider = selesai model/transport, tool = eksekusi
+ *  tool, mcp = server eksternal, budget = iterasi habis, abort = stop user,
+ *  internal = bug kita); `code` stabil untuk grep/alert. Keduanya opsional di
+ *  event lama — backward compatible. */
+export const ERROR_KINDS = ["provider", "tool", "mcp", "budget", "abort", "internal"] as const;
+
 export const SessionErrorEvent = EventMeta.extend({
   type: z.literal("session.error"),
   message: z.string(),
   recoverable: z.boolean(),
+  kind: z.enum(ERROR_KINDS).optional(),
+  code: z.string().max(64).optional(),
 });
 
 /** P1-MEM-2: learn nudge menghasilkan catatan ( transparansi — tampil sebagai chip di chat). */

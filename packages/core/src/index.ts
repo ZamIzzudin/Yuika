@@ -10,6 +10,8 @@ export { SessionStore } from "./session/store.js";
 export { buildContextMessages, slimHistory, DEFAULT_COMPRESS, DEFAULT_SLIM, type CompressOptions, type CompressResult, type SlimOptions } from "./session/compress.js";
 export { estimateTokens } from "./session/tokens.js";
 export { env as coreEnv } from "./env.js";
+export { getLogger, moduleLogger } from "./logger.js";
+export { classifyError, YuiError, ErrorCodes, ERROR_KINDS, type ErrorKind, type ErrorCode } from "./errors.js";
 export { makeEmitter, type Emit } from "./session/emit.js";
 export { AgentLoop } from "./loop.js";
 export { ApprovalEngine, getApprovalMode, setApprovalMode, type ApprovalMode } from "./approval/engine.js";

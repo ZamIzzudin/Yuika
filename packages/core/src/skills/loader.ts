@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
+import { moduleLogger } from "../logger.js";
 
 export interface SkillFrontmatter {
   name: string;
@@ -70,7 +71,7 @@ export function listSkills(skillsDir: string): Skill[] {
       try {
         return [loadSkill(dir)];
       } catch (e) {
-        console.warn(`[yui:skills] lewati ${path.basename(dir)}: ${e instanceof Error ? e.message : e}`);
+        moduleLogger("skills").warn({ dir: path.basename(dir) }, `skill skipped: ${e instanceof Error ? e.message : e}`);
         return [];
       }
     })

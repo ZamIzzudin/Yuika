@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
 import { SessionStore } from "./session/store.js";
+import { moduleLogger } from "./logger.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
 import { OpenAICompatProvider } from "./provider/openai-compat.js";
@@ -112,7 +113,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     gBoot.__yuiBootSwept = true;
     sweepStaleRuns(paths.workspacePath, loadMissions(paths.workspacePath)); // restart-safe
     const healed = healInterruptedTurns(store);
-    if (healed.length) console.log(`[yui:heal] ${healed.length} turn terputus ditutup (server restart saat berjalan)`);
+    if (healed.length) moduleLogger("runtime").info({ count: healed.length }, "interrupted turns healed after restart");
   }
 
   // ---- P1-DUN-3: eval buta tested→ready (hakim = sesi fresh, lihat §13.8) ----
@@ -309,13 +310,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     if (attempt > RETRY_DELAYS.length) {
       clearMcpRetry(name);
       mcpConns.set(name, { close: async () => undefined, toolNames: [], ping: async () => false, state: "parked", lastError: err, nextRetryAt: null });
-      console.warn(`[yui] MCP '${name}' PARKED setelah ${RETRY_DELAYS.length}× reconnect gagal (${err}) — aktifkan ulang dari panel MCP`);
+      moduleLogger("mcp").warn({ server: name, kind: "mcp", code: "MCP_PARKED" }, `parked after ${RETRY_DELAYS.length} reconnect attempts (${err}) — re-enable from the MCP panel`);
       return;
     }
     const delay = RETRY_DELAYS[Math.min(attempt - 1, RETRY_DELAYS.length - 1)]!;
     const nextRetryAt = Date.now() + delay;
     mcpConns.set(name, { close: async () => undefined, toolNames: [], ping: async () => false, state: "reconnecting", lastError: err, nextRetryAt });
-    console.warn(`[yui] MCP '${name}' down (${err}) — reconnect #${attempt} dalam ${Math.round(delay / 1000)}s`);
+    moduleLogger("mcp").warn({ server: name, kind: "mcp", code: "MCP_RECONNECT", attempt, retryInMs: delay }, `down (${err}) — reconnecting`);
     const timer = setTimeout(
       () => {
         void connectMcp(name)
@@ -341,19 +342,19 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       onToolsChanged: (r) => {
         const c = mcpConns.get(name);
         if (c) c.toolNames = r.toolNames;
-        console.log(`[yui] MCP '${name}' daftar tool berubah: +${r.added.length} -${r.removed.length} (total ${r.toolNames.length})`);
+        moduleLogger("mcp").info({ server: name, added: r.added.length, removed: r.removed.length, total: r.toolNames.length }, "tool list changed");
       },
     });
     clearMcpRetry(name);
     mcpConns.set(name, { ...conn, state: "connected", lastError: null, nextRetryAt: null });
-    console.log(`[yui] MCP '${name}' terhubung (${conn.toolCount} tools)`);
+    moduleLogger("mcp").info({ server: name, tools: conn.toolCount }, "connected");
     return true;
   }
 
   // Startup: connect semua server yang sudah di-trust (via helper di atas supaya
   // mcpConns terisi — connectMcpFromConfig hanya untuk pemakaian standalone).
   for (const name of Object.keys(mcpConfig?.mcpServers ?? {})) {
-    void connectMcp(name).catch((e) => console.warn(`[yui] ${e instanceof Error ? e.message : e}`));
+    void connectMcp(name).catch((e) => moduleLogger("mcp").warn({ server: name }, e instanceof Error ? e.message : String(e)));
   }
 
   // P0-MCP-1: health check — ping tiap 60 dtk (fix 2026-11: 30 dtk terlalu

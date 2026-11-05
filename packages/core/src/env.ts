@@ -32,6 +32,12 @@ const schema = z.object({
   compressMinMessages: int(10, 4, 512),
   /** Trace loop ke stdout (1) / matikan (0). */
   trace: z.preprocess((v) => (v === undefined ? true : v !== "0" && v !== "false"), z.boolean()),
+  /** Level logging terstruktur pino (P0-INF-3): trace|debug|info|warn|error|fatal.\n   *  Kosong = otomatis: "debug" saat YUI_TRACE aktif, selain itu "info"
+   *  (di bawah vitest default "warn" agar output test bersih). */
+  logLevel: z
+    .string()
+    .regex(/^(trace|debug|info|warn|error|fatal)$/, "harus level pino yang sah")
+    .optional(),
   /** Learn nudge pasca-turn (0 = matikan). */
   learn: z.preprocess((v) => v !== "0", z.boolean()),
 });
@@ -48,6 +54,7 @@ const raw = {
   compressKeepRecent: process.env.YUI_COMPRESS_KEEP_RECENT,
   compressMinMessages: process.env.YUI_COMPRESS_MIN_MESSAGES,
   trace: process.env.YUI_TRACE,
+  logLevel: process.env.YUI_LOG_LEVEL || undefined,
   learn: process.env.YUI_LEARN,
 };
 
