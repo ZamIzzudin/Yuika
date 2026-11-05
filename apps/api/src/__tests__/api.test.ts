@@ -13,6 +13,7 @@ const fake = {
   },
   listProjectSessions: () => [],
   getEvents: (_id: string, since: number) => [{ id: since + 1, ts: 1, sessionId: "s1", type: "turn.started", turnId: "t1" }],
+  subscribe: () => () => undefined,
   cancelTurn: () => true,
   emitSessionError: () => undefined,
   runTurn: () => Promise.resolve(),
@@ -76,5 +77,14 @@ describe("apps/api REST contract", () => {
     const r = await app.inject({ method: "GET", url: "/api/sessions/s1/events", headers: { origin: "http://localhost:3000" } });
     expect(r.statusCode).toBe(200);
     expect(r.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+  });
+
+  it("CORS di SSE stream: hijack() melewati pipeline fastify — ACAO harus tetap ada (fix E2E 2026-11)", async () => {
+    // hijack + raw.writeHead menimpa header; tanpa refleksi manual browser
+    // memblokir EventSource (kejadian E2E P0-QA-1: web:3990 → api:3291).
+    const r = await app.inject({ method: "GET", url: "/api/sessions/s1/stream?snapshot=1", headers: { origin: "http://localhost:3990" } });
+    expect(r.statusCode).toBe(200);
+    expect(r.headers["access-control-allow-origin"]).toBe("http://localhost:3990");
+    expect(r.headers["content-type"]).toContain("text/event-stream");
   });
 });

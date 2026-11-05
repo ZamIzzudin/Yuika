@@ -1,4 +1,3 @@
-
 "use client";
 import { apiUrl } from "@/lib/api";
 import { useState } from "react";
@@ -68,9 +67,12 @@ export function ProjectPanel({
     if (deleting) return;
     setDeleting(p.id);
     try {
-      const res = await fetch(apiUrl(`/api/projects/${encodeURIComponent(p.id)}`), {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        apiUrl(`/api/projects/${encodeURIComponent(p.id)}`),
+        {
+          method: "DELETE",
+        },
+      );
       const body = (await res
         .json()
         .catch(() => ({}))) as DeleteProjectResult & { error?: string };
@@ -142,8 +144,7 @@ export function ProjectPanel({
           </div>
         </Card>
       )}
-
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-3">
         <button
           className={`${rowBase} ${
             activeId === null
@@ -153,7 +154,7 @@ export function ProjectPanel({
           onClick={() => onPick(null)}
         >
           <i
-            className="h-[7px] w-[7px] shrink-0 rounded-pill bg-accent"
+            className={`h-[7px] w-[7px] shrink-0 rounded-pill ${activeId ? "bg-line-strong" : "bg-accent"}`}
             aria-hidden
           />
           <span className="flex min-w-0 flex-col">

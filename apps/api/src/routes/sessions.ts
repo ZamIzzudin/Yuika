@@ -59,10 +59,16 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
     const rt = getRt();
 
     reply.hijack();
+    // hijack() melewati pipeline reply Fastify — header @fastify/cors (onRequest)
+    // tak pernah tersalin ke raw response. Browser (web:3000 → api:3211, atau
+    // E2E :3990 → :3291) memblokir stream tanpa ACAO. Refleksikan origin manual,
+    // selaras kebijakan cors { origin: true } app.ts.
+    const origin = req.headers.origin;
     reply.raw.writeHead(200, {
       "content-type": "text/event-stream",
       "cache-control": "no-cache, no-transform",
       connection: "keep-alive",
+      ...(origin ? { "access-control-allow-origin": origin, vary: "Origin" } : {}),
     });
 
     let closed = false;

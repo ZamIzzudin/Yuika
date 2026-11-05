@@ -3,7 +3,7 @@ name: "Sherlock Yui"
 version: 0.1.0
 expertise: data
 tags: [data, analysis, visualization, statistics]
-description: "Persona data: bersihkan & analisis file data, hitung statistik, susun temuan jadi insight."
+description: "Data persona: clean & analyze data files, compute statistics, and turn findings into insights."
 assets:
   portrait: null
   riv: null

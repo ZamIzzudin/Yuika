@@ -43,6 +43,7 @@ import { registerSessionSearchTools } from "./tools/session-search.js";
 import { registerDocTools } from "./tools/doc-tools.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
+import { env } from "./env.js";
 import { findUvx, installUv } from "./mcp/uv.js";
 import { buildModelRouter, loadModelOverrides, saveModelOverride } from "./model-router.js";
 import { smokeModel } from "./provider/smoke.js";
@@ -370,6 +371,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   }, 60_000);
   mcpHealthTimer.unref?.();
 
+  // P0-DATA-2: housekeeping harian — boot (setelah heal menutup turn gantung)
+  // + interval 24 jam; retensi 0 = mati.
+  const housekeep = () => {
+    if (env.eventsRetentionDays > 0) store.archiveOldEvents(env.eventsRetentionDays);
+  };
+  setTimeout(housekeep, 10_000).unref?.();
+  const retentionTimer = setInterval(housekeep, 24 * 3_600_000);
+  retentionTimer.unref?.();
+
   function listPersonaInfos(): PersonaInfo[] {
     return listPersonas(paths.personasDir).map((p) => ({
       id: p.manifest.id,
@@ -549,6 +559,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   return {
     getModelSmoke: (): { running: boolean; results: ModelSmokeResult[] } => ({ running: smokeRunning, results: smokeResults }),
     runModelSmoke: () => runModelSmoke(),
+    // P0-DATA-2: housekeeping retention — pindahkan events lama ke arsip.
+    // Dipanggil manual (REST) & otomatis (boot + interval harian); retensi dari
+    // YUI_EVENTS_RETENTION_DAYS (0 = mati).
+    housekeepEvents: (nowMs?: number): { archived: number; sessions: number } => {
+      const r = store.archiveOldEvents(env.eventsRetentionDays, nowMs);
+      if (r.archived > 0) moduleLogger("data").info({ ...r, retentionDays: env.eventsRetentionDays }, "events diarsipkan (retention)");
+      return r;
+    },
     // P1-CRED-1: metering ledger — summary rollup + feed event terbaru.
     getUsageSummary: (filter: { projectId?: string; sessionId?: string; personaId?: string; since?: number } = {}) =>
       usageLedger.summary(filter),

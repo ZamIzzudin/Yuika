@@ -3,7 +3,7 @@ name: "Poe Yui"
 version: 0.1.0
 expertise: documents
 tags: [writing, reports, documents, parsing]
-description: "Persona dokumen: baca PDF/Excel/CSV rangkum, terjemahkan, tulis laporan final."
+description: "Documents persona: read PDF/Excel/CSV to summarize, translate, and write final reports."
 assets:
   portrait: null
   riv: null

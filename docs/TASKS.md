@@ -234,7 +234,7 @@
 ### P0-DATA (persistence)
 
 - [ ] **P0-DATA-1** Migrasi SQLite → Postgres (Drizzle): sessions/messages/events/jobs + migration script · *B · 2d · dep P0-INF-5*
-- [ ] **P0-DATA-2** Retention & housekeeping (events > N hari → arsip) · *B · 1d · dep P0-DATA-1*
+- [x] **P0-DATA-2** Retention & housekeeping (events > N hari → arsip) · *B · 1d · dep P0-DATA-1* → ✅ 2026-11: `events_archive` (SQLite) — `store.archiveOldEvents(retentionDays)` pindahkan events sesi **dingin** (MAX(ts) < cutoff) ke arsip dalam SATU transaksi (idempoten: `INSERT OR IGNORE` + delete); semua bacaan (getEvents replay, growth `personaDoneTurnCounts`, `listProjectSessions` lastEventId/ts) di-**UNION** dengan arsip → identitas & urutan id tak berubah (SSE replay/reconnect aman); sesi **turn gantung** di-skip (logika = `findInterruptedTurns` — milik boot-heal); trigger: boot (setelah heal) + interval 24 jam (unref) + `POST /api/settings/housekeeping`; `YUI_EVENTS_RETENTION_DAYS` (default 30, `0` = mati, fail-fast zod env.ts); +6 test (`packages/core/src/__tests__/housekeeping.test.ts` — arsip lengkap/union, sesi aktif tak disentuh, 0=no-op, gantung di-skip, growth tetap benar, lastEventId tetap benar)
 - [x] **P0-DATA-3** Approval pending persist (survive restart — ganti Map in-process) · *A · 1d* → ✅ dev-10: tabel `approvals` + `approval_memory` (SQLite) — request pending tercatat; restart → sweep `expirePendingApprovals()` menandai **expired** + event `approval.expired` (kartu UI “Kedaluwarsa — server direstart”, bukan 404); **“Setujui & ingat” lintas restart** (dimuat ulang per engine); live promise tetap in-process (turn mati bersama proses — resume turn = pekerjaan P1)
 
 ### P0-CORE (loop robustness)
@@ -254,7 +254,7 @@
 
 ### P0-QA & G-P0
 
-- [ ] **P0-QA-1** E2E smoke Playwright: skenario demo §2 otomatis · *B · 2d · dep P0-INF-1*
+- [x] **P0-QA-1** E2E smoke Playwright: skenario demo §2 otomatis · *B · 2d · dep P0-INF-1* → ✅ 2026-11: `playwright.config.ts` (root) mengelola 3 server terisolasi — mock provider openai-compat (`e2e/mock-provider.mjs` :3299, script FIFO via `POST /__script`, SSE standar + reasoning_content + tool_calls, fallback "ok" utk panggilan tak terduga), `apps/api` :3291 (DB/workspace `e2e/.tmp`, MCP+learn dimatikan → turn deterministik), `apps/web` :3990 (`NEXT_PUBLIC_API_BASE`/`NEXT_DIST_DIR=.next-e2e` — tak bentrok dev user); spec `e2e/smoke.spec.ts` = pilih Maestro Yui → prompt riset → assert kartu **Delegation · scholar** (SSE delegation.started) → jawaban final Conductor → replay REST events (persist). **Bonus fix nyata**: SSE `reply.hijack()` melewati pipeline `@fastify/cors` → ACAO hilang → browser blokir EventSource cross-origin (web:3000 → api:3211 juga kena!) — kini origin direfleksikan manual di `raw.writeHead` + test kontrak api. `npm run e2e` (≈15 dtk, chromium via mirror).
 - [x] **P0-QA-2** Load ringan: 10 sesi paralel × 5 turn tanpa deadlock/leak · *A+B · 1d* — ✅ v0 dev-10: `load-light.test.ts` — 10 sesi PARALEL × 5 turn provider jitter: semua selesai, history 10 pesan/sesi urutan user→assistant konsisten, provider tepat 50 panggilan (tanpa retry liar), tanpa kontaminasi antar-sesi
 - [ ] **G-P0** Gerbang: smoke E2E green di CI · contract invariant tests green · sandbox escape test lulus · pino trace per turn terlihat · fallback model terbukti · **retro tim: pelajaran demo → backlog**
 

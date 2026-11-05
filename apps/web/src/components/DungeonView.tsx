@@ -4,11 +4,36 @@ import { apiUrl } from "@/lib/api";
 // utility Tailwind semantik; tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PersonaInfo } from "@yui/contracts";
-import { ArrowLeft, Books, Check, CircleNotch, Clock, MagnifyingGlass, Sparkle, Sword, Trash, UploadSimple, X } from "@phosphor-icons/react";
+import {
+  ArrowLeft,
+  Books,
+  Check,
+  CircleNotch,
+  Clock,
+  MagnifyingGlass,
+  Sparkle,
+  Sword,
+  Trash,
+  UploadSimple,
+  X,
+} from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { Skeleton } from "./Skeleton";
 import { toastErr, toastOk } from "./ui/toast";
-import { Button, Chip, Card, Modal, Field, TextInput, TextArea, Select, TabList, EmptyState, MetaRow, SectionTitle } from "./ui";
+import {
+  Button,
+  Chip,
+  Card,
+  Modal,
+  Field,
+  TextInput,
+  TextArea,
+  Select,
+  TabList,
+  EmptyState,
+  MetaRow,
+  SectionTitle,
+} from "./ui";
 
 /** Baris GET /api/dungeons. */
 export interface DungeonRow {
@@ -23,12 +48,27 @@ export interface DungeonRow {
     resources: string[];
     acceptance: string[];
   };
-  runs: { id: string; status: "running" | "done" | "error"; startedAt: number; summary?: string; sessionId?: string; projectId?: string }[];
+  runs: {
+    id: string;
+    status: "running" | "done" | "error";
+    startedAt: number;
+    summary?: string;
+    sessionId?: string;
+    projectId?: string;
+  }[];
 }
 
 const DEFAULT_ACC: Record<"research" | "documents", string[]> = {
-  research: ["Prosedur langkah demi langkah, bisa diikuti tanpa konteks lain", "Minimal 2 sumber nyata", "Tanpa klaim yang tak bisa diverifikasi"],
-  documents: ["Ringkas SEMUA materi dengan setia (tanpa mengarang)", "Struktur mudah di-scan", "Menyebut file sumber tiap bagian"],
+  research: [
+    "Prosedur langkah demi langkah, bisa diikuti tanpa konteks lain",
+    "Minimal 2 sumber nyata",
+    "Tanpa klaim yang tak bisa diverifikasi",
+  ],
+  documents: [
+    "Ringkas SEMUA materi dengan setia (tanpa mengarang)",
+    "Struktur mudah di-scan",
+    "Menyebut file sumber tiap bagian",
+  ],
 };
 
 /** Tab "Mapping Skill" (feedback user dev-10): pilih persona → toggle skill
@@ -45,7 +85,12 @@ interface BindingPersona {
   effective: string[];
 }
 interface BindingsPayload {
-  skills: { name: string; description: string; status: string; slug: string | null }[];
+  skills: {
+    name: string;
+    description: string;
+    status: string;
+    slug: string | null;
+  }[];
   personas: BindingPersona[];
 }
 
@@ -68,7 +113,11 @@ function SkillMapping() {
 
   const persona = data?.personas.find((p) => p.id === sel) ?? data?.personas[0];
 
-  async function toggle(personaId: string, skill: string, action: "attach" | "detach") {
+  async function toggle(
+    personaId: string,
+    skill: string,
+    action: "attach" | "detach",
+  ) {
     // optimistic — PUT persist; gagal → reload (state server yang benar)
     setData((prev) =>
       prev
@@ -78,9 +127,18 @@ function SkillMapping() {
               p.id === personaId
                 ? {
                     ...p,
-                    attached: action === "attach" ? [...new Set([...p.attached, skill])] : p.attached.filter((s) => s !== skill),
-                    detached: action === "detach" ? [...new Set([...p.detached, skill])] : p.detached.filter((s) => s !== skill),
-                    effective: action === "attach" ? [...new Set([...p.effective, skill])] : p.effective.filter((s) => s !== skill),
+                    attached:
+                      action === "attach"
+                        ? [...new Set([...p.attached, skill])]
+                        : p.attached.filter((s) => s !== skill),
+                    detached:
+                      action === "detach"
+                        ? [...new Set([...p.detached, skill])]
+                        : p.detached.filter((s) => s !== skill),
+                    effective:
+                      action === "attach"
+                        ? [...new Set([...p.effective, skill])]
+                        : p.effective.filter((s) => s !== skill),
                   }
                 : p,
             ),
@@ -93,22 +151,33 @@ function SkillMapping() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ personaId, skill, action }),
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "request failed");
-      } catch (e) {
+      if (!res.ok)
+        throw new Error(
+          (await res.json().catch(() => ({}))).error ?? "request failed",
+        );
+    } catch (e) {
       toastErr(e instanceof Error ? e.message : "failed to save");
       void load();
     }
   }
 
   /** Draf → terima (lint + pindah aktif) → langsung pasang ke persona terpilih. */
-  async function acceptAndAttach(personaId: string, slug: string, name: string) {
+  async function acceptAndAttach(
+    personaId: string,
+    slug: string,
+    name: string,
+  ) {
     try {
       const res = await fetch(apiUrl("/api/skills"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug }),
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "failed to accept the draft");
+      if (!res.ok)
+        throw new Error(
+          (await res.json().catch(() => ({}))).error ??
+            "failed to accept the draft",
+        );
       await load(); // status baru dari server
       await toggle(personaId, name, "attach");
       toastOk(`Skill "${name}" accepted & attached to the selected persona.`);
@@ -122,11 +191,13 @@ function SkillMapping() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-caption leading-5 text-muted">
-        Attach existing skills to a persona — they automatically enter that persona's{" "}
-        <b className="text-secondary">new-session prompt index</b> (running sessions don't change; skills stay readable via{" "}
-        <code className="font-mono">skills_list</code>). “Bundled” = the persona's{" "}
-        <code className="font-mono">skills.yaml</code> (detachable). <b className="text-secondary">Draft</b> skills from
-        training runs can be accepted right here.
+        Attach existing skills to a persona — they automatically enter that
+        persona's <b className="text-secondary">new-session prompt index</b>{" "}
+        (running sessions don't change; skills stay readable via{" "}
+        <code className="font-mono">skills_list</code>). “Bundled” = the
+        persona's <code className="font-mono">skills.yaml</code> (detachable).{" "}
+        <b className="text-secondary">Draft</b> skills from training runs can be
+        accepted right here.
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -142,8 +213,11 @@ function SkillMapping() {
                 : "border-line bg-transparent text-muted hover:border-line-strong hover:text-primary"
             }`}
           >
-            <PersonaFace personaId={p.id} size={22} /> {p.name.replace(" Yui", "")}
-            <span className="rounded-pill bg-hover px-1.5 py-px text-dim">{p.effective.length}</span>
+            <PersonaFace personaId={p.id} size={22} />{" "}
+            {p.name.replace(" Yui", "")}
+            <span className="rounded-pill bg-hover px-1.5 py-px text-dim">
+              {p.effective.length}
+            </span>
           </button>
         ))}
       </div>
@@ -151,7 +225,11 @@ function SkillMapping() {
       {persona ? (
         <div className="flex flex-col gap-2">
           {data.skills.length === 0 ? (
-            <EmptyState icon={<Sparkle size={20} />} title="No skills yet" hint="Train the persona on the Missions tab — training results appear here as drafts you can accept." />
+            <EmptyState
+              icon={<Sparkle size={20} />}
+              title="No skills yet"
+              hint="Train the persona on the Missions tab — training results appear here as drafts you can accept."
+            />
           ) : (
             data.skills.map((s) => {
               const on = persona.effective.includes(s.name);
@@ -161,26 +239,50 @@ function SkillMapping() {
                 <div
                   key={s.name}
                   className={`flex items-center gap-3 rounded-card border px-3 py-2 transition-colors ${
-                    on ? "border-accent/45 bg-surface" : "border-line bg-surface"
+                    on
+                      ? "border-accent/45 bg-surface"
+                      : "border-line bg-surface"
                   }`}
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <b className="flex flex-wrap items-center gap-2 text-body text-primary">
                       {s.name}
                       {draft ? <Chip tone="warn">draft</Chip> : null}
-                      {!draft && s.status === "tested" ? <Chip tone="info">tested</Chip> : null}
+                      {!draft && s.status === "tested" ? (
+                        <Chip tone="info">tested</Chip>
+                      ) : null}
                       {native && on ? <Chip tone="muted">bundled</Chip> : null}
                     </b>
-                    <small className="truncate text-caption text-muted" title={s.description}>
+                    <small
+                      className="truncate text-caption text-muted"
+                      title={s.description}
+                    >
                       {s.description}
                     </small>
                   </div>
                   {draft ? (
-                    <Button size="sm" variant="primary" onClick={() => void acceptAndAttach(persona.id, s.slug!, s.name)} title="Lint + move to active skills, then attach to this persona">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() =>
+                        void acceptAndAttach(persona.id, s.slug!, s.name)
+                      }
+                      title="Lint + move to active skills, then attach to this persona"
+                    >
                       Accept &amp; attach
                     </Button>
                   ) : (
-                    <Button size="sm" active={on} onClick={() => void toggle(persona.id, s.name, on ? "detach" : "attach")}>
+                    <Button
+                      size="sm"
+                      active={on}
+                      onClick={() =>
+                        void toggle(
+                          persona.id,
+                          s.name,
+                          on ? "detach" : "attach",
+                        )
+                      }
+                    >
                       {on ? "Attached ✓" : "Attach"}
                     </Button>
                   )}
@@ -194,7 +296,15 @@ function SkillMapping() {
   );
 }
 
-export function DungeonView({ personas, onBack, onOpenProject }: { personas: PersonaInfo[]; onBack: () => void; onOpenProject?: (projectId: string) => void }) {
+export function DungeonView({
+  personas,
+  onBack,
+  onOpenProject,
+}: {
+  personas: PersonaInfo[];
+  onBack: () => void;
+  onOpenProject?: (projectId: string) => void;
+}) {
   const [dungeons, setDungeons] = useState<DungeonRow[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -219,7 +329,8 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
   const refresh = useCallback(async () => {
     try {
       const r = await fetch(apiUrl("/api/dungeons"));
-      if (r.ok) setDungeons(((await r.json()) as { dungeons: DungeonRow[] }).dungeons);
+      if (r.ok)
+        setDungeons(((await r.json()) as { dungeons: DungeonRow[] }).dungeons);
     } catch {
       /* refresh berikutnya */
     }
@@ -253,12 +364,24 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
           skillName: skillName.trim(),
           skillDescription: skillDesc.trim(),
           mode,
-          resources: mode === "research" ? resourcesText.split("\n").map((s) => s.trim()).filter(Boolean) : [],
-          acceptance: accText.split("\n").map((s) => s.trim()).filter(Boolean),
+          resources:
+            mode === "research"
+              ? resourcesText
+                  .split("\n")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              : [],
+          acceptance: accText
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean),
         }),
       });
       if (!r.ok) {
-        toastErr((((await r.json()) as { error?: string }).error ?? "failed to create the training") + "");
+        toastErr(
+          (((await r.json()) as { error?: string }).error ??
+            "failed to create the training") + "",
+        );
         return;
       }
       // reset form ringan
@@ -282,7 +405,11 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ missionId }),
       });
-      if (!r.ok) toastErr((((await r.json()) as { error?: string }).error ?? "failed to run the mission") + "");
+      if (!r.ok)
+        toastErr(
+          (((await r.json()) as { error?: string }).error ??
+            "failed to run the mission") + "",
+        );
       await refresh();
     } catch {
       toastErr("could not reach the server");
@@ -294,12 +421,20 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
     setUploading(slug);
     try {
       for (const f of Array.from(files)) {
-        const r = await fetch(apiUrl(`/api/dungeons/${encodeURIComponent(slug)}/materials?name=${encodeURIComponent(f.name)}`), {
-          method: "POST",
-          body: await f.arrayBuffer(),
-        });
+        const r = await fetch(
+          apiUrl(
+            `/api/dungeons/${encodeURIComponent(slug)}/materials?name=${encodeURIComponent(f.name)}`,
+          ),
+          {
+            method: "POST",
+            body: await f.arrayBuffer(),
+          },
+        );
         if (!r.ok) {
-          toastErr((((await r.json()) as { error?: string }).error ?? "upload failed") + ` (${f.name})`);
+          toastErr(
+            (((await r.json()) as { error?: string }).error ??
+              "upload failed") + ` (${f.name})`,
+          );
           break;
         }
       }
@@ -312,8 +447,15 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 
   async function remove(slug: string) {
     try {
-      const r = await fetch(apiUrl(`/api/dungeons/${encodeURIComponent(slug)}`), { method: "DELETE" });
-      if (!r.ok) toastErr((((await r.json()) as { error?: string }).error ?? "failed to delete the training") + "");
+      const r = await fetch(
+        apiUrl(`/api/dungeons/${encodeURIComponent(slug)}`),
+        { method: "DELETE" },
+      );
+      if (!r.ok)
+        toastErr(
+          (((await r.json()) as { error?: string }).error ??
+            "failed to delete the training") + "",
+        );
       await refresh();
     } finally {
       /* void */
@@ -321,14 +463,22 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
   }
 
   const persona = personas.find((p) => p.id === personaId);
-  const canCreate = personaId && skillName.trim().length >= 3 && skillDesc.trim().length >= 10 && !busy;
-  const userMissions = dungeons?.filter((d) => d.mission.origin === "user") ?? [];
-  const seedMissions = dungeons?.filter((d) => d.mission.origin !== "user") ?? [];
+  const canCreate =
+    personaId &&
+    skillName.trim().length >= 3 &&
+    skillDesc.trim().length >= 10 &&
+    !busy;
+  const userMissions =
+    dungeons?.filter((d) => d.mission.origin === "user") ?? [];
+  const seedMissions =
+    dungeons?.filter((d) => d.mission.origin !== "user") ?? [];
 
   const card = (d: DungeonRow) => {
     const active = d.runs.find((r) => r.status === "running");
     const last = d.runs[d.runs.length - 1];
-    const materials = d.mission.resources.filter((r) => r.startsWith("materials/"));
+    const materials = d.mission.resources.filter((r) =>
+      r.startsWith("materials/"),
+    );
     return (
       <Card key={d.mission.id} className="flex flex-col gap-2 p-3">
         <div className="flex items-center gap-3">
@@ -336,20 +486,31 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
           <div className="flex min-w-0 flex-1 flex-col">
             <b className="truncate text-body text-primary">{d.mission.title}</b>
             <MetaRow>
-              skill <code className="font-mono">{d.mission.targetSkill.name}</code>
+              skill{" "}
+              <code className="font-mono">{d.mission.targetSkill.name}</code>
               <span aria-hidden>·</span>
               persona {d.mission.persona.replace("yui-", "")}
             </MetaRow>
           </div>
-          <Button variant="primary" size="sm" disabled={Boolean(active)} onClick={() => void run(d.mission.id)}>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={Boolean(active)}
+            onClick={() => void run(d.mission.id)}
+          >
             {active ? "running…" : "Run"}
           </Button>
         </div>
-        <small className="line-clamp-2 text-caption leading-5 text-muted">{d.mission.goal.trim().split("\n")[0]}</small>
+        <small className="line-clamp-2 text-caption leading-5 text-muted">
+          {d.mission.goal.trim().split("\n")[0]}
+        </small>
         {materials.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {materials.map((m) => (
-              <code key={m} className="rounded-pill border border-line bg-hover px-2 py-px font-mono text-caption text-muted">
+              <code
+                key={m}
+                className="rounded-pill border border-line bg-hover px-2 py-px font-mono text-caption text-muted"
+              >
                 {m}
               </code>
             ))}
@@ -370,7 +531,9 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
                 <X size={11} weight="bold" aria-hidden /> failed
               </Chip>
             )}
-            {last.summary ? <span className="truncate">{last.summary.slice(0, 160)}</span> : null}
+            {last.summary ? (
+              <span className="truncate">{last.summary.slice(0, 160)}</span>
+            ) : null}
           </MetaRow>
         )}
         <div className="flex items-center gap-2">
@@ -382,10 +545,27 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
               fileRef.current?.click();
             }}
           >
-            {uploading === d.mission.id ? "uploading…" : <><UploadSimple size={12} aria-hidden className="mr-1 inline align-[-2px]" /> Materials</>}
+            {uploading === d.mission.id ? (
+              "uploading…"
+            ) : (
+              <>
+                <UploadSimple
+                  size={12}
+                  aria-hidden
+                  className="mr-1 inline align-[-2px]"
+                />{" "}
+                Materials
+              </>
+            )}
           </Button>
           {d.mission.origin === "user" && (
-            <Button size="sm" variant="danger" onClick={() => void remove(d.mission.id)} title="Delete this training" aria-label="Delete training">
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => void remove(d.mission.id)}
+              title="Delete this training"
+              aria-label="Delete training"
+            >
               <Trash size={13} aria-hidden />
             </Button>
           )}
@@ -396,24 +576,35 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 
   const allRuns =
     dungeons
-      ?.flatMap((d) => d.runs.map((r) => ({ ...r, title: d.mission.title, persona: d.mission.persona })))
+      ?.flatMap((d) =>
+        d.runs.map((r) => ({
+          ...r,
+          title: d.mission.title,
+          persona: d.mission.persona,
+        })),
+      )
       .sort((a, b) => b.startedAt - a.startedAt) ?? [];
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-6" aria-label="Dungeon — persona training arena">
+    <section
+      className="mx-auto flex w-full flex-col gap-5 px-4 py-6"
+      aria-label="Dungeon — persona training arena"
+    >
       <header className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
           <Button onClick={onBack}>
-            <ArrowLeft size={13} aria-hidden /> Workspace
+            <ArrowLeft size={13} aria-hidden />
           </Button>
           <h1 className="flex items-center gap-2 text-display font-semibold text-primary">
-            <Sword size={20} aria-hidden /> Dungeon
+            Enhancer
           </h1>
         </div>
         <p className="text-body leading-6 text-muted">
-          Teach personas new skills the way you'd teach a person: give a research topic or upload learning materials → the
-          persona studies in a sandbox → it produces a <b className="text-secondary">skill</b> it has mastered (draft → you accept → ready
-          to attach via the Skill Mapping tab).
+          Teach personas new skills the way you'd teach a person: give a
+          research topic or upload learning materials → the persona studies in a
+          sandbox → it produces a <b className="text-secondary">skill</b> it has
+          mastered (draft → you accept → ready to attach via the Skill Mapping
+          tab).
         </p>
         <TabList
           value={view}
@@ -428,7 +619,11 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 
       {view === "riwayat" ? (
         allRuns.length === 0 ? (
-          <EmptyState icon={<Clock size={20} />} title="No training sessions yet" hint="Run a mission first — every training run is recorded here." />
+          <EmptyState
+            icon={<Clock size={20} />}
+            title="No training sessions yet"
+            hint="Run a mission first — every training run is recorded here."
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {allRuns.map((r) => (
@@ -441,7 +636,12 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
                     <span aria-hidden>·</span>
                     {r.status === "running" ? (
                       <>
-                        <CircleNotch size={11} aria-hidden className="animate-pulse" /> running
+                        <CircleNotch
+                          size={11}
+                          aria-hidden
+                          className="animate-pulse"
+                        />{" "}
+                        running
                       </>
                     ) : r.status === "done" ? (
                       <>
@@ -452,10 +652,19 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
                         <X size={11} weight="bold" aria-hidden /> failed
                       </>
                     )}
-                    {r.summary ? <span className="truncate">— {r.summary.slice(0, 140)}</span> : null}
+                    {r.summary ? (
+                      <span className="truncate">
+                        — {r.summary.slice(0, 140)}
+                      </span>
+                    ) : null}
                   </MetaRow>
                 </div>
-                <Button size="sm" disabled={!onOpenProject} onClick={() => onOpenProject?.(r.projectId ?? "")} title="Open the training room (chat + artifacts of this session)">
+                <Button
+                  size="sm"
+                  disabled={!onOpenProject}
+                  onClick={() => onOpenProject?.(r.projectId ?? "")}
+                  title="Open the training room (chat + artifacts of this session)"
+                >
                   Open session →
                 </Button>
               </Card>
@@ -470,18 +679,36 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
             <Button variant="primary" onClick={() => setFormOpen(true)}>
               + New training
             </Button>
-            <small className="text-caption text-dim">Full form (mode, persona, skill, pass criteria) opens as a modal popup.</small>
+            <small className="text-caption text-dim">
+              Full form (mode, persona, skill, pass criteria) opens as a modal
+              popup.
+            </small>
           </div>
 
-          <Modal open={formOpen} onClose={() => setFormOpen(false)} title={<span className="flex items-center gap-2"><Sword size={16} aria-hidden /> New training</span>} wide>
+          <Modal
+            open={formOpen}
+            onClose={() => setFormOpen(false)}
+            title={
+              <span className="flex items-center gap-2">
+                <Sword size={16} aria-hidden /> New training
+              </span>
+            }
+            wide
+          >
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap gap-2">
-                  <ChipToggle2 active={mode === "research"} onClick={() => switchMode("research")}>
-                    <MagnifyingGlass size={12} aria-hidden /> Self-research
-                  </ChipToggle2>
-                  <ChipToggle2 active={mode === "documents"} onClick={() => switchMode("documents")}>
-                    <Books size={12} aria-hidden /> Learning materials (files)
-                  </ChipToggle2>
+                <ChipToggle2
+                  active={mode === "research"}
+                  onClick={() => switchMode("research")}
+                >
+                  <MagnifyingGlass size={12} aria-hidden /> Self-research
+                </ChipToggle2>
+                <ChipToggle2
+                  active={mode === "documents"}
+                  onClick={() => switchMode("documents")}
+                >
+                  <Books size={12} aria-hidden /> Learning materials (files)
+                </ChipToggle2>
               </div>
               <small className="text-caption leading-5 text-muted">
                 {mode === "research"
@@ -492,8 +719,14 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Persona to train" className="col-span-2">
                   <div className="flex items-center gap-2">
-                    {persona && <PersonaFace personaId={persona.id} size={32} />}
-                    <Select value={personaId} onChange={(e) => setPersonaId(e.target.value)} aria-label="Persona">
+                    {persona && (
+                      <PersonaFace personaId={persona.id} size={32} />
+                    )}
+                    <Select
+                      value={personaId}
+                      onChange={(e) => setPersonaId(e.target.value)}
+                      aria-label="Persona"
+                    >
                       <option value="">Pick a persona…</option>
                       {personas.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -504,29 +737,83 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
                   </div>
                 </Field>
                 <Field label="Target skill name">
-                  <TextInput value={skillName} placeholder="e.g. phaser-basics" spellCheck={false} onChange={(e) => setSkillName(e.target.value)} />
+                  <TextInput
+                    value={skillName}
+                    placeholder="e.g. phaser-basics"
+                    spellCheck={false}
+                    onChange={(e) => setSkillName(e.target.value)}
+                  />
                 </Field>
                 <Field label="When this skill is used (description)">
-                  <TextInput value={skillDesc} placeholder="e.g. Phaser 3 basics to start a 2D game" onChange={(e) => setSkillDesc(e.target.value)} />
+                  <TextInput
+                    value={skillDesc}
+                    placeholder="e.g. Phaser 3 basics to start a 2D game"
+                    onChange={(e) => setSkillDesc(e.target.value)}
+                  />
                 </Field>
-                <Field label="Training title (optional)" hint={`auto: Train ${skillName || "…"}`} className="col-span-2">
-                  <TextInput value={title} placeholder={`auto: Train ${skillName || "…"}`} onChange={(e) => setTitle(e.target.value)} />
+                <Field
+                  label="Training title (optional)"
+                  hint={`auto: Train ${skillName || "…"}`}
+                  className="col-span-2"
+                >
+                  <TextInput
+                    value={title}
+                    placeholder={`auto: Train ${skillName || "…"}`}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
                 </Field>
-                <Field label="Learning goal / special instructions (optional)" className="col-span-2">
-                  <TextArea value={goal} rows={2} placeholder="empty = mode default" onChange={(e) => setGoal(e.target.value)} />
+                <Field
+                  label="Learning goal / special instructions (optional)"
+                  className="col-span-2"
+                >
+                  <TextArea
+                    value={goal}
+                    rows={2}
+                    placeholder="empty = mode default"
+                    onChange={(e) => setGoal(e.target.value)}
+                  />
                 </Field>
                 {mode === "research" && (
-                  <Field label="Starting sources — URLs, one per line (optional)" className="col-span-2">
-                    <TextArea value={resourcesText} rows={2} spellCheck={false} placeholder="https://…" onChange={(e) => setResourcesText(e.target.value)} />
+                  <Field
+                    label="Starting sources — URLs, one per line (optional)"
+                    className="col-span-2"
+                  >
+                    <TextArea
+                      value={resourcesText}
+                      rows={2}
+                      spellCheck={false}
+                      placeholder="https://…"
+                      onChange={(e) => setResourcesText(e.target.value)}
+                    />
                   </Field>
                 )}
-                <Field label="Pass criteria — one per line" hint="used later in the blind eval" className="col-span-2">
-                  <TextArea value={accText} rows={3} spellCheck={false} onChange={(e) => { setAccText(e.target.value); setAccDirty(true); }} />
+                <Field
+                  label="Pass criteria — one per line"
+                  hint="used later in the blind eval"
+                  className="col-span-2"
+                >
+                  <TextArea
+                    value={accText}
+                    rows={3}
+                    spellCheck={false}
+                    onChange={(e) => {
+                      setAccText(e.target.value);
+                      setAccDirty(true);
+                    }}
+                  />
                 </Field>
               </div>
-                      <div className="flex justify-end">
-                <Button variant="primary" disabled={!canCreate} onClick={() => void create()}>
-                  {busy ? "creating…" : mode === "research" ? "Create & train" : "Create training (then upload materials)"}
+              <div className="flex justify-end">
+                <Button
+                  variant="primary"
+                  disabled={!canCreate}
+                  onClick={() => void create()}
+                >
+                  {busy
+                    ? "creating…"
+                    : mode === "research"
+                      ? "Create & train"
+                      : "Create training (then upload materials)"}
                 </Button>
               </div>
             </div>
@@ -537,20 +824,29 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
           ) : (
             <>
               <div className="flex flex-col gap-2">
-                <SectionTitle>Your trainings ({userMissions.length})</SectionTitle>
+                <SectionTitle>
+                  Your trainings ({userMissions.length})
+                </SectionTitle>
                 {userMissions.length === 0 ? (
-                  <EmptyState title="No trainings of yours yet" hint="Create one with the “New training” button." />
+                  <EmptyState
+                    title="No trainings of yours yet"
+                    hint="Create one with the “New training” button."
+                  />
                 ) : (
                   userMissions.map(card)
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <SectionTitle>Built-in trainings ({seedMissions.length})</SectionTitle>
+                <SectionTitle>
+                  Built-in trainings ({seedMissions.length})
+                </SectionTitle>
                 {seedMissions.map(card)}
               </div>
               <p className="text-caption leading-5 text-dim">
-                After training, the skill appears as a <b>draft</b>: accept it directly on the <b className="text-secondary">Skill Mapping</b>{" "}
-                tab (or the project's Skill tab). Personas without phase skills are marked ✕ on the Roster tab — train them here.
+                After training, the skill appears as a <b>draft</b>: accept it
+                directly on the <b className="text-secondary">Skill Mapping</b>{" "}
+                tab (or the project's Skill tab). Personas without phase skills
+                are marked ✕ on the Roster tab — train them here.
               </p>
             </>
           )}
@@ -572,14 +868,24 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 }
 
 /** Toggle mode kecil lokal (pilihan 2 opsi) — ChipToggle ui dengan spacing bar. */
-function ChipToggle2({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function ChipToggle2({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
       aria-pressed={active}
       onClick={onClick}
       className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border px-3.5 py-1.5 text-caption transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-        active ? "border-accent bg-accent-soft text-accent-text" : "border-line text-muted hover:border-line-strong hover:text-primary"
+        active
+          ? "border-accent bg-accent-soft text-accent-text"
+          : "border-line text-muted hover:border-line-strong hover:text-primary"
       }`}
     >
       {children}

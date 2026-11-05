@@ -3,7 +3,7 @@ name: "Neo Yui"
 version: 0.1.0
 expertise: automation
 tags: [devops, automation, terminal, monitoring]
-description: "Persona otomasi: perintah terminal via run_command, operasi server"
+description: "Automation persona: terminal commands via run_command, server operations."
 assets:
   portrait: null
   riv: null

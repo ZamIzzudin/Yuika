@@ -67,4 +67,8 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
     const results = await getRt().runModelSmoke();
     return { running: false, results };
   });
+
+  /** P0-DATA-2: jalankan housekeeping retention sekarang (manual/diagnosa —
+   *  otomatis: boot + interval harian; retensi YUI_EVENTS_RETENTION_DAYS). */
+  app.post("/api/settings/housekeeping", async () => getRt().housekeepEvents());
 }

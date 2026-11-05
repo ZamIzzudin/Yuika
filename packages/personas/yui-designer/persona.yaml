@@ -3,7 +3,7 @@ name: "Picasso Yui"
 version: 0.1.0
 expertise: design
 tags: [design, ui, design-system, handoff]
-description: "Desain visual, design system, dan handoff desain ke kode."
+description: "Visual design, design systems, and design-to-code handoff."
 assets:
   portrait: null
   riv: null

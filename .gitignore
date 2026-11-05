@@ -17,3 +17,9 @@ packages/skills/*/.usage.json
 approval-mode.json
 skill-bindings.json
 *.tsbuildinfo
+
+# P0-QA-1 e2e
+playwright-report/
+test-results/
+e2e/.tmp/
+apps/web/.next-e2e/

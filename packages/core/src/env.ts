@@ -40,6 +40,10 @@ const schema = z.object({
     .optional(),
   /** Learn nudge pasca-turn (0 = matikan). */
   learn: z.preprocess((v) => v !== "0", z.boolean()),
+  /** P0-DATA-2: retensi events (hari) — lebih tua dari ini diarsipkan ke
+   *  events_archive (tabel aktif tetap ramping; bacaan UNION agar replay
+   *  tetap utuh). 0 = housekeeping mati. */
+  eventsRetentionDays: int(30, 0, 3650),
 });
 
 export type CoreEnv = z.infer<typeof schema>;
@@ -56,6 +60,7 @@ const raw = {
   trace: process.env.YUI_TRACE,
   logLevel: process.env.YUI_LOG_LEVEL || undefined,
   learn: process.env.YUI_LEARN,
+  eventsRetentionDays: process.env.YUI_EVENTS_RETENTION_DAYS,
 };
 
 const parsed = schema.safeParse(raw);

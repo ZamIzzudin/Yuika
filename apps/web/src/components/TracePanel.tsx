@@ -1,4 +1,3 @@
-
 "use client";
 import { apiUrl } from "@/lib/api";
 /**
@@ -107,7 +106,8 @@ export function TracePanel({
       ? ""
       : `${ms >= 10_000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`}`;
 
-  const hint = "px-1 py-6 text-center text-body text-dim";
+  const hint =
+    "overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3 sm:px-6">
@@ -120,21 +120,23 @@ export function TracePanel({
         )}
       </header>
       {sessionId === null ? (
-        <p className={hint}>
+        <p className={`${hint} flex items-center justify-center`}>
           No active conversation yet — open or start a chat session first, then
           come back here to see its step-by-step trace.
         </p>
       ) : missing ? (
-        <p className={hint}>
+        <p className={`${hint} flex items-center justify-center`}>
           This session was not found (perhaps deleted along with its project).
           Pick another session from the sidebar.
         </p>
       ) : trace === null ? (
         <Skeleton lines={6} />
       ) : trace.turns.length === 0 ? (
-        <p className={hint}>No turns in this session yet.</p>
+        <p className={`${hint} flex items-center justify-center`}>
+          No turns in this session yet.
+        </p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full">
           {[...trace.turns].reverse().map((t) => (
             <details
               key={t.turnId}
@@ -185,9 +187,7 @@ export function TracePanel({
                   );
                 })}
                 {t.steps.length === 0 && (
-                  <li className="text-caption text-dim">
-                    (no steps recorded)
-                  </li>
+                  <li className="text-caption text-dim">(no steps recorded)</li>
                 )}
               </ol>
             </details>

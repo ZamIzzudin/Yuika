@@ -322,7 +322,10 @@ export default function Home() {
         setItems((prev) => {
           const next = [...prev];
           for (let i = next.length - 1; i >= 0; i--) {
-            if (next[i]!.kind === "delegation" && next[i]!.childSessionId === e.childSessionId) {
+            if (
+              next[i]!.kind === "delegation" &&
+              next[i]!.childSessionId === e.childSessionId
+            ) {
               next[i] = { ...next[i]!, paused: pausedNow };
               break;
             }
@@ -481,7 +484,9 @@ export default function Home() {
       }
       if (dead) return;
       es = new EventSource(
-        apiUrl(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}`),
+        apiUrl(
+          `/api/sessions/${sessionId}/stream?since=${lastEventId.current}`,
+        ),
       );
       es.onmessage = (m) => {
         attempt = 0;
@@ -516,7 +521,9 @@ export default function Home() {
       if (!sessionId) return;
       try {
         const r = await fetch(
-          apiUrl(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`),
+          apiUrl(
+            `/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`,
+          ),
         );
         if (!r.ok) return;
         const text = await r.text();
@@ -645,7 +652,9 @@ export default function Home() {
   /** P0-CORE-1: tombol Stop — abort turn aktif; progres & parsial tersimpan. */
   async function cancelTurn() {
     if (!sessionId) return;
-    await fetch(apiUrl(`/api/sessions/${sessionId}/cancel`), { method: "POST" });
+    await fetch(apiUrl(`/api/sessions/${sessionId}/cancel`), {
+      method: "POST",
+    });
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -726,7 +735,7 @@ export default function Home() {
               />
               <span className="flex min-w-0 flex-col leading-tight">
                 <b className="text-body font-semibold tracking-tight text-primary">
-                  Your-Yui
+                  Yui
                 </b>
                 <span className="text-caption text-dim">demo</span>
               </span>

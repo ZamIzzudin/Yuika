@@ -35,7 +35,13 @@ cp .env.example .env        # isi YUI_OPENAI_API_KEY dst.
 npm run dev                 # web :3000 + api :3211 (turbo paralel, dua proses)
 npm test                    # contracts + core + api (vitest)
 npm run typecheck
+npm run e2e                 # E2E smoke Playwright (mock provider, tanpa API key)
 ```
+
+E2E (P0-QA-1) menjalankan 3 server terisolasi (mock provider :3299 → api :3291 →
+web :3990, data di `e2e/.tmp`) dan menuntaskan skenario demo §2 end-to-end —
+pilih Conductor → delegasi Scholar via SSE → jawaban final → replay persist. Tidak
+bentrok dengan dev server yang sedang jalan.
 
 Atau jalankan semuanya di Docker (P0-INF-5):
 

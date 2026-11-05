@@ -50,6 +50,18 @@ export class SessionStore {
         ts INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, id);
+      -- P0-DATA-2: arsip retention — baris events lama dipindah ke sini (id ASLI
+      -- dipertahankan; identitas event tidak berubah). Bacaan memakai UNION
+      -- events + events_archive sehingga replay/hidrasi tetap utuh.
+      CREATE TABLE IF NOT EXISTS events_archive (
+        id INTEGER PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        ts INTEGER NOT NULL,
+        archived_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_events_archive_session ON events_archive(session_id, id);
       -- P0-CORE-4: checkpoint kompresi konteks — append-only; baris ter-id TERBESAR
       -- per sesi = checkpoint aktif (view prompt memakainya; messages tak pernah diubah).
       CREATE TABLE IF NOT EXISTS context_checkpoints (
@@ -128,9 +140,16 @@ export class SessionStore {
   listProjectSessions(projectId: string): Array<{ id: string; personaId: string; createdAt: number; lastEventAt: number; lastEventId: number }> {
     const rows = this.db
       .prepare(
-        `SELECT s.id, s.persona_id, s.created_at, COALESCE(MAX(e.id), 0) AS last_event_id, COALESCE(MAX(e.ts), s.created_at) AS last_event_at
-         FROM sessions s LEFT JOIN events e ON e.session_id = s.id
-         WHERE s.project_id = ? GROUP BY s.id ORDER BY last_event_at DESC`
+        `SELECT s.id, s.persona_id, s.created_at,
+                COALESCE(u.max_id, 0) AS last_event_id, COALESCE(u.max_ts, s.created_at) AS last_event_at
+         FROM sessions s
+         LEFT JOIN (
+           SELECT session_id, MAX(id) AS max_id, MAX(ts) AS max_ts FROM (
+             SELECT session_id, id, ts FROM events
+             UNION ALL SELECT session_id, id, ts FROM events_archive
+           ) GROUP BY session_id
+         ) u ON u.session_id = s.id
+         WHERE s.project_id = ? ORDER BY last_event_at DESC`
       )
       .all(projectId) as Array<{ id: string; persona_id: string; created_at: number; last_event_id: number; last_event_at: number }>;
     return rows.map((r) => ({ id: r.id, personaId: r.persona_id, createdAt: r.created_at, lastEventAt: r.last_event_at, lastEventId: r.last_event_id }));
@@ -145,8 +164,12 @@ export class SessionStore {
   /** P1-PER-4: jumlah turn SELESAI per persona (event persona.state done).
    *  Scan events sekali — cukup cepat di skala demo; index menyusul bila perlu. */
   personaDoneTurnCounts(): Map<string, number> {
+    // P0-DATA-2: scan events ∪ arsip — statistik growth tidak berubah karena retensi.
     const rows = this.db
-      .prepare(`SELECT payload FROM events WHERE type = 'persona.state'`)
+      .prepare(
+        `SELECT payload FROM events WHERE type = 'persona.state'
+         UNION ALL SELECT payload FROM events_archive WHERE type = 'persona.state'`
+      )
       .all() as Array<{ payload: string }>;
     const out = new Map<string, number>();
     for (const r of rows) {
@@ -303,6 +326,62 @@ export class SessionStore {
     }));
   }
 
+  /** P0-DATA-2 — pindahkan events lama ke events_archive.
+   *
+   *  Kandidat: baris `ts < cutoff` dari sesi DINGIN (event terakhir sesi < cutoff —
+   *  sesi aktif tidak disentuh). Sesi dengan turn GANTUNG (belum ada penutup —
+   *  dipakai boot-heal) dilewati seluruhnya; setelah heal menutupnya di boot
+   *  berikutnya, sesi itu layak diarsip pada siklus sesudahnya.
+   *
+   *  Identitas event TIDAK berubah (id asli ikut pindah); bacaan memakai UNION
+   *  (getEvents/growth/listSessions) sehingga replay & hidrasi tetap lengkap —
+   *  hanya tabel aktif yang mengecil. `nowMs` disuntik untuk test (jam dimajukan).
+   */
+  archiveOldEvents(retentionDays: number, nowMs: number = Date.now()): { archived: number; sessions: number } {
+    if (retentionDays <= 0) return { archived: 0, sessions: 0 };
+    const cutoff = nowMs - retentionDays * 86_400_000;
+    const tx = this.db.transaction(() => {
+      // idempoten: baris yang sudah ada di arsip tidak diangkat dua kali
+      const info = this.db
+        .prepare(
+          `INSERT OR IGNORE INTO events_archive (id, session_id, type, payload, ts, archived_at)
+           SELECT e.id, e.session_id, e.type, e.payload, e.ts, ?
+           FROM events e
+           WHERE e.ts < ? AND e.session_id IN (
+             SELECT session_id FROM events GROUP BY session_id HAVING MAX(ts) < ?
+           ) AND e.session_id NOT IN (
+             -- sesi turn gantung (logika = findInterruptedTurns): milik boot-heal,
+             -- jangan diutak-atik — biasanya sudah ditutup heal sebelum housekeeping jalan
+             SELECT s.id FROM sessions s
+             JOIN (SELECT session_id, MAX(id) AS id FROM events WHERE type = 'turn.started' GROUP BY session_id) ts
+               ON ts.session_id = s.id
+             LEFT JOIN events e ON e.session_id = s.id AND e.id > ts.id AND (
+               e.type = 'turn.cancelled' OR e.type = 'session.error' OR
+               (e.type = 'persona.state' AND json_extract(e.payload, '$.state') IN ('done','idle','error'))
+             )
+             WHERE e.id IS NULL
+           )`
+        )
+        .run(nowMs, cutoff, cutoff);
+      const n = Number(info.changes);
+      if (n > 0) {
+        this.db
+          .prepare(
+            `DELETE FROM events WHERE id IN (SELECT id FROM events_archive)`
+          )
+          .run();
+      }
+      return n;
+    });
+    const archived = tx() as number;
+    const sessions = archived > 0
+      ? Number(
+          (this.db.prepare(`SELECT COUNT(DISTINCT session_id) AS n FROM events_archive WHERE archived_at = ?`).get(nowMs) as { n: number }).n,
+        )
+      : 0;
+    return { archived, sessions };
+  }
+
   /** Append event draft + lekatkan meta (id monotonic, ts) — kunci replay/resume. */
   appendEvent(sessionId: string, draft: EventDraft): YuiEventType {
     const withMeta = { ...draft, sessionId, id: 0, ts: Date.now() } as Record<string, unknown>;
@@ -314,9 +393,17 @@ export class SessionStore {
   }
 
   getEvents(sessionId: string, sinceId = 0): YuiEventType[] {
+    // P0-DATA-2: UNION dengan arsip — replay SSE & hidrasi melihat riwayat
+    // lengkap walau baris lama sudah dipindah dari tabel aktif.
     const rows = this.db
-      .prepare("SELECT id, payload, ts FROM events WHERE session_id = ? AND id > ? ORDER BY id ASC")
-      .all(sessionId, sinceId) as { id: number; payload: string; ts: number }[];
+      .prepare(
+        `SELECT id, payload, ts FROM (
+           SELECT id, payload, ts FROM events WHERE session_id = ? AND id > ?
+           UNION ALL
+           SELECT id, payload, ts FROM events_archive WHERE session_id = ? AND id > ?
+         ) ORDER BY id ASC`
+      )
+      .all(sessionId, sinceId, sessionId, sinceId) as { id: number; payload: string; ts: number }[];
     return rows.map((r) => {
       const payload = JSON.parse(r.payload) as Record<string, unknown>;
       return YuiEvent.parse({ ...payload, id: r.id, ts: r.ts, sessionId });
