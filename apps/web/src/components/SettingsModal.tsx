@@ -6,7 +6,7 @@ import { apiUrl } from "@/lib/api";
 // MCP (katalog + trust + audit — dulunya sesak di dasar sidebar), + metering.
 // DS-1: ui/* + Tailwind semantik + ikon Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
-import type { ModelRoutes, ProviderSettings } from "@yui/contracts";
+import type { ProviderSettings } from "@yui/contracts";
 import { Check, Prohibit, Warning, X } from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
 import { Skeleton } from "./Skeleton";
@@ -147,7 +147,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   <Field label="Aux model (optional)" hint="lightweight tasks like memory learning; empty = primary model (P1-INF-3)">
                     <TextInput value={aux} onChange={(e) => setAux(e.target.value)} placeholder="glm/glm-5-flash" spellCheck={false} />
                   </Field>
-                  <ModelRoutesEditor defaultModel={cfg.model} />
                   <div className="flex items-center gap-3">
                     <Button variant="primary" onClick={() => void save()} disabled={!dirty}>
                       Save
@@ -175,137 +174,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 }
 
 /** P1-MDL: editor model per persona — kosong = ikut default; tersimpan ke
- *  model-overrides.json, sesi berikutnya langsung memakai route baru.
- *  P1-MDL-2: panel smoke test — model gagal tool-call 2 langkah → fallback otomatis. */
-function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
-  const [routes, setRoutes] = useState<ModelRoutes | null>(null);
-  const [saving, setSaving] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
-  const [smoke, setSmoke] = useState<{ running: boolean; results: { model: string; ok: boolean; latencyMs: number; error: string | null }[] } | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      const r = await fetch(apiUrl("/api/settings/models"));
-      if (r.ok) setRoutes((await r.json()) as ModelRoutes);
-      const s = await fetch(apiUrl("/api/settings/provider/smoke"));
-      if (s.ok) setSmoke((await s.json()) as NonNullable<typeof smoke>);
-    } catch {
-      /* coba lagi */
-    }
-  }, []);
-  useEffect(() => {
-    void load();
-    // smoke berjalan async (auto setelah ganti provider) — poll ringan
-    const t = setInterval(() => {
-      if (smoke?.running) void load();
-    }, 3_000);
-    return () => clearInterval(t);
-  }, [load, smoke?.running]);
-
-  async function runSmoke() {
-    setSmoke({ running: true, results: smoke?.results ?? [] });
-    try {
-      const r = await fetch(apiUrl("/api/settings/provider/smoke"), { method: "POST" });
-      if (r.ok) setSmoke((await r.json()) as NonNullable<typeof smoke>);
-    } catch {
-      setSmoke(null);
-    }
-  }
-
-  if (!routes) return <Skeleton lines={3} />;
-  return (
-    <Card variant="inset" className="flex flex-col gap-3 p-4">
-      <div className="flex flex-col gap-1">
-        <b className="text-body font-semibold text-primary">Model per persona (P1-MDL)</b>
-        <small className="text-caption leading-5 text-muted">
-          Leave empty to follow the default (<code className="font-mono">{defaultModel}</code>). Delegation children use
-          their own persona's model — so Conductor &amp; Coder can run on different models in one run.
-        </small>
-      </div>
-      {/* P1-MDL-2: smoke test — verifikasi tool-call 2 langkah per model aktif */}
-      <div className="flex flex-col gap-2">
-        <Button size="sm" onClick={() => void runSmoke()} disabled={smoke?.running}>
-          {smoke?.running ? "testing…" : "Test all models"}
-        </Button>
-        {smoke && smoke.results.length > 0 && (
-          <ul className="flex flex-col gap-0.5">
-            {smoke.results.map((s) => (
-              <li key={s.model} className={`flex items-center gap-1.5 text-caption ${s.ok ? "text-secondary" : "text-danger"}`} title={s.error ?? undefined}>
-                {s.ok ? <Check size={12} weight="bold" aria-hidden /> : <X size={12} weight="bold" aria-hidden />}
-                <code className="font-mono">{s.model}</code> · {(s.latencyMs / 1000).toFixed(1)}s
-                {!s.ok && <small className="text-dim"> — automatic fallback engaged</small>}
-              </li>
-            ))}
-          </ul>
-        )}
-        {smoke && smoke.results.length === 0 && !smoke.running && (
-          <small className="text-caption text-dim">no results yet — click “Test all models”</small>
-        )}
-      </div>
-      <table className="w-full text-caption">
-        <tbody>
-          {routes.personas.map((p) => {
-            const o = routes.overrides[p.id];
-            return (
-              <tr key={p.id} className="border-b border-line last:border-0">
-                <th className="w-[130px] py-1 pr-2 text-left align-middle font-medium text-secondary">{p.name}</th>
-                <td className="py-1 pr-2">
-                  <TextInput
-                    defaultValue={o?.model ?? ""}
-                    placeholder={defaultModel}
-                    spellCheck={false}
-                    className="h-6"
-                    onBlur={(e) => void save(p.id, "model", e.target.value, routes, setRoutes, setSaving, setOk)}
-                  />
-                </td>
-                <td className="py-1">
-                  <TextInput
-                    defaultValue={o?.fallback ?? ""}
-                    placeholder={routes.defaultFallback || "—"}
-                    spellCheck={false}
-                    className="h-6"
-                    onBlur={(e) => void save(p.id, "fallback", e.target.value, routes, setRoutes, setSaving, setOk)}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {ok && <small className="text-caption text-success">{ok}</small>}
-    </Card>
-  );
-}
-
-async function save(
-  personaId: string,
-  field: "model" | "fallback",
-  value: string,
-  routes: ModelRoutes,
-  setRoutes: (m: ModelRoutes) => void,
-  setSaving: (s: string | null) => void,
-  setOk: (s: string | null) => void,
-) {
-  const cur = routes.overrides[personaId] ?? {};
-  const next = { ...cur, [field]: value.trim() } as { model?: string; fallback?: string };
-  const empty = !next.model && !next.fallback;
-  setSaving(personaId);
-  setOk(null);
-  try {
-    const r = await fetch(apiUrl("/api/settings/models"), {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ personaId, model: empty ? "" : next.model ?? "", fallback: empty ? "" : next.fallback ?? "" }),
-    });
-    if (r.ok) {
-      setRoutes((await r.json()) as ModelRoutes);
-      setOk("Saved — the next session uses the new route.");
-    }
-  } finally {
-    setSaving(null);
-  }
-}
-
 /** P1-CRED-2/3/4: panel saldo & batas — belanja jujur dari metering × price
  *  book, burn-rate 24 j, hold aktif, limit harian/total (mode warn/block),
  *  rate-limit turn/menit & cap delegasi paralel. Edit = blur → PUT budget. */

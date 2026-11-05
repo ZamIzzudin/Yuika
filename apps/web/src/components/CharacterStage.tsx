@@ -19,6 +19,7 @@ import {
   Code,
   Compass,
   Fire,
+  Gear,
   Lightning,
   MagnifyingGlass,
   PuzzlePiece,
@@ -29,6 +30,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { OrinPortrait } from "./OrinPortrait";
+import { PersonaModelModal } from "./PersonaModelModal";
 import {
   MiniFace,
   PERSONA_SHAPE,
@@ -365,6 +367,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   const [emote, setEmote] = useState<PersonaState>("idle");
   const [busyShape, setBusyShape] = useState<OrinShapeKey | null>(null);
   const [greeted, setGreeted] = useState(false);
+  const [modelOpen, setModelOpen] = useState(false);
   // Tooltip skill melayang (layer stage — tak terpotong scroll card):
   // posisi = pusat-atas tile, relatif stage.
   const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(
@@ -591,9 +594,20 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       <aside
         className={
           cardCls +
-          " min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
+          " relative min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
         }
       >
+        {/* setup model persona — pojok kiri atas card */}
+        <button
+          type="button"
+          data-model-gear=""
+          aria-label={`Model settings for ${persona.name}`}
+          title="Model settings"
+          onClick={() => setModelOpen(true)}
+          className="absolute top-3 left-3 z-[3] grid size-7 cursor-pointer place-items-center rounded-[9px] border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-primary"
+        >
+          <Gear size={14} weight="duotone" aria-hidden />
+        </button>
         <div className="flex flex-wrap gap-1.5 items-center justify-center mb-3">
           <span
             className="rounded-pill border px-2.5 py-0.5 text-[12px] font-semibold"
@@ -814,6 +828,15 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           })}
         </div>
       </div>
+
+      {/* setup model per persona — dipindah dari SettingsModal */}
+      {modelOpen && persona && (
+        <PersonaModelModal
+          personaId={persona.id}
+          personaName={persona.name}
+          onClose={() => setModelOpen(false)}
+        />
+      )}
     </div>
   );
 }

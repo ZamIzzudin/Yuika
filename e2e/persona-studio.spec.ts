@@ -54,7 +54,16 @@ test("CharacterStage: constellation stage, carousel, gallery, shape, skills, mis
     await expect(tile).toHaveAttribute("aria-pressed", "false", { timeout: 8000 });
   }
 
-  // 6) Dock galeri: pilih via thumbnail
+  // 6) Setup model persona: tombol gear (card kiri) → modal form + tombol
+  //    check connection (dipindah dari SettingsModal)
+  await page.locator("[data-model-gear]").click();
+  const modelDlg = page.getByRole("dialog", { name: /^Model — / });
+  await expect(modelDlg).toBeVisible();
+  await expect(modelDlg.getByRole("button", { name: "Check connection" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(modelDlg).toBeHidden();
+
+  // 7) Dock galeri: pilih via thumbnail
   await expect(page.getByRole("listbox", { name: "Character gallery" })).toBeVisible();
   await page.getByRole("option").nth(2).click();
   await expect(page.getByRole("option").nth(2)).toHaveAttribute("aria-selected", "true");
