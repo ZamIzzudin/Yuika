@@ -15,10 +15,13 @@ const int = (def: number, min: number, max: number) =>
 const schema = z.object({
   /** Budget iterasi tool-round per turn. */
   maxIter: int(16, 1, 128),
+  /** Cap iterasi saat mode hardcore/auto-approve — selesaikan sampai tuntas. */
+  maxIterHardcore: int(64, 1, 1024),
   /** Deadline approval (ms); 0 = tanpa timeout. */
   approvalTimeoutMs: int(300_000, 0, 86_400_000),
-  /** Timeout provider (ms). */
-  providerTimeoutMs: int(120_000, 1_000, 600_000),
+  /** Timeout provider (ms) — default 5 mnt: model reasoning + context MCP besar
+   *  bisa >120 dtk sampai token pertama (fix "Socket timeout" 2026-11). */
+  providerTimeoutMs: int(300_000, 1_000, 600_000),
   /** Estimasi jendela konteks model (token) — acuan kompresi (P0-CORE-4). */
   contextTokens: int(128_000, 4_000, 2_000_000),
   /** Kompresi: fraksi jendela pemicu ×1000 (700 = 70%). */
@@ -37,6 +40,7 @@ export type CoreEnv = z.infer<typeof schema>;
 
 const raw = {
   maxIter: process.env.YUI_MAX_ITER,
+  maxIterHardcore: process.env.YUI_MAX_ITER_HARDCORE,
   approvalTimeoutMs: process.env.YUI_APPROVAL_TIMEOUT_MS,
   providerTimeoutMs: process.env.YUI_PROVIDER_TIMEOUT_MS,
   contextTokens: process.env.YUI_CONTEXT_TOKENS,

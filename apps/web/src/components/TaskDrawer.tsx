@@ -17,7 +17,7 @@ import {
   CircleHalf,
   CircleNotch,
   Paperclip,
-  Plus,
+  TreeStructure,
   X,
 } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
@@ -48,11 +48,7 @@ export type WorkspaceTab =
   | "team"
   | "files"
   | "board"
-  | "tree"
-  | "roster"
-  | "sessions"
-  | "memory"
-  | "skills";
+  | "config";
 
 /** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
 export interface LiveDelegation {
@@ -64,17 +60,6 @@ export interface LiveDelegation {
 }
 
 /** Waktu relatif pendek untuk daftar sesi. */
-function relTime(ts: number): string {
-  const s = Math.max(1, Math.round((Date.now() - ts) / 1000));
-  if (s < 60) return `${s} dtk lalu`;
-  if (s < 3600) return `${Math.round(s / 60)} mnt lalu`;
-  if (s < 86400) return `${Math.round(s / 3600)} jam lalu`;
-  return new Date(ts).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
 const PERSONA_NAME: Record<string, string> = {
   "yui-conductor": "Maestro Yui",
   "yui-planner": "Liebert Yui",
@@ -177,20 +162,14 @@ export function ProjectTabs({
   personas,
   activeTab,
   rev,
-  sessions,
   activeSessionId,
-  onOpenSession,
-  onNewSession,
   live,
 }: {
   project: ProjectInfo;
   personas: PersonaInfo[];
   activeTab: Exclude<WorkspaceTab, "chat">;
   rev: number;
-  sessions: ProjectSessionSummary[];
   activeSessionId: string | null;
-  onOpenSession: (s: ProjectSessionSummary) => void;
-  onNewSession: () => void;
   live: {
     parentPersonaId: string | null;
     parentState: PersonaState;
@@ -199,6 +178,10 @@ export function ProjectTabs({
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
+  // Tab Konfigurasi: menu internal (roster/memori/skill) — ala SettingsModal, non-modal.
+  const [cfgMenu, setCfgMenu] = useState<"roster" | "memory" | "skills">("roster");
+  // Drawer "Log Task" (bekas tab Pohon) — dibuka dari tab Task.
+  const [treeOpen, setTreeOpen] = useState(false);
   // Jam live untuk durasi "sudah berjalan Xm" (tab Pohon & Tim)
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -288,11 +271,11 @@ export function ProjectTabs({
   }, [rev, refresh]);
 
   useEffect(() => {
-    if (activeTab === "tree" || activeTab === "board") void refreshTree();
-  }, [activeTab, rev, refreshTree]);
+    if (activeTab === "board" || treeOpen) void refreshTree();
+  }, [activeTab, treeOpen, rev, refreshTree]);
 
   useEffect(() => {
-    if (activeTab !== "memory") return;
+    if (activeTab !== "config" || cfgMenu !== "memory") return;
     void (async () => {
       try {
         const [u, p] = await Promise.all([
@@ -305,7 +288,7 @@ export function ProjectTabs({
         /* coba lagi saat buka tab */
       }
     })();
-  }, [activeTab, project.id]);
+  }, [activeTab, cfgMenu, project.id]);
 
   /** Simpan dokumen memori (PUT /api/memory). */
   async function saveMemoryDoc(scope: "user" | "project") {
@@ -382,46 +365,34 @@ export function ProjectTabs({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6">
       {!loaded && <Skeleton lines={6} />}
-      {loaded && activeTab === "sessions" && (
-        <section aria-label="Sesi project" className="flex flex-col gap-2.5">
-          <div>
-            <Button onClick={onNewSession}>
-              <Plus size={13} weight="bold" aria-hidden /> Sesi baru (Conductor)
-            </Button>
-          </div>
-          {sessions.length === 0 ? (
-            <p className="text-caption text-dim">Belum ada sesi.</p>
-          ) : (
-            <ul className="flex flex-col gap-0.5">
-              {sessions.map((s) => (
-                <li key={s.sessionId}>
-                  <button
-                    aria-current={
-                      s.sessionId === activeSessionId ? "true" : undefined
-                    }
-                    className={`flex w-full cursor-pointer items-center gap-2.5 rounded-md2 border px-2.5 py-2 text-left transition-colors ${
-                      s.sessionId === activeSessionId
-                        ? "border-line bg-hover"
-                        : "border-transparent hover:bg-hover"
-                    }`}
-                    onClick={() => onOpenSession(s)}
-                  >
-                    <PersonaFace personaId={s.personaId} size={18} />
-                    <span className="flex-1 text-body text-secondary">
-                      {s.personaName}
-                    </span>
-                    <span className="shrink-0 text-caption text-dim">
-                      {relTime(s.lastEventAt)}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {loaded && activeTab === "roster" && (
+      {loaded && activeTab === "config" && (
+        <div className="flex min-h-0 flex-1 items-start gap-5">
+          <nav
+            aria-label="Menu konfigurasi"
+            className="sticky top-0 flex w-[150px] shrink-0 flex-col gap-0.5 rounded-lg2 border border-line bg-surface p-1.5"
+          >
+            {(
+              [
+                ["roster", "Roster"],
+                ["memory", "Memori"],
+                ["skills", "Skill"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                aria-current={cfgMenu === id ? "page" : undefined}
+                className={`flex cursor-pointer items-center rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                  cfgMenu === id ? "bg-hover text-primary" : "text-dim hover:bg-hover hover:text-secondary"
+                }`}
+                onClick={() => setCfgMenu(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <div className="flex min-h-0 flex-1 flex-col">
+{loaded && cfgMenu === "roster" && (
         <section aria-label="Roster proyek" className="flex flex-col gap-3">
           <p className="text-caption text-dim">
             {done}/{tasks.length} task selesai · roster tersimpan deklaratif di{" "}
@@ -560,9 +531,60 @@ export function ProjectTabs({
           )}
         </section>
       )}
+{loaded && cfgMenu === "memory" && (
+        <section
+          aria-label="Memori — apa yang Yui ketahui"
+          className="flex max-w-[760px] flex-col gap-3"
+        >
+          {[
+            {
+              scope: "user" as const,
+              title: "Tentang Anda — USER.md",
+              hint: "Lintas proyek: preferensi gaya, bahasa, batasan.",
+            },
+            {
+              scope: "project" as const,
+              title: `Proyek ini — MEMORY.md`,
+              hint: `Keputusan, pelajaran, konteks yang berlaku di ${project.name}.`,
+            },
+          ].map((d) => (
+            <Card key={d.scope} className="flex flex-col gap-2.5">
+              <header className="flex items-center justify-between gap-2">
+                <b className="text-body font-semibold text-primary">
+                  {d.title}
+                </b>
+                <Button size="sm" onClick={() => void saveMemoryDoc(d.scope)}>
+                  Simpan
+                </Button>
+              </header>
+              <TextArea
+                value={d.scope === "user" ? userMd : projMd}
+                onChange={(e) =>
+                  d.scope === "user"
+                    ? setUserMd(e.target.value)
+                    : setProjMd(e.target.value)
+                }
+                rows={9}
+                spellCheck={false}
+              />
+              <small className="text-caption text-dim">{d.hint}</small>
+            </Card>
+          ))}
+        </section>
+      )}
+        {loaded && cfgMenu === "skills" && <SkillsTab />}
+          </div>
+        </div>
+      )}
 
       {loaded && activeTab === "board" && (
         <section aria-label="Papan kanban task">
+          <header className="mb-3 flex items-center justify-between">
+            <b className="text-body font-semibold text-primary">Task</b>
+            <Button size="sm" onClick={() => setTreeOpen(true)}>
+              <TreeStructure size={13} aria-hidden /> Log Task
+            </Button>
+          </header>
           <div className="grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
             {(["todo", "doing", "review", "done"] as const).map((col) => {
               const cards = flattenCards.filter((c) => c.node.status === col);
@@ -635,54 +657,27 @@ export function ProjectTabs({
         </section>
       )}
 
-      {loaded && activeTab === "memory" && (
-        <section
-          aria-label="Memori — apa yang Yui ketahui"
-          className="flex max-w-[760px] flex-col gap-3"
-        >
-          {[
-            {
-              scope: "user" as const,
-              title: "Tentang Anda — USER.md",
-              hint: "Lintas proyek: preferensi gaya, bahasa, batasan.",
-            },
-            {
-              scope: "project" as const,
-              title: `Proyek ini — MEMORY.md`,
-              hint: `Keputusan, pelajaran, konteks yang berlaku di ${project.name}.`,
-            },
-          ].map((d) => (
-            <Card key={d.scope} className="flex flex-col gap-2.5">
-              <header className="flex items-center justify-between gap-2">
-                <b className="text-body font-semibold text-primary">
-                  {d.title}
-                </b>
-                <Button size="sm" onClick={() => void saveMemoryDoc(d.scope)}>
-                  Simpan
-                </Button>
-              </header>
-              <TextArea
-                value={d.scope === "user" ? userMd : projMd}
-                onChange={(e) =>
-                  d.scope === "user"
-                    ? setUserMd(e.target.value)
-                    : setProjMd(e.target.value)
-                }
-                rows={9}
-                spellCheck={false}
-              />
-              <small className="text-caption text-dim">{d.hint}</small>
-            </Card>
-          ))}
-        </section>
-      )}
-
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
 
-      {loaded && activeTab === "skills" && <SkillsTab />}
-
-      {loaded && activeTab === "tree" && (
-        <section aria-label="Pohon task (TaskTree)" className="max-w-[860px]">
+      {treeOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Log Task"
+          className="fixed inset-0 z-50 flex justify-end bg-black/40"
+          onClick={() => setTreeOpen(false)}
+        >
+          <div
+            className="motion-safe:msg-in flex h-full w-full max-w-[560px] flex-col gap-3 overflow-y-auto border-l border-line bg-canvas p-4 shadow-pop"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between">
+              <b className="text-body font-semibold text-primary">Log Task</b>
+              <Button size="sm" variant="ghost" aria-label="Tutup" onClick={() => setTreeOpen(false)}>
+                <X size={14} weight="bold" aria-hidden />
+              </Button>
+            </header>
+            <section aria-label="Pohon task (TaskTree)">
           {tree.length === 0 ? (
             <p className="text-caption leading-5 text-dim">
               Pohon task masih kosong — simpul terbentuk dari event task (REST /
@@ -697,6 +692,8 @@ export function ProjectTabs({
             </ul>
           )}
         </section>
+          </div>
+        </div>
       )}
 
       {loaded && activeTab === "team" && (

@@ -9,7 +9,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
 import type { DelegationEdge } from "@yui/contracts";
-import { Check, Circle, CircleNotch, House, Minus, Plus } from "@phosphor-icons/react";
+import {
+  Check,
+  Circle,
+  CircleNotch,
+  House,
+  Minus,
+  Plus,
+} from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { Button, StateChip } from "./ui";
 
@@ -57,7 +64,9 @@ function Card({
         <b className="block text-body font-semibold text-primary">
           {PERSONA_NAME[personaId] ?? personaId.replace("yui-", "")}
         </b>
-        {subtitle && <small className="text-caption text-dim">{subtitle}</small>}
+        {subtitle && (
+          <small className="text-caption text-dim">{subtitle}</small>
+        )}
       </div>
       <StateChip state={state} className="mt-0.5 shrink-0" />
     </div>
@@ -72,19 +81,34 @@ function TaskRows({ edges, now }: { edges: DelegationEdge[]; now: number }) {
         const running = e.status === "running";
         const dur = e.doneAt ? e.doneAt - e.startedAt : now - e.startedAt;
         return (
-          <span key={e.childSessionId} className="flex items-baseline gap-1.5 text-caption text-dim" title={e.goal}>
+          <span
+            key={e.childSessionId}
+            className="flex items-baseline gap-1.5 text-caption text-dim"
+            title={e.goal}
+          >
             <span className="shrink-0 self-center">
               {running ? (
                 e.state === "idle" ? (
                   <Circle size={9} aria-hidden className="text-dim" />
                 ) : (
-                  <CircleNotch size={9} aria-hidden className="animate-pulse text-accent" />
+                  <CircleNotch
+                    size={9}
+                    aria-hidden
+                    className="animate-pulse text-accent"
+                  />
                 )
               ) : (
-                <Check size={9} weight="bold" aria-hidden className="text-success" />
+                <Check
+                  size={9}
+                  weight="bold"
+                  aria-hidden
+                  className="text-success"
+                />
               )}
             </span>
-            <span className="min-w-0 flex-1 truncate">{e.goal.length > 64 ? e.goal.slice(0, 64) + "…" : e.goal}</span>
+            <span className="min-w-0 flex-1 truncate">
+              {e.goal.length > 64 ? e.goal.slice(0, 64) + "…" : e.goal}
+            </span>
             <span className="shrink-0 tabular-nums">{fmtDur(dur)}</span>
           </span>
         );
@@ -124,9 +148,15 @@ function Branch({
       }`}
     >
       {[...groups.entries()].map(([personaId, ds]) => {
-        const working = ds.some((d) => d.status === "running" && d.state !== "idle");
+        const working = ds.some(
+          (d) => d.status === "running" && d.state !== "idle",
+        );
         const doneCount = ds.filter((d) => d.status === "done").length;
-        const state = working ? "working" : doneCount === ds.length ? "done" : "idle";
+        const state = working
+          ? "working"
+          : doneCount === ds.length
+            ? "done"
+            : "idle";
         const delegatedBy =
           ds[0]!.parentPersonaId !== "yui-conductor" && !isRootBranch
             ? `dari ${PERSONA_NAME[ds[0]!.parentPersonaId] ?? ds[0]!.parentPersonaId}`
@@ -140,13 +170,21 @@ function Branch({
               personaId={personaId}
               state={state}
               subtitle={
-                delegatedBy ?? (ds.length > 1 ? `${ds.length} tugas · ${doneCount} selesai` : undefined)
+                delegatedBy ??
+                (ds.length > 1
+                  ? `${ds.length} tugas · ${doneCount} selesai`
+                  : undefined)
               }
             />
             <TaskRows edges={ds} now={now} />
             {/* delegasi turunan (mis. designer → coder) */}
             {ds.map((d) => (
-              <Branch key={d.childSessionId} parentSessionId={d.childSessionId} edges={edges} now={now} />
+              <Branch
+                key={d.childSessionId}
+                parentSessionId={d.childSessionId}
+                edges={edges}
+                now={now}
+              />
             ))}
           </li>
         );
@@ -185,7 +223,9 @@ export function TeamTree({
     try {
       const r = await fetch(`/api/projects/${projectId}/delegations`);
       if (r.ok)
-        setEdges(((await r.json()) as { delegations: DelegationEdge[] }).delegations);
+        setEdges(
+          ((await r.json()) as { delegations: DelegationEdge[] }).delegations,
+        );
     } catch {
       /* biarkan data lama */
     }
@@ -207,7 +247,10 @@ export function TeamTree({
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
         setZoom((z) =>
-          Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * (e.deltaY < 0 ? 1.15 : 1 / 1.15))),
+          Math.min(
+            ZOOM_MAX,
+            Math.max(ZOOM_MIN, z * (e.deltaY < 0 ? 1.15 : 1 / 1.15)),
+          ),
         );
       } else {
         setPan((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
@@ -251,12 +294,27 @@ export function TeamTree({
       style={{ backgroundPosition: `${pan.x}px ${pan.y}px` }}
     >
       {/* kontrol zoom overlay — klik tidak ikut tergeser (stopPropagation) */}
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()}>
-        <Button size="sm" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.2))} title="Perbesar" aria-label="Perbesar">
+      <div
+        className="absolute top-3 right-3 z-10 flex items-center gap-1"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <Button
+          size="sm"
+          onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.2))}
+          title="Perbesar"
+          aria-label="Perbesar"
+        >
           <Plus size={12} weight="bold" aria-hidden />
         </Button>
-        <span className="min-w-[42px] text-center text-caption tabular-nums text-dim">{Math.round(zoom * 100)}%</span>
-        <Button size="sm" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z / 1.2))} title="Perkecil" aria-label="Perkecil">
+        <span className="min-w-[42px] text-center text-caption tabular-nums text-dim">
+          {Math.round(zoom * 100)}%
+        </span>
+        <Button
+          size="sm"
+          onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z / 1.2))}
+          title="Perkecil"
+          aria-label="Perkecil"
+        >
           <Minus size={12} weight="bold" aria-hidden />
         </Button>
         <Button
@@ -273,21 +331,36 @@ export function TeamTree({
       </div>
       <div
         className="absolute inset-0 flex items-start justify-center pt-[34px] will-change-transform"
-        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+        }}
       >
         <div className="mx-auto flex min-w-max justify-center px-6 pt-2 pb-4">
           <div className="flex flex-col items-center">
             {rootPersonaId ? (
-              <Card personaId={rootPersonaId} state={leadState} subtitle="lead sesi ini" root />
+              <Card
+                personaId={rootPersonaId}
+                state={leadState}
+                subtitle="Lead This Session"
+                root
+              />
             ) : (
-              <p className="text-caption text-dim">Buka sesi untuk melihat struktur delegasi live.</p>
+              <p className="text-caption text-dim">
+                Buka sesi untuk melihat struktur delegasi live.
+              </p>
             )}
             {rootSessionId && edges !== null && (
-              <Branch parentSessionId={rootSessionId} edges={edges} now={now} isRootBranch />
+              <Branch
+                parentSessionId={rootSessionId}
+                edges={edges}
+                now={now}
+                isRootBranch
+              />
             )}
             {edges !== null && edges.length === 0 && (
               <p className="mt-2.5 text-center text-caption text-dim">
-                Belum ada delegasi — lead mengerjakan sendiri atau minta ia mendelegasikan.
+                Belum ada delegasi — lead mengerjakan sendiri atau minta ia
+                mendelegasikan.
               </p>
             )}
           </div>

@@ -1,5 +1,6 @@
 // @yui/core — OpenAI-compatible streaming adapter (D12)
 import OpenAI from "openai";
+import { env } from "../env.js";
 import type {
   ChatRequest,
   InternalMessage,
@@ -60,7 +61,7 @@ export class OpenAICompatProvider implements ProviderAdapter {
       apiKey: cfg.apiKey,
       // P0-CORE-2 (parsial): panggilan provider bisa menggantung menit-lamanya
       // (di test: 139 dtk dan 35 dtk) — timeout per request + retry transien.
-      timeout: Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? 120_000),
+      timeout: Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? env.providerTimeoutMs),
       maxRetries: 2,
     });
   }

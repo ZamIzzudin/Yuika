@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import type { ChatRequest, InternalMessage, ProviderAdapter, ProviderChunk, ProviderDone, ToolCallRequest } from "./adapter.js";
 import { parseSse } from "./anthropic.js";
+import { env } from "../env.js";
 
 export interface GeminiConfig {
   baseUrl: string; // default https://generativelanguage.googleapis.com
@@ -70,7 +71,7 @@ export class GeminiProvider implements ProviderAdapter {
 
   async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
     const { systemInstruction, contents } = toGeminiRequest(req.messages);
-    const timeoutMs = this.cfg.timeoutMs ?? Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? 120_000);
+    const timeoutMs = this.cfg.timeoutMs ?? Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? env.providerTimeoutMs);
     const signal = AbortSignal.any([req.signal, AbortSignal.timeout(timeoutMs)].filter(Boolean) as AbortSignal[]);
     const url = `${this.cfg.baseUrl.replace(/\/$/, "")}/v1beta/models/${encodeURIComponent(req.model)}:streamGenerateContent?alt=sse`;
     const res = await fetch(url, {

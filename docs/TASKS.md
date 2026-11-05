@@ -472,3 +472,28 @@
 2. Task tanpa owner = belum siap dikerjakan.
 3. Task > 2d harus dipecah saat planning.
 4. Setiap bugfix P0/P1 menambah 1 test invariant bila relevan (pola Hermes: 1–2 invariant test per fix).
+
+## Batch fix 2026-11 (feedback user pasca-rest)
+> **MCP tidak lagi spam reconnect:** singleton runtime kini di-tag HASH SOURCE
+> `createYuiRuntime` (dulu per module-instance → tiap route API baru di-compile
+> dev = runtime dibuang-dibuat ulang = SEMUA server MCP reconnect menumpuk);
+> health ping 30→60 dtk.
+> **Delegasi PARALEL beneran:** tool calls dalam satu round kini `Promise.all`
+> (dulu di-await berurutan → "paralel" Maestro ternyata sequential); hasil tetap
+> di-append berurutan. Cap delegasi default 2→3 (budget + runner + teks Settings).
+> **"child gagal: Socket timeout":** timeout provider default 120 dtk→5 mnt via
+> env (`YUI_PROVIDER_TIMEOUT_MS`) — model reasoning + konteks MCP besar bisa
+> >120 dtk sampai token pertama; berlaku openai-compat/anthropic/gemini.
+> **Hardcore Mode tuntas:** approval mode "auto" → cap iterasi 64
+> (`YUI_MAX_ITER_HARDCORE`) bukan 16 — selesaikan sampai jawaban final tanpa
+> minta "lanjutkan".
+> **Chat tanpa timelapse:** buka sesi lama = snapshot di-hydrate SATU fetch →
+> satu render (dulu delta di-replay satu-satu = efek streaming ulang).
+> **Kartu delegasi klikable** → langsung buka sesi persona anak.
+> **Restrukturisasi tab (10→6):** Chat · Tim · Task (Papan+Pohon via drawer
+> "Log Task") · File · Trace · Konfigurasi (menu Roster/Memori/Skill ala
+> Settings non-modal). Tab Sesi → header Chat: status persona di tengah +
+> dropdown sesi + tombol sesi baru di kanan.
+> **Scrollbar compact** 7px bertoken (default Windows terlalu tebal).
+> **Konsep Runner masuk PLAN §13.5** (port registry + preview iframe + jembatan
+> Penpot) — belum dikerjakan, menunggu fase.

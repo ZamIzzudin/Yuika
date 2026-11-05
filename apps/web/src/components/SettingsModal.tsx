@@ -409,7 +409,7 @@ function BudgetPanel() {
         {numField("dailyLimit", `Limit harian (${cur})`, "— tanpa batas")}
         {numField("totalLimit", `Limit total (${cur})`, "— tanpa batas")}
         {numField("maxTurnsPerMinute", "Turn / menit", "— tanpa batas")}
-        {numField("maxDelegationConcurrency", "Delegasi paralel", "— default 2")}
+        {numField("maxDelegationConcurrency", "Delegasi paralel", "— default 3")}
         <Field label="Saat limit tercapai">
           <Select value={st.config.mode} onChange={(e) => save({ mode: e.target.value as "warn" | "block" })}>
             <option value="warn">warn — peringatkan saja</option>

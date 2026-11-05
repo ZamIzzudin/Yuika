@@ -18,18 +18,35 @@ export function Card({
   className = "",
   children,
   ...rest
-}: { variant?: CardVariant; className?: string; children: ReactNode } & React.HTMLAttributes<HTMLDivElement>) {
+}: {
+  variant?: CardVariant;
+  className?: string;
+  children: ReactNode;
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`rounded-card border ${CARDS[variant]} ${className}`} {...rest}>
+    <div
+      className={`rounded-card border ${CARDS[variant]} ${className}`}
+      {...rest}
+    >
       {children}
     </div>
   );
 }
 
 /** Header kartu seragam: judul kiri, aksi kanan. */
-export function CardHead({ title, actions, className = "" }: { title: ReactNode; actions?: ReactNode; className?: string }) {
+export function CardHead({
+  title,
+  actions,
+  className = "",
+}: {
+  title: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={`flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 ${className}`}>
+    <div
+      className={`flex items-center justify-between gap-3 border-b border-line px-4 py-2.5 ${className}`}
+    >
       <b className="text-lead text-primary">{title}</b>
       <div className="flex items-center gap-2">{actions}</div>
     </div>
@@ -69,7 +86,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={typeof title === "string" ? title : "dialog"}
-        className={`glass-panel flex max-h-[86vh] w-full flex-col rounded-card shadow-pop ${wide ? "max-w-2xl" : "max-w-md"}`}
+        className={`glass-panel flex max-h-[86vh] w-full flex-col rounded-card shadow-pop ${wide ? "max-w-5xl" : "max-w-md"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-glass-line px-4 py-3">
@@ -96,7 +113,17 @@ const CONTROL =
   "transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] " +
   "hover:border-line-strong focus:border-accent focus:outline-none";
 
-export function Field({ label, hint, className = "", children }: { label: ReactNode; hint?: ReactNode; className?: string; children: ReactNode }) {
+export function Field({
+  label,
+  hint,
+  className = "",
+  children,
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <label className={`flex flex-col gap-1 ${className}`}>
       <span className="text-caption font-medium text-secondary">{label}</span>
@@ -111,12 +138,19 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input className={`${CONTROL} h-8 ${className}`} {...rest} />;
 }
 
-export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextArea(
+  props: React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+) {
   const { className = "", ...rest } = props;
   return <textarea className={`${CONTROL} resize-y ${className}`} {...rest} />;
 }
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   const { className = "", ...rest } = props;
-  return <select className={`${CONTROL} h-8 cursor-pointer ${className}`} {...rest} />;
+  return (
+    <select
+      className={`${CONTROL} h-8 cursor-pointer ${className}`}
+      {...rest}
+    />
+  );
 }

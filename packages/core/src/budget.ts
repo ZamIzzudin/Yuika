@@ -61,9 +61,9 @@ export class AdmissionControl {
     return merged;
   }
 
-  /** CRED-3: cap delegasi paralel (null → default runner 2). */
+  /** CRED-3: cap delegasi paralel (null → default 3). */
   maxChildren(): number {
-    return this.cfg.maxDelegationConcurrency ?? 2;
+    return this.cfg.maxDelegationConcurrency ?? 3;
   }
 
   /** Belanja jujur dari ledger × price book (cache TTL — "saldo cache" CRED-2). */

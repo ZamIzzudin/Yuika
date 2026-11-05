@@ -85,6 +85,7 @@ export function ChatView({
   onSend,
   onCancel,
   onApprove,
+  onOpenDelegation,
   busy,
   emptySlot,
   approvalMode,
@@ -100,6 +101,8 @@ export function ChatView({
   /** Konten state kosong (hero + saran) — composer tetap tampil, user bisa langsung menulis. */
   emptySlot?: ReactNode;
   onApprove: (requestId: string, approved: boolean, remember?: boolean) => void;
+  /** Klik kartu delegasi → buka sesi persona anak (fix 2026-11 user). */
+  onOpenDelegation?: (childSessionId: string) => void;
   /** Fix dev-10: mode cepat — "auto" = write_file & run_command bebas-approval. */
   approvalMode?: "ask" | "auto";
   onToggleApprovalMode?: () => void;
@@ -185,6 +188,10 @@ export function ChatView({
               );
             }
             if (it.kind === "delegation") {
+              const openChild =
+                onOpenDelegation && it.childSessionId
+                  ? () => onOpenDelegation(it.childSessionId!)
+                  : undefined;
               return (
                 <div
                   key={`r${i}`}
@@ -196,7 +203,19 @@ export function ChatView({
                       size={28}
                     />
                   </span>
-                  <div className="col-start-2 rounded-card border border-line bg-surface px-4 py-3">
+                  <div
+                    className={`col-start-2 rounded-card border bg-surface px-4 py-3 ${
+                      openChild
+                        ? "cursor-pointer border-line transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:shadow-card"
+                        : "border-line"
+                    }`}
+                    onClick={openChild}
+                    title={
+                      openChild
+                        ? "Buka sesi persona ini"
+                        : undefined
+                    }
+                  >
                     <div className="flex flex-wrap items-center gap-2">
                       <b className="text-body font-semibold text-primary">
                         Delegasi · {it.personaId?.replace("yui-", "")}

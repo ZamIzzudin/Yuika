@@ -42,7 +42,10 @@ const KIND_TONE: Record<string, string> = {
   skill: "text-accent",
   memory: "text-accent",
 };
-const STATUS_TONE: Record<string, "ok" | "accent" | "warn" | "muted" | "danger"> = {
+const STATUS_TONE: Record<
+  string,
+  "ok" | "accent" | "warn" | "muted" | "danger"
+> = {
   done: "ok",
   running: "accent",
   cancelled: "muted",
@@ -109,19 +112,20 @@ export function TracePanel({
       <header className="mb-3 flex flex-wrap items-center gap-3">
         <b className="text-body font-semibold text-primary">Trace sesi</b>
         {sessionId && (
-          <small className="font-mono text-caption text-dim">{sessionId.slice(0, 14)}…</small>
+          <small className="font-mono text-caption text-dim">
+            {sessionId.slice(0, 14)}…
+          </small>
         )}
-        <Button size="sm" onClick={onBack} className="ml-auto">
-          <ArrowLeft size={12} aria-hidden /> Kembali ke chat
-        </Button>
       </header>
       {sessionId === null ? (
         <p className={hint}>
-          Belum ada percakapan aktif — buka atau mulai sesi chat dulu, lalu kembali ke sini untuk melihat jejak langkahnya.
+          Belum ada percakapan aktif — buka atau mulai sesi chat dulu, lalu
+          kembali ke sini untuk melihat jejak langkahnya.
         </p>
       ) : missing ? (
         <p className={hint}>
-          Sesi ini tidak ditemukan (mungkin terhapus bersama project-nya). Pilih sesi lain dari sidebar.
+          Sesi ini tidak ditemukan (mungkin terhapus bersama project-nya). Pilih
+          sesi lain dari sidebar.
         </p>
       ) : trace === null ? (
         <Skeleton lines={6} />
@@ -136,35 +140,53 @@ export function TracePanel({
               className="group rounded-lg2 border border-line bg-surface px-3 py-2"
             >
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2.5 select-none [&::-webkit-details-marker]:hidden">
-                <Chip tone={STATUS_TONE[t.status] ?? "muted"}>{STATUS_LABEL[t.status] ?? t.status}</Chip>
+                <Chip tone={STATUS_TONE[t.status] ?? "muted"}>
+                  {STATUS_LABEL[t.status] ?? t.status}
+                </Chip>
                 <span className="font-mono text-caption text-secondary">
                   {fmtTime(t.startedAt)}
                   {t.endedAt ? ` → ${fmtTime(t.endedAt)}` : ""}
                 </span>
                 <small className="ml-auto text-caption text-dim">
                   {t.steps.length} langkah · {t.tokens.calls}× model ·{" "}
-                  {t.tokens.input.toLocaleString("id-ID")}+{t.tokens.output.toLocaleString("id-ID")} tok
+                  {t.tokens.input.toLocaleString("id-ID")}+
+                  {t.tokens.output.toLocaleString("id-ID")} tok
                 </small>
               </summary>
               <ol className="mt-2 flex flex-col gap-1 border-t border-line pt-2">
                 {t.steps.map((s, i) => {
                   const Ic = KIND_ICON[s.kind] ?? DotsThree;
                   return (
-                    <li key={i} className="flex items-baseline gap-2.5 text-caption leading-5">
+                    <li
+                      key={i}
+                      className="flex items-baseline gap-2.5 text-caption leading-5"
+                    >
                       <Ic
                         size={13}
                         aria-hidden
                         className={`shrink-0 self-center ${s.isError ? "text-danger" : (KIND_TONE[s.kind] ?? "text-muted")}`}
                       />
-                      <code className="shrink-0 font-mono text-dim">{fmtTime(s.at)}</code>
-                      <span className={`min-w-0 flex-1 ${s.isError ? "text-danger" : "text-secondary"}`}>{s.label}</span>
+                      <code className="shrink-0 font-mono text-dim">
+                        {fmtTime(s.at)}
+                      </code>
+                      <span
+                        className={`min-w-0 flex-1 ${s.isError ? "text-danger" : "text-secondary"}`}
+                      >
+                        {s.label}
+                      </span>
                       {s.durationMs !== null && (
-                        <small className="shrink-0 text-dim tabular-nums">{fmtDur(s.durationMs)}</small>
+                        <small className="shrink-0 text-dim tabular-nums">
+                          {fmtDur(s.durationMs)}
+                        </small>
                       )}
                     </li>
                   );
                 })}
-                {t.steps.length === 0 && <li className="text-caption text-dim">(tanpa langkah tercatat)</li>}
+                {t.steps.length === 0 && (
+                  <li className="text-caption text-dim">
+                    (tanpa langkah tercatat)
+                  </li>
+                )}
               </ol>
             </details>
           ))}

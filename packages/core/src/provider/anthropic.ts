@@ -2,6 +2,7 @@
 // Konversi format internal (adapter.ts) → Anthropic: system terpisah, tool_use
 // blocks, tool_result sebagai user message. Tanpa SDK — fetch + SSE manual.
 import { randomUUID } from "node:crypto";
+import { env } from "../env.js";
 import type {
   ChatRequest,
   InternalMessage,
@@ -69,7 +70,7 @@ export class AnthropicProvider implements ProviderAdapter {
 
   async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
     const { system, contents } = toAnthropicMessages(req.messages);
-    const timeoutMs = this.cfg.timeoutMs ?? Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? 120_000);
+    const timeoutMs = this.cfg.timeoutMs ?? Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? env.providerTimeoutMs);
     const signal = AbortSignal.any([req.signal, AbortSignal.timeout(timeoutMs)].filter(Boolean) as AbortSignal[]);
     const res = await fetch(`${this.cfg.baseUrl.replace(/\/$/, "")}/v1/messages`, {
       method: "POST",

@@ -24,7 +24,7 @@ export function TabList({
   return (
     <nav
       role="tablist"
-      className={`flex flex-wrap items-center border-b border-line pt-5 px-3 ${className}`}
+      className={`flex flex-wrap items-center border-b border-line pt-3 px-3 ${className} overflow-hidden`}
     >
       {tabs.map((t) => (
         <button

@@ -35,7 +35,7 @@ export interface DelegationDeps {
   maxChildren?: () => number;
 }
 
-const MAX_PARALLEL_CHILDREN = 2; // DEMO cap — P1: pool berbasis workspace + plan
+const MAX_PARALLEL_CHILDREN = 3; // fix 2026-11: Maestro kerap 3 arah sekaligus (riset+susun+develop)
 
 let activeChildren = 0;
 

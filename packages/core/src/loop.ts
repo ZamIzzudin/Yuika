@@ -15,6 +15,8 @@ import type { ApprovalEngine } from "./approval/engine.js";
 import type { UsageEvent } from "@yui/contracts";
 
 // Budget iterasi per turn: env override untuk use case panjang (multi-delegasi).
+import { getApprovalMode } from "./approval/engine.js";
+
 const MAX_ITERATIONS = env.maxIter;
 
 /** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0). */
@@ -142,7 +144,10 @@ export class AgentLoop {
     let lastRoundSig = "";
     let repeatRounds = 0;
 
-    for (let i = 0; i < MAX_ITERATIONS; i++) {
+    // Fix 2026-11 (user): mode auto ("Hardcore") = user tidak ingin diinterupsi —
+    // iterasi lanjut sampai jawaban final, cap pengaman jauh lebih tinggi (64).
+    const iterCap = getApprovalMode() === "auto" ? env.maxIterHardcore : MAX_ITERATIONS;
+    for (let i = 0; i < iterCap; i++) {
       if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop ditekan sebelum iterasi dimulai
       // 3) api phase — rantai attempt: primary → fallback (P0-CORE-2). Provider
       // sudah retry transien ×2 di dalam (maxRetries); sampai sini = model itu
@@ -214,29 +219,43 @@ export class AgentLoop {
         messages.push(assistantMsg);
         store.appendMessage(sessionId, assistantMsg);
 
+        // Fix 2026-11 (user): tool calls dalam SATU round dieksekusi PARALEL.
+        // Provider mengirim beberapa tool_calls sekaligus (mis. Maestro mendelegasikan
+        // 3 riset "paralel") — dulu di-await satu-per-satu sehingga anak ke-2 baru
+        // jalan setelah anak ke-1 selesai (sequential). Hasil tetap di-append
+        // BERURUTAN sesuai urutan call (kontrak protocol tool_result).
         for (const call of done.toolCalls as ToolCallRequest[]) {
           emit({ type: "tool.call", turnId, callId: call.id, name: call.name, args: call.args });
-          emit({ type: "persona.state", personaId: session.personaId, state: "working" });
-          if (call.name === "delegate_task") usedDelegation = true;
+        }
+        emit({ type: "persona.state", personaId: session.personaId, state: "working" });
+        if (done.toolCalls.some((c) => c.name === "delegate_task")) usedDelegation = true;
 
-          const tTool = Date.now();
-          let tApproval = 0;
-          const res = await registry.dispatch(call.name, call.args, {
-            sessionId,
-            turnId,
-            workspacePath: this.deps.workspacePath,
-            emit,
-            requestApproval: (tool, args, reason) => {
-              emit({ type: "persona.state", personaId: session.personaId, state: "awaiting_input" });
-              tApproval = Date.now();
-              return this.deps.approvals.request(tool, args, reason).then((v) => {
-                trace(`  approval ${tool}: ${Date.now() - tApproval}ms → ${v ? "disetujui" : "ditolak"}`);
-                return v;
+        const roundResults = await Promise.all(
+          (done.toolCalls as ToolCallRequest[]).map((call) => {
+            const tTool = Date.now();
+            let tApproval = 0;
+            return registry
+              .dispatch(call.name, call.args, {
+                sessionId,
+                turnId,
+                workspacePath: this.deps.workspacePath,
+                emit,
+                requestApproval: (tool, args, reason) => {
+                  emit({ type: "persona.state", personaId: session.personaId, state: "awaiting_input" });
+                  tApproval = Date.now();
+                  return this.deps.approvals.request(tool, args, reason).then((v) => {
+                    trace(`  approval ${tool}: ${Date.now() - tApproval}ms → ${v ? "disetujui" : "ditolak"}`);
+                    return v;
+                  });
+                },
+              })
+              .then((res) => {
+                trace(`  tool ${call.name}: total=${Date.now() - tTool}ms${tApproval ? ` (menunggu user ${Date.now() - tApproval}ms)` : ""}`);
+                return { call, res };
               });
-            },
-          });
-          trace(`  tool ${call.name}: total=${Date.now() - tTool}ms${tApproval ? ` (menunggu user ${Date.now() - tApproval}ms)` : ""}`);
-
+          }),
+        );
+        for (const { call, res } of roundResults) {
           emit({ type: "tool.result", turnId, callId: call.id, result: res.result, isError: !!res.isError });
           const toolMsg: InternalMessage = {
             role: "tool",
@@ -245,8 +264,8 @@ export class AgentLoop {
           };
           messages.push(toolMsg);
           store.appendMessage(sessionId, toolMsg);
-          if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop antar tool round
         }
+        if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop antar tool round
         emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
         const sig = JSON.stringify(done.toolCalls.map((c) => [c.name, c.args]));
         if (sig === lastRoundSig) repeatRounds++;

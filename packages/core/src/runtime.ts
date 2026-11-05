@@ -352,8 +352,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     void connectMcp(name).catch((e) => console.warn(`[yui] ${e instanceof Error ? e.message : e}`));
   }
 
-  // P0-MCP-1: health check — ping tiap 30 dtk; hang/zombie tanpa crash proses
-  // tetap terdeteksi → jalur reconnect backoff yang sama.
+  // P0-MCP-1: health check — ping tiap 60 dtk (fix 2026-11: 30 dtk terlalu
+  // sering — tiap recreate runtime di dev menumpuk ping & membebani; server
+  // banyak → interval naik. stdio ping tetap murah, tapi jangan spam).
   const mcpHealthTimer = setInterval(() => {
     for (const [name, conn] of mcpConns) {
       if (conn.state !== "connected") continue;
@@ -361,7 +362,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         if (!ok) onMcpDown(name, "health check: ping gagal");
       });
     }
-  }, 30_000);
+  }, 60_000);
   mcpHealthTimer.unref?.();
 
   function listPersonaInfos(): PersonaInfo[] {

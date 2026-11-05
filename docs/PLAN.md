@@ -1003,6 +1003,7 @@ Katalog + custom server menyusul dari P1-MCP; yang baru hanya model binding gran
 | **File** | Tree kode/docs project + viewer + diff hasil kerja agent | Di atas file tools yang sudah ada |
 | **Tim** | Diagram hierarki delegasi live di **kanvas tak terbatas** (ala Excalidraw/draw.io: hold-drag = pan, Ctrl+scroll = zoom, grid dot) — graf nyata dari event delegation lintas sesi | ✅ v0 (dev-10): `TeamTree` + REST `/projects/:id/delegations`; persona sama di dua cabang = dua sesi nyata, label “dari &lt;pemberi&gt;”; durasi per tugas live 5 dtk |
 | **Board** | Tasklist project (kolom todo/doing/review/done) + run workflow aktif | P1-PRJ tasklist + P2-FLOW monitoring |
+| **Runner** (v0.5) | Proyek berbasis web (mis. React) yang dikerjakan persona: daftar **port yang berjalan** (deteksi dari `run_command` dev-server) + **preview output live** ala iframe; jembatan ke Penpot — desain Picasso Yui dilihat berdampingan dengan hasil Coder untuk dibandingkan | Port registry di runtime + reverse proxy dev-server project; iframe preview (konsep Tailscale Serve menyusul — user belum mencoba); pasangan tab Design §13.9 |
 | **Docs** | Markdown deliverable, laporan run | Viewer/editor sederhana |
 | **Design** (v0.5) | Canvas Penpot **ter-embed** — hasil kerja persona Designer, live; artefak ter-link ke TaskTree | Tangga embed §13.9: v0 ramping (view + navigasi) → v2 white-label SSO |
 

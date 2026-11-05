@@ -1,13 +1,25 @@
 // Singleton runtime — aman terhadap HMR Next.js (cache di globalThis).
 // QUIRK (dipelajari dev-10): runtime lama dibuat oleh kode SEBELUM update core;
 // route baru yang memanggil method baru → "not a function" walau disk sudah
-// benar. Solusi: tag PEMILIK singleton per module-instance — module di-reload
-// oleh HMR (kode baru) → tag beda → runtime dibuat ulang. Di produksi (next
-// start, tanpa HMR) tag stabil → singleton benar-benar tunggal.
+// benar. Solusi: tag PEMILIK singleton = HASH SOURCE createYuiRuntime — route
+// yang di-compile ulang membawa SALINAN source core yang SAMA → hash sama →
+// runtime DIPERTAHANKAN (fix 2026-11: dulu tag per module-instance → tiap route
+// API baru di-compile dev = runtime dibuang & dibuat ulang = SEMUA server MCP
+// reconnect menumpuk, spam log & beban sistem). Source core berubah (edit
+// @yui/core) → hash beda → runtime dibuat ulang sekali, seperti semula.
+// Di produksi (next start, tanpa HMR) tag stabil → singleton tunggal.
 import { createYuiRuntime, type YuiRuntime } from "@yui/core";
 
 const g = globalThis as unknown as { __yuiRuntime?: YuiRuntime; __yuiRuntimeOwner?: string };
-const OWNER = `rt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+/** djb2 → base36 — hash pendek dari source fungsi (cukup untuk deteksi perubahan). */
+function sourceTag(fn: (...args: never[]) => unknown): string {
+  const s = String(fn);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36) + "-" + s.length.toString(36);
+}
+const OWNER = sourceTag(createYuiRuntime);
 
 export function getRuntime(): YuiRuntime {
   if (g.__yuiRuntimeOwner !== OWNER || !g.__yuiRuntime) {

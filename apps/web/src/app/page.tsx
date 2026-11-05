@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
-import { CommandIcon, Gear, SidebarSimple, Sword } from "@phosphor-icons/react";
+import { CaretDown, CommandIcon, Gear, Plus, SidebarSimple, Sword } from "@phosphor-icons/react";
 import { DungeonView } from "@/components/DungeonView";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
@@ -421,7 +421,40 @@ export default function Home() {
     let dead = false;
     let attempt = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const open = () => {
+    const open = async () => {
+      // Fix 2026-11 ("timelapse"): sesi lama (since=0) → tarik snapshot dalam
+      // SATU fetch lalu apply sinkron dalam satu tick (React batch = satu render,
+      // tanpa efek streaming ulang) — baru buka SSE live dari seq terakhir.
+      if (lastEventId.current === 0) {
+        try {
+          const r = await fetch(
+            `/api/sessions/${sessionId}/stream?since=0&snapshot=1`,
+          );
+          if (r.ok) {
+            const text = await r.text();
+            let last = 0;
+            for (const block of text.split("\n\n")) {
+              const idLine = block
+                .split("\n")
+                .find((l) => l.startsWith("id: "));
+              if (idLine) last = Math.max(last, Number(idLine.slice(4)) || 0);
+              const line = block
+                .split("\n")
+                .find((l) => l.startsWith("data: "));
+              if (!line) continue;
+              try {
+                applyEvent(JSON.parse(line.slice(6)) as YuiEvent);
+              } catch {
+                /* blok tidak lengkap */
+              }
+            }
+            if (last > 0) lastEventId.current = last;
+          }
+        } catch {
+          /* fallback: SSE replay seperti biasa */
+        }
+      }
+      if (dead) return;
       es = new EventSource(
         `/api/sessions/${sessionId}/stream?since=${lastEventId.current}`,
       );
@@ -541,6 +574,15 @@ export default function Home() {
     lastEventId.current = 0;
     setSessionId(s.sessionId);
     setBusy(false);
+  }
+
+  /** Kartu delegasi di chat → lompat langsung ke sesi persona anak tersebut. */
+  function jumpToSession(sid: string) {
+    const s = projSessions.find((x) => x.sessionId === sid);
+    if (s) {
+      openSession(s);
+      setMainTab("chat");
+    }
   }
 
   /** Sesi baru di project aktif (Conductor lead). */
@@ -829,12 +871,8 @@ export default function Home() {
                             ),
                           },
                           { id: "files", label: "File" },
-                          { id: "board", label: "Papan" },
-                          { id: "tree", label: "Pohon" },
-                          { id: "roster", label: "Roster" },
-                          { id: "sessions", label: "Sesi" },
-                          { id: "memory", label: "Memori" },
-                          { id: "skills", label: "Skill" },
+                          { id: "board", label: "Task" },
+                          { id: "config", label: "Konfigurasi" },
                         ] as const)
                       : []),
                     {
@@ -854,7 +892,7 @@ export default function Home() {
                 <div className="flex min-h-0 flex-1 flex-col">
                   {mainTab === "chat" && (
                     <>
-                      <header className="flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
+                      <header className="relative flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
                         <details className="group relative">
                           <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill pl-3 pr-6 py-3 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
                             <PersonaPortrait
@@ -897,7 +935,61 @@ export default function Home() {
                             ))}
                           </div>
                         </details>
-                        <StateChip state={personaState} className="ml-auto" />
+                        {/* Status persona di TENGAH header (tab Sesi digabung ke sini) */}
+                        <span className="pointer-events-none absolute left-1/2 -translate-x-1/2">
+                          <StateChip state={personaState} />
+                        </span>
+                        {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama) */}
+                        {activeProject && (
+                          <details className="group relative ml-auto">
+                            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary select-none transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary [&::-webkit-details-marker]:hidden">
+                              <CaretDown size={12} aria-hidden /> Sesi
+                            </summary>
+                            <div className="glass-panel absolute top-full right-0 z-30 mt-1 flex w-[300px] flex-col gap-px rounded-lg2 p-1 shadow-pop">
+                              <button
+                                className="flex cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2 py-1.5 text-left text-body text-secondary transition-colors hover:bg-hover hover:text-primary"
+                                onClick={() => {
+                                  void newProjectSession();
+                                  (document.activeElement as HTMLElement | null)?.blur();
+                                }}
+                              >
+                                <Plus size={13} weight="bold" aria-hidden className="text-accent" />
+                                Sesi baru (Conductor)
+                              </button>
+                              {projSessions.length === 0 ? (
+                                <small className="px-2 py-1.5 text-caption text-dim">
+                                  Belum ada sesi lain.
+                                </small>
+                              ) : (
+                                projSessions.map((ps) => (
+                                  <button
+                                    key={ps.sessionId}
+                                    aria-current={
+                                      ps.sessionId === sessionId ? "true" : undefined
+                                    }
+                                    className={`flex cursor-pointer items-center gap-2.5 rounded-md2 border px-2 py-1.5 text-left transition-colors ${
+                                      ps.sessionId === sessionId
+                                        ? "border-line bg-hover"
+                                        : "border-transparent hover:bg-hover"
+                                    }`}
+                                    onClick={() => {
+                                      openSession(ps);
+                                      (document.activeElement as HTMLElement | null)?.blur();
+                                    }}
+                                  >
+                                    <PersonaFace personaId={ps.personaId} size={18} />
+                                    <span className="flex-1 truncate text-body text-secondary">
+                                      {ps.personaName}
+                                    </span>
+                                    {ps.sessionId === sessionId && (
+                                      <Dot tone="accent" className="shrink-0" />
+                                    )}
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          </details>
+                        )}
                       </header>
                       {items.length === 0 ? (
                         <ChatView
@@ -908,6 +1000,7 @@ export default function Home() {
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
+                          onOpenDelegation={jumpToSession}
                           approvalMode={approvalMode}
                           onToggleApprovalMode={toggleApprovalMode}
                           busy={busy}
@@ -954,6 +1047,7 @@ export default function Home() {
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
+                          onOpenDelegation={jumpToSession}
                           approvalMode={approvalMode}
                           onToggleApprovalMode={toggleApprovalMode}
                           busy={busy}
@@ -973,10 +1067,7 @@ export default function Home() {
                     mainTab !== "trace" && (
                       <ProjectTabs
                         project={activeProject}
-                        sessions={projSessions}
                         activeSessionId={sessionId}
-                        onOpenSession={openSession}
-                        onNewSession={() => void newProjectSession()}
                         personas={personas}
                         activeTab={mainTab}
                         rev={taskRev}
