@@ -14,7 +14,7 @@
 
 | # | Batch | Est | Status | Bisa mulai |
 |---|---|---|---|---|
-| 1 | Remote Control | ~9d | TERSEDIA | ✅ sekarang |
+| 1 | Remote Control | ~9d | IN-PROGRESS (2026-11) | ✅ sekarang |
 | 2 | Agent Developer | ~8d | TERSDIA | ✅ sekarang |
 | 3 | Agent 24/7 | ~8d | TERSEDIA | ✅ sekarang |
 | 4 | Otak Yuika | ~8d | TERSEDIA | ✅ sekarang |
