@@ -613,3 +613,32 @@
     kanan-bawah saat mode lokal — sebelumnya user pertama tidak punya jalan
     masuk via UI (gerbang hanya aktif setelah ada user); form bisa dibatalkan
     ("keep this server open"). e2e auth+smoke tetap hijau.
+
+### 2026-11 · Keputusan arsitektur multi-platform: Yuika Portal (repo terpisah)
+- [x] **ARAH PRODUK — portal akun + linked device + relay** — ✅ 2026-11: repo
+  baru `D:\projects\yuika-portal` (fondasi v0 terimplementasi & teruji; lihat
+  `docs/ARCH-PORTAL.md` di sana — dokumen keputusan tunggal). Ringkas:
+  - **Akun pribadi** dibuat di portal (bukan di host) — portal = pusat identitas;
+    host memegang kunci sesi lokal (offline-friendly), portal dihubungi hanya
+    saat pairing/unlink. **Implikasi: P1-INF-1 bagian "workspace multi-user per
+    server" DITUNDakan/diganti** — self-host Yuika tetap mode-lokal ala Gitea,
+    identitas user bermigrasi ke portal (auth.db lokal = solusi final utk
+    single-owner, bukan interim).
+  - **Linked device ala WhatsApp**: 3 slot (desktop/mobile/web) ×1 per jenis,
+    pairing via QR/copy-token sekali pakai (TTL 120 dtk, sha256 di DB),
+    pengganti WAJIB menunggu unlink manual dari portal.
+  - **Relay** = satu endpoint publik, multiplexer BUTA (payload E2E: X25519
+    ECDH + HKDF + AES-256-GCM, AAD from|to); host & remote connect keluar;
+    join hanya sesama akun yang sama; dua remote live bersamaan sesi sama.
+  - **Matriks platform (final)**: Web = HOST saja · Desktop = HOST/REMOTE
+    (switch mode) · Mobile = REMOTE saja (switch host) · semua host bisa
+    diremote (host wajib online — konsekuensi sadar).
+  - **Remote = action-based** (intent terstruktur + event delta), BUKAN screen
+    mirroring — natural bagi Yuika karena YuiEvent + REST sudah ada.
+  - **Plan/billing defer**: launching free-tier; hook `accounts.plan` disiapkan.
+  - v0 portal: crypto (9 test) + relay ws integrasi (5 test) + web Next
+    (register/login, device manager QR/unlink, claim API, slot clash 409) +
+    demo alur penuh `npm run demo:relay`.
+  - Task lanjutan menyesuaikan: P2-MOB-2/3/4/5 (mobile remote via relay),
+    P2-DTL-1/2 (desktop host/remote switch + device relay worker) — detail
+    roadmap §7 ARCH-PORTAL. Rive RN di P2-MOB-4 sudah dicancel sebelumnya.
