@@ -242,185 +242,6 @@ function useBindings() {
 }
 
 // ---------------------------------------------------------------------------
-// Latar konstelasi — bintang ber-seed + garis tetangga + rasi utama (≥1100px).
-// ---------------------------------------------------------------------------
-interface Star {
-  x: number;
-  y: number;
-  r: number;
-  o: number;
-  tw: boolean;
-}
-
-function Constellation({
-  w,
-  h,
-  accent,
-}: {
-  w: number;
-  h: number;
-  accent: string;
-}) {
-  // Bintang: sebaran acak bertema (dart-throwing ber-seed — bukan grid!):
-  // jarak minimum bervariasi per kandidat → kluster & celah organik,
-  // beberapa bintang besar + mayoritas kecil (bias kuadrat).
-  const stars = useMemo<Star[]>(() => {
-    if (w < 2 || h < 2) return [];
-    const rnd = mulberry32(20260130);
-    const target = Math.max(14, Math.round((w * h) / 15000));
-    const avgD = Math.sqrt((w * h) / target);
-    const out: Star[] = [];
-    let guard = 0;
-    while (out.length < target && guard < target * 60) {
-      guard++;
-      const x = 12 + rnd() * (w - 24);
-      const y = 12 + rnd() * (h - 24);
-      // jarak minimum acak per kandidat (0.35–1× jarak rata-rata grid)
-      const minD = avgD * (0.35 + rnd() * 0.65);
-      let ok = true;
-      for (const s of out) {
-        if (Math.hypot(s.x - x, s.y - y) < minD) {
-          ok = false;
-          break;
-        }
-      }
-      if (!ok) continue;
-      out.push({
-        x,
-        y,
-        r: 0.7 + rnd() * rnd() * 2.4,
-        o: 0.14 + rnd() * 0.3,
-        tw: rnd() < 0.22,
-      });
-    }
-    return out;
-  }, [w, h]);
-
-  // Garis: tiap bintang → maks 2 tetangga terdekat dalam 130px; sebagian
-  // sengaja TIDAK digambar (rnd 0.8) supaya ada celah — bukan mesh rapi.
-  const lines = useMemo(() => {
-    const rndL = mulberry32(7);
-    const out: Array<[number, number, number, number]> = [];
-    for (let i = 0; i < stars.length; i++) {
-      const a = stars[i]!;
-      const near = stars
-        .map((s, j) => ({ j, d: Math.hypot(s.x - a.x, s.y - a.y) }))
-        .filter((s) => s.j !== i && s.d < 130)
-        .sort((x, y) => x.d - y.d)
-        .slice(0, 2);
-      for (const { j } of near) {
-        if (rndL() < 0.8) {
-          const b = stars[j]!;
-          out.push([a.x, a.y, b.x, b.y]);
-        }
-      }
-    }
-    return out;
-  }, [stars]);
-
-  // Rasi utama mengelilingi maskot: elips 8 node + 8 sisi + 2 diagonal (≥1100px).
-  // Rasi utama mengelilingi maskot — ORGANIK, bukan elips rapi: 9 titik
-  // dengan sudut & jarak ter-jitter ber-seed (kluster tak beraturan),
-  // sambungan beruntun dengan SATU celah + dua lompatan silang tak
-  // simetris (≥1100px).
-  const ring = useMemo(() => {
-    if (w < 1100 || h < 2) return null;
-    const rnd = mulberry32(0x6b57);
-    const cx = w / 2;
-    const cy = h * 0.44;
-    const base = Math.min(w, h) * 0.3;
-    const N = 6; // sedikit titik → lapang, bukan kurungan
-    const angs = Array.from(
-      { length: N },
-      (_, i) => (i / N) * Math.PI * 2 - Math.PI / 2 + (rnd() - 0.5) * 1.1,
-    ).sort((a, b) => a - b);
-    const nodes = angs.map((a) => {
-      const k = 0.8 + rnd() * 0.5; // 0.8–1.3× → sebar lebar, banyak ruang kosong
-      return {
-        x: cx + base * 1.14 * k * Math.cos(a),
-        y: cy + base * 0.95 * k * Math.sin(a),
-        r: 1.8 + rnd() * 1.4,
-      };
-    });
-    // dua segmen pendek (celah besar) + satu silang — hanya 5 garis
-    const edges: Array<[number, number]> = [
-      [0, 1],
-      [1, 2],
-      [3, 4],
-      [4, 5],
-      [1, 4],
-    ];
-    return { nodes, edges };
-  }, [w, h]);
-
-  return (
-    <svg
-      className="pointer-events-none absolute inset-0 z-0"
-      width={w}
-      height={h}
-      aria-hidden
-      focusable="false"
-    >
-      {lines.map(([x1, y1, x2, y2], i) => (
-        <line
-          key={"l" + i}
-          x1={x1}
-          y1={y1}
-          x2={x2}
-          y2={y2}
-          stroke="var(--color-primary)"
-          strokeWidth={1}
-          opacity={0.1}
-        />
-      ))}
-      {stars.map((s, i) => (
-        <circle
-          key={"s" + i}
-          className={s.tw ? "twinkle-yui" : undefined}
-          cx={s.x}
-          cy={s.y}
-          r={s.r}
-          fill="var(--color-primary)"
-          opacity={s.tw ? undefined : s.o}
-        />
-      ))}
-      {ring && (
-        <g
-          style={{ transition: "stroke .3s, fill .3s" }}
-          stroke={accent}
-          fill={accent}
-        >
-          {ring.edges.map(([a, b], i) => {
-            const na = ring.nodes[a]!;
-            const nb = ring.nodes[b]!;
-            return (
-              <line
-                key={"re" + i}
-                x1={na.x}
-                y1={na.y}
-                x2={nb.x}
-                y2={nb.y}
-                strokeWidth={1.2}
-                opacity={0.32 + (i % 3) * 0.12}
-              />
-            );
-          })}
-          {ring.nodes.map((n, i) => (
-            <circle
-              key={"rn" + i}
-              cx={n.x}
-              cy={n.y}
-              r={n.r}
-              opacity={0.55 + (i % 4) * 0.13}
-            />
-          ))}
-        </g>
-      )}
-    </svg>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Radar heksagonal — dasar vs. setelah bonus skill (real-time).
 // ---------------------------------------------------------------------------
 function RadarChart({
@@ -560,19 +381,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   const idx = persona ? personas.findIndex((p) => p.id === persona.id) : -1;
   const accent = SHAPES[activeShape].color;
 
-  // ukuran stage — konstelasi digambar ulang saat resize
   const boxRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ w: 0, h: 0 });
-  useEffect(() => {
-    const el = boxRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((es) => {
-      const r = es[0]?.contentRect;
-      if (r) setSize({ w: r.width, h: r.height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   /** Ganti karakter (carousel loop) — reset emote & sapaan. */
   const go = useCallback(
@@ -707,7 +516,16 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       className="relative isolate h-[88dvh] min-h-[560px] w-full overflow-hidden max-[1099px]:flex max-[1099px]:flex-col max-[1099px]:gap-4 max-[1099px]:overflow-visible max-[1099px]:pb-2"
       style={{ "--c": accent } as React.CSSProperties}
     >
-      <Constellation w={size.w} h={size.h} accent={accent} />
+      {/* latar: OVAL BERLAPIS — konsep sama dengan orbit workspace
+          (PersonaPicker): cincin elips konsentris di belakang maskot. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0 max-[1099px]:hidden"
+      >
+        <div className="absolute top-[44%] left-1/2 h-[560px] w-[min(640px,58vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
+        <div className="absolute top-[44%] left-1/2 h-[390px] w-[min(460px,42vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
+        <div className="absolute top-[44%] left-1/2 h-[270px] w-[min(320px,32vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
+      </div>
 
       {/* ===== HERO — maskot di tengah panggung ===== */}
       <div className="absolute left-1/2 top-[44%] z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[26px] max-[1099px]:static max-[1099px]:mt-2 max-[1099px]:translate-x-0 max-[1099px]:translate-y-0">

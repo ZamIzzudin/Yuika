@@ -3,7 +3,7 @@
 // Stack sama seperti smoke (mock :3299 · api :3291 · web :3990).
 import { test } from "@playwright/test";
 
-test("Orin v8: orbit + galeri 15 bentuk (bintang 1.18×) ter-render", async ({ page }) => {
+test("Orin v8: orbit persona ter-render (bintang 1.18×)", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto("http://127.0.0.1:3990/");
@@ -11,12 +11,9 @@ test("Orin v8: orbit + galeri 15 bentuk (bintang 1.18×) ter-render", async ({ p
   await page.waitForSelector("svg[aria-label='Maskot Orin']", { timeout: 20000 });
   await page.waitForTimeout(1200);
   await page.screenshot({ path: "e2e/.tmp/orin-v8-orbit.png", fullPage: false });
-  // buka galeri bentuk → 15 thumbnail (star diskalakan via bodyScale)
-  await page.getByRole("button", { name: "Lainnya" }).click();
-  await page.waitForTimeout(600);
-  await page.screenshot({ path: "e2e/.tmp/orin-v8-gallery.png", fullPage: true });
+  // katalog 15 bentuk kini ada di page Persona (card identitas) — cukup orbit
   const thumbs = await page.locator("svg[viewBox='-165 -165 330 330']").count();
   console.log("thumbnails:", thumbs, "| pageerrors:", errors.length ? errors : "none");
-  if (thumbs < 15) throw new Error(`galeri harus 15 bentuk, dapat ${thumbs}`);
+  if (thumbs < 8) throw new Error(`orbit harus ≥8 maskot, dapat ${thumbs}`);
   if (errors.length) throw new Error("pageerror: " + errors.join(" | "));
 });

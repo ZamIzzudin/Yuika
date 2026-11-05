@@ -3,9 +3,8 @@
 import { apiUrl } from "@/lib/api";
 import { useEffect, useState } from "react";
 import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
-import { SHAPE_ORDER, SHAPES, PERSONA_SHAPE, usePersonaShape } from "./orinShapes";
+import { usePersonaShape } from "./orinShapes";
 import { OrinPortrait } from "./OrinPortrait";
-import { Button, Modal } from "./ui";
 
 export { PERSONA_SHAPE, SHAPES } from "./orinShapes";
 
@@ -111,7 +110,6 @@ export function PersonaOrbit({
   onPick: (p: PersonaInfo) => void;
 }) {
   const [focus, setFocus] = useState(0);
-  const [showShapes, setShowShapes] = useState(false);
   const growth = usePersonaGrowth();
   const n = personas.length;
   const active = personas[Math.min(focus, n - 1)] ?? null;
@@ -173,64 +171,8 @@ export function PersonaOrbit({
           </div>
         );
       })}
-      {/* katalog bentuk — aksi sekunder di pojok kanan atas orbit */}
-      <div className="absolute top-0 right-0">
-        <Button variant="primary" size="sm" onClick={() => setShowShapes(true)}>
-          Lainnya
-        </Button>
-      </div>
-      {showShapes && <ShapeGalleryModal onClose={() => setShowShapes(false)} />}
+      {/* (katalog 15 bentuk kini ada di page Persona — card identitas) */}
     </div>
-  );
-}
-
-/** Modal galeri 15 bentuk Orin (dev 10) — verifikasi render + referensi
- *  pilihan identitas persona mendatang (Analyst, Operator, dst.). Pemetaan
- *  persona ada di PERSONA_SHAPE; pemilihan bebas user menyusul. */
-function ShapeGalleryModal({ onClose }: { onClose: () => void }) {
-  return (
-    <Modal open onClose={onClose} title="15 Orin Shapes" wide>
-      <p className="mb-3 max-w-[560px] text-caption leading-5 text-muted">
-        One eye rig drives every shape — order = <code className="font-mono">shape</code>{" "}
-        index 0–14 in Rive. Marked = already used by a persona; the rest are free
-        for future personas.
-      </p>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
-        {SHAPE_ORDER.map((k, i) => {
-          const s = SHAPES[k];
-          const owner = Object.entries(PERSONA_SHAPE).find(
-            ([, v]) => v === k,
-          )?.[0];
-          return (
-            <div
-              key={k}
-              className={`flex flex-col items-center gap-1 rounded-lg2 border px-2 py-3 text-center ${
-                owner ? "border-accent/50 bg-inset" : "border-line bg-inset"
-              }`}
-            >
-              <svg
-                width={64}
-                height={64}
-                viewBox="-165 -165 330 330"
-                aria-hidden
-                focusable="false"
-              >
-                <g
-                  fill={s.color}
-                  transform={s.bodyScale && s.bodyScale !== 1 ? `scale(${s.bodyScale})` : undefined}
-                >
-                  {s.geom}
-                </g>
-              </svg>
-              <b className="text-body font-semibold text-primary">{s.name}</b>
-              <small className="text-caption text-dim">
-                {owner ? owner.replace("yui-", "yui · ") : `bebas · ${i}`}
-              </small>
-            </div>
-          );
-        })}
-      </div>
-    </Modal>
   );
 }
 
