@@ -36,10 +36,10 @@ const NEXT: Record<TaskStatus, TaskStatus> = {
   done: "todo",
 };
 const LABEL: Record<TaskStatus, string> = {
-  todo: "Belum",
-  doing: "Kerja",
-  review: "Reviu",
-  done: "Selesai",
+  todo: "To Do",
+  doing: "On Progress",
+  review: "Review",
+  done: "Done",
 };
 
 export type WorkspaceTab =
@@ -88,9 +88,20 @@ const PERSONA_NAME: Record<string, string> = {
 
 /** Ikon status simpul pohon (○ ◐ ◑ ● → Phosphor). */
 function TaskStatusIcon({ s, size = 10 }: { s: TaskStatus; size?: number }) {
-  if (s === "doing") return <CircleNotch size={size} aria-hidden className="animate-pulse text-accent" />;
-  if (s === "review") return <CircleHalf size={size} aria-hidden className="text-warn" />;
-  if (s === "done") return <Circle size={size} weight="fill" aria-hidden className="text-success" />;
+  if (s === "doing")
+    return (
+      <CircleNotch
+        size={size}
+        aria-hidden
+        className="animate-pulse text-accent"
+      />
+    );
+  if (s === "review")
+    return <CircleHalf size={size} aria-hidden className="text-warn" />;
+  if (s === "done")
+    return (
+      <Circle size={size} weight="fill" aria-hidden className="text-success" />
+    );
   return <Circle size={size} aria-hidden className="text-dim" />;
 }
 
@@ -115,15 +126,24 @@ function TreeNode({
       </span>
       <span className="text-secondary">{node.title}</span>
       {node.assignee && (
-        <small className="text-caption text-dim">{node.assignee.replace("yui-", "")}</small>
+        <small className="text-caption text-dim">
+          {node.assignee.replace("yui-", "")}
+        </small>
       )}
       {running && node.startedAt && (
-        <small className="flex items-center gap-1 text-caption tabular-nums text-warn" title="sudah berjalan sejak status doing">
-          <CircleNotch size={9} aria-hidden className="animate-pulse" /> {fmtDur(now - node.startedAt)}
+        <small
+          className="flex items-center gap-1 text-caption tabular-nums text-warn"
+          title="sudah berjalan sejak status doing"
+        >
+          <CircleNotch size={9} aria-hidden className="animate-pulse" />{" "}
+          {fmtDur(now - node.startedAt)}
         </small>
       )}
       {node.status === "done" && node.startedAt && (
-        <small className="text-caption tabular-nums text-dim" title="total durasi pengerjaan">
+        <small
+          className="text-caption tabular-nums text-dim"
+          title="total durasi pengerjaan"
+        >
           {fmtDur((node.doneAt ?? now) - node.startedAt)}
         </small>
       )}
@@ -298,7 +318,12 @@ export function ProjectTabs({
         content: scope === "user" ? userMd : projMd,
       }),
     });
-    if (res.ok) toastOk(scope === "user" ? "USER.md tersimpan — berlaku di sesi baru berikutnya." : "MEMORY.md proyek tersimpan.");
+    if (res.ok)
+      toastOk(
+        scope === "user"
+          ? "USER.md tersimpan — berlaku di sesi baru berikutnya."
+          : "MEMORY.md proyek tersimpan.",
+      );
     else toastErr("gagal menyimpan memori");
   }
 
@@ -371,7 +396,9 @@ export function ProjectTabs({
               {sessions.map((s) => (
                 <li key={s.sessionId}>
                   <button
-                    aria-current={s.sessionId === activeSessionId ? "true" : undefined}
+                    aria-current={
+                      s.sessionId === activeSessionId ? "true" : undefined
+                    }
                     className={`flex w-full cursor-pointer items-center gap-2.5 rounded-md2 border px-2.5 py-2 text-left transition-colors ${
                       s.sessionId === activeSessionId
                         ? "border-line bg-hover"
@@ -380,8 +407,12 @@ export function ProjectTabs({
                     onClick={() => onOpenSession(s)}
                   >
                     <PersonaFace personaId={s.personaId} size={18} />
-                    <span className="flex-1 text-body text-secondary">{s.personaName}</span>
-                    <span className="shrink-0 text-caption text-dim">{relTime(s.lastEventAt)}</span>
+                    <span className="flex-1 text-body text-secondary">
+                      {s.personaName}
+                    </span>
+                    <span className="shrink-0 text-caption text-dim">
+                      {relTime(s.lastEventAt)}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -398,7 +429,8 @@ export function ProjectTabs({
           </p>
           {roster.length === 0 ? (
             <p className="text-caption leading-5 text-dim">
-              Belum ada persona di roster — assign di bawah untuk membentuk tim proyek.
+              Belum ada persona di roster — assign di bawah untuk membentuk tim
+              proyek.
             </p>
           ) : (
             <ul className="flex flex-col gap-1.5">
@@ -412,18 +444,27 @@ export function ProjectTabs({
                     {p ? (
                       <PersonaFace personaId={p.id} size={24} />
                     ) : (
-                      <span className="h-6 w-6 shrink-0 rounded-pill bg-inset" aria-hidden />
+                      <span
+                        className="h-6 w-6 shrink-0 rounded-pill bg-inset"
+                        aria-hidden
+                      />
                     )}
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <b className="text-body font-semibold text-primary">{p?.name ?? r.personaId}</b>
+                      <b className="text-body font-semibold text-primary">
+                        {p?.name ?? r.personaId}
+                      </b>
                       <small className="text-caption text-dim">{r.role}</small>
                       {r.phases.length > 0 && (
-                        <small className="text-caption text-muted">{r.phases.join(" · ")}</small>
+                        <small className="text-caption text-muted">
+                          {r.phases.join(" · ")}
+                        </small>
                       )}
                       {/* P1-DUN-5: gating per fase — ✕ = belum ada skill siap (latih di Dungeon) */}
                       {readiness
                         .find((x) => x.personaId === r.personaId)
-                        ?.phases.filter((ph) => ph.skills.length > 0 || !ph.ready)
+                        ?.phases.filter(
+                          (ph) => ph.skills.length > 0 || !ph.ready,
+                        )
                         .map((ph) => (
                           <small
                             key={ph.phase}
@@ -434,12 +475,20 @@ export function ProjectTabs({
                                 : "belum ada skill siap untuk fase ini — latih persona di Dungeon (tab Skill)"
                             }
                           >
-                            {ph.ready ? <Check size={10} weight="bold" aria-hidden /> : <X size={10} weight="bold" aria-hidden />}
+                            {ph.ready ? (
+                              <Check size={10} weight="bold" aria-hidden />
+                            ) : (
+                              <X size={10} weight="bold" aria-hidden />
+                            )}
                             {ph.phase}
                           </small>
                         ))}
                       {r.mcp.map((b) => (
-                        <Chip key={b.server} tone="muted" className="self-start">
+                        <Chip
+                          key={b.server}
+                          tone="muted"
+                          className="self-start"
+                        >
                           MCP:{b.server}
                           {b.tools.length > 0 ? ` (${b.tools.length})` : ""}
                         </Chip>
@@ -448,7 +497,9 @@ export function ProjectTabs({
                     <button
                       className="flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
                       onClick={() =>
-                        void saveRoster(roster.filter((x) => x.personaId !== r.personaId))
+                        void saveRoster(
+                          roster.filter((x) => x.personaId !== r.personaId),
+                        )
                       }
                       aria-label={`Keluarkan ${p?.name ?? r.personaId}`}
                       disabled={busy}
@@ -462,7 +513,12 @@ export function ProjectTabs({
           )}
           {available.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-lg2 border border-line bg-inset p-3">
-              <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Persona" className="w-36">
+              <Select
+                value={pick}
+                onChange={(e) => setPick(e.target.value)}
+                aria-label="Persona"
+                className="w-36"
+              >
                 <option value="">Persona…</option>
                 {available.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -493,7 +549,11 @@ export function ProjectTabs({
                   ))}
                 </Select>
               )}
-              <Button variant="primary" onClick={assign} disabled={!pick || !role.trim() || busy}>
+              <Button
+                variant="primary"
+                onClick={assign}
+                disabled={!pick || !role.trim() || busy}
+              >
                 Assign
               </Button>
             </div>
@@ -526,8 +586,12 @@ export function ProjectTabs({
                   }}
                 >
                   <header className="flex items-center justify-between">
-                    <b className="text-body font-semibold text-secondary">{LABEL[col]}</b>
-                    <span className="rounded-pill bg-surface px-2 text-caption tabular-nums text-dim">{cards.length}</span>
+                    <b className="text-body font-semibold text-secondary">
+                      {LABEL[col]}
+                    </b>
+                    <span className="rounded-pill bg-surface px-2 text-caption tabular-nums text-dim">
+                      {cards.length}
+                    </span>
                   </header>
                   <div className="flex flex-col gap-2">
                     {cards.map(({ node, depth }) => (
@@ -536,16 +600,30 @@ export function ProjectTabs({
                         className="flex cursor-grab flex-wrap items-center gap-1.5 rounded-lg2 border border-line bg-raised px-3 py-2 select-none hover:border-line-strong active:cursor-grabbing"
                         style={{ marginLeft: depth * 10 }}
                         draggable
-                        onDragStart={(e) => e.dataTransfer.setData("text/yui-task", node.id)}
+                        onDragStart={(e) =>
+                          e.dataTransfer.setData("text/yui-task", node.id)
+                        }
                         title={depth > 0 ? "subtask" : undefined}
                       >
-                        {depth > 0 && <ArrowBendDownRight size={10} aria-hidden className="text-dim" />}
-                        <span className="min-w-0 flex-1 overflow-wrap-anywhere text-body text-secondary">{node.title}</span>
+                        {depth > 0 && (
+                          <ArrowBendDownRight
+                            size={10}
+                            aria-hidden
+                            className="text-dim"
+                          />
+                        )}
+                        <span className="min-w-0 flex-1 overflow-wrap-anywhere text-body text-secondary">
+                          {node.title}
+                        </span>
                         {node.assignee && (
-                          <small className="text-caption text-muted">{node.assignee.replace("yui-", "")}</small>
+                          <small className="text-caption text-muted">
+                            {node.assignee.replace("yui-", "")}
+                          </small>
                         )}
                         {node.artefak.length > 0 && (
-                          <small className="text-caption text-dim">+{node.artefak.length}</small>
+                          <small className="text-caption text-dim">
+                            +{node.artefak.length}
+                          </small>
                         )}
                       </article>
                     ))}
@@ -558,23 +636,38 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "memory" && (
-        <section aria-label="Memori — apa yang Yui ketahui" className="flex max-w-[760px] flex-col gap-3">
-          {(
-            [
-              { scope: "user" as const, title: "Tentang Anda — USER.md", hint: "Lintas proyek: preferensi gaya, bahasa, batasan." },
-              { scope: "project" as const, title: `Proyek ini — MEMORY.md`, hint: `Keputusan, pelajaran, konteks yang berlaku di ${project.name}.` },
-            ]
-          ).map((d) => (
+        <section
+          aria-label="Memori — apa yang Yui ketahui"
+          className="flex max-w-[760px] flex-col gap-3"
+        >
+          {[
+            {
+              scope: "user" as const,
+              title: "Tentang Anda — USER.md",
+              hint: "Lintas proyek: preferensi gaya, bahasa, batasan.",
+            },
+            {
+              scope: "project" as const,
+              title: `Proyek ini — MEMORY.md`,
+              hint: `Keputusan, pelajaran, konteks yang berlaku di ${project.name}.`,
+            },
+          ].map((d) => (
             <Card key={d.scope} className="flex flex-col gap-2.5">
               <header className="flex items-center justify-between gap-2">
-                <b className="text-body font-semibold text-primary">{d.title}</b>
+                <b className="text-body font-semibold text-primary">
+                  {d.title}
+                </b>
                 <Button size="sm" onClick={() => void saveMemoryDoc(d.scope)}>
                   Simpan
                 </Button>
               </header>
               <TextArea
                 value={d.scope === "user" ? userMd : projMd}
-                onChange={(e) => (d.scope === "user" ? setUserMd(e.target.value) : setProjMd(e.target.value))}
+                onChange={(e) =>
+                  d.scope === "user"
+                    ? setUserMd(e.target.value)
+                    : setProjMd(e.target.value)
+                }
                 rows={9}
                 spellCheck={false}
               />
@@ -592,9 +685,9 @@ export function ProjectTabs({
         <section aria-label="Pohon task (TaskTree)" className="max-w-[860px]">
           {tree.length === 0 ? (
             <p className="text-caption leading-5 text-dim">
-              Pohon task masih kosong — simpul terbentuk dari event task (REST / tools{" "}
-              <code className="font-mono">todo_*</code>) sejak TaskTree aktif. Task pra-migrasi hanya tampil di tab
-              Tasklist.
+              Pohon task masih kosong — simpul terbentuk dari event task (REST /
+              tools <code className="font-mono">todo_*</code>) sejak TaskTree
+              aktif. Task pra-migrasi hanya tampil di tab Tasklist.
             </p>
           ) : (
             <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
@@ -607,7 +700,10 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "team" && (
-        <section aria-label="Tim — diagram hierarki delegasi" className="flex flex-col gap-4">
+        <section
+          aria-label="Tim — diagram hierarki delegasi"
+          className="flex flex-col gap-4"
+        >
           <TeamTree
             projectId={project.id}
             rootSessionId={activeSessionId}
@@ -616,7 +712,9 @@ export function ProjectTabs({
           />
           {bench.length > 0 && (
             <div className="w-full max-w-[460px]">
-              <small className="mb-2 block text-caption text-dim">Siaga (di roster, belum didelegasi):</small>
+              <small className="mb-2 block text-caption text-dim">
+                Siaga (di roster, belum didelegasi):
+              </small>
               <div className="flex flex-wrap gap-2">
                 {bench.map((r) => (
                   <span
@@ -625,7 +723,8 @@ export function ProjectTabs({
                     title={r.role}
                   >
                     <PersonaFace personaId={r.personaId} size={16} />
-                    {PERSONA_NAME[r.personaId]?.replace(" Yui", "") ?? r.personaId.replace("yui-", "")}
+                    {PERSONA_NAME[r.personaId]?.replace(" Yui", "") ??
+                      r.personaId.replace("yui-", "")}
                   </span>
                 ))}
               </div>

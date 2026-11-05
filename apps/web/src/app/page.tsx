@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
-import { CommandIcon, Gear, Sword } from "@phosphor-icons/react";
+import { CommandIcon, Gear, SidebarSimple, Sword } from "@phosphor-icons/react";
 import { DungeonView } from "@/components/DungeonView";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
@@ -52,6 +52,32 @@ export default function Home() {
   const [personas, setPersonas] = useState<PersonaInfo[]>([]);
   /** P1-DUN-4: halaman Dungeon (arena latihan persona) — view terpisah di main. */
   const [dungeonOpen, setDungeonOpen] = useState(false);
+  // Sidebar fold/unfold — persist di localStorage (yui.sidebar: "open" | "folded");
+  // layar sempit (<768px) default lipat. Shortcut: Ctrl/Cmd+B.
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((v) => {
+      try {
+        localStorage.setItem("yui.sidebar", v ? "folded" : "open");
+      } catch {}
+      return !v;
+    });
+  }, []);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("yui.sidebar");
+      if (saved === "folded") setSidebarOpen(false);
+      else if (!saved && window.innerWidth < 768) setSidebarOpen(false);
+    } catch {}
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleSidebar]);
   const [active, setActive] = useState<PersonaInfo | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [items, setItems] = useState<ChatItem[]>([]);
@@ -614,47 +640,117 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-canvas text-body text-secondary">
-      <aside className="flex w-[272px] shrink-0 flex-col overflow-y-auto border-r border-line bg-sidebar px-2 py-3">
-        <div className="flex items-baseline gap-2 px-2 pb-4 text-body font-semibold tracking-tight text-primary">
-          Your-Yui{" "}
-          <span className="text-caption font-normal text-dim">demo</span>
-        </div>
-        <ProjectPanel
-          projects={projects.filter((p) => p.kind !== "dungeon")}
-          booted={booted}
-          activeId={activeProjectId}
-          onPick={pickProject}
-          onCreated={loadProjects}
-          onDeleted={(pid) => {
-            // Scope yang aktif terhapus → kembali ke workspace global (reset sesi);
-            // selain itu cukup refresh daftar project + sesi project aktif.
-            void loadProjects();
-            if (activeProjectId === pid) {
-              void pickProject(null);
-            } else if (activeProjectId) {
-              void loadProjectSessions(activeProjectId);
-            }
-          }}
-        />
-        <div className="mt-auto flex flex-col gap-1 border-t border-line pt-3">
-          <button
-            className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-              dungeonOpen
-                ? "bg-hover text-primary"
-                : "text-dim hover:bg-hover hover:text-primary"
-            }`}
-            aria-current={dungeonOpen ? "page" : undefined}
-            onClick={() => setDungeonOpen((v) => !v)}
-          >
-            <CommandIcon size={20} aria-hidden /> Enhancer
-          </button>
-          <button
-            className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Gear size={20} /> Pengaturan
-          </button>
-        </div>
+      <aside
+        className={`flex shrink-0 flex-col border-r border-line bg-sidebar py-3 transition-[width] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+          sidebarOpen
+            ? "w-[272px] overflow-y-auto px-2"
+            : "w-14 items-center overflow-hidden px-1"
+        }`}
+      >
+        {sidebarOpen ? (
+          <>
+            <div className="flex items-center gap-2.5 px-2 pb-4">
+              {/* Logo maskot Orin (favicon_io) + wordmark Your-Yui */}
+              <img
+                src="/android-chrome-192x192.png"
+                alt=""
+                aria-hidden
+                className="size-7 shrink-0 rounded-full"
+              />
+              <span className="flex min-w-0 flex-col leading-tight">
+                <b className="text-body font-semibold tracking-tight text-primary">Your-Yui</b>
+                <span className="text-caption text-dim">demo</span>
+              </span>
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                title="Lipat sidebar (Ctrl+B)"
+                aria-label="Lipat sidebar"
+                className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+              >
+                <SidebarSimple size={16} aria-hidden />
+              </button>
+            </div>
+            <ProjectPanel
+              projects={projects.filter((p) => p.kind !== "dungeon")}
+              booted={booted}
+              activeId={activeProjectId}
+              onPick={pickProject}
+              onCreated={loadProjects}
+              onDeleted={(pid) => {
+                // Scope yang aktif terhapus → kembali ke workspace global (reset sesi);
+                // selain itu cukup refresh daftar project + sesi project aktif.
+                void loadProjects();
+                if (activeProjectId === pid) {
+                  void pickProject(null);
+                } else if (activeProjectId) {
+                  void loadProjectSessions(activeProjectId);
+                }
+              }}
+            />
+            <div className="mt-auto flex flex-col gap-1 border-t border-line pt-3">
+              <button
+                className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                  dungeonOpen
+                    ? "bg-hover text-primary"
+                    : "text-dim hover:bg-hover hover:text-primary"
+                }`}
+                aria-current={dungeonOpen ? "page" : undefined}
+                onClick={() => setDungeonOpen((v) => !v)}
+              >
+                <CommandIcon size={20} aria-hidden /> Enhancer
+              </button>
+              <button
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Gear size={20} /> Pengaturan
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-col items-center gap-1">
+              <img
+                src="/android-chrome-192x192.png"
+                alt="Your-Yui"
+                className="size-7 rounded-full"
+              />
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                title="Buka sidebar (Ctrl+B)"
+                aria-label="Buka sidebar"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+              >
+                <SidebarSimple size={16} aria-hidden />
+              </button>
+            </div>
+            <div className="mt-auto flex flex-col gap-1">
+              <button
+                type="button"
+                title="Enhancer"
+                aria-label="Enhancer"
+                aria-current={dungeonOpen ? "page" : undefined}
+                onClick={() => setDungeonOpen((v) => !v)}
+                className={`flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                  dungeonOpen ? "bg-hover text-primary" : "text-dim hover:bg-hover hover:text-primary"
+                }`}
+              >
+                <CommandIcon size={20} aria-hidden />
+              </button>
+              <button
+                type="button"
+                title="Pengaturan"
+                aria-label="Pengaturan"
+                onClick={() => setSettingsOpen(true)}
+                className="flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+              >
+                <Gear size={20} aria-hidden />
+              </button>
+            </div>
+          </>
+        )}
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <main className="flex min-w-0 flex-1 flex-col">

@@ -95,13 +95,13 @@ export function Dot({
 
 /* ── State persona (idle/working/done/…) — dipakai header chat & kartu delegasi ── */
 export const STATE_LABEL: Record<string, string> = {
-  idle: "menunggu",
-  thinking: "berpikir",
-  working: "bekerja",
-  awaiting_input: "menunggu persetujuan",
-  done: "selesai",
-  error: "error",
-  celebrating: "merayakan",
+  idle: "Waiting",
+  thinking: "Thinking",
+  working: "Working",
+  awaiting_input: "Waiting Approval",
+  done: "Done",
+  error: "Error",
+  celebrating: "Celebrating",
 };
 const STATE_TONE: Record<string, ChipTone> = {
   idle: "muted",
