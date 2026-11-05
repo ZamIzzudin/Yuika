@@ -55,7 +55,7 @@ test("G2-G6 — remote browser: join, stream, approve, resume, dua remote", asyn
   // lalu teks penutup.
   await enqueue(request, [
     { text: STREAM_TEXT },
-    { toolCalls: [{ id: "call_w1", name: "write_file", args: { path: "reports/remote-note.txt", content: "approved from remote" } }] },
+    { toolCalls: [{ id: "call_w1", name: "write_file", args: { path: "notes/remote-note.txt", content: "approved from remote" } }] },
     { text: "File written after remote approval." },
   ]);
 
@@ -74,12 +74,19 @@ test("G2-G6 — remote browser: join, stream, approve, resume, dua remote", asyn
     .toBe(1);
 
   // ── G3: prompt pertama → delta streaming terlihat ────────────────────
+  // Sesi BARU via New session + persona Yui Coder (punya write_file utk
+  // G4) — deterministik, tak tergantung sesi leftover run lain.
+  await page.getByRole("button", { name: "New session" }).click();
+  await page.getByRole("combobox").selectOption({ label: "Hiro Yui" });
   const input = page.getByPlaceholder(/First prompt creates a session|Message the host/);
   await input.fill("Say the remote proof sentence.");
   await input.press("Enter");
   await expect(page.getByText(/streams over the encrypted relay/)).toBeVisible({ timeout: 60_000 });
 
   // ── G4: approval remote — write_file minta persetujuan ───────────────
+  // Paksa mode "ask" (approval-mode.json persist antar run bisa "auto").
+  const modeRes = await request.put(`${API}/api/settings/approval`, { data: { mode: "ask" } });
+  expect(modeRes.ok()).toBeTruthy();
   await page.getByPlaceholder(/Message the host/).fill("Write a note file for me.");
   await page.keyboard.press("Enter");
   const card = page.locator("div", { hasText: "write_file" }).filter({ has: page.getByRole("button", { name: "Approve" }) }).first();

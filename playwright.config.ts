@@ -57,7 +57,7 @@ export default defineConfig({
     {
       // P1-PRT-6 — double portal: claim stub :3110 + SpecRelay ws://3111
       // (semantik SPEC-PROTOCOL v1; relay produksi = repo yuika-portal).
-      command: "npx tsx e2e/portal-double.mjs",
+      command: "npx tsx e2e/portal-double.mts",
       url: `http://127.0.0.1:${DOUBLE_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 60_000,

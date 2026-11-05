@@ -14,7 +14,7 @@
 
 | # | Batch | Est | Status | Bisa mulai |
 |---|---|---|---|---|
-| 1 | Remote Control | ~9d | IN-PROGRESS (2026-11) | ✅ sekarang |
+| 1 | Remote Control | ~9d | **DONE (2026-11-06)** — semua P1-PRT ✅; live cross-repo smoke 8/8 (`scripts/live-portal-smoke.mts`) | ✅ sekarang |
 | 2 | Agent Developer | ~8d | TERSDIA | ✅ sekarang |
 | 3 | Agent 24/7 | ~8d | TERSEDIA | ✅ sekarang |
 | 4 | Otak Yuika | ~8d | TERSEDIA | ✅ sekarang |
@@ -68,6 +68,14 @@ mobile ada. Ini jalur kritis menuju Batch 8 (mobile) & 9 (desktop).
 **Acceptance batch:** skenario SPEC-PROTOCOL §11 butir 1–9 hijau via /dev/remote
 + gerbang e2e; badge remote connected tampil; host tetap diremotable tanpa tab
 web terbuka.
+
+**HASIL (2026-11-06): DONE.** Butir 1–7 = unit relay-client 12 test; butir 8 =
+vectors 45 test dua backend; butir 9 = claim route (409 clash sudah teruji di
+portal). Gerbang e2e G1–G6 hijau (2 test/37 dtk, SpecRelay double) + **live
+smoke lintas repo 8/8** vs relay PRODUKSI yuika-portal (T1 done sesi paralel,
+commit portal `0d0752d`). Commit: `4e58968` `ff50d39` `09b5d1d` `bfd4a72`
+`a8a31d3` + gerbang. Sisa non-blokir: uji ulang penuh via portal web +
+staging setelah portal T2+T4 (gerbang PORTAL READY).
 
 **Paralelisme:** PRT-1..4 tidak butuh portal T1 selesai (spec sudah beku;
 relay mock in-process). Hanya PRT-6 menunggu portal READY.

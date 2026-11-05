@@ -49,7 +49,7 @@ export default function DevRemotePage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [log, setLog] = useState<string[]>([]);
   const [prompt, setPrompt] = useState("");
-  const [personaId, setPersonaId] = useState("yui-scholar");
+  const [personaId, setPersonaId] = useState("yui-coder");
   const [personas, setPersonas] = useState<Array<{ id: string; name: string }>>([]);
 
   const clientRef = useRef<RelayClient | null>(null);
@@ -430,11 +430,24 @@ export default function DevRemotePage() {
                     value={personaId}
                     onChange={(e) => setPersonaId(e.target.value)}
                   >
-                    {personas.length === 0 && <option value="yui-scholar">yui-scholar</option>}
+                    {personas.length === 0 && <option value="yui-coder">yui-coder</option>}
                     {personas.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
+                  <Button
+                    variant="ghost"
+                    className="mt-2 w-full"
+                    onClick={() => {
+                      // mulai sesi baru: prompt berikutnya membawa personaId terpilih
+                      setActiveSession(null);
+                      activeRef.current = null;
+                      setMsgs([]);
+                      setApprovals([]);
+                    }}
+                  >
+                    New session
+                  </Button>
                 </div>
               </Card>
 
