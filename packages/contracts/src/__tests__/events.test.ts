@@ -15,6 +15,8 @@ const samples: YuiEventType[] = [
   { id: 10, ts: 10, sessionId: "s1", type: "memory.noted", turnId: "t1", scope: "user", note: "ringkas saja" },
   { id: 11, ts: 11, sessionId: "s1", type: "skill.proposed", turnId: "t1", name: "deploy-check", description: "Sebelum deploy cek lint+test" },
   { id: 12, ts: 12, sessionId: "s1", type: "turn.cancelled", turnId: "t1" },
+  { id: 13, ts: 13, sessionId: "s1", type: "delegation.paused", turnId: "t1", childSessionId: "s2" },
+  { id: 14, ts: 14, sessionId: "s1", type: "delegation.resumed", turnId: "t1", childSessionId: "s2" },
 ];
 
 describe("YuiEvent contract", () => {

@@ -467,7 +467,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const turnAborts = new Map<string, AbortController>();
   /** P0-DEL-2: kontrol anak delegasi aktif (cancel/steer dari UI parent).
    *  Key = childSessionId; unregister otomatis oleh runner (finally). */
-  const childControls = new Map<string, { parentSessionId: string; ctl: { abort: AbortController; steer: (text: string) => void } }>();
+  const childControls = new Map<
+    string,
+    { parentSessionId: string; ctl: { abort: AbortController; steer: (text: string) => void; pause: () => void; resume: () => void } }
+  >();
 
   /** Dipakai REST runTurn & dungeon runner (async — resolve saat turn selesai). */
   function runTurnInternal(sessionId: string, text: string): Promise<void> {
@@ -602,6 +605,19 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const t = text.trim();
       if (!c || !t) return false;
       c.ctl.steer(t);
+      return true;
+    },
+    // ---- P1-DEL-3: pause/resume anak delegasi ----
+    pauseDelegation: (childSessionId: string) => {
+      const c = childControls.get(childSessionId);
+      if (!c) return false;
+      c.ctl.pause(); // event delegation.paused ke parent via runner
+      return true;
+    },
+    resumeDelegation: (childSessionId: string) => {
+      const c = childControls.get(childSessionId);
+      if (!c) return false;
+      c.ctl.resume();
       return true;
     },
     resolveApproval: (requestId: string, approved: boolean, remember = false) =>

@@ -279,7 +279,7 @@
 
 - [ ] **P1-DEL-1** Batch paralel (cap per plan) + `delegation.max_concurrent` config · *A · 2d*
 - [ ] **P1-DEL-2** Background jobs + notifikasi selesai (web push) · *A+B · 2d*
-- [ ] **P1-DEL-3** Steering UI (arahkan/pause anak dari web) · *B · 2d · dep P0-DEL-2*
+- [x] **P1-DEL-3** Steering UI (arahkan/pause anak dari web) · *B · 2d · dep P0-DEL-2* — ✅ v0 2026-11 (dua tahap): **steer+cancel** (P0-DEL-2) — kartu delegasi parent: tombol 💬 steer (input inline, pesan user berlabel `[arahan user — mid-turn]` di-drain tiap awal iterasi) + 🚫 cancel (graceful, job interrupted); **pause/resume** (P1-DEL-3) — ⏸ di kartu delegasi: anak berhenti di BATAS ITERASI (provider tak dipanggil, progres tersimpan; parent turn ikut menunggu — jujur, bukan background), ▶ resume lanjut dari titik pause; event `delegation.paused/resumed` (audit trail + chip "paused — waiting for resume" di kartu); cancel saat pause tetap graceful (gate dibangunkan abort → interrupted); steer saat pause ter-antre & ter-drain pasca-resume; REST `POST /api/delegations/:id {action:pause|resume}`; +3 test `delegation-pause.test.ts`. Sisa v1: pause dari panel Tim/TaskTree (bukan hanya kartu chat) & auto-pause saat budget warn.
 - [x] **P1-DEL-4** Isolasi & redaksi konteks anak (anak tidak melihat tool call parent) — audit + test · *A · 1d* — ✅ v0 dev-10: `delegation-isolation.test.ts` — anak = sesi FRESH (bukan asumsi): diverifikasi 3 lapis — messages anak tanpa jejak history parent, systemPrompt anak tanpa konten parent, dan WIRE request ke provider (req yang benar-benar terkirim) bersih dari rahasia parent
 
 ### P1-PER (persona v1 penuh — pilar produk)

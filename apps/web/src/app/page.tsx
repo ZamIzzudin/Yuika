@@ -313,6 +313,22 @@ export default function Home() {
           return next;
         });
         break;
+      // P1-DEL-3: pause/resume → tandai kartu (anak menunggu di batas iterasi).
+      case "delegation.paused":
+      case "delegation.resumed": {
+        const pausedNow = e.type === "delegation.paused";
+        setItems((prev) => {
+          const next = [...prev];
+          for (let i = next.length - 1; i >= 0; i--) {
+            if (next[i]!.kind === "delegation" && next[i]!.childSessionId === e.childSessionId) {
+              next[i] = { ...next[i]!, paused: pausedNow };
+              break;
+            }
+          }
+          return next;
+        });
+        break;
+      }
       case "delegation.done":
         setItems((prev) => {
           const next = [...prev];

@@ -64,6 +64,10 @@ export interface LoopDeps {
    *  tiap iterasi loop, di-inject sebagai pesan user berlabel. Dipakai runner
    *  delegasi untuk arahkan anak tanpa membatalkannya. */
   steerFor?: (sessionId: string) => string[];
+  /** P1-DEL-3: gate pause per sesi (delegasi) — dipanggil di awal TIAP iterasi.
+   *  Resolve `true` = lanjut (tidak sedang pause); `false` = dibatalkan saat
+   *  ter-pause → loop keluar graceful (progress & parsial tersimpan). */
+  pauseGateFor?: (sessionId: string) => Promise<boolean>;
 }
 
 export class AgentLoop {
@@ -173,6 +177,11 @@ export class AgentLoop {
         messages.push(steerMsg);
         store.appendMessage(sessionId, steerMsg);
         trace(`  steer: ${st.slice(0, 80)}`);
+      }
+      // P1-DEL-3: pause (delegasi) — anak menunggu di sini TANPA memanggil
+      // provider; resume/abort membangunkan gate. Abort saat pause → graceful.
+      if (this.deps.pauseGateFor && !(await this.deps.pauseGateFor(sessionId))) {
+        return cancelledExit();
       }
       // 3) api phase — rantai attempt: primary → fallback (P0-CORE-2). Provider
       // sudah retry transien ×2 di dalam (maxRetries); sampai sini = model itu

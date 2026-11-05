@@ -14,6 +14,8 @@ import {
   ChatTeardropText,
   Lightning,
   PaperPlaneTilt,
+  PauseCircle,
+  PlayCircle,
   PencilSimple,
   Prohibit,
   Stop,
@@ -56,6 +58,8 @@ export interface ChatItem {
   /** Feed live anak (delegation.delta) — streaming saat delegasi berjalan. */
   liveText?: string;
   liveKind?: "text" | "reasoning" | "tool";
+  /** P1-DEL-3: anak di-pause — menunggu resume (chip + tombol jadi Resume). */
+  paused?: boolean;
   // approval
   requestId?: string;
   reason?: string;
@@ -145,6 +149,21 @@ export function ChatView({
       if (!r.ok) {
         const body = (await r.json().catch(() => ({}))) as { error?: string };
         toastErr(body.error ?? "could not cancel");
+      }
+    } catch {
+      toastErr("could not reach the server");
+    }
+  }
+  async function pauseDelegation(childSessionId: string, pause: boolean) {
+    try {
+      const r = await fetch(`/api/delegations/${childSessionId}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: pause ? "pause" : "resume" }),
+      });
+      if (!r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { error?: string };
+        toastErr(body.error ?? (pause ? "could not pause" : "could not resume"));
       }
     } catch {
       toastErr("could not reach the server");
@@ -264,6 +283,11 @@ export function ChatView({
                       {it.childState ? (
                         <StateChip state={it.childState} />
                       ) : null}
+                      {it.paused ? (
+                        <span className="rounded-pill border border-line bg-hover px-2 py-px text-caption text-dim">
+                          paused — waiting for resume
+                        </span>
+                      ) : null}
                       {/* P0-DEL-2: kontrol anak saat masih bekerja (belum ada ringkasan). */}
                       {!it.text && (
                         <span className="ml-auto flex items-center gap-1">
@@ -314,6 +338,18 @@ export function ChatView({
                               <ChatTeardropText size={14} aria-hidden />
                             </button>
                           )}
+                          <button
+                            type="button"
+                            title={it.paused ? "Resume delegation" : "Pause delegation (stops at next iteration boundary)"}
+                            aria-label={it.paused ? "Resume delegation" : "Pause delegation"}
+                            className="flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void pauseDelegation(it.childSessionId!, !it.paused);
+                            }}
+                          >
+                            {it.paused ? <PlayCircle size={14} aria-hidden /> : <PauseCircle size={14} aria-hidden />}
+                          </button>
                           <button
                             type="button"
                             title="Cancel delegation"

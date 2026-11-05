@@ -103,6 +103,21 @@ export const DelegationSteeredEvent = EventMeta.extend({
   text: z.string(),
 });
 
+/** P1-DEL-3: anak di-PAUSE dari UI parent — loop anak berhenti memanggil
+ *  provider di batas iterasi (progres tersimpan); parent turn ikut menunggu.
+ *  Resume = delegation.resumed; cancel saat pause tetap jalan (graceful). */
+export const DelegationPausedEvent = EventMeta.extend({
+  type: z.literal("delegation.paused"),
+  turnId: z.string(),
+  childSessionId: z.string(),
+});
+
+export const DelegationResumedEvent = EventMeta.extend({
+  type: z.literal("delegation.resumed"),
+  turnId: z.string(),
+  childSessionId: z.string(),
+});
+
 export const PersonaStateEvent = EventMeta.extend({
   type: z.literal("persona.state"),
   personaId: z.string(),
@@ -193,6 +208,8 @@ export const YuiEvent = z.discriminatedUnion("type", [
   DelegationDeltaEvent,
   DelegationDoneEvent,
   DelegationSteeredEvent,
+  DelegationPausedEvent,
+  DelegationResumedEvent,
   PersonaStateEvent,
   ApprovalRequestedEvent,
   MemoryNotedEvent,

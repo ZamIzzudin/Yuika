@@ -38,7 +38,7 @@ export interface DelegationDeps {
    *  cancel (abort turn anak) / steer (arahan mid-turn) tanpa menunggu selesai.
    *  unregister dipanggil saat anak selesai (done/error/abort). */
   controls?: {
-    register: (childSessionId: string, parentSessionId: string, ctl: { abort: AbortController; steer: (text: string) => void }) => void;
+    register: (childSessionId: string, parentSessionId: string, ctl: { abort: AbortController; steer: (text: string) => void; pause: () => void; resume: () => void }) => void;
     unregister: (childSessionId: string) => void;
   };
 }
@@ -102,11 +102,32 @@ export function runChildPersona(
   // mid-turn (di-drain loop anak tiap awal iterasi).
   const ac = new AbortController();
   const steerQueue: string[] = [];
+  // P1-DEL-3: pause/resume — anak berhenti di batas iterasi (gate di loop);
+  // abort saat pause membangunkan semua waiter → loop keluar graceful.
+  let paused = false;
+  let wakeWaiters: Array<() => void> = [];
+  const wake = (): void => {
+    const ws = wakeWaiters;
+    wakeWaiters = [];
+    ws.forEach((f) => f());
+  };
+  ac.signal.addEventListener("abort", wake, { once: true });
   deps.controls?.register(childSessionId, parent.sessionId, {
     abort: ac,
     steer: (text) => {
       steerQueue.push(text);
       parentEmit({ type: "delegation.steered", turnId: parent.turnId, childSessionId, text });
+    },
+    pause: () => {
+      if (paused || ac.signal.aborted) return;
+      paused = true;
+      parentEmit({ type: "delegation.paused", turnId: parent.turnId, childSessionId });
+    },
+    resume: () => {
+      if (!paused) return;
+      paused = false;
+      wake();
+      parentEmit({ type: "delegation.resumed", turnId: parent.turnId, childSessionId });
     },
   });
   // P0-DEL-1: job persist — baris di DB sebelum loop anak jalan (audit & heal
@@ -171,6 +192,11 @@ export function runChildPersona(
           steerQueue.length = 0;
           return q;
         }, // P0-DEL-2
+        pauseGateFor: async () => {
+          // tunggu hingga resume/abort; true = lanjut iterasi, false = abort saat pause
+          while (paused && !ac.signal.aborted) await new Promise<void>((res) => wakeWaiters.push(res));
+          return !ac.signal.aborted;
+        }, // P1-DEL-3
       });
       await loop.runTurn(childSessionId, context ? `${goal}\n\nContext:\n${context}` : goal, { signal: ac.signal });
       // P0-DEL-2: turn anak dibatalkan GRACEFUL (loop keluar rapi, bukan throw)

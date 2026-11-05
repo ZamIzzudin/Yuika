@@ -75,9 +75,16 @@ class HangingProvider implements ProviderAdapter {
 }
 
 function controlsFixture() {
-  const map = new Map<string, { abort: AbortController; steer: (t: string) => void }>();
+  const map = new Map<
+    string,
+    { abort: AbortController; steer: (t: string) => void; pause: () => void; resume: () => void }
+  >();
   const deps = {
-    register: (id: string, _parent: string, ctl: { abort: AbortController; steer: (t: string) => void }) => map.set(id, ctl),
+    register: (
+      id: string,
+      _parent: string,
+      ctl: { abort: AbortController; steer: (t: string) => void; pause: () => void; resume: () => void },
+    ) => map.set(id, ctl),
     unregister: (id: string) => map.delete(id),
   };
   return { map, deps };
