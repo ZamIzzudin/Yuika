@@ -1,4 +1,6 @@
+
 "use client";
+import { apiUrl } from "@/lib/api";
 // Tab File (P2-STU-3 v0): tree kiri + viewer kanan. Artefak agent (reports/,
 // code/, MEMORY.md) bisa diperiksa tanpa keluar app. File teks/kode ≤256 KB
 // dibaca; selain itu tampil info ukuran. DS-1: ui/* + Tailwind + Phosphor.
@@ -96,7 +98,7 @@ export function FileTab({ projectId }: { projectId: string }) {
 
   const loadTree = useCallback(async () => {
     try {
-      const r = await fetch(`/api/projects/${projectId}/files`);
+      const r = await fetch(apiUrl(`/api/projects/${projectId}/files`));
       if (r.ok) setTree(((await r.json()) as { tree: FileNode[] }).tree);
       else
         toastErr((((await r.json()) as { error?: string }).error ?? "failed to load files") + "");
@@ -107,8 +109,8 @@ export function FileTab({ projectId }: { projectId: string }) {
     if (sel) {
       try {
         const [c, rv] = await Promise.all([
-          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`),
-          fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`),
+          fetch(apiUrl(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`)),
+          fetch(apiUrl(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`)),
         ]);
         if (c.ok) setContent((await c.json()) as Content);
         if (rv.ok)
@@ -156,8 +158,8 @@ export function FileTab({ projectId }: { projectId: string }) {
     setLoadingContent(true);
     try {
       const [c, r] = await Promise.all([
-        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`),
-        fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`),
+        fetch(apiUrl(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`)),
+        fetch(apiUrl(`/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`)),
       ]);
       const cd = (await c.json()) as Content & { error?: string };
       if (!c.ok) {
@@ -178,7 +180,7 @@ export function FileTab({ projectId }: { projectId: string }) {
     setDiff(null);
     if (!sel || !rev || !content) return;
     const r = await fetch(
-      `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&rev=${rev}`,
+      apiUrl(`/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&rev=${rev}`),
     );
     if (!r.ok) return;
     const old = ((await r.json()) as { content: string | null }).content ?? "";
@@ -193,7 +195,7 @@ export function FileTab({ projectId }: { projectId: string }) {
   /** Upload dokumen user → uploads/ (lalu minta scribe membacanya via doc_read). */
   async function upload(f: File) {
     const r = await fetch(
-      `/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`,
+      apiUrl(`/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`),
       { method: "POST", body: await f.arrayBuffer() },
     );
     if (!r.ok) {

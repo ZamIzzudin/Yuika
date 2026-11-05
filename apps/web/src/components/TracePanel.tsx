@@ -1,4 +1,6 @@
+
 "use client";
+import { apiUrl } from "@/lib/api";
 /**
  * TracePanel (P1-INF-4) — observability per turn: timeline langkah (model call,
  * tool, delegasi, approval, error) + token per turn dari ledger. Realtime via
@@ -74,7 +76,7 @@ export function TracePanel({
   const load = useCallback(async () => {
     if (!sessionId) return;
     try {
-      const r = await fetch(`/api/sessions/${sessionId}/trace`);
+      const r = await fetch(apiUrl(`/api/sessions/${sessionId}/trace`));
       if (r.ok) {
         setTrace(await r.json());
         setMissing(false);

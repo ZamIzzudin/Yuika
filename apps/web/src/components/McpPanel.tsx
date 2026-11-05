@@ -1,4 +1,6 @@
+
 "use client";
+import { apiUrl } from "@/lib/api";
 // Panel MCP (P1-MCP-3 + P1-MCP-1): trust gate workspace + status koneksi live
 // + audit tail + KATALOG server (install → mcp.json, uninstall). Fail-closed:
 // install TIDAK menghubungkan — user harus Trust dulu (toggle di atas).
@@ -32,10 +34,10 @@ export function McpPanel() {
   const refresh = useCallback(async () => {
     try {
       const [s, a, c, rt] = await Promise.all([
-        fetch("/api/mcp/servers"),
-        fetch("/api/mcp/audit?limit=5"),
-        fetch("/api/mcp/catalog"),
-        fetch("/api/mcp/runtime"),
+        fetch(apiUrl("/api/mcp/servers")),
+        fetch(apiUrl("/api/mcp/audit?limit=5")),
+        fetch(apiUrl("/api/mcp/catalog")),
+        fetch(apiUrl("/api/mcp/runtime")),
       ]);
       if (s.ok) setServers(((await s.json()) as { servers: McpServerStatus[] }).servers);
       if (a.ok) setAudit(((await a.json()) as { entries: McpAuditEntry[] }).entries);
@@ -59,7 +61,7 @@ export function McpPanel() {
     setUvInstalling(true);
     setUvLog(null);
     try {
-      const res = await fetch("/api/mcp/runtime", { method: "POST" });
+      const res = await fetch(apiUrl("/api/mcp/runtime"), { method: "POST" });
       const j = (await res.json()) as { ok: boolean; uvxPath: string | null; log: string };
       if (j.ok) {
         setUvx(j.uvxPath ?? "uvx");
@@ -80,7 +82,7 @@ export function McpPanel() {
   async function toggle(s: McpServerStatus) {
     setBusy(s.name);
     try {
-      const res = await fetch("/api/mcp/servers", {
+      const res = await fetch(apiUrl("/api/mcp/servers"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ server: s.name, trusted: !s.trusted, denyTools: s.denyTools }),
@@ -96,7 +98,7 @@ export function McpPanel() {
   async function retry(name: string) {
     setBusy(name);
     try {
-      const res = await fetch("/api/mcp/servers", {
+      const res = await fetch(apiUrl("/api/mcp/servers"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ server: name }),
@@ -111,7 +113,7 @@ export function McpPanel() {
   async function install(c: McpCatalogEntry) {
     setBusy(c.id);
     try {
-      const res = await fetch("/api/mcp/install", {
+      const res = await fetch(apiUrl("/api/mcp/install"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ catalogId: c.id, env: envVals }),
@@ -131,7 +133,7 @@ export function McpPanel() {
   async function uninstall(c: McpCatalogEntry) {
     setBusy(c.id);
     try {
-      const res = await fetch(`/api/mcp/install?name=${encodeURIComponent(c.id)}`, { method: "DELETE" });
+      const res = await fetch(apiUrl(`/api/mcp/install?name=${encodeURIComponent(c.id)}`), { method: "DELETE" });
       if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
       else toastOk(`${c.name} removed from mcp.json.`);
       await refresh();

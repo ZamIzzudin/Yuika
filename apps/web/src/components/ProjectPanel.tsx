@@ -1,4 +1,6 @@
+
 "use client";
+import { apiUrl } from "@/lib/api";
 import { useState } from "react";
 import { DeleteProjectResult, type ProjectInfo } from "@yui/contracts";
 import { Plus, Trash } from "@phosphor-icons/react";
@@ -42,7 +44,7 @@ export function ProjectPanel({
     if (!name.trim() || busy) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/projects", {
+      const res = await fetch(apiUrl("/api/projects"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: name.trim(), description: desc.trim() }),
@@ -66,7 +68,7 @@ export function ProjectPanel({
     if (deleting) return;
     setDeleting(p.id);
     try {
-      const res = await fetch(`/api/projects/${encodeURIComponent(p.id)}`, {
+      const res = await fetch(apiUrl(`/api/projects/${encodeURIComponent(p.id)}`), {
         method: "DELETE",
       });
       const body = (await res

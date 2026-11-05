@@ -1,4 +1,6 @@
+
 "use client";
+import { apiUrl } from "@/lib/api";
 import { useEffect, useState } from "react";
 import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
 import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
@@ -14,7 +16,7 @@ export function usePersonaGrowth(): Map<string, PersonaGrowth> {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/personas/growth");
+        const r = await fetch(apiUrl("/api/personas/growth"));
         if (!r.ok || !alive) return;
         const list = (await r.json()) as PersonaGrowth[];
         if (alive) setGrowth(new Map(list.map((g) => [g.id, g])));

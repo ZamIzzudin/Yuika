@@ -60,13 +60,25 @@ export function runChildPersona(
   context: string | null,
   parentEmit: Emit,
 ): ChildRunHandle {
-  const persona = listPersonas(deps.personasDir).find((p) => p.manifest.id === personaId);
+  const personas = listPersonas(deps.personasDir);
+  const persona = personas.find((p) => p.manifest.id === personaId);
   if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
   if (!persona.manifest.delegation.spawnable_by.includes("yui") && !persona.manifest.delegation.spawnable_by.includes("user")) {
     throw new Error(`persona ${personaId} tidak spawnable`);
   }
-  if (activeChildren >= (deps.maxChildren?.() ?? MAX_PARALLEL_CHILDREN))
-    throw new Error(`batas delegation paralel (${deps.maxChildren?.() ?? MAX_PARALLEL_CHILDREN}) tercapai — atur di Settings → Metering`);
+  // P1-DEL-1: cap paralel = min(cap budget workspace, cap plan pendelegasi).
+  // max_concurrent dibaca dari delegation.yaml persona PARENT — "resep"
+  // seberapa agresif persona itu boleh membuka front paralel (Maestro 3 arah,
+  // Planner fokus 1 anak per waktu). Anak tanpa delegate_task tak terdampak.
+  const parentPersonaId = deps.store.getSession(parent.sessionId)?.personaId;
+  const planCap = personas.find((p) => p.manifest.id === parentPersonaId)?.manifest.delegation.max_concurrent;
+  const budgetCap = deps.maxChildren?.() ?? MAX_PARALLEL_CHILDREN;
+  const cap = Math.min(budgetCap, planCap ?? budgetCap);
+  if (activeChildren >= cap)
+    throw new Error(
+      `batas delegation paralel (${cap}) tercapai` +
+        (planCap !== undefined && planCap <= budgetCap ? ` — plan ${parentPersonaId}: max_concurrent=${planCap} (delegation.yaml)` : " — atur di Settings → Metering"),
+    );
 
   const childSessionId = `s_${randomUUID()}`;
   // Toolset anak = toolset persona MINUS delegate_task (kedalaman 1 utk demo) — TODO(P1): depth policy

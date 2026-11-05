@@ -32,10 +32,14 @@ your-yui/
 ```bash
 npm install
 cp .env.example .env        # isi YUI_OPENAI_API_KEY dst.
-npm run dev                 # web di http://localhost:3000
-npm test                    # contracts + core (vitest)
+npm run dev                 # web :3000 + api :3211 (turbo paralel, dua proses)
+npm test                    # contracts + core + api (vitest)
 npm run typecheck
 ```
+
+Arsitektur (P0-INF-1): `apps/web` (Next.js, pure frontend) memanggil `apps/api`
+(Fastify, pemilik runtime @yui/core) via HTTP — `NEXT_PUBLIC_API_BASE`
+(default `http://127.0.0.1:3211`).
 
 Skenario demo: pilih **Yui Conductor** → *"Riset 3 framework JS paling populer sekarang,
 bandingkan singkat, tulis laporan markdown ke reports/"* → amati dekomposisi → delegasi ke

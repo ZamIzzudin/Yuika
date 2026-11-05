@@ -1,2 +1,7 @@
+# P1-DEL-1: max_concurrent = cap paralel MILIK SI PENDELEGASI (planner).
+# 2 = dua arah konsultasi paralel (fitur consult P2-PM-2 by design);
+# delegasi tugas tetap terkendali — naikkan hanya bila benar-benar perlu.
+# Final cap juga di-min() dengan cap budget workspace (Settings → Metering).
+max_concurrent: 2
 can_spawn: [yui-scholar, yui-analyst, yui-scribe]
 spawnable_by: [user, yui-conductor]

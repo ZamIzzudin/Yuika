@@ -1,4 +1,6 @@
 "use client";
+
+import { apiUrl } from "@/lib/api";
 /**
  * Your-Yui demo shell — orchestrator UI (DEMO-WEEK-1 §2):
  * persona picker → sesi → SSE event stream → render msg/activity/delegation/approval.
@@ -104,7 +106,7 @@ export default function Home() {
 
   const loadProjects = useCallback(async () => {
     try {
-      const r = await fetch("/api/projects");
+      const r = await fetch(apiUrl("/api/projects"));
       if (!r.ok) return;
       const d = (await r.json()) as { projects: ProjectInfo[] };
       setProjects(d.projects);
@@ -134,7 +136,7 @@ export default function Home() {
   }, [activeProjectId]);
 
   useEffect(() => {
-    fetch("/api/personas")
+    fetch(apiUrl("/api/personas"))
       .then((r) => r.json())
       .then((d: { personas: PersonaInfo[] }) => setPersonas(d.personas))
       .catch(console.error);
@@ -451,7 +453,7 @@ export default function Home() {
       if (lastEventId.current === 0) {
         try {
           const r = await fetch(
-            `/api/sessions/${sessionId}/stream?since=0&snapshot=1`,
+            apiUrl(`/api/sessions/${sessionId}/stream?since=0&snapshot=1`),
           );
           if (r.ok) {
             const text = await r.text();
@@ -479,7 +481,7 @@ export default function Home() {
       }
       if (dead) return;
       es = new EventSource(
-        `/api/sessions/${sessionId}/stream?since=${lastEventId.current}`,
+        apiUrl(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}`),
       );
       es.onmessage = (m) => {
         attempt = 0;
@@ -514,7 +516,7 @@ export default function Home() {
       if (!sessionId) return;
       try {
         const r = await fetch(
-          `/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`,
+          apiUrl(`/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`),
         );
         if (!r.ok) return;
         const text = await r.text();
@@ -543,7 +545,7 @@ export default function Home() {
     lastEventId.current = 0;
     const projectId =
       projectIdOverride !== undefined ? projectIdOverride : activeProjectId;
-    const res = await fetch("/api/sessions", {
+    const res = await fetch(apiUrl("/api/sessions"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ personaId: p.id, projectId: projectId ?? null }),
@@ -580,7 +582,7 @@ export default function Home() {
   async function loadProjectSessions(
     projectId: string,
   ): Promise<ProjectSessionSummary[]> {
-    const res = await fetch(`/api/sessions?projectId=${projectId}`);
+    const res = await fetch(apiUrl(`/api/sessions?projectId=${projectId}`));
     const d = (await res.json()) as { sessions: ProjectSessionSummary[] };
     setProjSessions(d.sessions);
     return d.sessions;
@@ -633,7 +635,7 @@ export default function Home() {
   async function send(text: string) {
     if (!sessionId) return;
     setItems((prev) => [...prev, { kind: "msg", role: "user", text }]);
-    await fetch(`/api/sessions/${sessionId}/message`, {
+    await fetch(apiUrl(`/api/sessions/${sessionId}/message`), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text }),
@@ -643,7 +645,7 @@ export default function Home() {
   /** P0-CORE-1: tombol Stop — abort turn aktif; progres & parsial tersimpan. */
   async function cancelTurn() {
     if (!sessionId) return;
-    await fetch(`/api/sessions/${sessionId}/cancel`, { method: "POST" });
+    await fetch(apiUrl(`/api/sessions/${sessionId}/cancel`), { method: "POST" });
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -653,7 +655,7 @@ export default function Home() {
   // Mode approval (fix dev-10): "auto" = write_file & run_command bebas-approval.
   const [approvalMode, setApprovalMode] = useState<"ask" | "auto">("ask");
   useEffect(() => {
-    fetch("/api/settings/approval")
+    fetch(apiUrl("/api/settings/approval"))
       .then((r) => r.json())
       .then((d: { mode: "ask" | "auto" }) => setApprovalMode(d.mode ?? "ask"))
       .catch(() => {});
@@ -661,7 +663,7 @@ export default function Home() {
   const toggleApprovalMode = useCallback(() => {
     const next = approvalMode === "auto" ? "ask" : "auto";
     setApprovalMode(next); // optimistic — server persist (survive restart)
-    fetch("/api/settings/approval", {
+    fetch(apiUrl("/api/settings/approval"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mode: next }),
@@ -674,7 +676,7 @@ export default function Home() {
     remember = false,
   ) {
     try {
-      const res = await fetch(`/api/approvals/${requestId}`, {
+      const res = await fetch(apiUrl(`/api/approvals/${requestId}`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ approved, remember }),

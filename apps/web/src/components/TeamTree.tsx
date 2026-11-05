@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/api";
 // Diagram hierarki delegasi (tab Tim, dev-10 v3): CANVAS tak terbatas ala
 // Excalidraw/draw.io — hold & drag untuk menggeser, Ctrl+scroll / tombol ± untuk
 // zoom, ⌂ me-reset. Isinya tree/organisasi bercabang dari GRAF event delegasi
@@ -221,7 +222,7 @@ export function TeamTree({
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch(`/api/projects/${projectId}/delegations`);
+      const r = await fetch(apiUrl(`/api/projects/${projectId}/delegations`));
       if (r.ok)
         setEdges(
           ((await r.json()) as { delegations: DelegationEdge[] }).delegations,

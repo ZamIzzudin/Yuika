@@ -33,6 +33,11 @@ const SkillsBinding = z.object({
 const DelegationRules = z.object({
   can_spawn: z.array(z.string()).default([]),
   spawnable_by: z.array(z.string()).default(["user"]),
+  /** P1-DEL-1: cap paralel MILIK SI PENDELEGASI (persona yang memegang
+   *  delegate_task) — berlaku pada delegation.yaml persona tsb.; persona anak
+   *  tanpa delegate_task mengabaikannya. Dikombinasikan min() dengan cap
+   *  budget workspace (Settings → Metering). */
+  max_concurrent: z.number().int().min(1).max(16).optional(),
 });
 
 export const PersonaManifest = z.object({

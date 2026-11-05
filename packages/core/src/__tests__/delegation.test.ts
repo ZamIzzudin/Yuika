@@ -183,6 +183,30 @@ describe("delegation runner", () => {
     store.close();
   });
 
+  it("P1-DEL-1: cap per plan — delegation.max_concurrent pendelegasi lebih ketat dari budget", async () => {
+    const deps = { ...makeDeps(new FakeProvider([])), maxChildren: () => 5 };
+    // parent = yui-planner (delegation.yaml: max_concurrent: 2 — consult 2 arah
+    // paralel tetap jalan) walau budget cap 5: anak ke-3 ditolak.
+    store.createSession("s_plan", "yui-planner", "SYS", ["delegate_task"]);
+    const emitPlan = (d: EventDraft) => store.appendEvent("s_plan", d);
+    const hp = ["riset A", "riset B"].map((g) =>
+      runChildPersona(deps, { sessionId: "s_plan", turnId: "tp1" }, "yui-scholar", g, null, emitPlan));
+    expect(() =>
+      runChildPersona(deps, { sessionId: "s_plan", turnId: "tp1" }, "yui-analyst", "analisis", null, emitPlan),
+    ).toThrow(/plan yui-planner: max_concurrent=2/);
+    await Promise.allSettled(hp.map((h) => h.summary)); // cleanup: activeChildren kembali 0
+
+    // parent = yui-conductor (max_concurrent: 3), budget cap 5 → 3 jalan, ke-4 ditolak
+    const emit2 = makeEmit();
+    const hs = ["a", "b", "c"].map((g) =>
+      runChildPersona(deps, { sessionId: parentSession, turnId: "tp2" }, "yui-scribe", g, null, emit2));
+    expect(() =>
+      runChildPersona(deps, { sessionId: parentSession, turnId: "tp2" }, "yui-scribe", "d", null, emit2),
+    ).toThrow(/batas delegation paralel \(3\) tercapai — plan yui-conductor: max_concurrent=3/);
+    for (const h of hs) void h.summary.catch(() => undefined);
+    await Promise.allSettled([...hp, ...hs].map((h) => h.summary)); // cleanup: activeChildren kembali 0
+  });
+
   it("P1-CRED-3: cap delegasi paralel dinamis (maxChildren) — spawn di atas cap ditolak", async () => {
     const slow = new FakeProvider([]); // tak beres dalam test — anak 1 tetap "aktif"
     const deps = { ...makeDeps(slow), maxChildren: () => 1 };

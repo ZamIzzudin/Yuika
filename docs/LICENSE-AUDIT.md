@@ -1,20 +1,21 @@
 # Audit Lisensi & Pihak Ketiga — 2026-11
 
-> Cakupan: 260 package npm (27 deps langsung — +pino 9.14 MIT, logging P0-INF-3)
+> Cakupan: 297 package npm (30 deps langsung — +pino 9.14 MIT (P0-INF-3),
+> +fastify 5.12 MIT, @fastify/cors 10.1 MIT, tsx 4.23 MIT (P0-INF-1 split apps/api))
 > + aset non-npm (ikon, art, MCP server,
 > skill, dokumen). Metode: enumerasi `license` field seluruh `node_modules` +
 > `npm audit` + inspeksi file sumber non-npm. Kesimpulan singkat:
 > **tidak ada lisensi copyleft kuat (GPL/AGPL/SSPL/NC) — aman jalur komersial,
 > dengan 4 catatan di bawah.**
 
-## 1. Deps langsung (26) — semua permissive
+## 1. Deps langsung (30) — semua permissive
 
 | Paket | Lisensi | Catatan |
 |---|---|---|
 | react, react-dom, next, tailwindcss, @tailwindcss/postcss | MIT | ✓ |
 | @phosphor-icons/react | MIT | satu-satunya set ikon — benar |
 | @rive-app/react-canvas | MIT | runtime Rive MIT (editor proprietary — tak relevan) |
-| react-hot-toast, ajv, yaml, zod-to-json-schema, vitest, turbo, unpdf, better-sqlite3, @modelcontextprotocol/sdk | MIT/ISC | ✓ |
+| react-hot-toast, ajv, yaml, vitest, turbo, unpdf, better-sqlite3, @modelcontextprotocol/sdk, pino, fastify, @fastify/cors, tsx | MIT/ISC | ✓ (fastify = service api P0-INF-1) |
 | openai, typescript | Apache-2.0 | ✓ (Apache = patent grant eksplisit, bagus) |
 | xlsx@0.18.5 | Apache-2.0 | lisensi OK — **tapi ada CVE, lihat §4** |
 
@@ -123,4 +124,5 @@ LGPL-3.0 2 · MPL-2.0 2 · CC-BY-4.0 1 · dual (MIT OR WTFPL) 1.
 ---
 *Skrip audit (enumerasi license + histogram + flag) dijalankan lokal; hasil
 histogram di §2 adalah snapshot 2026-11 (259 package, sebelum +pino MIT
-2026-11 untuk P0-INF-3 — tidak mengubah kesimpulan).*
+2026-11 untuk P0-INF-3 dan +fastify/@fastify/cors/tsx MIT 2026-11 untuk
+P0-INF-1 — keduanya MIT, tidak mengubah kesimpulan).*

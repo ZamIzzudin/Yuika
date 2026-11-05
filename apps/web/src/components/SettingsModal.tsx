@@ -1,4 +1,6 @@
+
 "use client";
+import { apiUrl } from "@/lib/api";
 // Settings modal (feedback user sesi dev 9): menu khusus untuk hal yang tidak muat
 // di sidebar — seksi: Provider & Model (API key/base URL/model, swap panas),
 // MCP (katalog + trust + audit — dulunya sesak di dasar sidebar), + metering.
@@ -31,7 +33,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/settings/provider");
+      const res = await fetch(apiUrl("/api/settings/provider"));
       if (res.ok) {
         const c = (await res.json()) as ProviderSettings;
         setCfg(c);
@@ -52,7 +54,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   async function save() {
     try {
-      const res = await fetch("/api/settings/provider", {
+      const res = await fetch(apiUrl("/api/settings/provider"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -183,9 +185,9 @@ function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/settings/models");
+      const r = await fetch(apiUrl("/api/settings/models"));
       if (r.ok) setRoutes((await r.json()) as ModelRoutes);
-      const s = await fetch("/api/settings/provider/smoke");
+      const s = await fetch(apiUrl("/api/settings/provider/smoke"));
       if (s.ok) setSmoke((await s.json()) as NonNullable<typeof smoke>);
     } catch {
       /* coba lagi */
@@ -203,7 +205,7 @@ function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
   async function runSmoke() {
     setSmoke({ running: true, results: smoke?.results ?? [] });
     try {
-      const r = await fetch("/api/settings/provider/smoke", { method: "POST" });
+      const r = await fetch(apiUrl("/api/settings/provider/smoke"), { method: "POST" });
       if (r.ok) setSmoke((await r.json()) as NonNullable<typeof smoke>);
     } catch {
       setSmoke(null);
@@ -290,7 +292,7 @@ async function save(
   setSaving(personaId);
   setOk(null);
   try {
-    const r = await fetch("/api/settings/models", {
+    const r = await fetch(apiUrl("/api/settings/models"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ personaId, model: empty ? "" : next.model ?? "", fallback: empty ? "" : next.fallback ?? "" }),
@@ -316,7 +318,7 @@ function BudgetPanel() {
   const [draft, setDraft] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
-    const r = await fetch("/api/settings/budget");
+    const r = await fetch(apiUrl("/api/settings/budget"));
     if (r.ok) setSt(await r.json());
   }, []);
   useEffect(() => {
@@ -326,7 +328,7 @@ function BudgetPanel() {
   }, [load]);
 
   const save = (patch: Record<string, number | "warn" | "block" | null>) =>
-    void fetch("/api/settings/budget", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(patch) })
+    void fetch(apiUrl("/api/settings/budget"), { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(patch) })
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => s && setSt(s));
 
@@ -432,8 +434,8 @@ function UsagePanel() {
   const load = useCallback(async () => {
     const since = hours > 0 ? Date.now() - hours * 3_600_000 : undefined;
     const [u, p] = await Promise.all([
-      fetch(`/api/usage?recent=8&matrix=1${since ? `&since=${since}` : ""}`),
-      fetch("/api/settings/models/prices"),
+      fetch(apiUrl(`/api/usage?recent=8&matrix=1${since ? `&since=${since}` : ""}`)),
+      fetch(apiUrl("/api/settings/models/prices")),
     ]);
     if (u.ok) setData(await u.json());
     if (p.ok) setPrices(await p.json());
@@ -458,7 +460,7 @@ function UsagePanel() {
   const anyPriced = data?.summary.byModel.some((m) => cost(m) !== null) ?? false;
 
   async function savePrice(model: string, p: { inputPerMillion: number; outputPerMillion: number; currency: "USD" | "IDR" }) {
-    const r = await fetch("/api/settings/models/prices", {
+    const r = await fetch(apiUrl("/api/settings/models/prices"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ model, price: p }),

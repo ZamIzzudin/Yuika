@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/api";
 // ⚔ Dungeon — arena latihan persona (P1-DUN-2/3, P1-MEM-3).
 // DS-1: file ini LAYAR REFERENSI design system — hanya komponen ui/* +
 // utility Tailwind semantik; tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
@@ -54,7 +55,7 @@ function SkillMapping() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/skills/bindings");
+      const r = await fetch(apiUrl("/api/skills/bindings"));
       if (r.ok) setData(await r.json());
     } catch {
       /* coba lagi nanti */
@@ -87,7 +88,7 @@ function SkillMapping() {
         : prev,
     );
     try {
-      const res = await fetch("/api/skills/bindings", {
+      const res = await fetch(apiUrl("/api/skills/bindings"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ personaId, skill, action }),
@@ -102,7 +103,7 @@ function SkillMapping() {
   /** Draf → terima (lint + pindah aktif) → langsung pasang ke persona terpilih. */
   async function acceptAndAttach(personaId: string, slug: string, name: string) {
     try {
-      const res = await fetch("/api/skills", {
+      const res = await fetch(apiUrl("/api/skills"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug }),
@@ -217,7 +218,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch("/api/dungeons");
+      const r = await fetch(apiUrl("/api/dungeons"));
       if (r.ok) setDungeons(((await r.json()) as { dungeons: DungeonRow[] }).dungeons);
     } catch {
       /* refresh berikutnya */
@@ -242,7 +243,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
         mode === "research"
           ? `Pelajari "${skillName}" dari sumber terpercaya dan susun jadi prosedur praktis yang bisa diikuti.`
           : `Pelajari semua bahan ajar di folder misi ini sampai paham, lalu rangkum menjadi skill "${skillName}".`;
-      const r = await fetch("/api/dungeons/mission", {
+      const r = await fetch(apiUrl("/api/dungeons/mission"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -276,7 +277,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 
   async function run(missionId: string) {
     try {
-      const r = await fetch("/api/dungeons", {
+      const r = await fetch(apiUrl("/api/dungeons"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ missionId }),
@@ -293,7 +294,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
     setUploading(slug);
     try {
       for (const f of Array.from(files)) {
-        const r = await fetch(`/api/dungeons/${encodeURIComponent(slug)}/materials?name=${encodeURIComponent(f.name)}`, {
+        const r = await fetch(apiUrl(`/api/dungeons/${encodeURIComponent(slug)}/materials?name=${encodeURIComponent(f.name)}`), {
           method: "POST",
           body: await f.arrayBuffer(),
         });
@@ -311,7 +312,7 @@ export function DungeonView({ personas, onBack, onOpenProject }: { personas: Per
 
   async function remove(slug: string) {
     try {
-      const r = await fetch(`/api/dungeons/${encodeURIComponent(slug)}`, { method: "DELETE" });
+      const r = await fetch(apiUrl(`/api/dungeons/${encodeURIComponent(slug)}`), { method: "DELETE" });
       if (!r.ok) toastErr((((await r.json()) as { error?: string }).error ?? "failed to delete the training") + "");
       await refresh();
     } finally {
