@@ -63,4 +63,24 @@ test("demo §2: Conductor → riset → delegasi Scholar → selesai → replay"
   expect(body).toContain("delegation.started");
   expect(body).toContain("message.done");
   expect(body).toContain("Riset selesai");
+
+  // 6. Delete project kini lewat POPUP konfirmasi (bukan aksi langsung):
+  //    buat project dummy → tombol 🗑 (opacity-0 → includeHidden+force) →
+  //    dialog “Delete project” → Cancel (popup tervalidasi, data tak berubah).
+  await page.getByRole("button", { name: "New project" }).click();
+  await page.getByPlaceholder("Project Name").fill("Popup smoke check");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  const row = page.getByRole("button", { name: /^Popup smoke check/ }).first();
+  await expect(row).toBeVisible();
+  const trash = page
+    .getByRole("button", { name: "Delete project Popup smoke check" })
+    .first();
+  await trash.click({ force: true });
+  const dlg = page.getByRole("dialog", { name: "Delete project" });
+  await expect(dlg).toBeVisible();
+  await expect(dlg.getByRole("button", { name: "Delete permanently" })).toBeVisible();
+  await expect(dlg.getByText("Popup smoke check")).toBeVisible();
+  await dlg.getByRole("button", { name: "Cancel" }).click();
+  await expect(dlg).toBeHidden();
+  await expect(row).toBeVisible(); // batal → project tetap ada
 });

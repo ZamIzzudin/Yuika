@@ -1,5 +1,7 @@
-// DS-1 — komponen global: Tabs + primitif kecil (EmptyState, Skeleton, MetaRow, SectionTitle).
-// Tabs: baris tab aria lengkap; konten digele pengguna (state tab milik pemanggil).
+// DS-1 — komponen global: TabPills + primitif kecil (EmptyState, Skeleton, MetaRow, SectionTitle).
+// TabPills: tab kapsul terpusat (aria lengkap; konten digele pemanggil).
+// Center sejati: pemanggil pakai grid 3 kolom [1fr_auto_1fr] — kolom kiri &
+// kanan sama lebar, pills di kolom tengah (lihat PersonaStudioView & page.tsx).
 import type { ReactNode } from "react";
 import { Leaf } from "@phosphor-icons/react";
 
@@ -10,38 +12,45 @@ export interface TabItem {
   title?: string;
 }
 
-export function TabList({
+export function TabPills({
   tabs,
   value,
   onChange,
+  ariaLabel,
   className = "",
 }: {
   tabs: TabItem[];
   value: string;
   onChange: (id: string) => void;
+  ariaLabel: string;
   className?: string;
 }) {
   return (
     <nav
       role="tablist"
-      className={`flex flex-wrap items-center border-b border-line pt-3 px-3 ${className} overflow-hidden`}
+      aria-label={ariaLabel}
+      className={`mx-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-pill border border-line bg-surface/70 p-1 shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md ${className}`}
     >
-      {tabs.map((t) => (
-        <button
-          key={t.id}
-          role="tab"
-          aria-selected={value === t.id}
-          title={t.title}
-          onClick={() => onChange(t.id)}
-          className={`-mb-px inline-flex cursor-pointer items-center gap-1.5 rounded-t-md2 border border-b-0 px-5 py-3 text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-            value === t.id
-              ? "border-line-strong bg-surface text-primary"
-              : "border-transparent bg-transparent text-muted hover:bg-hover hover:text-primary"
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
+      {tabs.map((t) => {
+        const on = value === t.id;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            title={t.title}
+            onClick={() => onChange(t.id)}
+            className={`cursor-pointer whitespace-nowrap rounded-pill px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+              on
+                ? "bg-hover text-primary shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+                : "text-muted hover:text-primary"
+            }`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
     </nav>
   );
 }

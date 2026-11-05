@@ -8,7 +8,9 @@ test("CharacterStage: constellation stage, carousel, gallery, shape, skills, mis
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto("http://127.0.0.1:3990/");
   await page.getByRole("button", { name: "Persona", exact: true }).first().click();
-  await expect(page.getByRole("heading", { name: /Persona/ })).toBeVisible();
+  await expect(
+    page.getByRole("tablist", { name: "Persona views" }),
+  ).toBeVisible();
 
   // 1) Panggung: konstelasi (svg aria-hidden besar) + maskot hero + chevron
   await expect(page.getByRole("button", { name: "Next persona" })).toBeVisible();

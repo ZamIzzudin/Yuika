@@ -28,11 +28,13 @@ import {
   Button,
   Chip,
   Card,
+  ConfirmDialog,
   Modal,
   Field,
   TextInput,
   TextArea,
   Select,
+  TabPills,
   EmptyState,
   MetaRow,
   SectionTitle,
@@ -94,6 +96,11 @@ export function PersonaStudioView({
   const fileRef = useRef<HTMLInputElement | null>(null);
   const uploadFor = useRef<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  // Popup konfirmasi hapus mission (dulu: langsung delete tanpa konfirmasi).
+  const [confirmMission, setConfirmMission] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   // ---- form buat latihan ----
   const [mode, setMode] = useState<"research" | "documents">("research");
@@ -233,6 +240,7 @@ export function PersonaStudioView({
           (((await r.json()) as { error?: string }).error ??
             "failed to delete the training") + "",
         );
+      setConfirmMission(null);
       await refresh();
     } finally {
       /* void */
@@ -339,7 +347,9 @@ export function PersonaStudioView({
             <Button
               size="sm"
               variant="danger"
-              onClick={() => void remove(d.mission.id)}
+              onClick={() =>
+                setConfirmMission({ id: d.mission.id, title: d.mission.title })
+              }
               title="Delete this mission"
               aria-label="Delete mission"
             >
@@ -368,48 +378,24 @@ export function PersonaStudioView({
       aria-label="Persona — character studio"
     >
       {/* Header: back + judul di kiri, TAB PILLS terpusat di tengah. */}
-      <header className="flex items-center gap-3 pb-3">
-        <div className="flex shrink-0 items-center gap-3">
+      {/* grid 3 kolom [1fr_auto_1fr] — pills center geometris sejati (kolom kiri
+          & kanan sama lebar); sebelumnya mx-auto + spacer fixed 150px → geser). */}
+      <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 pb-3">
+        <div className="flex shrink-0 justify-self-start">
           <Button onClick={onBack} aria-label="Back to workspace">
             <ArrowLeft size={13} aria-hidden />
           </Button>
-          <h1 className="flex items-center gap-2 text-lg font-semibold text-primary">
-            Personas
-          </h1>
         </div>
-        <nav
-          role="tablist"
-          aria-label="Persona views"
-          className="mx-auto flex items-center gap-1 rounded-pill border border-line bg-surface/70 p-1 shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md"
-        >
-          {(
-            [
-              { id: "personas", label: "Persona" },
-              { id: "missions", label: "Missions" },
-              { id: "history", label: `Training history (${allRuns.length})` },
-            ] as const
-          ).map((t) => {
-            const on = view === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => setView(t.id)}
-                className={`cursor-pointer rounded-pill px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                  on
-                    ? "bg-hover text-primary shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
-                    : "text-muted hover:text-primary"
-                }`}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </nav>
-        {/* penyeimbang lebar kiri supaya pills benar-benar di tengah */}
-        <div className="shrink-0 basis-[150px]" aria-hidden />
+        <TabPills
+          ariaLabel="Persona views"
+          value={view}
+          onChange={(id) => setView(id as typeof view)}
+          tabs={[
+            { id: "personas", label: "Persona" },
+            { id: "missions", label: "Missions" },
+            { id: "history", label: `Training history (${allRuns.length})` },
+          ]}
+        />
       </header>
 
       {view === "personas" ? (
@@ -659,6 +645,23 @@ export function PersonaStudioView({
           )}
         </div>
       )}
+
+      {/* Popup konfirmasi hapus training mission */}
+      <ConfirmDialog
+        open={confirmMission !== null}
+        title="Delete mission"
+        message={
+          confirmMission && (
+            <>
+              Permanently delete <b>“{confirmMission.title}”</b> and its run
+              history? The skill it was training stays untouched.
+            </>
+          )
+        }
+        confirmLabel="Delete mission"
+        onConfirm={() => confirmMission && void remove(confirmMission.id)}
+        onClose={() => setConfirmMission(null)}
+      />
     </section>
   );
 }

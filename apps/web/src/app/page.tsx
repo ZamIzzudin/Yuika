@@ -29,7 +29,7 @@ import {
   type WorkspaceTab,
 } from "@/components/TaskDrawer";
 import { Skeleton } from "@/components/Skeleton";
-import { Dot, StateChip, TabList } from "@/components/ui";
+import { Dot, StateChip, TabPills } from "@/components/ui";
 import type {
   PersonaInfo,
   PersonaState,
@@ -893,55 +893,65 @@ export default function Home() {
               </div>
             ) : (
               <div className="flex min-h-0 flex-1 flex-col">
-                <TabList
-                  value={mainTab}
-                  onChange={(id) => setMainTab(id as WorkspaceTab)}
-                  className="flex-none overflow-x-auto"
-                  tabs={[
-                    {
-                      id: "chat",
-                      label: (
-                        <>
-                          <PersonaFace personaId={active.id} size={16} /> Chat
-                          {items.some(
-                            (it) => it.kind === "approval" && !it.resolved,
-                          ) && <Dot tone="warn" pulse className="ml-1" />}
-                          {busy && <Dot tone="accent" pulse className="ml-1" />}
-                        </>
-                      ),
-                    },
-                    ...(activeProject
-                      ? ([
-                          {
-                            id: "team",
-                            label: (
-                              <span>
-                                Team
-                                {items.some(
-                                  (it) => it.kind === "delegation" && !it.text,
-                                ) && <Dot pulse className="ml-1" />}
-                              </span>
-                            ),
-                          },
-                          { id: "files", label: "Files" },
-                          { id: "board", label: "Task" },
-                          { id: "config", label: "Config" },
-                        ] as const)
-                      : []),
-                    {
-                      id: "trace",
-                      label: (
-                        <span>
-                          Logs
-                          {sessionId && busy && <Dot pulse className="ml-1" />}
-                        </span>
-                      ),
-                      title: sessionId
-                        ? "Step-by-step trace per turn of this session"
-                        : "Start a session to see the trace",
-                    },
-                  ]}
-                />
+                {/* pills terpusat ala page Persona — grid [1fr_auto_1fr]
+                    (kolom tengah pills, kiri/kanan 1fr sama → center sejati). */}
+                <div className="grid flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 pt-3">
+                  <span aria-hidden />
+                  <TabPills
+                    ariaLabel="Workspace views"
+                    value={mainTab}
+                    onChange={(id) => setMainTab(id as WorkspaceTab)}
+                    tabs={[
+                      {
+                        id: "chat",
+                        label: (
+                          <>
+                            <PersonaFace personaId={active.id} size={16} /> Chat
+                            {items.some(
+                              (it) => it.kind === "approval" && !it.resolved,
+                            ) && <Dot tone="warn" pulse className="ml-1" />}
+                            {busy && (
+                              <Dot tone="accent" pulse className="ml-1" />
+                            )}
+                          </>
+                        ),
+                      },
+                      ...(activeProject
+                        ? ([
+                            {
+                              id: "team",
+                              label: (
+                                <span>
+                                  Team
+                                  {items.some(
+                                    (it) =>
+                                      it.kind === "delegation" && !it.text,
+                                  ) && <Dot pulse className="ml-1" />}
+                                </span>
+                              ),
+                            },
+                            { id: "files", label: "Files" },
+                            { id: "board", label: "Task" },
+                            { id: "config", label: "Config" },
+                          ] as const)
+                        : []),
+                      {
+                        id: "trace",
+                        label: (
+                          <span>
+                            Logs
+                            {sessionId && busy && (
+                              <Dot pulse className="ml-1" />
+                            )}
+                          </span>
+                        ),
+                        title: sessionId
+                          ? "Step-by-step trace per turn of this session"
+                          : "Start a session to see the trace",
+                      },
+                    ]}
+                  />
+                </div>
                 <div className="flex min-h-0 flex-1 flex-col">
                   {mainTab === "chat" && (
                     <>
@@ -1143,15 +1153,13 @@ export default function Home() {
                           parentState: personaState,
                           delegations: items
                             .filter((it) => it.kind === "delegation")
-                            .map(
-                              (it): LiveDelegation => ({
-                                personaId: it.personaId ?? "yui-scholar",
-                                childSessionId: it.childSessionId ?? "",
-                                goal: it.goal ?? "",
-                                childState: it.childState,
-                                summary: it.text,
-                              }),
-                            ),
+                            .map((it): LiveDelegation => ({
+                              personaId: it.personaId ?? "yui-scholar",
+                              childSessionId: it.childSessionId ?? "",
+                              goal: it.goal ?? "",
+                              childState: it.childState,
+                              summary: it.text,
+                            })),
                         }}
                       />
                     )}

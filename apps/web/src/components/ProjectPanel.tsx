@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DeleteProjectResult, type ProjectInfo } from "@yuika/contracts";
 import { Plus, Trash } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
-import { Button, Card, Field, TextInput } from "./ui";
+import { Button, Card, ConfirmDialog, Field, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 /**
@@ -35,8 +35,8 @@ export function ProjectPanel({
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [busy, setBusy] = useState(false);
-  // P1-PRJ-8: konfirmasi dua langkah — klik 🗑 → baris konfirmasi merah → Hapus.
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  // P1-PRJ-8: konfirmasi dua langkah — klik 🗑 → popup konfirmasi → Delete.
+  const [confirmP, setConfirmP] = useState<ProjectInfo | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   async function create() {
@@ -77,7 +77,7 @@ export function ProjectPanel({
         .json()
         .catch(() => ({}))) as DeleteProjectResult & { error?: string };
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      setConfirmId(null);
+      setConfirmP(null);
       toastOk(
         `“${p.name}” deleted — ${body.deleted.sessions} sessions, ${body.deleted.tasks} tasks cleaned up. Persona skills & metering are kept.`,
       );
@@ -199,39 +199,36 @@ export function ProjectPanel({
                 aria-label={`Delete project ${p.name}`}
                 title={`Delete project ${p.name} and all its artifacts`}
                 disabled={deleting === p.id}
-                onClick={() => setConfirmId(confirmId === p.id ? null : p.id)}
+                onClick={() => setConfirmP(p)}
               >
                 <Trash size={13} aria-hidden />
               </button>
             </div>
-            {confirmId === p.id && (
-              <div className="flex flex-col gap-2 rounded-md2 border border-danger/30 bg-danger-soft px-3 py-2.5">
-                <p className="text-caption leading-5 text-danger">
-                  Permanently delete <b>“{p.name}”</b>? Sessions, tasks, files,
-                  project memory &amp; its audit trail will be removed.
-                  <br />
-                  <small className="text-danger/70">
-                    Skills learned by personas &amp; metering are kept.
-                  </small>
-                </p>
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" onClick={() => setConfirmId(null)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => void remove(p)}
-                    disabled={deleting === p.id}
-                  >
-                    {deleting === p.id ? "Deleting…" : "Delete permanently"}
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>
+
+      {/* Popup konfirmasi delete project (menggantikan baris merah inline) */}
+      <ConfirmDialog
+        open={confirmP !== null}
+        title="Delete project"
+        message={
+          confirmP && (
+            <>
+              Permanently delete <b>“{confirmP.name}”</b>? Sessions, tasks,
+              files, project memory &amp; its audit trail will be removed.
+              <br />
+              <small className="text-dim">
+                Skills learned by personas &amp; metering are kept.
+              </small>
+            </>
+          )
+        }
+        confirmLabel="Delete permanently"
+        busy={confirmP !== null && deleting === confirmP.id}
+        onConfirm={() => confirmP && void remove(confirmP)}
+        onClose={() => setConfirmP(null)}
+      />
     </section>
   );
 }

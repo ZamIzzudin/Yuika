@@ -7,7 +7,7 @@ import { apiUrl } from "@/lib/api";
 // DS-1: ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
 import { Check, CircleNotch, Eye, Flag, Info, PencilSimple, X } from "@phosphor-icons/react";
-import { Button, Card, Field, TextArea, TextInput } from "./ui";
+import { Button, Card, ConfirmDialog, Field, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 interface DraftRow {
@@ -40,6 +40,8 @@ export function SkillsTab() {
   const [drafts, setDrafts] = useState<DraftRow[]>([]);
   const [skills, setSkills] = useState<SkillRow[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  // Popup konfirmasi reject (draf terhapus permanen — dulu langsung delete).
+  const [confirmSlug, setConfirmSlug] = useState<string | null>(null);
   const [edit, setEdit] = useState<{
     name: string;
     description: string;
@@ -130,6 +132,7 @@ export function SkillsTab() {
       if (!r.ok)
         toastErr(((await r.json()) as { error?: string }).error ?? "failed to delete");
       setOpen(null);
+      setConfirmSlug(null);
       await refresh();
     } finally {
       setBusy(false);
@@ -182,7 +185,7 @@ export function SkillsTab() {
                 <Button size="sm" variant="primary" onClick={() => void accept(d.slug)} disabled={busy} title="Validate & activate this skill">
                   Accept
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => void reject(d.slug)} disabled={busy} title="Delete draft">
+                <Button size="sm" variant="danger" onClick={() => setConfirmSlug(d.slug)} disabled={busy} title="Delete draft">
                   Reject
                 </Button>
               </span>
@@ -283,6 +286,26 @@ export function SkillsTab() {
           </ul>
         )}
       </div>
+
+      {/* Popup konfirmasi reject (hapus draf skill permanen) */}
+      <ConfirmDialog
+        open={confirmSlug !== null}
+        title="Delete skill draft"
+        message={
+          confirmSlug && (
+            <>
+              Permanently delete the draft <b>“{drafts.find((x) => x.slug === confirmSlug)?.name ?? confirmSlug}”</b>?
+              It cannot be accepted afterwards — the agent can always re-propose
+              it from a later session.
+            </>
+          )
+        }
+        confirmLabel="Delete draft"
+        busy={busy}
+        busyLabel="Deleting…"
+        onConfirm={() => confirmSlug && void reject(confirmSlug)}
+        onClose={() => setConfirmSlug(null)}
+      />
     </section>
   );
 }

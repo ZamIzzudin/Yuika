@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { SessionTrace } from "@yuika/contracts";
 import type { Icon } from "@phosphor-icons/react";
 import {
-  ArrowLeft,
+  Barricade,
   BookOpen,
   Brain,
   ChatCircle,
@@ -21,7 +21,7 @@ import {
   XCircle,
 } from "@phosphor-icons/react";
 import { Skeleton } from "./Skeleton";
-import { Button, Chip } from "./ui";
+import { Chip } from "./ui";
 
 const KIND_ICON: Record<string, Icon> = {
   model: Brain,
@@ -112,7 +112,7 @@ export function TracePanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3 sm:px-6">
       <header className="mb-3 flex flex-wrap items-center gap-3">
-        <b className="text-body font-semibold text-primary">Session trace</b>
+        <b className="text-body font-semibold text-primary">Session Trace</b>
         {sessionId && (
           <small className="font-mono text-caption text-dim">
             {sessionId.slice(0, 14)}…
@@ -132,8 +132,9 @@ export function TracePanel({
       ) : trace === null ? (
         <Skeleton lines={6} />
       ) : trace.turns.length === 0 ? (
-        <p className={`${hint} flex items-center justify-center`}>
-          No turns in this session yet.
+        <p className={`${hint} flex items-center justify-center flex-col`}>
+          <Barricade className="text-dim" size={48} />
+          <p className="text-lg text-dim">No Logs.</p>
         </p>
       ) : (
         <div className="flex flex-col gap-2 overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full">

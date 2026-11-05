@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { McpAuditEntry, McpCatalogEntry, McpServerStatus } from "@yuika/contracts";
 import { ArrowsClockwise, ArrowClockwise, Check, Warning, X } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
-import { Button, Chip, Dot, SectionTitle, TextInput } from "./ui";
+import { Button, Chip, ConfirmDialog, Dot, SectionTitle, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 const RISK_LABEL: Record<string, { label: string; tone: "ok" | "warn" | "danger" }> = {
@@ -28,6 +28,8 @@ export function McpPanel() {
   const [busy, setBusy] = useState<string | null>(null);
   const [uvx, setUvx] = useState<string | null | "loading">("loading");
   const [uvConfirm, setUvConfirm] = useState(false);
+  // Popup konfirmasi uninstall server (dulu: langsung hapus dari mcp.json).
+  const [confirmUn, setConfirmUn] = useState<McpCatalogEntry | null>(null);
   const [uvInstalling, setUvInstalling] = useState(false);
   const [uvLog, setUvLog] = useState<string | null>(null);
 
@@ -136,6 +138,7 @@ export function McpPanel() {
       const res = await fetch(apiUrl(`/api/mcp/install?name=${encodeURIComponent(c.id)}`), { method: "DELETE" });
       if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
       else toastOk(`${c.name} removed from mcp.json.`);
+      setConfirmUn(null);
       await refresh();
     } finally {
       setBusy(null);
@@ -298,7 +301,7 @@ export function McpPanel() {
                         )}
                       </span>
                       {isInstalled ? (
-                        <Button size="sm" className={rowBtn} onClick={() => void uninstall(c)} disabled={busy === c.id} title="Remove from mcp.json (disconnects)">
+                        <Button size="sm" className={rowBtn} onClick={() => setConfirmUn(c)} disabled={busy === c.id} title="Remove from mcp.json (disconnects)">
                           {busy === c.id ? "…" : "Remove"}
                         </Button>
                       ) : c.runtime === "python" && uvx === null ? (
@@ -351,6 +354,26 @@ export function McpPanel() {
           </div>
         </>
       )}
+
+      {/* Popup konfirmasi uninstall server dari mcp.json */}
+      <ConfirmDialog
+        open={confirmUn !== null}
+        title="Remove MCP server"
+        message={
+          confirmUn && (
+            <>
+              Remove <b>“{confirmUn.name}”</b> from mcp.json? Active sessions
+              using its tools will be disconnected. You can reinstall it from
+              the catalog anytime.
+            </>
+          )
+        }
+        confirmLabel="Remove server"
+        busy={confirmUn !== null && busy === confirmUn.id}
+        busyLabel="Removing…"
+        onConfirm={() => confirmUn && void uninstall(confirmUn)}
+        onClose={() => setConfirmUn(null)}
+      />
     </section>
   );
 }
