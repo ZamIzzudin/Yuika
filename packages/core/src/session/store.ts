@@ -27,6 +27,8 @@ export interface ISessionStore {
   createSession(id: string, personaId: string, systemPrompt: string, toolsets: string[], projectId?: string | null): SessionRow;
   getSession(id: string): SessionRow | undefined;
   listProjectSessions(projectId: string): Array<{ id: string; personaId: string; createdAt: number; lastEventAt: number; lastEventId: number }>;
+  /** P1-PRT-3: sesi terbaru lintas project (host.state / list_sessions remote). */
+  listRecentSessions(limit: number): Array<{ id: string; personaId: string; title: string | null; updatedAt: number }>;
   personaSessionCounts(): Map<string, number>;
   personaDoneTurnCounts(): Map<string, number>;
   appendMessage(sessionId: string, msg: InternalMessage): void;
@@ -198,6 +200,29 @@ export class SessionStore implements ISessionStore {
       )
       .all(projectId) as Array<{ id: string; persona_id: string; created_at: number; last_event_id: number; last_event_at: number }>;
     return rows.map((r) => ({ id: r.id, personaId: r.persona_id, createdAt: r.created_at, lastEventAt: r.last_event_at, lastEventId: r.last_event_id }));
+  }
+
+  /** P1-PRT-3: sesi terbaru lintas project — judul = pesan user pertama.
+   *  Dipakai host worker utk host.state / list_sessions (RemoteEvent). */
+  listRecentSessions(limit: number): Array<{ id: string; personaId: string; title: string | null; updatedAt: number }> {
+    const rows = this.db
+      .prepare(
+        `SELECT s.id, s.persona_id,
+                COALESCE(u.max_ts, s.created_at) AS updated_at,
+                (SELECT m.content FROM messages m
+                  WHERE m.session_id = s.id AND m.role = 'user'
+                  ORDER BY m.seq LIMIT 1) AS title
+         FROM sessions s
+         LEFT JOIN (
+           SELECT session_id, MAX(ts) AS max_ts FROM (
+             SELECT session_id, ts FROM events
+             UNION ALL SELECT session_id, ts FROM events_archive
+           ) GROUP BY session_id
+         ) u ON u.session_id = s.id
+         ORDER BY updated_at DESC LIMIT ?`
+      )
+      .all(limit) as Array<{ id: string; persona_id: string; personaId?: string; updated_at: number; title: string | null }>;
+    return rows.map((r) => ({ id: r.id, personaId: r.persona_id, title: r.title, updatedAt: r.updated_at }));
   }
 
   /** P1-PER-4: jumlah sesi per persona (lintas project — growth tracking). */

@@ -453,6 +453,16 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return { sessionId, persona: info, projectId: projectId ?? null };
   }
 
+  /** P1-PRT-3: sesi terbaru lintas project — host.state/list_sessions remote. */
+  function listRecentSessions(limit = 20): Array<{ sessionId: string; title: string; personaId: string; updatedAt: number }> {
+    return store.listRecentSessions(limit).map((s) => ({
+      sessionId: s.id,
+      title: (s.title ?? "(no message)").slice(0, 60),
+      personaId: s.personaId,
+      updatedAt: s.updatedAt,
+    }));
+  }
+
   /** Riwayat sesi sebuah project (terbaru dulu) — untuk resume percakapan lintas kunjungan. */
   function listProjectSessions(projectId: string): Array<{
     sessionId: string;
@@ -624,6 +634,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     setPersonaShape,
     createSession,
     listProjectSessions,
+    listRecentSessions,
     runTurn: (sessionId: string, text: string) => runTurnInternal(sessionId, text),
     /** Batalkan turn sesi (tombol Stop). true bila ada turn aktif yang dibatalkan.
      *  P0-DEL-2: CASCADE — membatalkan turn parent sekaligus membatalkan semua
@@ -676,6 +687,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     getEvents: (sessionId: string, since = 0): YuiEvent[] => store.getEvents(sessionId, since),
     subscribe: (sessionId: string, listener: (e: YuiEvent) => void) => EventBus.subscribe(sessionId, listener),
+    subscribeAll: (listener: (e: YuiEvent) => void) => EventBus.subscribeAll(listener),
     // ---- projects (P1-PRJ-1, PLAN §13.1) ----
     createProject: (name: string, description = "") => {
       const id = `p_${randomUUID().slice(0, 8)}`;

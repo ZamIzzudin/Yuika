@@ -3,7 +3,16 @@
 // logika runtime (sudut itu milik suite core).
 import { describe, expect, it } from "vitest";
 import type { YuiRuntime } from "@yuika/core";
-import { buildApp } from "../app.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+// Isolasi auth gate (pola auth.test.ts): auth.db tmp — auth.db DEV punya user
+// terdaftar → gate aktif → semua kontrak 401 tanpa ini.
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "yui-api-contract-"));
+process.env.YUI_AUTH_DB = path.join(TMP, "auth.db");
+
+const { buildApp } = await import("../app.js");
 
 const calls: string[] = [];
 const fake = {

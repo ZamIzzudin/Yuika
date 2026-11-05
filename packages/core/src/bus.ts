@@ -16,9 +16,15 @@ g.__yuiBusEmitter = bus;
 export const EventBus = {
   publish(sessionId: string, event: YuiEvent): void {
     bus.emit(sessionId, event);
+    bus.emit("*", event); // P1-PRT-3: host portal — proyeksi lintas sesi
   },
   subscribe(sessionId: string, listener: (e: YuiEvent) => void): () => void {
     bus.on(sessionId, listener);
     return () => bus.off(sessionId, listener);
+  },
+  /** P1-PRT-3: langganan SEMUA event (host worker relay). */
+  subscribeAll(listener: (e: YuiEvent) => void): () => void {
+    bus.on("*", listener);
+    return () => bus.off("*", listener);
   },
 };
