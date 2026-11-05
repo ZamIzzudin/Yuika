@@ -609,3 +609,7 @@
   memang sudah implement di SVG). P1-PER-2 & P1-PER-3 dicancel; P2-MOB-4
   ganti catatan (SVG). Verifikasi pasca-cabut: tsc web bersih · e2e 4 spec
   passed (auth/smoke/persona-studio/orin).
+  - Fix UX (menyusul commit 9bb3d1b): tombol **"Set up account"** di pojok
+    kanan-bawah saat mode lokal — sebelumnya user pertama tidak punya jalan
+    masuk via UI (gerbang hanya aktif setelah ada user); form bisa dibatalkan
+    ("keep this server open"). e2e auth+smoke tetap hijau.

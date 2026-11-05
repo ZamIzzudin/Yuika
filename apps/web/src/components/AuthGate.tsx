@@ -16,6 +16,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
+  /** Mode lokal: user membuka form register via "Set up account" (bisa dibatalkan). */
+  const [setupOpen, setSetupOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -48,6 +50,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       setAuthToken(body.token);
       setStatus({ user: { id: "", email }, authRequired: true });
       setPassword("");
+      setSetupOpen(false);
     } catch (err) {
       toastErr(err instanceof Error ? err.message : String(err));
     } finally {
@@ -64,12 +67,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Server belum menjawab → jangan kedip-kedip (render kosong dulu).
   if (status === null) return <div className="h-dvh w-full bg-canvas" />;
 
+  // Mode lokal: form register dibuka manual dari tombol "Set up account".
+  // Setelah user pertama ada, gerbang aktif permanen (server sudah menutup mode lokal).
+  const gate = setupOpen || (status.authRequired && !status.user);
+
   // Mode lokal (belum ada user) / sudah valid → lewat.
-  if (!status.authRequired || status.user) {
+  if (!gate) {
     return (
       <>
         {children}
-        {status.user && (
+        {status.user ? (
           <button
             onClick={() => void logout()}
             aria-label={`Sign out (${status.user?.email})`}
@@ -77,6 +84,20 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             className="fixed right-3 bottom-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
           >
             <Key size={12} aria-hidden /> {status.user.email}
+          </button>
+        ) : (
+          // Mode lokal (belum ada user): jalan masuk ke akun pertama — opsional,
+          // bisa dibiarkan terbuka untuk pemakaian solo/self-host.
+          <button
+            onClick={() => {
+              setMode("register");
+              setSetupOpen(true);
+            }}
+            aria-label="Set up account"
+            title="Create the first account — enables sign-in for this server"
+            className="fixed right-3 bottom-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
+          >
+            <UserPlus size={12} aria-hidden /> Set up account
           </button>
         )}
       </>
@@ -151,6 +172,17 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             ? "First time here? Create an account"
             : "Already have an account? Sign in"}
         </button>
+
+        {/* Dibuka dari tombol "Set up account" di mode lokal — boleh dibatalkan. */}
+        {setupOpen && !status.authRequired && (
+          <button
+            type="button"
+            onClick={() => setSetupOpen(false)}
+            className="cursor-pointer text-center text-caption text-dim underline-offset-2 transition-colors hover:text-primary hover:underline"
+          >
+            Cancel — keep this server open (local mode)
+          </button>
+        )}
       </form>
     </main>
   );
