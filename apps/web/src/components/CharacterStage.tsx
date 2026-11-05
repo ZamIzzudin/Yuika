@@ -30,7 +30,6 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { OrinPortrait } from "./OrinPortrait";
-import { RiveStage } from "./rive/RiveStage";
 import { PersonaModelModal } from "./PersonaModelModal";
 import {
   MiniFace,
@@ -540,12 +539,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
             onClick={() => setGreeted(true)}
             className="group size-[200px] cursor-pointer rounded-full transition-transform duration-300 ease-[var(--ease-out-yui)] hover:-translate-y-1 hover:scale-[1.03] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--c)]"
           >
-            <RiveStage
-              state={emote}
-              personaId={persona.id}
-              size={200}
-              fallback={<OrinPortrait state={emote} personaId={persona.id} size={200} />}
-            />
+            <OrinPortrait state={emote} personaId={persona.id} size={200} />
           </button>
         </div>
         <div

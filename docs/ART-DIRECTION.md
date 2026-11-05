@@ -1,5 +1,11 @@
 # Art Direction — Maskot Orin × Rive (P1-PER-1)
 
+> **STATUS 2026-11: DIBATALKAN / ARSIP** — jalur Rive dicabut total dari produk
+> (P1-PER-2/3 cancel). Dokumen ini dipertahankan sebagai arsip desain; yang
+> masih hidup di produk: prinsip karakter §1 dan tabel 15 bentuk §4 — keduanya
+> sudah terimplement penuh di rig SVG `OrinPortrait.tsx` + `orinShapes.tsx`
+> (portrait final), dan `docs/orin_v8_larger_star.html` tetap referensi interaktif.
+
 > Spesifikasi tunggal untuk artist & engineer: memindahkan **Orin v8** (SVG rig di
 > `apps/web/src/components/OrinPortrait.tsx` + `orinShapes.tsx`) ke **Rive** tan
 > kehilangan satu pun perilaku. Sumber kebenaran visual: `docs/orin_v8_larger_star.html`

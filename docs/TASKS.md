@@ -294,9 +294,9 @@
 ### P1-PER (persona v1 penuh — pilar produk)
 
 - [x] **P1-PER-1** Art direction doc + pipeline Rive (spec: dimensi, state machine, input, penamaan) · *S+artist · 3d* — ✅ 2026-11: **`docs/ART-DIRECTION.md`** — spec tunggal dari Orin v8 (sumber kebenaran: `orin_v8_larger_star.html` + rig SVG `OrinPortrait.tsx`): prinsip karakter (satu rig mata, identitas = bentuk+warna); artboard 400×400 1-file `orin.riv` dengan input `shape` 0–14; hirarki bone Root›Body(1.18 utk bintang)›Face›EyeL/R(+Glint)›FX — penamaan = kontrak by-name; tabel 15 bentuk (warna/fy/gs/es/gr/bodyScale) + pemetaan persona; state machine `Mascot` lengkap (mood/audioLevel/lookX/lookY/shape/sleep + trigger blink·nod·giggle·hum·look·tilt·yawn·hiccup·wake); keyframe 6 mood + aturan squash (bola seragam); pipeline 2-batch (Conductor+Scholar+Scribe dulu) dengan fallback SVG permanen; acceptance criteria 8 poin (≤300 KB, tajam 22–180 px). Siap langsung untuk P1-PER-2 (aset) & P1-PER-3 (runtime @rive-app/react-canvas)
-- [ ] **P1-PER-2** Aset Rive 6 persona × 7 state (batch: Conductor+Scholar+Scribe dulu) · *artist · berjalan paralel*
+- [x] **P1-PER-2** Aset Rive 6 persona × 7 state (batch: Conductor+Scholar+Scribe dulu) · *artist · berjalan paralel* — ❌ CANCELLED 2026-11: keputusan tidak memproduksi aset Rive; rig SVG OrinPortrait = portrait final (tidak akan pernah ada `orin.riv`)
   - ✎ dev-10: **Scribe berevolusi jadi persona dokumen** — upload (pdf/xlsx/csv) via tab File → `uploads/`, tool `doc_read` (unpdf + SheetJS), PERSONA.md: baca-dulu-baru-tulis. Menyusul: docx, offset paging doc_read, tabel hasil ekstraksi di UI.
-- [ ] **P1-PER-3** Ganti PersonaPortrait fallback → Rive runtime + pre-load · *B · 2d · dep P1-PER-2*
+- [x] **P1-PER-3** Ganti PersonaPortrait fallback → Rive runtime + pre-load · *B · 2d · dep P1-PER-2* — ❌ CANCELLED 2026-11: runtime sempat dibangun lengkap (2416cdb: RiveStage + /dev/rive + sample.riv + e2e), lalu sesuai keputusan Rive dibatalkan **dicabut bersih** (dep `@rive-app/react-canvas` di-uninstall, komponen/route/aset/e2e dihapus); PersonaPortrait & CharacterStage kembali langsung ke OrinPortrait SVG — nol perubahan perilaku
 - [x] **P1-PER-4** Growth tracking (usage → level → varian gratis unlock) + timeline UI · *C+B · 3d* — ✅ v0 dev-10 (growth v0 tanpa unlock-varian — menyusul CRED-5): `personas/growth.ts` — level dikurasi dari KERJA NYATA (turn done via events persona.state, sesi, task done per assignee; kurva Baru→Berkembang 15→Mahir 50→Ahli 150 turn, tanpa jalur inflate); REST `GET /api/personas/growth` (kontrak `PersonaGrowth`); badge level + progress bar + tooltip di kartu PersonaGrid & baris PersonaPicker (poll 15 dtk); +5 test
 - [ ] **P1-PER-5** Persona acceptance test blind (perilaku beda nyata antar persona — anti "hanya kosmetik") · *S · 2d* → ≥80% penguji menebak persona benar dari output
 - [x] **P1-PER-6** 2 persona tambahan (Analyst, Operator) sesuai roster D9 · *C · 1d* — ✅ v0 dev-10: **Yui Analyst** (expertise data: doc_read + run_command script reproducible, PERSONA.md inspeksi→bersih→hitung→lapor) + **Yui Operator** (otomasi/devops: run_command + mcp__* binding Tailscale, disiplin approval & verifikasi post-aksi); skill seed **data-analysis-basics** (category data, persona analyst) + kategori `data` masuk gating fase research; conductor can_spawn diperbaiki (typo `yui_designer` → hyphen) + 2 persona baru; bentuk Orin: Analyst=diamond, Operator=hex; +3 test roster D9 (manifest valid, delegation koheren, toolset benar)
@@ -382,7 +382,7 @@
 - [ ] **P2-MOB-1** Expo app: shell + generated client dari kontrak · *B · 3d*
 - [ ] **P2-MOB-2** Chat streaming + resume di mobile · *B · 3d*
 - [ ] **P2-MOB-3** Push notification (Expo Notifications + FCM/APNs) + tap→approve · *B · 3d*
-- [ ] **P2-MOB-4** Persona picker + portrait (Rive RN runtime) · *B · 2d*
+- [ ] **P2-MOB-4** Persona picker + portrait (portrait = rig SVG OrinPortrait; Rive RN dibatalkan 2026-11) · *B · 2d*
 - [ ] **P2-MOB-5** Mission Control mini (delegation/cron monitor) · *B · 2d*
 
 ### P2-DTL (desktop)
@@ -597,3 +597,15 @@
 
 ### 2026-11 · P1-PER-3 runtime Rive (+ QA handoff artist)
 - [x] **P1-PER-3** Ganti PersonaPortrait fallback → Rive runtime + pre-load · *B · 2d* — ✅ 2026-11: dep `@rive-app/react-canvas` dipasang lagi. **`components/rive/`**: `riveMap.ts` (kontrak by-name: PersonaState→mood 0–5, OrinShapeKey→shape 0–14 via SHAPE_ORDER, daftar input number+trigger — spec ART-DIRECTION §5 jadi kode) & `RiveStage.tsx` (probe HEAD aset → 404 = fallback OrinPortrait SVG **tanpa mengubah perilaku hari ini**; prefers-reduced-motion → fallback; ErrorBoundary + onLoadError → fallback; `warmRive()` pre-load idle sekali per src; aksi trigger via prop `{name,nonce}`; `stateMachine` param baru non-deprecated; aset non-kontrak: play animasi pertama). Dipakai di PersonaPortrait (hero 220 + compact 40) & CharacterStage hero 200 — **grid persona tetap SVG** (1 canvas = 1 WebGL context). **`/dev/rive`** halaman QA handoff artist: status load, artboard+daftar animasi, checklist input vs kontrak (Contract missing ✓/✗), 7 PersonaState → mood, 9 tombol trigger, toggle SM off untuk aset non-kontrak; `sample.riv` (contoh publik Rive, Truck/idle-curves-bounce) untuk menguji canvas hidup. e2e `rive.spec.ts` ×3 (fallback missing → SVG, sample → canvas+laporan kontrak, halaman utama tetap SVG). P1-PER-2 tinggal drop `orin.riv` ke `apps/web/public/rive/` → semua portrait otomatis menyala. Bonus housekeeping: `auth.db`/`-shm`/`-wal` (runtime, terbawa `git add -A` kemarin) di-untrack + .gitignore.
+
+### 2026-11 · Rive dicabut total (keputusan produk)
+- [x] **Cancel jalur Rive** — ❌ CANCELLED 2026-11: user memutuskan Yuika tidak
+  memakai aset Rive. Semua runtime P1-PER-3 (commit 2416cdb: `components/rive/`,
+  `/dev/rive`, `public/rive/sample.riv`, `e2e/rive.spec.ts`, CSS `.rive-wrap`,
+  integrasi PersonaPortrait/CharacterStage) **dihapus bersih**; dep
+  `@rive-app/react-canvas` di-uninstall. Rig SVG `OrinPortrait` v8 = portrait
+  final (fallback-selamanya menjadi satu-satunya jalur). `docs/ART-DIRECTION.md`
+  ditandai arsip (nilai hidupnya: prinsip karakter & tabel 15 bentuk yang
+  memang sudah implement di SVG). P1-PER-2 & P1-PER-3 dicancel; P2-MOB-4
+  ganti catatan (SVG). Verifikasi pasca-cabut: tsc web bersih · e2e 4 spec
+  passed (auth/smoke/persona-studio/orin).
