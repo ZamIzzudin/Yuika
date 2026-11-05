@@ -1,86 +1,135 @@
-# Yuika 🎀
+<div align="center">
 
-> Platform AI agent multi-platform (cloud · web · mobile · desktop) dengan **persona per
-> keahlian**, MCP, skills learning-loop, dan delegation. Status: **minggu demo internal**.
->
-> **Yuika** — "yui" (mimpi / 唯華) + "ka" (unggul / 香): *mimpi yang unggul*.
-> Nama pendek "Yui" tetap dipakai untuk sang persona maestro (`Maestro Yui`).
+<img src="docs/assets/orin.png" width="150" alt="Orin, the Yuika mascot" />
 
-## Dokumen
+# Yuika
 
-| Dokumen | Isi |
-|---|---|
-| [`docs/PLAN.md`](./docs/PLAN.md) | Blueprint lengkap: visi, arsitektur, keputusan D1–D13, roadmap fase |
-| [`docs/DEMO-WEEK-1.md`](./docs/DEMO-WEEK-1.md) | Rencana eksekusi demo internal 1 minggu (3 dev, harian) |
-| [`docs/TASKS.md`](./docs/TASKS.md) | **Checklist delegasi & roadmap sampai siap testing** (sumber kebenaran progres) |
+**A multi-project agent OS with skill-based personas you can train.**
 
-## Struktur
+[![CI](https://github.com/ZamIzzudin/Yuika/actions/workflows/ci.yml/badge.svg)](https://github.com/ZamIzzudin/Yuika/actions/workflows/ci.yml)
 
-```
-yuika/
-├── packages/
-│   ├── contracts/      # ★ zod: event catalog + REST + persona manifest (SINGLE SOURCE OF TRUTH)
-│   ├── core/           # agent loop, registry, tools, personas/skills loader, delegation, MCP, approval
-│   ├── personas/       # data: 4 persona (persona.yaml + PERSONA.md + toolsets/skills/delegation)
-│   └── skills/         # data: 5 skill seed (agentskills.io-compatible SKILL.md)
-├── apps/
-│   └── web/            # Next.js: chat SSE + persona picker + approval + delegation cards
-├── workspace/reports/  # deliverable agent (di-gitignore)
-├── mcp.json            # MCP servers demo (fetch + filesystem)
-└── docs/
-```
+Yuika is a self-hosted workspace where AI personas do real work: researching,
+writing, coding, and planning — alone or as a team. Every persona has its own
+identity, skill set, model route, and growth history. You steer them from a
+single chat-first workspace with full visibility: approvals, traces, budgets,
+and metering are all inspectable.
 
-## Quickstart
+> The name combines *"yui"* (dream) and *"ka"* (excellence) — an excellent dream.
+> The star-shaped companion you see above is **Orin**, the in-app guide.
+
+</div>
+
+---
+
+## Why Yuika
+
+- **Personas, not generic bots.** Pick a partner from the character studio —
+  Coder, Scholar, Scribe, Designer, Analyst, Operator, Planner, or the maestro
+  Conductor. Each bundles its own prompt, tools, and learned skills.
+- **Skills that grow.** When a persona does something well, it can distill the
+  experience into a reusable skill. You review, edit, accept, or reject —
+  accepted skills are immediately usable by every persona.
+- **Team delegation.** The Conductor splits work and delegates to child
+  personas with isolated sessions, live progress, and steering mid-run.
+- **You stay in control.** Risky tool calls (running code, writing files)
+  require explicit approval with a deadline; everything is logged per turn.
+- **Sandboxed execution.** `node` runs inside a disposable Docker container —
+  no network, capped resources, read-only filesystem, hard timeout.
+- **Honest metering.** Token usage per turn, per persona, per model — no
+  estimates, only provider-reported numbers.
+
+## Getting started
+
+### Prerequisites
+
+- **Node.js 24+** and npm (the repo uses npm workspaces)
+- **Docker** (optional but recommended) — enables the execution sandbox;
+  without it, `node` falls back to local execution with a clear warning
+- Any **OpenAI-compatible API key** (OpenAI, GLM, OpenRouter, local
+  gateways — configurable per provider kind in Settings)
+
+### Install and run
 
 ```bash
+git clone https://github.com/ZamIzzudin/Yuika.git
+cd Yuika
 npm install
-cp .env.example .env        # isi YUI_OPENAI_API_KEY dst.
-npm run dev                 # web :3000 + api :3211 (turbo paralel, dua proses)
-npm test                    # contracts + core + api (vitest)
-npm run typecheck
-npm run e2e                 # E2E smoke Playwright (mock provider, tanpa API key)
 ```
 
-E2E (P0-QA-1) menjalankan 3 server terisolasi (mock provider :3299 → api :3291 →
-web :3990, data di `e2e/.tmp`) dan menuntaskan skenario demo §2 end-to-end —
-pilih Conductor → delegasi Scholar via SSE → jawaban final → replay persist. Tidak
-bentrok dengan dev server yang sedang jalan.
-
-Atau jalankan semuanya di Docker (P0-INF-5):
+Copy the environment template and put your key in `.env`:
 
 ```bash
-docker compose up -d --build   # build image web+api, hidup di :3000 / :3211
-# data user (sqlite + workspace) persist di volume yui-data — aman saat rebuild
-# akses dari LAN: NEXT_PUBLIC_API_BASE=http://<host-anda>:3211 docker compose up -d --build web
+cp .env.example .env
+# then edit .env:
+#   YUI_OPENAI_BASE_URL=https://api.openai.com/v1
+#   YUI_OPENAI_API_KEY=sk-...
+#   YUI_MODEL=gpt-4o
 ```
 
-Arsitektur (P0-INF-1): `apps/web` (Next.js, pure frontend) memanggil `apps/api`
-(Fastify, pemilik runtime @yuika/core) via HTTP — `NEXT_PUBLIC_API_BASE`
-(default `http://127.0.0.1:3211`).
-
-Penyimpanan sesi **swappable** (P0-DATA-1): default SQLite embedded; untuk
-server / multi-worker, Postgres —
+Start the dev stack (Next.js web app + Fastify API, wired by turbo):
 
 ```bash
-docker compose --profile postgres up -d --build   # + db :5545, api-pg :3213, web :3003
-# atau tanpa docker: YUI_DB_DRIVER=postgres DATABASE_URL=postgres://… npx tsx apps/api/src/server.ts
-# migrasi data lama (idempoten — aman diulang):
-npx tsx scripts/migrate-sqlite-to-pg.mjs --from data/yui.db --to $DATABASE_URL
+npm run dev
 ```
 
-Skenario demo: pilih **Yui Conductor** → *"Riset 3 framework JS paling populer sekarang,
-bandingkan singkat, tulis laporan markdown ke reports/"* → amati dekomposisi → delegasi ke
-Scholar (riset + MCP) → Scribe (menulis + approval) → celebrating → refresh (resume).
+Open **http://localhost:3000**, pick a persona from the orbit, and start
+talking. Everything else (provider, models, budgets, MCP servers) can be
+tuned later from the in-app Settings.
 
-## Aturan Repo (dari PLAN.md — dihafal semua dev)
+> Prefer Docker end-to-end? `docker compose up` builds both apps with
+> production settings; `docker-compose.smoke.yml` runs a tiny self-check stack.
 
-1. **Kontrak dulu.** Semua tipe lintas core↔klien dari `@yuika/contracts`. Tipe tangan = PR ditolak.
-2. **History append-only.** Sistem prompt + toolset frozen saat sesi dibuat (prompt-cache discipline).
-3. **Narrow waist.** Kapabilitas baru: skill → MCP → plugin; core tool = jalan terakhir.
-4. **Shortcut demo ditandai** `// DEMO-SHORTCUT:` — dibayar di fase P0 (lihat TASKS.md).
-5. **Persona = data**, bukan kode: package di `packages/personas/` (manifest + prompt + binding).
+### Try these first
 
-## Stack (D7)
+1. **Chat with the Coder** and ask it to write and run a small Node script —
+   you will see the approval card, then the sandboxed output.
+2. **Delegate research**: ask the Conductor to have the Scholar summarize a
+   topic, then watch the delegation card stream progress.
+3. **Train a skill**: in the Persona page, create a training mission and let
+   a persona study material you upload.
+4. **Inspect everything**: open the Logs tab for a per-turn trace, or
+   Settings > Metering for token usage.
 
-npm + turbo · TypeScript strict · zod contracts · Node + better-sqlite3 (demo) · Next.js 15 ·
-OpenAI-compatible provider (D12) · @modelcontextprotocol/sdk · Rive (placeholder CSS sementara).
+## Monorepo layout
+
+```
+Yuika/
+├── apps/
+│   ├── web/            Next.js — chat, persona studio, approvals, panels
+│   └── api/            Fastify — REST owner of the agent runtime
+├── packages/
+│   ├── contracts/      zod schemas: events, REST, personas (source of truth)
+│   ├── core/           agent loop, tools, delegation, sandbox, MCP, metering
+│   ├── personas/       persona data: prompt, toolsets, delegation rules
+│   └── skills/         seed skills (agentskills.io-compatible SKILL.md)
+├── e2e/                Playwright specs (smoke, persona studio, mascot)
+├── mcp-servers/        first-party MCP servers (e.g. tailscale)
+├── docs/               plan, tasks, design system, art direction
+└── mcp.json            MCP server registry
+```
+
+## Development
+
+```bash
+npm run dev          # web + api dev servers (turbo)
+npm run build        # production build
+npm test             # unit tests across all packages
+npm run e2e         # Playwright e2e (starts its own stack)
+```
+
+Core guarantees are pinned by tests: contract invariants, delegation
+isolation, approval persistence, sandbox integration (opt-in with
+`YUI_SANDBOX_IT=1`), and a deterministic smoke demo against a mock provider.
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [docs/PLAN.md](docs/PLAN.md) | Vision, architecture decisions, roadmap |
+| [docs/TASKS.md](docs/TASKS.md) | Live progress checklist |
+| [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) | UI tokens, components, motion |
+| [docs/ART-DIRECTION.md](docs/ART-DIRECTION.md) | Orin mascot and Rive art direction |
+
+## License
+
+UNLICENSED — proprietary, all rights reserved. See [LICENSE](LICENSE).
