@@ -1,0 +1,21 @@
+# P0-INF-5 — build context minimal (mempercepat build & menjaga secrets keluar).
+# Yang TIDAK masuk image: .env (dilewatkan via env_file compose), data user,
+# artefak lokal, VCS, docs.
+.git
+.turbo
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+demo.db*
+apps/web/.next
+apps/web/.next-*
+apps/web/.next-pi
+apps/api/dist
+apps/web/public/android-chrome-*.png
+docs
+*.log
+tmp-*.mjs
+.tmp-*
+smoke-policy.tmp.*

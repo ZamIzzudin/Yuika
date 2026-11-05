@@ -22,6 +22,9 @@ loadRootEnv();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Docker (P0-INF-5): standalone saat build image — bundle minimal tanpa devDeps;
+  // lokal & CI tetap default (next dev/start biasa).
+  output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
   // distDir bisa dipisah (NEXT_DIST_DIR=.next-pi) agar verifikasi/CI paralel
   // TIDAK menghapus cache dev server yang sedang berjalan (kejadian 2026-11:
   // rm -rf .next saat server hidup -> _document.js ENOENT, semua route 500).

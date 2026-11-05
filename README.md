@@ -37,6 +37,14 @@ npm test                    # contracts + core + api (vitest)
 npm run typecheck
 ```
 
+Atau jalankan semuanya di Docker (P0-INF-5):
+
+```bash
+docker compose up -d --build   # build image web+api, hidup di :3000 / :3211
+# data user (sqlite + workspace) persist di volume yui-data — aman saat rebuild
+# akses dari LAN: NEXT_PUBLIC_API_BASE=http://<host-anda>:3211 docker compose up -d --build web
+```
+
 Arsitektur (P0-INF-1): `apps/web` (Next.js, pure frontend) memanggil `apps/api`
 (Fastify, pemilik runtime @yui/core) via HTTP — `NEXT_PUBLIC_API_BASE`
 (default `http://127.0.0.1:3211`).

@@ -1,0 +1,57 @@
+# P0-INF-5 — Your-Yui via docker compose (web :3000 + api :3211 + volume data).
+#
+#   docker compose up -d --build
+#   open http://localhost:3000
+#
+# Secrets (YUI_OPENAI_API_KEY dst.) dibaca dari .env repo root (env_file)
+# dan TIDAK ikut ter-bake ke image. Data user (sqlite + workspace proyek)
+# hidup di volume yui-data — aman saat rebuild/upgrade image.
+#
+# NEXT_PUBLIC_API_BASE di-inline ke bundle web SAAT BUILD (dari sudut pandang
+# BROWSER, bukan container): default http://127.0.0.1:3211 — benar saat
+# browser & docker di mesin yang sama. Akses dari LAN/remote: build ulang
+# web dengan NEXT_PUBLIC_API_BASE=http://<host-anda>:3211.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    image: your-yui/api:dev
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # overrides env_file — path di dalam container (volume), jangan menimpa
+      # secrets; api listen 0.0.0.0 agar port-forward jalan
+      YUI_API_HOST: 0.0.0.0
+      YUI_API_PORT: "3211"
+      YUI_DB_PATH: /data/demo.db
+      YUI_WORKSPACE_DIR: /data/workspace
+    ports:
+      - "3211:3211"
+    volumes:
+      - yui-data:/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://127.0.0.1:3211}
+    image: your-yui/web:dev
+    environment:
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  yui-data:
