@@ -1,0 +1,79 @@
+{
+  "proto": 1,
+  "note": "Golden vectors protokol v1 — identik di yuika-portal & your-yui (mirror). Kunci PRIVAT di sini adalah material test PUBLIK. Verifikasi: lihat scripts/verify-vectors.mjs (portal) / spec mirror (your-yui).",
+  "keys": {
+    "alice": {
+      "deviceId": "dev_0f59d11785fecd55",
+      "signPub": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA3DxSyeF7xQ8dekB0y9n7xY9P5SafUB+6JWIevIQYltg=\n-----END PUBLIC KEY-----\n",
+      "signPriv": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEINZy2u4Bt3iX2jgc/6NTc6scxsOMGg1ROuJ6rLURsYPz\n-----END PRIVATE KEY-----\n",
+      "dhPub": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VuAyEAsx0sjyRFkdroF/ZChWHBKY4A0af72AfsyKUdaMh+zzw=\n-----END PUBLIC KEY-----\n",
+      "dhPriv": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VuBCIEIMDe4lTMPgstFMVtkbdOXRBtcuRF14Jt66aIryhTAFh0\n-----END PRIVATE KEY-----\n"
+    },
+    "bob": {
+      "deviceId": "dev_dae0577b0645ef5f",
+      "signPub": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA519GnsVtrVOrXd46uZ2Hdsw6WC+lY3r67DFbWl3DlmA=\n-----END PUBLIC KEY-----\n",
+      "signPriv": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIL905uLxclRBO7+pKH40ZKuyKmO5yg3vVBSVEzarblfo\n-----END PRIVATE KEY-----\n",
+      "dhPub": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VuAyEAahgbqEjkWuBbnbNUvpZRXvse9y3zzlsUw2ItOSPR0Sw=\n-----END PUBLIC KEY-----\n",
+      "dhPriv": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VuBCIEIOB1MolVWaOQbwI6yn18phuo0mERhDvLAJeg3PO8omJs\n-----END PRIVATE KEY-----\n"
+    }
+  },
+  "signChallenge": [
+    {
+      "name": "alice-ok",
+      "deviceId": "dev_0f59d11785fecd55",
+      "nonce": "n-0123456789abcdef",
+      "signPub": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA3DxSyeF7xQ8dekB0y9n7xY9P5SafUB+6JWIevIQYltg=\n-----END PUBLIC KEY-----\n",
+      "sig": "L626JQHJhhgMSfHXLsTZjU+vqqp1aLYlWY8mQbM6Nd3OKF0eFca4D18DEJeYJ6LJ98VhcoKWsCkIQrIxJsX+BA==",
+      "expect": true
+    },
+    {
+      "name": "wrong-nonce",
+      "deviceId": "dev_0f59d11785fecd55",
+      "nonce": "n-ffffffffffffffff",
+      "signPub": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA3DxSyeF7xQ8dekB0y9n7xY9P5SafUB+6JWIevIQYltg=\n-----END PUBLIC KEY-----\n",
+      "sig": "L626JQHJhhgMSfHXLsTZjU+vqqp1aLYlWY8mQbM6Nd3OKF0eFca4D18DEJeYJ6LJ98VhcoKWsCkIQrIxJsX+BA==",
+      "expect": false
+    },
+    {
+      "name": "wrong-device",
+      "deviceId": "dev_0000000000000000",
+      "nonce": "n-0123456789abcdef",
+      "signPub": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA3DxSyeF7xQ8dekB0y9n7xY9P5SafUB+6JWIevIQYltg=\n-----END PUBLIC KEY-----\n",
+      "sig": "L626JQHJhhgMSfHXLsTZjU+vqqp1aLYlWY8mQbM6Nd3OKF0eFca4D18DEJeYJ6LJ98VhcoKWsCkIQrIxJsX+BA==",
+      "expect": false
+    }
+  ],
+  "envelope": [
+    {
+      "name": "alice-to-bob-prompt",
+      "fromDeviceId": "dev_0f59d11785fecd55",
+      "toDeviceId": "dev_dae0577b0645ef5f",
+      "plaintext": "{\"proto\":1,\"act\":\"send_prompt\",\"rid\":\"r-1\",\"sessionId\":\"s-demo\",\"personaId\":\"yui-coder\",\"message\":\"Research popular JS frameworks\"}",
+      "box": "AAECAwQFBgcICQoLsDqJKfIihizdw3TfTOeL1f9Wko3jUiZ+ijk81um2lEJFbvX2zfTnKxF0cB4zdFOIQ1GfD7b9RO5nrFvxVkQHvbOWH4PryGBu1IfB4BrTTUjfslaWdOtl+/pBY1j4jL10gzbTL0CWdP50pkZ1lHvoSw8RZkrBkr72kYLJPIsK5WpVfdMKrDd9WzWKlHbmK1Gjj14P"
+    },
+    {
+      "name": "bob-to-alice-delta",
+      "fromDeviceId": "dev_dae0577b0645ef5f",
+      "toDeviceId": "dev_0f59d11785fecd55",
+      "plaintext": "{\"proto\":1,\"ev\":\"message.delta\",\"rid\":\"r-1\",\"sessionId\":\"s-demo\",\"delta\":\"According to 2026 data\"}",
+      "box": "CwoJCAcGBQQDAgEAFzEJHB9u+YQ9Ks43bYMeU2twb2z/eVZFEmpGuCfj04cKgJC6oxLsSFCLzTi54kMxnvVLVejLGNB/4jyeLoouxrBZMs8eJg9ctZlTdq2IUNXl74DLU2Mg5D7LL7FZcE4ZMTNIqfhDw44BPV3bNS1Zqir+"
+    },
+    {
+      "name": "bob-to-alice-approval",
+      "fromDeviceId": "dev_dae0577b0645ef5f",
+      "toDeviceId": "dev_0f59d11785fecd55",
+      "plaintext": "{\"proto\":1,\"ev\":\"approval.request\",\"sessionId\":\"s-demo\",\"approvalId\":\"ap-1\",\"title\":\"run_command\",\"summary\":\"npm install\",\"risk\":\"medium\"}",
+      "box": "Dw4NDAsKCQgHBgUEKk2x9ch3GWoIaJeK/ihFnUNgKD03PJxwq6yWOtio09HgYwM7vAEYDjRZIaBddH/kyC+OkXQ2xvla5y4/xvtGZnWS07iTfqoQQXCrjOtJONrVr0VeTZ7QFF2FOWoeEkCN42gG53lZwADBsDDae6VNoBznndzFDDQTHo1x6BSd2EGhJlu6pWcenniOgkRmtB2ZbfkcNxo8gy9tcQ=="
+    }
+  ],
+  "sha256Hex": [
+    {
+      "input": "pairing-token-demo-0123456789abcdefghijklmnopqrstuv",
+      "expect": "2c336bf90d5292713c10b7d38effcf925eac4cf9b403fb4c6ed6bb5a2129d9eb"
+    },
+    {
+      "input": "",
+      "expect": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}
