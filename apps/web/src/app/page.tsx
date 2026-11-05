@@ -148,14 +148,12 @@ export default function Home() {
   useEffect(() => {
     fetch(apiUrl("/api/personas/shapes"))
       .then((r) => (r.ok ? r.json() : { shapes: [] }))
-      .then(
-        (d: { shapes: { personaId: string; shape: string }[] }) =>
-          setShapeOverrides(
-            Object.fromEntries(d.shapes.map((s) => [s.personaId, s.shape])) as Record<
-              string,
-              import("@/components/orinShapes").OrinShapeKey
-            >,
-          ),
+      .then((d: { shapes: { personaId: string; shape: string }[] }) =>
+        setShapeOverrides(
+          Object.fromEntries(
+            d.shapes.map((s) => [s.personaId, s.shape]),
+          ) as Record<string, import("@/components/orinShapes").OrinShapeKey>,
+        ),
       )
       .catch(() => undefined);
   }, []);
@@ -751,11 +749,10 @@ export default function Home() {
                 aria-hidden
                 className="size-7 shrink-0 rounded-full"
               />
-              <span className="flex min-w-0 flex-col leading-tight">
+              <span className="flex min-w-0 flex-col">
                 <b className="text-body font-semibold tracking-tight text-primary">
-                  Yui
+                  Yuika
                 </b>
-                <span className="text-caption text-dim">demo</span>
               </span>
               <button
                 type="button"

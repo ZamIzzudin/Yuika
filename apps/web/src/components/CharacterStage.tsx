@@ -319,26 +319,33 @@ function Constellation({
   }, [stars]);
 
   // Rasi utama mengelilingi maskot: elips 8 node + 8 sisi + 2 diagonal (≥1100px).
+  // Rasi utama mengelilingi maskot — ORGANIK, bukan elips rapi: 9 titik
+  // dengan sudut & jarak ter-jitter ber-seed (kluster tak beraturan),
+  // sambungan beruntun dengan SATU celah + dua lompatan silang tak
+  // simetris (≥1100px).
   const ring = useMemo(() => {
     if (w < 1100 || h < 2) return null;
+    const rnd = mulberry32(0xa5c0);
     const cx = w / 2;
     const cy = h * 0.44;
-    const rr = Math.min(w, h) * 0.3;
-    const rx = rr * 1.14;
-    const ry = rr * 0.95;
-    const nodes = Array.from({ length: 8 }, (_, i) => {
-      const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+    const base = Math.min(w, h) * 0.3;
+    const N = 9;
+    const angs = Array.from(
+      { length: N },
+      (_, i) => (i / N) * Math.PI * 2 - Math.PI / 2 + (rnd() - 0.5) * 0.7,
+    ).sort((a, b) => a - b);
+    const nodes = angs.map((a) => {
+      const k = 0.82 + rnd() * 0.36; // jarak 0.82–1.18× → bukan elips mulus
       return {
-        x: cx + rx * Math.cos(a),
-        y: cy + ry * Math.sin(a),
-        r: i % 2 ? 3 : 4,
+        x: cx + base * 1.14 * k * Math.cos(a),
+        y: cy + base * 0.95 * k * Math.sin(a),
+        r: 2.2 + rnd() * 2.3,
       };
     });
-    const edges: Array<[number, number]> = nodes.map((_, i) => [
-      i,
-      (i + 1) % 8,
-    ]);
-    edges.push([0, 4], [2, 6]); // dua diagonal
+    // rantai tetangga dengan satu celah + silang tak simetris
+    const edges: Array<[number, number]> = [];
+    for (let i = 0; i < N - 1; i++) if (i !== 5) edges.push([i, i + 1]);
+    edges.push([1, 6], [3, 8]);
     return { nodes, edges };
   }, [w, h]);
 
@@ -390,12 +397,18 @@ function Constellation({
                 x2={nb.x}
                 y2={nb.y}
                 strokeWidth={1.2}
-                opacity={0.5}
+                opacity={0.32 + (i % 3) * 0.12}
               />
             );
           })}
           {ring.nodes.map((n, i) => (
-            <circle key={"rn" + i} cx={n.x} cy={n.y} r={n.r} opacity={0.85} />
+            <circle
+              key={"rn" + i}
+              cx={n.x}
+              cy={n.y}
+              r={n.r}
+              opacity={0.55 + (i % 4) * 0.13}
+            />
           ))}
         </g>
       )}
@@ -529,7 +542,9 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   const [greeted, setGreeted] = useState(false);
   // Tooltip skill melayang (layer stage — tak terpotong scroll card):
   // posisi = pusat-atas tile, relatif stage.
-  const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(null);
+  const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(
+    null,
+  );
   const growthMap = useGrowthMap();
   const overrides = useShapeOverridesMap();
   const { data: bindings, toggle, accept } = useBindings();
@@ -671,7 +686,9 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       for (const [ax, v] of skillBonus(n)) b[ax] = (b[ax] ?? 0) + v;
     return b;
   }, [bp?.effective]);
-  const detail = tip ? (bindings?.skills.find((s) => s.name === tip.name) ?? null) : null;
+  const detail = tip
+    ? (bindings?.skills.find((s) => s.name === tip.name) ?? null)
+    : null;
   const detailBonus = detail ? skillBonus(detail.name) : [];
 
   const galKey = (id: string): OrinShapeKey =>
@@ -750,7 +767,10 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
 
       {/* ===== CARD KIRI — identitas ===== */}
       <aside
-        className={cardCls + " min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"}
+        className={
+          cardCls +
+          " min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
+        }
       >
         <h2 className="text-2xl font-bold tracking-tight text-primary">
           {persona.name}
@@ -862,12 +882,15 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       {/* ===== CARD KANAN — stats & skill: radar TETAP (tidak ikut scroll),
           hanya list skill yang menggulir bila panjang ===== */}
       <aside
-        className={cardCls + " min-[1100px]:right-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"}
+        className={
+          cardCls +
+          " min-[1100px]:right-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
+        }
       >
         <div className="shrink-0">
           <RadarChart base={base} bonus={bonus} accent={accent} />
         </div>
-        <div className="mt-1 flex min-h-0 flex-1 flex-col gap-2">
+        <div className="mt-1 flex min-h-0 flex-1 flex-col gap-3">
           <b className="shrink-0 text-sm font-semibold text-secondary">
             Skills ({bp?.effective.length ?? 0})
           </b>
@@ -906,11 +929,13 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       {detail && tip && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute z-[6] w-60 -translate-x-1/2 -translate-y-full rounded-xl border border-line bg-surface px-3 py-2 text-[12px] leading-5 shadow-[0_14px_36px_-14px_rgb(0_0_0/.7)]"
+          className="pointer-events-none absolute z-[6] w-60 -translate-x-1/2 -translate-y-full rounded-xl border border-line bg-surface px-3 py-2 text-[12px] leading-5 shadow-[0_14px_36px_-14px_rgb(0_0_0/.7)] flex flex-col gap-2"
           style={{ left: tip.x, top: tip.y - 10 }}
         >
-          <b className="text-primary">{detail.name}</b>{" "}
-          <span style={{ color: accent }}>
+          <b className="text-primary capitalize">
+            {detail.name.replaceAll("-", " ")}
+          </b>
+          <span style={{ color: accent }} className="text-xs italic">
             {detailBonus.map(([ax, v], i) => (
               <span key={i}>
                 {i > 0 ? " " : ""}
@@ -919,8 +944,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
               </span>
             ))}
           </span>
-          <br />
-          <span className="text-muted">{detail.description}</span>
+          <span className="text-muted text-justify">{detail.description}</span>
           <span className="absolute bottom-[-4px] left-1/2 size-2 -translate-x-1/2 rotate-45 border-r border-b border-line bg-surface" />
         </div>
       )}
