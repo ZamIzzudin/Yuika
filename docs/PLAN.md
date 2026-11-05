@@ -1,9 +1,18 @@
 # YOUR-YUI — Blueprint Platform Agent Multi-Platform
 
-> Dokumen perencanaan **v0.6** — diperbarui setelah putaran keputusan kedua (lihat §2),
-> perluasan visi Studio Proyek (§13), dan pilar v0.5 (§13.7–13.10).
+> Dokumen perencanaan **v0.7** — diperbarui setelah putaran keputusan kedua (lihat §2),
+> perluasan visi Studio Proyek (§13), pilar v0.5 (§13.7–13.10), dan **Portal & Linked
+> Device (§14, D23)**.
 > Disusun dari pembelajaran mendalam `hermes-agent` (Nous Research) + brainstorming
 > konsep dari ekosistem tools lain. Status: draft aktif — eksekusi demo dimulai.
+>
+> **Changelog v0.7:** **Yuika Portal & Linked Device (D23)** — repo terpisah
+> `yuika-portal`: akun pribadi + device manager (pairing QR ala WhatsApp; 3 slot
+> desktop/mobile/web × 1; unlink manual) + **relay WebSocket buta E2E** (X25519+
+> HKDF+AES-256-GCM; host & remote connect outbound) — remote **action-based**, bukan
+> mirroring; matriks platform final: Web=host · Desktop=host/remote · Mobile=remote;
+> workspace multi-user per server (P1-INF-1 bag. 2) DIGANTI model ini (§14).
+> Fondasi v0 server terimplementasi & teruji; integrasi sisi Studio = P1-PRT.
 >
 > **Changelog v0.6:** **Persona Project Manager (Liebert Yui — D22)** untuk project skala
 > besar: division of labor planning (Planner: brainstorm `consult` multi-persona → dokumen
@@ -59,6 +68,7 @@
 11. [Risiko & Mitigasi](#11-risiko--mitigasi)
 12. [Pertanyaan Terbuka Berikutnya](#12-pertanyaan-terbuka-berikutnya)
 13. [Studio Proyek: Multi-Project Agent OS (pilar v0.4–v0.5)](#13-studio-proyek-multi-project-agent-os-pilar-v04v05)
+14. [Portal & Linked Device (pilar v0.7)](#14-portal--linked-device-pilar-v07)
 
 ---
 
@@ -126,6 +136,7 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D20 | **Dungeon = arena latihan persona**: misi (research/praktik/template) → skill dengan lifecycle `draft→tested→ready`; assign ke project digating skill readiness | Bukan fine-tuning bobot model — skill = file deklaratif + memory domain; rigor eval = kunci kualitas (blind test + curator) |
 | D21 | **Model per persona**: persona.yaml `model` + `fallback` — tiap loop (parent & delegation anak) resolve model persona masing-masing | Quirk provider dinetralkan terpusat (`normalizeToolSchema` — pelajaran GLM 1210); metering per persona (P1-CRED-4) |
 | D22 | **Persona Project Manager (Liebert Yui, roster ke-8)**: pemisah peran PLANNING vs EKSEKUSI — Planner: brainstorm multi-persona terstruktur (`consult`) → dokumen perencanaan → task list detail (acceptance, depends_on, assignee); Conductor: delegasi eksekusi sequential/paralel. Tiap fase flow punya owner + metrik keluaran terukur (RACI ringan); iterasi besar = run berantai (delta + regresi), bukan restart | Untuk project skala besar dengan puluhan-ratusan task & iterasi berulang; butuh engine P2-FLOW; brainstorm = prompt terstruktur bukan chat bebas (output deterministik, ter-audit) |
+| D23 | **Portal & Linked Device**: akun pribadi di portal (repo `yuika-portal`) + pairing sekali pakai (QR/copy-token, TTL 120 dtk) + **relay buta E2E** (payload AES-256-GCM, AAD from|to) — host & remote connect outbound; **remote action-based** (intent terstruktur + event delta), BUKAN screen mirroring; matriks: Web=host saja · Desktop=host/remote (switch) · Mobile=remote saja; 2 remote live bersamaan sesi sama; slot per kind × 1, pengganti = unlink manual | Identitas user pindah ke portal (menggantikan workspace multi-user per server P1-INF-1 bag. 2); host offline-friendly (kunci sesi lokal; portal hanya pairing/unlink + gateway LLM); natural bagi Yuika — YuiEvent+REST tinggal ditransport; detail = `yuika-portal/docs/ARCH-PORTAL.md` (sumber kebenaran tunggal) |
 
 ---
 
@@ -1163,4 +1174,70 @@ persona.yaml:  Conductor → glm/glm-5.1        (reasoning kuat)
 (zod), (b) format persona.yaml + validator + acceptance test per persona, (c) skema DB awal,
 (d) daftar 15 tool core + schema, (e) 10 skill seed, (f) spec asset pipeline Rive (dimensi,
 state machine, daftar input/state, konvensi penamaan), (g) desain ledger metering (SQL
-migration pertama), (h) konsep skin/event/achievement (D10).*
+migration pertama), 
+---
+
+> **Catatan §14:** detail teknis penuh (protokol pairing & relay, skema DB,
+> keputusan keamanan) hidup di **`yuika-portal/docs/ARCH-PORTAL.md`** — sumber
+> kebenaran tunggal. Bagian ini merangkum keputusan produk + implikasinya ke Yuika.
+
+## 14. Portal & Linked Device (pilar v0.7)
+
+### 14.1 Masalah yang diselesaikan
+
+Sebelum v0.7, Yuika = aplikasi self-host satu-ruang: identitas cuma ada di host lokal
+(auth.db mode-lokal ala Gitea), dan rencana lama P1-INF-1 bagian 2 (workspace
+multi-user per server) memaksakan server Yuika jadi pusat identitas multi-user —
+berat untuk self-host dan tidak sesuai produk (akun pribadi, bukan tim).
+
+**D23 memindahkan identitas ke portal** (`yuika-portal`, repo terpisah): satu akun
+pribadi → link maksimal 3 device (desktop/mobile/web × 1 slot) → device saling
+terhubung lewat relay terenkripsi. Server Yuika self-host KEMBALI ringan: tetap
+mode-lokal, kunci sesi lokal, offline-friendly.
+
+### 14.2 Topologi
+
+```
+PORTAL (yuika-portal)                 YUIKA STUDIO (repo ini)
+  akun + device manager                  WEB      = HOST saja
+  pairing QR (sekali pakai)              DESKTOP  = HOST / REMOTE (switch)
+  RELAY wss — buta, E2E                  MOBILE   = REMOTE saja (switch host)
+```
+
+- Host & remote sama-sama connect KELUAR ke satu endpoint publik relay (host tidak
+  membuka port — pola Tailscale/Telegram). Relay = multiplexer buta: payload
+  envelope E2E (X25519 ECDH + HKDF + AES-256-GCM, AAD from|to) tidak terbaca
+  relay maupun operator portal.
+- **Remote action-based, bukan mirroring**: remote mengirim intent terstruktur
+  (`send_prompt`, `approve`, `steer`…) dan menerima event delta — mapping natural ke
+  YuiEvent + REST yang sudah ada; dua remote boleh live bersamaan pada sesi host
+  yang sama.
+- Pairing ala WhatsApp: token sekali pakai TTL 120 dtk (QR = kenyamanan, copy-token
+  setara); device credential (Ed25519 sign + X25519 DH) dibuat DI device — private
+  key tidak pernah keluar. Pengganti device = unlink manual dulu dari portal.
+
+### 14.3 Implikasi ke roadmap Yuika
+
+| Area | Sebelum | Sesudah D23 |
+|---|---|---|
+| P1-INF-1 bag. 2 | workspace multi-user per server | **diganti** akun portal + linked device (P1-PRT) |
+| P2-MOB | app standalone chat REST | **remote via relay** (pair → pilih host → action/event) |
+| P2-DTL | shell + job worker lokal | **switch mode host/remote**; job worker melebur ke relay-client |
+| Billing | tier di server Yuika | hook `accounts.plan` di portal; launching free-tier (Stripe defer) |
+
+### 14.4 Urutan integrasi (P1-PRT, lihat TASKS.md untuk detail per task)
+
+1. `packages/relay-client` SDK + kontrak `RemoteAction`/`RemoteEvent` (payload tetap
+   opaque bagi relay; field `proto: 1` menjaga drift server↔klien).
+2. Host mode di `apps/api`: device keys dipegang PROSES host (bukan browser) —
+   host online tanpa tab terbuka; pairing dari Settings (paste token → claim).
+3. `/dev/remote` — halaman remote uji (bukti E2E dua browser, sebelum mobile ada).
+4. Relay support kecil: `list_hosts`, `last_seen`, re-join pasca-drop.
+5. Gerbang e2e: 2 remote live + approval dari remote + resume pasca-drop.
+6. Setelah gerbang → P2-MOB (Expo) sebagai remote pertama, lalu P2-DTL (Tauri).
+
+Fondasi server portal SUDAH jalan & teruji (crypto 9 test, relay 5 test, web portal
+v0 + demo alur penuh `npm run demo:relay`) — sisa pekerjaan ada di sisi Studio.
+
+
+(h) konsep skin/event/achievement (D10).*

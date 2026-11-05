@@ -93,8 +93,8 @@
 |---|---|---|---|
 | **W0–W7** | Demo internal (vertical slice) | 1 minggu | **G-DEMO** — demo 8 menit lulus |
 | **P0** | Kernel penuh — bayar utang demo | ±3 minggu | **G-P0** — kernel production-grade |
-| **P1** | MCP penuh · memory loop · delegation penuh · persona v1 · credits v1 | ±9 minggu | **G-ALPHA — SIAP TESTING #1 (internal alpha)** |
-| **P2** | Mobile · desktop+relay · curator · cron · kanban · KB · vault · billing v2 | ±10 minggu | **G-BETA — SIAP TESTING #2 (closed beta)** |
+| **P1** | MCP penuh · memory loop · delegation penuh · persona v1 · credits v1 · **portal link (P1-PRT, D23)** | ±9 minggu | **G-ALPHA — SIAP TESTING #1 (internal alpha)** |
+| **P2** | Mobile (remote via relay) · desktop host/remote · curator · cron · kanban · KB · vault · billing v2 | ±10 minggu | **G-BETA — SIAP TESTING #2 (closed beta)** |
 | **P3** | Marketplace · teams · voice · self-host | ±3–4 bulan | G-P3 |
 | **P4** | Workflow builder · eval · enterprise | berkelanjutan | — |
 
@@ -313,11 +313,22 @@
 
 ### P1-INF
 
-- [ ] **P1-INF-1** Auth (email+password → magic link) + workspace + tenant scope middleware · *B · 3d*
+- [ ] **P1-INF-1** Auth (email+password → magic link) + workspace + tenant scope middleware · *B · 3d* — **DIARAHKAN ULANG 2026-11 (D23)**: bagian 1 password auth ✅ (lihat catatan sesi bawah); bagian workspace multi-user per server **DIGANTI** model akun-portal + linked device (`D:\projects\yuika-portal`, ARCH-PORTAL.md) — identitas lintas platform = akun portal, self-host tetap mode-lokal ala Gitea → lanjutan task = **P1-PRT** di bawah; magic link & tenant middleware defer sampai ada kebutuhan nyata
 - [x] **P1-INF-2** Adapter Anthropic + Gemini + router kualitas/biaya · *A · 2d* — ✅ v0 dev-10: `provider/anthropic.ts` (Messages API SSE via fetch: system terpisah, tool_use/tool_result block, input_json_delta terakumulasi, stop_reason & usage terpetakan) + `provider/gemini.ts` (streamGenerateContent alt=sse: functionCall TANPA id → id sintetis, tool result → functionResponse role user via mapping id→nama, usageMetadata) — keduanya tanpa SDK baru (fetch + parser SSE generik `parseSse`); factory `makeProvider` satu titik di runtime; kind provider jadi kontrak (`ProviderSettings.kind` + `UpdateProviderSettingsRequest.kind`, env `YUI_PROVIDER_KIND`, persist .env, swap panas + smoke ulang); UI Settings → Provider: dropdown jenis provider + placeholder base URL per kind; +6 test (konversi pesan kedua format, stream tool-call, usage/finishReason, HTTP error, tool-result non-JSON Gemini). Router kualitas/biaya penuh menyusul bersama multi-key (butuh ≥2 provider aktif — catatan CRED/billing)
 - [x] **P1-INF-3** Aux routing (title/compression/skill-extract → model murah) · *A · 1d* — ✅ v0 dev-10: knob tunggal **model aux** `YUI_AUX_MODEL` (alias lama YUI_LEARN_MODEL di-hormati & dibersihkan saat disimpan) — dipakai learn nudge (aux call ringan pasca-turn); **aux kini ter-meter** (recordUsage di nudge — sebelumnya token nudge TAK tercatat, jujur untuk CRED-6); Settings → Provider: field "Model aux" (kosong = model utama, persist .env); updateEnvFile kini mendukung hapus key (null) — perbaiki bug lama: fallback dikosongkan tidak "hidup lagi" setelah restart; +3 test (preferensi model aux, aux ter-meter, env delete). Compression v0 = truncasi lokal (tanpa model); title generation belum ada di produk; skill-extract dungeon tetap model persona (kualitas draf) — aux routing tinggal pakai knob yang sama saat fitur itu lahir
 - [x] **P1-INF-4** Observability: trace view per turn (pino + tabel DB) · *B · 2d* — ✅ v0 dev-10: **tanpa tabel baru** — agregasi dari sumber yang sudah jujur: event store append-only (tool call/result dengan nama via callId-map, delegasi, approval, error, memory/skill) + usage ledger (latensi & token per panggilan model, join via window waktu turn); `core/session/trace.ts` `buildTrace` → kontrak `SessionTrace`/`TraceTurn`/`TraceStep` (status done/running/cancelled/error); runtime `getTrace(sessionId)`; REST `GET /api/sessions/[id]/trace`; UI **panel Trace** (tombol sidebar, poll 3 dtk, turn terbaru di atas & auto-expand saat running, ikon per jenis langkah, durasi model call, rollup token per turn); +3 test (grup turn + join ledger, turn error terisolasi, sesi kosong). pino + tabel log terpisah menyusul bersama deploy (INF-5)
 - [ ] **P1-INF-5** Deploy staging (VPS/Fly) + domain + TLS · *B · 1d*
+
+### P1-PRT — Portal & remote integration (baru 2026-11, D23; pondasi server sudah jalan di repo `yuika-portal` — crypto 9 test + relay 5 test + web portal v0)
+
+> **Keputusan kunci implementasi (D23):** device keys + koneksi relay host dipegang **apps/api** (proses host), BUKAN browser — host tetap online tanpa tab terbuka, dan kode yang sama dipakai ulang desktop-host nanti. Klien SDK (`packages/relay-client`) hidup di repo INI karena semua konsumennya di sini (studio host, mobile, desktop); protokol wire = spec `ARCH-PORTAL.md §3` dengan field `proto: 1` supaya server (repo portal) dan klien tak silently drift.
+
+- [ ] **P1-PRT-1** `packages/relay-client` SDK — connect + auth challenge (Ed25519), register_host/join, seal/open envelope, reconnect backoff + presence event, typed API · *A · 2d* (mock ws; spec ARCH-PORTAL §3)
+- [ ] **P1-PRT-2** Kontrak remote: `RemoteAction` (send_prompt, approve, reject, steer, cancel, list_sessions, subscribe) + `RemoteEvent` (session.snapshot, message.delta, approval.request, delegation.update, host.state) — zod di `packages/contracts`; payload tetap OPAQUE bagi relay · *A · 1d*
+- [ ] **P1-PRT-3** Host mode di `apps/api`: device store (kunci device host tersimpan di server lokal, gaya auth.db), REST `/api/portal/pair|status|unlink` + UI Settings → tab Portal (paste pairing token → claim → linked), relay host worker: RemoteAction → runtime (re-use handler route) + bus YuiEvent → envelope per-recipient; badge "N remote connected" di web · *A · 3d · dep P1-PRT-1,2*
+- [ ] **P1-PRT-4** Halaman `/dev/remote` — remote uji di browser kedua (pair token, join, kirim prompt, stream delta, approve) — bukti E2E TANPA mobile · *B · 1d · dep P1-PRT-3*
+- [ ] **P1-PRT-5** Relay support (repo portal): `list_hosts` (host online per akun) + update `devices.last_seen` saat auth + re-join otomatis remote pasca-drop · *B · 1d*
+- [ ] **P1-PRT-6** Gerbang e2e: host + 2 remote live sesi sama, approval dari remote, drop koneksi → resume snapshot; playwright (relay in-process) · *A · 2d · dep P1-PRT-4,5* → HP mengendalikan host terbukti end-to-end (via /dev/remote sebelum mobile)
 
 ### PUB — Gerbang Go-Public (repo privat → publik; sumber: docs/LICENSE-AUDIT.md §6–7)
 
@@ -379,16 +390,20 @@
 
 ### P2-MOB (mobile)
 
-- [ ] **P2-MOB-1** Expo app: shell + generated client dari kontrak · *B · 3d*
-- [ ] **P2-MOB-2** Chat streaming + resume di mobile · *B · 3d*
-- [ ] **P2-MOB-3** Push notification (Expo Notifications + FCM/APNs) + tap→approve · *B · 3d*
+> **D23 (2026-11): mobile = REMOTE SAJA via portal relay** (switch host, action-based — bukan mirroring; matrix ARCH-PORTAL §4). Seluruh MOB memakai `@yuika/relay-client` + kontrak RemoteAction/RemoteEvent (P1-PRT-1/2) — streaming & approve LEBIH DULU lewat envelope relay, REST langsung hanya bootstrap. Urutan setelah P1-PRT selesai.
+
+- [ ] **P2-MOB-1** Expo app: shell + generated client dari kontrak · *B · 3d* — **+ D23: pair via portal (login/token), pilih host dari `list_hosts`, join relay**
+- [ ] **P2-MOB-2** Chat streaming + resume di mobile · *B · 3d* — **+ D23: via envelope relay (message.delta), resume = session.snapshot**
+- [ ] **P2-MOB-3** Push notification (Expo Notifications + FCM/APNs) + tap→approve · *B · 3d* — **+ D23: trigger approval.request dari host via relay; tap → RemoteAction approve**
 - [ ] **P2-MOB-4** Persona picker + portrait (portrait = rig SVG OrinPortrait; Rive RN dibatalkan 2026-11) · *B · 2d*
-- [ ] **P2-MOB-5** Mission Control mini (delegation/cron monitor) · *B · 2d*
+- [ ] **P2-MOB-5** Mission Control mini (delegation/cron monitor) · *B · 2d* — **+ D23: delegation.update via relay**
 
 ### P2-DTL (desktop)
 
-- [ ] **P2-DTL-1** Tauri shell + reuse UI web · *B · 2d*
-- [ ] **P2-DTL-2** Device relay worker (ambil job eksekusi lokal, report hasil; approval ketat) · *A · 4d*
+> **D23 (2026-11): desktop = HOST atau REMOTE (switch mode)** — host = develop lokal (runtime di shell); remote = kirim action ke host lain (termasuk web-host). Konsep lama "device relay worker ambil job eksekusi lokal" MELEBUR ke relay-client + mode host (P1-PRT); task lama dianotasi, tidak dihapus.
+
+- [ ] **P2-DTL-1** Tauri shell + reuse UI web · *B · 2d* — **+ D23: mode switch host/remote di onboarding**
+- [ ] **P2-DTL-2** Device relay worker (ambil job eksekusi lokal, report hasil; approval ketat) · *A · 4d* — **+ D23: tercapai via relay-client (host worker = P1-PRT-3 berjalan dalam Tauri; approval ketat tetap prinsip)**
 - [ ] **P2-DTL-3** Auto-update + packaging (NSIS/MSI/DMG) · *B · 2d*
 
 ### P2-AGT (autonomy & knowledge)
