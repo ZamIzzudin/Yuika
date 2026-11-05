@@ -38,21 +38,20 @@ test("CharacterStage: constellation stage, carousel, gallery, shape, skills, mis
   await page.locator('[data-shape-tile="orb"]').click(); // kembali default — idempoten
   await page.waitForTimeout(250);
 
-  // 5) Skill loadout: hover → tooltip popup; klik tile free → attach ATAU tooltip penuh
+  // 5) Skill loadout (TANPA batas jumlah): hover → tooltip popup; klik tile
+  //    = equip/unequip langsung (attach via PUT bindings)
   const free = page.locator('[data-skill-tile][aria-pressed="false"]').first();
   if (await free.count()) {
     await free.hover();
     await expect(page.getByRole("tooltip")).toBeVisible(); // nama + bonus + deskripsi
-    const hdr = await page.getByText(/^Skills \(\d+\)/).innerText();
-    const n = parseInt(hdr.match(/\d+/)![0]!, 10);
+    // kunci tile berdasar nama skill (locator "aria-pressed=false" akan pindah
+    // target setelah attach)
+    const name = await free.getAttribute("data-skill-tile");
+    const tile = page.locator(`[data-skill-tile="${name}"]`);
     await free.click();
-    if (n >= 3) {
-      await expect(page.getByText("Slots full — unequip one skill first.")).toBeVisible();
-    } else {
-      await expect(free).toHaveAttribute("aria-pressed", "true", { timeout: 8000 });
-      await free.click(); // lepas (tile equipped = klik untuk unequip)
-      await expect(free).toHaveAttribute("aria-pressed", "false", { timeout: 8000 });
-    }
+    await expect(tile).toHaveAttribute("aria-pressed", "true", { timeout: 8000 });
+    await tile.click(); // lepas lagi (klik tile terpasang = unequip)
+    await expect(tile).toHaveAttribute("aria-pressed", "false", { timeout: 8000 });
   }
 
   // 6) Dock galeri: pilih via thumbnail

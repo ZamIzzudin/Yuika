@@ -34,7 +34,6 @@ import {
   TextInput,
   TextArea,
   Select,
-  TabList,
   EmptyState,
   MetaRow,
   SectionTitle,
@@ -369,25 +368,49 @@ export function PersonaStudioView({
       className="flex h-full min-h-0 w-full flex-col px-4 pt-3 lg:px-6"
       aria-label="Persona — character studio"
     >
-      {/* Header ringkas satu baris — panggung Characters butuh ruang setinggi mungkin. */}
-      <header className="flex flex-wrap items-center gap-3 pb-3">
-        <Button onClick={onBack} aria-label="Back to workspace">
-          <ArrowLeft size={13} aria-hidden />
-        </Button>
-        <h1 className="flex items-center gap-2 text-lg font-semibold text-primary">
-          <Users size={18} aria-hidden /> Persona
-        </h1>
-        <div className="ml-auto">
-          <TabList
-            value={view}
-            onChange={(id) => setView(id as typeof view)}
-            tabs={[
+      {/* Header: back + judul di kiri, TAB PILLS terpusat di tengah. */}
+      <header className="flex items-center gap-3 pb-3">
+        <div className="flex shrink-0 items-center gap-3">
+          <Button onClick={onBack} aria-label="Back to workspace">
+            <ArrowLeft size={13} aria-hidden />
+          </Button>
+          <h1 className="flex items-center gap-2 text-lg font-semibold text-primary">
+            <Users size={18} aria-hidden /> Persona
+          </h1>
+        </div>
+        <nav
+          role="tablist"
+          aria-label="Persona views"
+          className="mx-auto flex items-center gap-1 rounded-pill border border-line bg-surface/70 p-1 shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md"
+        >
+          {(
+            [
               { id: "characters", label: "Characters" },
               { id: "missions", label: "Missions" },
               { id: "history", label: `Training history (${allRuns.length})` },
-            ]}
-          />
-        </div>
+            ] as const
+          ).map((t) => {
+            const on = view === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => setView(t.id)}
+                className={`cursor-pointer rounded-pill px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                  on
+                    ? "bg-hover text-primary shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+                    : "text-muted hover:text-primary"
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </nav>
+        {/* penyeimbang lebar kiri supaya pills benar-benar di tengah */}
+        <div className="shrink-0 basis-[150px]" aria-hidden />
       </header>
 
       {view === "characters" ? (

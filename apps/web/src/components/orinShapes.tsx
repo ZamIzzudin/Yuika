@@ -249,6 +249,47 @@ export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
 
 const FALLBACK: OrinShape = { ...SHAPES.orb, color: "#9A9A9A" };
 
+/** Wajah mini persona — rig mata kapsul v8 yang sama dengan OrinPortrait
+ *  (mood idle, posisi statis): dipakai thumbnail galeri & tile bentuk di
+ *  menu Persona supaya mini persona bermata seperti di workspace. */
+export function MiniFace({ shape }: { shape: OrinShape }) {
+  const w = 30 * shape.es;
+  const h = 68 * shape.es;
+  const g = 34 * shape.gs;
+  const eye = (d: number) => (
+    <g transform={`translate(${d * g} ${shape.fy})`}>
+      <rect
+        x={-w / 2}
+        y={-h / 2}
+        width={w}
+        height={h}
+        rx={w / 2}
+        fill="#11121A"
+      />
+      <circle
+        cx={-w * 0.2}
+        cy={-h * 0.23}
+        r={Math.max(2.7, w * 0.14)}
+        fill="#fff"
+        opacity={0.88}
+      />
+      <circle
+        cx={w * 0.17}
+        cy={-h * 0.12}
+        r={Math.max(1.2, w * 0.055)}
+        fill="#fff"
+        opacity={0.72}
+      />
+    </g>
+  );
+  return (
+    <>
+      {eye(-1)}
+      {eye(1)}
+    </>
+  );
+}
+
 /** Kunci bentuk persona (fallback: orb) — dipakai aturan khusus per bentuk
  *  (v8: bola diskalakan seragam saat squash-stretch agar tetap bulat). */
 export function personaShapeKey(personaId?: string): OrinShapeKey {

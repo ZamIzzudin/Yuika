@@ -30,6 +30,7 @@ import {
 } from "@phosphor-icons/react";
 import { OrinPortrait } from "./OrinPortrait";
 import {
+  MiniFace,
   PERSONA_SHAPE,
   SHAPE_ORDER,
   SHAPES,
@@ -260,22 +261,45 @@ function Constellation({
   h: number;
   accent: string;
 }) {
-  // Bintang: jumlah ∝ luas, posisi ber-seed tetap (konsisten antar render/resize).
+  // Bintang: sebaran acak bertema (dart-throwing ber-seed — bukan grid!):
+  // jarak minimum bervariasi per kandidat → kluster & celah organik,
+  // beberapa bintang besar + mayoritas kecil (bias kuadrat).
   const stars = useMemo<Star[]>(() => {
     if (w < 2 || h < 2) return [];
-    const rnd = mulberry32(42);
-    const n = Math.max(14, Math.round((w * h) / 15000));
-    return Array.from({ length: n }, () => ({
-      x: rnd() * w,
-      y: rnd() * h,
-      r: 0.8 + rnd() * 1.4,
-      o: 0.18 + rnd() * 0.22,
-      tw: rnd() < 0.18,
-    }));
+    const rnd = mulberry32(20260130);
+    const target = Math.max(14, Math.round((w * h) / 15000));
+    const avgD = Math.sqrt((w * h) / target);
+    const out: Star[] = [];
+    let guard = 0;
+    while (out.length < target && guard < target * 60) {
+      guard++;
+      const x = 12 + rnd() * (w - 24);
+      const y = 12 + rnd() * (h - 24);
+      // jarak minimum acak per kandidat (0.35–1× jarak rata-rata grid)
+      const minD = avgD * (0.35 + rnd() * 0.65);
+      let ok = true;
+      for (const s of out) {
+        if (Math.hypot(s.x - x, s.y - y) < minD) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) continue;
+      out.push({
+        x,
+        y,
+        r: 0.7 + rnd() * rnd() * 2.4,
+        o: 0.14 + rnd() * 0.3,
+        tw: rnd() < 0.22,
+      });
+    }
+    return out;
   }, [w, h]);
 
-  // Garis: tiap bintang → maks 2 tetangga terdekat dalam 130px.
+  // Garis: tiap bintang → maks 2 tetangga terdekat dalam 130px; sebagian
+  // sengaja TIDAK digambar (rnd 0.8) supaya ada celah — bukan mesh rapi.
   const lines = useMemo(() => {
+    const rndL = mulberry32(7);
     const out: Array<[number, number, number, number]> = [];
     for (let i = 0; i < stars.length; i++) {
       const a = stars[i]!;
@@ -285,8 +309,10 @@ function Constellation({
         .sort((x, y) => x.d - y.d)
         .slice(0, 2);
       for (const { j } of near) {
-        const b = stars[j]!;
-        out.push([a.x, a.y, b.x, b.y]);
+        if (rndL() < 0.8) {
+          const b = stars[j]!;
+          out.push([a.x, a.y, b.x, b.y]);
+        }
       }
     }
     return out;
@@ -412,15 +438,15 @@ function RadarChart({
       aria-label="Stat radar"
       focusable="false"
     >
-      {/* cincin + jari-jari samar */}
+      {/* grid heksagonal: cincin + jari-jari — kontras jelas sebagai latar radar */}
       {[2.5, 5, 7.5, 10].map((v) => (
         <polygon
           key={v}
           points={poly(AXES.map(() => v))}
           fill="none"
           stroke="var(--color-line-strong)"
-          strokeWidth={0.8}
-          opacity={0.5}
+          strokeWidth={1.1}
+          opacity={0.9}
         />
       ))}
       {AXES.map((_, i) => {
@@ -433,8 +459,8 @@ function RadarChart({
             x2={x}
             y2={y}
             stroke="var(--color-line-strong)"
-            strokeWidth={0.8}
-            opacity={0.5}
+            strokeWidth={1}
+            opacity={0.85}
           />
         );
       })}
@@ -504,7 +530,6 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   // Tooltip skill melayang (layer stage — tak terpotong scroll card):
   // posisi = pusat-atas tile, relatif stage.
   const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(null);
-  const [fullTip, setFullTip] = useState<{ x: number; y: number } | null>(null);
   const growthMap = useGrowthMap();
   const overrides = useShapeOverridesMap();
   const { data: bindings, toggle, accept } = useBindings();
@@ -577,13 +602,6 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     });
   }, [persona?.id]);
 
-  // Flash "slot penuh" ±2 dtk (tooltip di posisi tile yang diklik).
-  useEffect(() => {
-    if (!fullTip) return;
-    const t = setTimeout(() => setFullTip(null), 2000);
-    return () => clearTimeout(t);
-  }, [fullTip]);
-
   /** Anchor tooltip: pusat-atas elemen, relatif stage. */
   const tipAt = useCallback((name: string, el: HTMLElement) => {
     const b = boxRef.current?.getBoundingClientRect();
@@ -621,16 +639,11 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   }
 
   /** Pasang/lepas skill — maks 3 slot; penuh → tooltip pesan (bukan error). */
-  function toggleSkill(name: string, el?: HTMLElement) {
+  /** Pasang/lepas skill — klik tile: terpasang → lepas, belum → pasang.
+   *  Tanpa batasan jumlah (permintaan user): semua skill boleh aktif serentak. */
+  function toggleSkill(name: string) {
     if (!bp) return;
     const on = bp.effective.includes(name);
-    if (!on && bp.effective.length >= 3) {
-      const b = boxRef.current?.getBoundingClientRect();
-      const r = el?.getBoundingClientRect();
-      if (b && r)
-        setFullTip({ x: r.left + r.width / 2 - b.left, y: r.top - b.top });
-      return;
-    }
     const s = bindings?.skills.find((x) => x.name === name);
     if (!on && s?.status === "draft" && s.slug)
       void accept(bp.id, s.slug, name);
@@ -832,6 +845,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
                     >
                       {s.geom}
                     </g>
+                    <MiniFace shape={s} />
                   </svg>
                   {on && (
                     <span className="absolute top-1 right-1 grid size-3.5 place-items-center rounded-pill bg-[var(--c)] text-canvas">
@@ -845,18 +859,19 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </div>
       </aside>
 
-      {/* ===== CARD KANAN — stats & skill ===== */}
+      {/* ===== CARD KANAN — stats & skill: radar TETAP (tidak ikut scroll),
+          hanya list skill yang menggulir bila panjang ===== */}
       <aside
-        className={cardCls + " min-[1100px]:right-[max(24px,calc(25%-580px))] min-[1100px]:overflow-y-auto"}
+        className={cardCls + " min-[1100px]:right-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"}
       >
-        <RadarChart base={base} bonus={bonus} accent={accent} />
-        <div className="mt-1 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <b className="text-sm font-semibold text-secondary">
-              Skills ({bp?.effective.length ?? 0})
-            </b>
-          </div>
-          <div className="grid grid-cols-5 gap-2">
+        <div className="shrink-0">
+          <RadarChart base={base} bonus={bonus} accent={accent} />
+        </div>
+        <div className="mt-1 flex min-h-0 flex-1 flex-col gap-2">
+          <b className="shrink-0 text-sm font-semibold text-secondary">
+            Skills ({bp?.effective.length ?? 0})
+          </b>
+          <div className="grid min-h-0 flex-1 grid-cols-5 content-start gap-2 overflow-y-auto pr-0.5">
             {bindings?.skills.map((s) => {
               const on = bp?.effective.includes(s.name) ?? false;
               const Glyph = skillGlyph(s.name);
@@ -871,7 +886,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
                   onMouseEnter={(e) => tipAt(s.name, e.currentTarget)}
                   onMouseLeave={() => setTip(null)}
                   onBlur={() => setTip(null)}
-                  onClick={(e) => toggleSkill(s.name, e.currentTarget)}
+                  onClick={() => toggleSkill(s.name)}
                   className={`grid aspect-square cursor-pointer place-items-center rounded-[12px] border transition-all duration-200 hover:-translate-y-0.5 ${
                     on
                       ? "border-[var(--c)] text-[var(--c)]"
@@ -909,20 +924,11 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           <span className="absolute bottom-[-4px] left-1/2 size-2 -translate-x-1/2 rotate-45 border-r border-b border-line bg-surface" />
         </div>
       )}
-      {fullTip && (
-        <div
-          role="status"
-          className="pointer-events-none absolute z-[6] w-60 -translate-x-1/2 -translate-y-full rounded-xl border border-line bg-surface px-3 py-2 text-[12px] leading-5 font-medium shadow-[0_14px_36px_-14px_rgb(0_0_0/.7)]"
-          style={{ left: fullTip.x, top: fullTip.y - 10, color: accent }}
-        >
-          Slots full — unequip one skill first.
-          <span className="absolute bottom-[-4px] left-1/2 size-2 -translate-x-1/2 rotate-45 border-r border-b border-line bg-surface" />
-        </div>
-      )}
 
       {/* ===== DOCK — galeri karakter ===== */}
       <div className="absolute inset-x-0 bottom-5 z-[4] flex flex-col items-center gap-2 max-[1099px]:sticky max-[1099px]:bottom-0 max-[1099px]:mt-auto max-[1099px]:translate-y-0">
         <div
+          data-dock=""
           role="listbox"
           aria-label="Character gallery"
           className="flex max-w-[min(760px,calc(100vw-32px))] snap-x snap-mandatory gap-2.5 overflow-x-auto rounded-[22px] border border-line bg-surface/70 px-5 pt-5 pb-3 shadow-[0_16px_40px_-20px_rgb(0_0_0/.6)] backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -965,6 +971,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
                   >
                     {s.geom}
                   </g>
+                  <MiniFace shape={s} />
                 </svg>
                 <b className="w-full truncate text-center text-[12px] font-semibold">
                   {p.name}

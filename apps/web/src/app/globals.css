@@ -96,6 +96,14 @@
 @utility twinkle-yui {
   animation: star-twinkle 4s ease-in-out infinite alternate;
 }
+/* Persona Studio: dock galeri — scroll tetap jalan, scrollbar TIDAK tampil. */
+[data-dock] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[data-dock]::-webkit-scrollbar {
+  display: none;
+}
 @utility caret-blink {
   display: inline-block;
   width: 8px;
