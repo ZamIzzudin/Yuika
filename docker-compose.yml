@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: api
-    image: your-yui/api:dev
+    image: yuika/api:dev
     env_file:
       - path: .env
         required: false
@@ -52,7 +52,7 @@ services:
       target: web
       args:
         NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://127.0.0.1:3211}
-    image: your-yui/web:dev
+    image: yuika/web:dev
     environment:
       PORT: "3000"
       HOSTNAME: 0.0.0.0
@@ -87,7 +87,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: api
-    image: your-yui/api:dev
+    image: yuika/api:dev
     profiles: ["postgres"]
     env_file:
       - path: .env
@@ -116,7 +116,7 @@ services:
       target: web
       args:
         NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://127.0.0.1:3213}
-    image: your-yui/web:dev
+    image: yuika/web:dev
     profiles: ["postgres"]
     environment:
       PORT: "3003"

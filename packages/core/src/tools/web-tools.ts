@@ -29,7 +29,7 @@ export function registerWebTools(): void {
     handler: async (args: z.infer<typeof fetchSchema>) => {
       const res = await fetch(args.url, {
         signal: AbortSignal.timeout(15_000),
-        headers: { "user-agent": "YourYui/0.1 (demo)" },
+        headers: { "user-agent": "Yuika/0.1 (demo)" },
       });
       const contentType = res.headers.get("content-type") ?? "";
       const raw = await res.text();

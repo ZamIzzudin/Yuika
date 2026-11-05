@@ -2,7 +2,7 @@
 name: design-system-basics
 description: "Build a compact design system (tokens: color/type/space/radius) that translates directly to CSS variables — monochrome plus one accent."
 version: 0.1.0
-author: Your-Yui Team
+author: Yuika Team
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

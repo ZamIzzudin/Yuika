@@ -1,4 +1,4 @@
-# Your-Yui Design System (DS-1)
+# Yuika Design System (DS-1)
 
 > **Satu sumber kebenaran desain UI.** Semua layar & fitur baru WAJIB dibangun
 > dari komponen global `apps/web/src/components/ui/*` + utility Tailwind

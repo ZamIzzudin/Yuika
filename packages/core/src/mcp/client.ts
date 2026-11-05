@@ -49,7 +49,7 @@ export async function connectMcpServer(
   /** P1-MCP-6: tarik ulang daftar tool (dipanggil saat notifikasi list_changed). */
   refreshTools: () => Promise<{ toolNames: string[]; added: string[]; removed: string[] }>;
 }> {
-  const client = new Client({ name: "your-yui", version: "0.1.0" }, { capabilities: {} });
+  const client = new Client({ name: "yuika", version: "0.1.0" }, { capabilities: {} });
   // Server Python (uvx): bila uvx tak di PATH (mis. baru di-install via UI dan
   // PATH proses belum menyegarkan), pakai path absolut — tanpa restart server.
   let command = cfg.command;

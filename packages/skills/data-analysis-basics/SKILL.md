@@ -2,7 +2,7 @@
 name: data-analysis-basics
 description: "Analisis dataset tabular yang jujur & reproducible: inspeksi, pembersihan, statistik, temuan."
 version: 0.1.0
-author: Your-Yui Team
+author: Yuika Team
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

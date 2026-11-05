@@ -2,7 +2,7 @@
 name: project-planning-basics
 description: "Turn a large brief into an executable, measurable plan: scope table, risk register with decision owners, and a dependency-ordered task list where every task has acceptance criteria and an assignee."
 version: 0.1.0
-author: Your-Yui Team
+author: Yuika Team
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

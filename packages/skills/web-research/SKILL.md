@@ -2,7 +2,7 @@
 name: web-research
 description: "Structured web research loop with source cross-checking."
 version: 0.1.0
-author: Your-Yui Team
+author: Yuika Team
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

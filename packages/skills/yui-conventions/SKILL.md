@@ -2,7 +2,7 @@
 name: yui-conventions
 description: "Workspace conventions for Yui personas."
 version: 0.1.0
-author: Your-Yui Team
+author: Yuika Team
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

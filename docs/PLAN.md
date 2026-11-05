@@ -49,9 +49,9 @@
 1. [Ringkasan Eksekutif & Vision](#1-ringkasan-eksekutif--vision)
 2. [Keputusan yang Sudah Diambil](#2-keputusan-yang-sudah-diambil)
 3. [Meta-Prinsip dari Hermes yang Diwarisi](#3-meta-prinsip-dari-hermes-yang-diwarisi)
-4. [Diseksi Konsep Hermes → Adopsi untuk Your-Yui](#4-diseksi-konsep-hermes--adopsi-untuk-your-yui)
+4. [Diseksi Konsep Hermes → Adopsi untuk Yuika](#4-diseksi-konsep-hermes--adopsi-untuk-yuika)
 5. [Konsep dari Ekosistem Lain untuk Di-Assemble](#5-konsep-dari-ekosistem-lain-untuk-di-assemble)
-6. [Arsitektur Your-Yui](#6-arsitektur-your-yui)
+6. [Arsitektur Yuika](#6-arsitektur-yuika)
 7. [Sistem Persona Yui (pilar produk)](#7-sistem-persona-yui-pilar-produk)
 8. [SaaS Credits: Metering & Billing](#8-saas-credits-metering--billing)
 9. [Keputusan Bahasa: Python vs Pure TypeScript](#9-keputusan-bahasa-python-vs-pure-typescript)
@@ -66,21 +66,21 @@
 
 ### 1.1 Pernyataan vision
 
-**Your-Yui** adalah platform AI agent yang berjalan **hanya** di permukaan milikmu sendiri —
+**Yuika** adalah platform AI agent yang berjalan **hanya** di permukaan milikmu sendiri —
 web (termasuk self-hosted), mobile, dan desktop — dengan satu inti agent yang sama di cloud.
 Yui bukan chatbot generik: dia adalah **keluarga persona spesialis** — Hiro Yui, Einstein Yui,
 Sherlock Yui — masing-masing dengan ilustrasi, kepribadian, skill set, dan memori keahlian
 sendiri, yang tumbuh lewat learning loop, bekerja terjadwal, dan **saling mendelegasikan**
 pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 
-**Tagline kandidat:** *"Your Yui. Everywhere — but only yours."*
+**Tagline kandidat:** *"Yuika. Everywhere — but only yours."*
 
 ### 1.2 Diferensiasi inti
 
-| Dimensi | Hermes | Your-Yui |
+| Dimensi | Hermes | Yuika |
 |---|---|---|
 | Model deployment | Local-first: CLI/TUI di mesin user + gateway VPS | **Server-first**: runtime agent di cloud-mu; klien web/mobile/desktop bicara ke satu API; opsi self-host web |
-| Ekosistem | Terbuka: 28 platform messaging, API publik | **Tertutup & terkurasi**: hanya aplikasi Your-Yui (web/mobile/desktop). Notifikasi via push milik sendiri |
+| Ekosistem | Terbuka: 28 platform messaging, API publik | **Tertutup & terkurasi**: hanya aplikasi Yuika (web/mobile/desktop). Notifikasi via push milik sendiri |
 | Multi-user | 1 orang multi-profile | **Multi-user + workspace** sejak desain awal (auth, billing, isolasi tenant) |
 | Bisnis | Open source gratis (BYOM) | **SaaS credits**: compute (LLM, sandbox, storage) dibayar dengan kredit |
 | Identitas agent | Agent generik + personality ringan | **Persona per keahlian sebagai pilar**: ilustrasi unik, prompt layer, skill bundle, toolset, memori domain, dan *growth* per persona |
@@ -121,7 +121,7 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D15 | **Workflow = DAG deklaratif per fase** (bukan free-form graph): template 7 fase bawaan; mode `sequential`/`parallel` per fase; human gate antar fase default | Engine di atas job queue (P0-DEL-1 diperluas); builder visual node-graph menyusul Fase 3; kontrak event `workflow.*` aditif |
 | D16 | **Terminal & browser = permukaan (surface) dari tool yang sudah ada**, bukan sistem paralel: terminal = PTY di sandbox (`run_command` generalisasi), browser = server-side proxy dari `web_fetch`/browser tool | Workbench multi-tab web/desktop; pola OpenBot (browser persisten + agent control) jadi referensi; keamanan = review wajib |
 | D17 | **MCP binding granular: project × persona × tool** — koneksi sekali (OAuth, vault), turunannya di-scope per persona di project tertentu | Pain point utama user: MCP semacam Figma “menempel” sebagai skill persona yang punya tanggung jawab; audit log per binding |
-| D18 | **Penpot = mesin desain studio yang TER-EMBED di platform** (open source; menggantikan pen.dev yang tidak open source): user tidak pernah keluar Your-Yui — canvas desain hidup di dalam tab Design; persona Designer memproduksi/mengubah file via API, dan fase `develop` membaca file → generate kode | Kebutuhan user v0.5: embedded, bukan app terpisah; **scope v0 ramping tapi flow utuh** (lihat tangga embed §13.9); mekanisme embed pasti (iframe scoped / komponen frontend / plugin) = hasil eksplorasi P2-DSN-1; ekspektasi hasil = komponen + design tokens, bukan pixel-perfect |
+| D18 | **Penpot = mesin desain studio yang TER-EMBED di platform** (open source; menggantikan pen.dev yang tidak open source): user tidak pernah keluar Yuika — canvas desain hidup di dalam tab Design; persona Designer memproduksi/mengubah file via API, dan fase `develop` membaca file → generate kode | Kebutuhan user v0.5: embedded, bukan app terpisah; **scope v0 ramping tapi flow utuh** (lihat tangga embed §13.9); mekanisme embed pasti (iframe scoped / komponen frontend / plugin) = hasil eksplorasi P2-DSN-1; ekspektasi hasil = komponen + design tokens, bukan pixel-perfect |
 | D19 | **TaskTree = hierarki pemantauan delegasi** (task → subtask → step → job agent) yang **diproyeksikan dari event**, bukan state kedua | TaskList (board) = flat view dari tree; refresh/reconnect = replay; status paralel/sequential terlihat dari struktur node |
 | D20 | **Dungeon = arena latihan persona**: misi (research/praktik/template) → skill dengan lifecycle `draft→tested→ready`; assign ke project digating skill readiness | Bukan fine-tuning bobot model — skill = file deklaratif + memory domain; rigor eval = kunci kualitas (blind test + curator) |
 | D21 | **Model per persona**: persona.yaml `model` + `fallback` — tiap loop (parent & delegation anak) resolve model persona masing-masing | Quirk provider dinetralkan terpusat (`normalizeToolSchema` — pelajaran GLM 1210); metering per persona (P1-CRED-4) |
@@ -156,7 +156,7 @@ satu-satunya = compression (dengan checkpoint terarsip).
 
 Hermes menyatakan seluruh wire protocol sebagai model ter-validasi (Pydantic, `extra="forbid"`)
 lalu meng-generate TypeScript untuk TUI/Desktop/Web — ganti model → regenerate → compiler
-menunjukkan semua yang rusak. Your-Yui menggeneralisasi: **satu kontrak → semua klien** (§6.3).
+menunjukkan semua yang rusak. Yuika menggeneralisasi: **satu kontrak → semua klien** (§6.3).
 
 ### 3.4 Facade + Siblings (anti god-file)
 
@@ -176,7 +176,7 @@ Untuk marketplace nanti: compat contract aditif — field baru = optional, tidak
 
 ---
 
-## 4. Diseksi Konsep Hermes → Adopsi untuk Your-Yui
+## 4. Diseksi Konsep Hermes → Adopsi untuk Yuika
 
 Status per subsistem: ✅ adopsi penuh · 🔧 adaptasi · ❌ tidak diadopsi (dengan alasan).
 
@@ -208,7 +208,7 @@ health check, trust record per-profile, OSV malware preflight, OAuth (device flo
 **sampling** (server minta LLM call) & **elicitation** (server minta input user), notifikasi
 tool-list berubah; Hermes juga bisa *menjadi* MCP server; 60+ manifest katalog.
 
-**Adopsi untuk Your-Yui — MCP adalah sistem ekstensi utama:**
+**Adopsi untuk Yuika — MCP adalah sistem ekstensi utama:**
 - Client multi-transport + lifecycle state machine + health: adopsi penuh.
 - **UX lebih baik dari Hermes**: karena klien-mu web/mobile, OAuth & trust flow jadi klik-satu-
   tombol di browser (Hermes harus lewat YAML/terminal).
@@ -216,7 +216,7 @@ tool-list berubah; Hermes juga bisa *menjadi* MCP server; 60+ manifest katalog.
   (kebutuhan multi-user memaksa ini — Hermes bisa stdio bare karena personal).
 - **Sampling & elicitation diteruskan ke UI-mu**: MCP server minta input → jadi *server request*
   ke klien (push notification bila perlu) — sinergi dengan pola `server_requests` Hermes.
-- **Your-Yui sebagai MCP server** (fase lanjut, opsional): workspace bisa expose agent-nya
+- **Yuika sebagai MCP server** (fase lanjut, opsional): workspace bisa expose agent-nya
   sebagai MCP server untuk desktop tools — tetap sesuai "tertutup" karena opt-in per workspace.
 - Katalog kurasi internal (bukan publik bebas) ±20–30 server populer di awal.
 
@@ -291,7 +291,7 @@ sendiri (web socket, push notification, desktop relay), bukan platform pihak ket
 ### 4.10 Cron, Goals, Kanban — ✅ (fase 2+)
 
 Cron natural-language + blueprint template (daily briefing, weekly review, price monitor);
-kanban dengan human review gate; heartbeat. Di Your-Yui: "Mission Control" — semua cron,
+kanban dengan human review gate; heartbeat. Di Yuika: "Mission Control" — semua cron,
 delegation, review gate satu layar, mobile-friendly, push notification untuk approval.
 (Konsep tetap penting walau bukan prioritas awal — ini yang membuat Yui "hidup".)
 
@@ -307,13 +307,13 @@ sejak commit pertama; path policy; tool output truncation.
 - **Usage/pricing tracking** (pola `usage_tracker`, `billing_usage` Hermes) → dasar metering §8.
 - **Eval/trajectory** (pola batch_runner) → nanti untuk regression test perilaku persona.
 - **Terminal/browser backends pluggable** (local/docker/ssh/modal/daytona di Hermes) → versi
-  Your-Yui: backend sandbox (container default; device relay; penyedia cloud sandbox menyusul).
+  Yuika: backend sandbox (container default; device relay; penyedia cloud sandbox menyusul).
 
 ---
 
 ## 5. Konsep dari Ekosistem Lain untuk Di-Assemble
 
-| Sumber | Konsep | Pakai di Your-Yui |
+| Sumber | Konsep | Pakai di Yuika |
 |---|---|---|
 | **Claude Code / pi** | Project instruction file, plan mode, hooks | `YUI.md` per workspace; plan-approve-execute untuk task besar; hook = arsitektur internal |
 | **LangGraph** | Graph orchestration, checkpoint, human-in-loop | Engine workflow deterministik untuk pipeline berulang; checkpoint = resume job panjang (fase 4) |
@@ -329,7 +329,7 @@ sejak commit pertama; path policy; tool output truncation.
 
 ---
 
-## 6. Arsitektur Your-Yui
+## 6. Arsitektur Yuika
 
 ### 6.1 Topologi tingkat tinggi (diperbarui: tanpa messaging pihak ketiga)
 
@@ -438,7 +438,7 @@ klien. Tidak ada klien yang menulis tipe tangan sendiri. Tiga keluarga:
 
 ## 7. Sistem Persona Yui (pilar produk)
 
-> Keputusan D5. Ini bagian yang membuat Your-Yui bukan "agent platform lain" —
+> Keputusan D5. Ini bagian yang membuat Yuika bukan "agent platform lain" —
 > persona adalah **unit produk**: dibeli pertumbuhannya, dinikmati ilustrasinya,
 > dan menjadi antarmuka bagi seluruh mesin (skill, MCP, delegation, memory).
 
@@ -595,7 +595,7 @@ Marketplace fase lanjut: persona buatan user (fork + remix skill + asset sendiri
 | Item | Satuan | Catatan |
 |---|---|---|
 | LLM tokens | credit per 1k token, **rate per model** (margin di atas harga provider) | Input/output/cache terpisah; aux model lebih murah — insentif routing pintar |
-| Sandbox compute | credit per detik (tier CPU/RAM) | Termasuk MCP server user yang di-host Your-Yui |
+| Sandbox compute | credit per detik (tier CPU/RAM) | Termasuk MCP server user yang di-host Yuika |
 | Storage | credit per GB-bulan | Knowledge base, artifacts, arsip sesi |
 | Tool berbayar hosted | credit per panggilan | Web search, image gen, dsb. (bila di-router lewat gateway-mu) |
 | Delegation | diambil dari saldo workspace yang sama | Anak mewarisi pool workspace — cap concurrency per plan |
@@ -639,7 +639,7 @@ User/subagent minta turn ──► Admission Control ──► Job masuk queue �
 **Premium entitlement (D11).** "Sekali premium, dipakai di semua platform": premium adalah
 **entitlement level akun**, bukan lisensi per-perangkat — satu status langganan membuka fitur
 di web, mobile, dan desktop sekaligus. **Self-host edition = lisensi berbayar yang mensyaratkan
-akun premium**: instance self-host memvalidasi lisensi ke license-server Your-Yui saat start
+akun premium**: instance self-host memvalidasi lisensi ke license-server Yuika saat start
 (dengan grace period offline — durasi jadi keputusan §12), lalu berjalan dengan kunci model
 milik user; credits tidak berlaku di self-host (konsumsi LLM = kunci user sendiri).
 
@@ -797,7 +797,7 @@ expression states; burn-rate credit terukur per turn."
 - [ ] Eval harness perilaku persona (regression suite — pola batch_runner Hermes)
 - [ ] Sandbox microVM (Firecracker/gVisor) untuk plan enterprise
 - [ ] Enterprise: SSO, audit export, BYO-KMS, SLA
-- [ ] (Opsional) Your-Yui sebagai MCP server per-workspace; A2A antar-workspace internal
+- [ ] (Opsional) Yuika sebagai MCP server per-workspace; A2A antar-workspace internal
 
 ---
 
@@ -850,7 +850,7 @@ expression states; burn-rate credit terukur per turn."
 8. **Desain event & achievement (D10):** kapan dirinci? (Rekomendasi: bersama growth timeline
    di Fase 2 — jangan sekarang, demo tidak butuh.)
 9. **Expiring credits?** (belum terjawab dari v0.2 — 12 bulan vs non-expiring).
-10. **Nama:** "Your-Yui" final? Cek domain/trademark sebelum branding jalan jauh.
+10. **Nama:** "Yuika" final? Cek domain/trademark sebelum branding jalan jauh.
 11. **Penpot (v0.5, menggantikan pen.dev — tidak open source):** eksplorasi repo
     `D:\projects\penpot` → **selesai**: laporan `docs/refs/penpot.md` (P2-DSN-1).
     Temuan utama: embed wajib self-host (CSP `frame-ancestors`); v0 = agent via RPC API
@@ -873,7 +873,7 @@ expression states; burn-rate credit terukur per turn."
 
 ## 13. Studio Proyek: Multi-Project Agent OS (pilar v0.4–v0.5)
 
-> Keputusan D14–D17. Visi: Your-Yui bukan sekadar "chat dengan persona", melainkan
+> Keputusan D14–D17. Visi: Yuika bukan sekadar "chat dengan persona", melainkan
 > **studio tempat banyak project hidup** — tiap project membawa kode, dokumentasi, tasklist,
 > dan **struktur agent-nya sendiri**; struktur itu berjalan sebagai workflow berfase
 > (sequential/paralel) yang bisa dimonitor; dan seluruhnya dibuka lewat **workbench
@@ -1056,7 +1056,7 @@ Project Board (TaskList — flat)
 ### 13.8 Dungeon — arena latihan persona (v0.5, D20)
 
 > Jawaban atas “apakah mungkin persona dilatih sampai siap di-assign ke project?” —
-> **ya**, karena “skill” di Your-Yui bukan bobot model, melainkan **file deklaratif
+> **ya**, karena “skill” di Yuika bukan bobot model, melainkan **file deklaratif
 > (SKILL.md) + memory domain persona**. Melatih = menjalankan sesi terpandu yang
 > berakhir di skill baru — tanpa infra fine-tuning sama sekali.
 
@@ -1117,14 +1117,14 @@ fase `develop` : agent membaca file Penpot (API) → generate komponen kode + to
 - Ekspektasi v0 jujur: **komponen + design tokens**, bukan pixel-perfect app penuh.
 
 **Embed di dalam platform (kebutuhan user v0.5, D18) — bukan app/platform terpisah.**
-User tidak pernah keluar Your-Yui; canvas desain hidup di tab Design. Tangga embed —
+User tidak pernah keluar Yuika; canvas desain hidup di tab Design. Tangga embed —
 **mulai ramping, jaga flow utuh**:
 
 | Layer | Isi (fitur sengaja lean) | Flow yang WAJIB utuh sejak v0 |
 |---|---|---|
 | **v0 (ramping)** | Canvas Penpot ter-embed scoped ke file project (mekanisme sesuai eksplorasi DSN-1): lihat, navigasi halaman/frame, zoom — tanpa editor penuh; artefak ter-link ke node TaskTree | Agent membuat frame (fase `design`) → user melihat hasilnya live di tab → fase `develop` membaca file → komponen kode → diff — **semua tanpa keluar platform** |
 | **v1** | Sunting ringan di dalam tab (komentar, pindah objek) · multi-file project · palet subset | Iterasi manusia di tengah fase desain masuk ke alur agent |
-| **v2** | Embed dalam: frontend Penpot self-host di belakang SSO platform (white-label, tanpa login kedua, tema menyatu) | Pengalaman “desain adalah bagian dari Your-Yui”, bukan jendela pinjaman |
+| **v2** | Embed dalam: frontend Penpot self-host di belakang SSO platform (white-label, tanpa login kedua, tema menyatu) | Pengalaman “desain adalah bagian dari Yuika”, bukan jendela pinjaman |
 
 - Eksplorasi repo `D:\projects\penpot` (clone berjalan) → laporan kemampuan API vs
   kebutuhan (task P2-DSN-1); jangan asumsi detail API sebelum dibaca.

@@ -2,7 +2,7 @@
 
 import { apiUrl } from "@/lib/api";
 /**
- * Your-Yui demo shell — orchestrator UI (DEMO-WEEK-1 §2):
+ * Yuika demo shell — orchestrator UI (DEMO-WEEK-1 §2):
  * persona picker → sesi → SSE event stream → render msg/activity/delegation/approval.
  * SEMUA tipe dari @yui/contracts (dilarang tipe tangan — PLAN §6.3).
  */
@@ -726,7 +726,7 @@ export default function Home() {
         {sidebarOpen ? (
           <>
             <div className="flex items-center gap-2.5 px-2 pb-4">
-              {/* Logo maskot Orin (favicon_io) + wordmark Your-Yui */}
+              {/* Logo maskot Orin (favicon_io) + wordmark Yuika */}
               <img
                 src="/android-chrome-192x192.png"
                 alt=""
@@ -791,7 +791,7 @@ export default function Home() {
             <div className="flex flex-col items-center gap-1">
               <img
                 src="/android-chrome-192x192.png"
-                alt="Your-Yui"
+                alt="Yuika"
                 className="size-7 rounded-full"
               />
               <button

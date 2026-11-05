@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# P0-INF-5 — image Your-Yui (web + api) untuk docker compose.
+# P0-INF-5 — image Yuika (web + api) untuk docker compose.
 #
 # Multi-stage, DUA target runtime dari satu file:
 #   web : Next.js standalone (output:standalone — bundle minimal, tanpa devDeps)

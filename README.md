@@ -1,7 +1,10 @@
-# Your-Yui 🎀
+# Yuika 🎀
 
 > Platform AI agent multi-platform (cloud · web · mobile · desktop) dengan **persona per
 > keahlian**, MCP, skills learning-loop, dan delegation. Status: **minggu demo internal**.
+>
+> **Yuika** — "yui" (mimpi / 唯華) + "ka" (unggul / 香): *mimpi yang unggul*.
+> Nama pendek "Yui" tetap dipakai untuk sang persona maestro (`Maestro Yui`).
 
 ## Dokumen
 
@@ -14,7 +17,7 @@
 ## Struktur
 
 ```
-your-yui/
+yuika/
 ├── packages/
 │   ├── contracts/      # ★ zod: event catalog + REST + persona manifest (SINGLE SOURCE OF TRUTH)
 │   ├── core/           # agent loop, registry, tools, personas/skills loader, delegation, MCP, approval

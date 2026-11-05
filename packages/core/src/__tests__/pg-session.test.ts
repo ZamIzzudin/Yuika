@@ -14,8 +14,7 @@ describe.skipIf(!gate)("PgSessionStore (integrasi, YUI_PG_IT=1)", () => {
   let s: PgSessionStore;
   const sid = "pgit-" + Date.now().toString(36);
 
-  beforeAll(async (ctx) => {
-    if (!gate) ctx.skip();
+  beforeAll(async () => {
     s = new PgSessionStore(url);
     await s.migrate();
   });

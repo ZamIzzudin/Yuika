@@ -2,7 +2,7 @@
 name: design-to-code-handoff
 description: "Hand off design as working HTML/CSS mockups a coder can execute directly — one-file deliverables in code/, decisions documented in reports/."
 version: 0.1.0
-author: Your-Yui Team
+author: Yuika Team
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

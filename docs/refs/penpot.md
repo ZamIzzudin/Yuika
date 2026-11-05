@@ -6,7 +6,7 @@
 > Sumber: repo lokal `D:\projects\penpot` (clone penuh, branch develop, **v2.19.0 unreleased**;
 > pin ke tag stable terakhir saat deploy). Lisensi **MPL-2.0** (file-based, aman dikombinasikan).
 
-## TL;DR untuk Your-Yui
+## TL;DR untuk Yuika
 
 1. **Embed WAJIB self-host.** CSP default `frame-ancestors 'self'` dan TIDAK bisa dilepas
    lewat env var tambahan — harus override utuh `PENPOT_CSP_POLICY` (hanya mungkin di
@@ -69,7 +69,7 @@
 
 - `exporter/`: service Node, `POST /api/export/jobs` → job queue (Redis), render
   shape/file → **bitmap/SVG/PDF**. `render-wasm/`: engine Rust+Emscripten+Skia.
-- Untuk Your-Yui: thumbnail artefak TaskNode, snapshot diff antar fase, bahan input
+- Untuk Yuika: thumbnail artefak TaskNode, snapshot diff antar fase, bahan input
   model vision — semua tanpa membuka browser Penpot.
 
 ### 5. Plugin system (`plugins/`)
@@ -77,7 +77,7 @@
 - Plugin dimuat via URL manifest (`manifest.json`), UI plugin = app web apa pun
   (Angular starter disediakan), akses `penpot.*` API ke file yang sedang terbuka
   (tipe lengkap: `plugins/libs/plugin-types/index.d.ts`).
-- Untuk Your-Yui: jalur **v1+** — plugin resmi "Your-Yui" (di-host platform kita)
+- Untuk Yuika: jalur **v1+** — plugin resmi "Yuika" (di-host platform kita)
   yang dibuka otomatis di sesi embedded = jembatan live-control tanpa menunggu
   upstream; juga jalur white-label v2.
 - Catatan: `penpot.ui.open(..., {hidden: true})` ada — plugin bisa jalan tersembunyi.
@@ -113,8 +113,8 @@ v1 (live in-canvas):
   user menyaksikan; exportShape → bahan vision/diff.
 
 v2 (white-label):
-  Plugin "Your-Yui" sendiri (opsional fork kecil UI Penpot) + SSO/autologin token
-  + tema → "desain adalah bagian dari Your-Yui".
+  Plugin "Yuika" sendiri (opsional fork kecil UI Penpot) + SSO/autologin token
+  + tema → "desain adalah bagian dari Yuika".
 ```
 
 ## Yang perlu diverifikasi saat PoC (jangan asumsi)

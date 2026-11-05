@@ -1,5 +1,9 @@
 # TASKS.md — Checklist Delegasi & Roadmap Development (awal → siap testing)
 
+> **REBRAND 2026-11: "Your-Yui" → "Yuika"** (yui = mimpi/唯華 + ka = unggul/香 —
+> "mimpi yang unggul"). Nama pendek **Yui** dipertahankan (persona maestro, prefix
+> `YUI_`, scope `@yui/*`). Semua kemunculan brand di sumber/docs di-update.
+
 > **Update sesi kernel 2026-11 (agent, branch `dev/p0-kernel`):** **P1-DEL-3 pause/resume
 > anak delegasi** (⏸ kartu delegasi; gate di batas iterasi; cancel saat pause tetap
 > graceful) · **P1-DEL-1 cap per plan** (`delegation.max_concurrent`; min() dengan cap
@@ -330,7 +334,7 @@
 - [ ] **PUB-3** Bersih-bersih pra-publik: hapus artefak internal (docs/Orin*.html berisi
   prompt kerja), audit secrets/history git, .gitignore data workspace · *B · 0.5d*
 - [ ] **PUB-4** CONTRIBUTING.md + CLA/DCO (syarat agar bisa relicense/dual-license
-  di masa depan) + cek trademark "Your-Yui"/"Orin" (PDKI kelas 9 & 42) · *B · 1d*
+  di masa depan) + cek trademark "Yuika"/"Orin" (PDKI kelas 9 & 42) · *B · 1d*
 - [x] **PUB-5** CI: gerbang `npm audit --omit=dev --audit-level=high` (saat ini 2 high =
   zod; hilang setelah upgrade zod v4) + regenerasi laporan lisensi berkala · *C · 0.5d* — ✅ 2026-11: step **Security audit gate (prod deps)** di ci.yml setelah `npm ci` (audit prod = 0 vulnerabilities pasca zod v4 + openai 7.51); waiver hanya lewat keputusan eksplisit + catatan di LICENSE-AUDIT §4. Regenerasi laporan lisensi berkala = manual (skrip audit lokal, §LICENSE-AUDIT) — dijalankan tiap tambah dep signifikan.
 
