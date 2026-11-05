@@ -1,0 +1,28 @@
+{
+  "name": "@yuika/relay-client",
+  "license": "UNLICENSED",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo relay-client: no lint yet"
+  },
+  "dependencies": {
+    "@yuika/contracts": "*",
+    "@yuika/crypto": "*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}
