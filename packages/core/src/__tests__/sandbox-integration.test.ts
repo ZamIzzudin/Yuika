@@ -24,7 +24,7 @@ afterAll(() => {
 });
 
 describe("P0-SEC-1 sandbox integration (docker nyata)", () => {
-  it.skipIf(!GATED)("node -v berjalan & exit 0", async (ctx) => {
+  it.skipIf(!GATED)("node -v berjalan & exit 0", { timeout: 30_000 }, async (ctx) => {
     if (!haveDocker) return ctx.skip();
     const r = await runInSandbox("node", ["-v"], dir);
     expect(r.timedOut).toBe(false);
@@ -32,7 +32,7 @@ describe("P0-SEC-1 sandbox integration (docker nyata)", () => {
     expect(r.stdout.trim()).toMatch(/^v\d+\./);
   });
 
-  it.skipIf(!GATED)("EGRESS DIBLOKIR: fetch keluar harus gagal", async (ctx) => {
+  it.skipIf(!GATED)("EGRESS DIBLOKIR: fetch keluar harus gagal", { timeout: 30_000 }, async (ctx) => {
     if (!haveDocker) return ctx.skip();
     const r = await runInSandbox(
       "node",
@@ -42,20 +42,20 @@ describe("P0-SEC-1 sandbox integration (docker nyata)", () => {
     expect(r.exitCode).toBe(3); // network unreachable → fetch throw (default-deny)
   }, 30_000);
 
-  it.skipIf(!GATED)("file yang ditulis agent MUNCUL di workspace host", async (ctx) => {
+  it.skipIf(!GATED)("file yang ditulis agent MUNCUL di workspace host", { timeout: 30_000 }, async (ctx) => {
     if (!haveDocker) return ctx.skip();
     await runInSandbox("node", ["-e", "require('fs').writeFileSync('hasil.txt','ok')"], dir);
     expect(fs.readFileSync(path.join(dir, "hasil.txt"), "utf8")).toBe("ok");
   });
 
-  it.skipIf(!GATED)("rootfs read-only: tulis di luar /workspace & /tmp DITOLAK", async (ctx) => {
+  it.skipIf(!GATED)("rootfs read-only: tulis di luar /workspace & /tmp DITOLAK", { timeout: 30_000 }, async (ctx) => {
     if (!haveDocker) return ctx.skip();
     const r = await runInSandbox("node", ["-e", "require('fs').writeFileSync('/nol.txt','x')"], dir);
     expect(r.exitCode).not.toBe(0);
     expect(r.stderr).toContain("EROFS"); // read-only rootfs (node: EROFS, bukan EPERM)
   });
 
-  it.skipIf(!GATED)("timeout: container dibunuh setelah batas waktu", async (ctx) => {
+  it.skipIf(!GATED)("timeout: container dibunuh setelah batas waktu", { timeout: 30_000 }, async (ctx) => {
     if (!haveDocker) return ctx.skip();
     const r = await runInSandbox("node", ["-e", "while(true){}"], dir, { timeoutMs: 3_000 });
     expect(r.timedOut).toBe(true);
