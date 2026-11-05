@@ -1,5 +1,14 @@
 # TASKS.md — Checklist Delegasi & Roadmap Development (awal → siap testing)
 
+> **Update sesi kernel 2026-11 (agent, branch `dev/p0-kernel`):** zod **v3 → v4.6.7**
+> (kontrak + core + web + override global; menutup GHSA ReDoS zod — audit prod kini
+> **0 vulnerabilities**) · **openai SDK 4.104 → 7.51** (menutup advisory high openai
+> 4.55–5.23; adapter streaming API tak berubah) · `zod-to-json-schema` pensiun →
+> `z.toJSONSchema(draft-7)` native · `normalizeToolSchema` kini mempertahankan bentuk
+> ANGKA exclusiveMin/Max (v4 memancarkannya langsung) · P0-INF-3 pino + traceId per
+> turn · P0-INF-4 error taxonomy (`YuiError{kind,code,retryable}` + `SessionErrorEvent`
+> bermakna) · P0-CORE-5 contract invariants ✅ (sudah ada di suite CI).
+>
 > Pasangan `PLAN.md` (mengapa) dan `DEMO-WEEK-1.md` (eksekusi minggu demo).
 > **Dokumen ini = sumber kebenaran progres tim.** Update tiap sinkron pagi (15 menit).
 >

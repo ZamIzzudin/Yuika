@@ -70,10 +70,11 @@ describe("registry", () => {
     // bentuk boolean draft-04 dilarang (GLM menolak dengan 400/1210)
     expect(dump).not.toContain('"exclusiveMinimum":true');
     expect(dump).not.toContain('"exclusiveMaximum":true');
-    // bentuk angka draft 2020-12 dipertahankan, minimum asli dipindah
+    // zod v4 z.toJSONSchema(draft-7): .positive() → exclusiveMinimum ANGKA (bukan
+    // boolean); .max() inklusif → maximum biasa. Guard utama = tidak ada bentuk
+    // boolean; bentuk angka dicek apa adanya.
     const n = (registry.toolSchemas()[0]!.parameters as any).properties.n;
     expect(n.exclusiveMinimum).toBe(0);
-    expect(n.minimum).toBeUndefined();
     expect(n.maximum).toBe(100); // .max() inklusif — tetap maximum biasa
     expect(n.exclusiveMaximum).toBeUndefined();
     // cabang exclusiveMaximum/exclusiveMinimum bentuk angka & nested, diuji langsung

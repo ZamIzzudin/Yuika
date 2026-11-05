@@ -3,7 +3,6 @@
 // P0-MCP-2: parameters boleh zod schema ATAU JSON Schema mentah (dari server MCP
 // `t.inputSchema`) — validasi JSON Schema via ajv (compile sekali, di-cache).
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import Ajv, { type ValidateFunction } from "ajv";
 import type { EventDraft } from "@yui/contracts";
 
@@ -58,10 +57,13 @@ export function normalizeToolSchema(node: unknown): unknown {
   const n = node as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(n)) {
-    if (k === "exclusiveMinimum" && v === true) out.exclusiveMinimum = n.minimum;
-    else if (k === "exclusiveMaximum" && v === true) out.exclusiveMaximum = n.maximum;
-    else if (k === "exclusiveMinimum" || k === "exclusiveMaximum") continue; // false → hapus
-    else if (k === "minimum" && n.exclusiveMinimum === true) continue; // pindah ke exclusive
+    if (k === "exclusiveMinimum") {
+      if (v === true) out.exclusiveMinimum = n.minimum; // draft-04 boolean → angka
+      else if (v !== false) out[k] = v; // bentuk angka (draft-7/2020-12, output zod v4) — pertahankan
+    } else if (k === "exclusiveMaximum") {
+      if (v === true) out.exclusiveMaximum = n.maximum;
+      else if (v !== false) out[k] = v;
+    } else if (k === "minimum" && n.exclusiveMinimum === true) continue; // pindah ke exclusive
     else if (k === "maximum" && n.exclusiveMaximum === true) continue;
     else out[k] = normalizeToolSchema(v);
   }
@@ -95,7 +97,11 @@ export const registry = {
         name: t.name,
         description: t.description,
         parameters: normalizeToolSchema(
-          isZod(t.parameters) ? zodToJsonSchema(t.parameters, { target: "openApi3" }) : t.parameters,
+          // zod v4: konversi native (drop dep zod-to-json-schema) — target
+          // draft-7: exclusiveMinimum angka (bukan boolean draft-04) langsung
+          // ramah provider; normalizeToolSchema tetap jaring-pengaman utk JSON
+          // Schema mentah dari server MCP (bisa draft-04).
+          isZod(t.parameters) ? z.toJSONSchema(t.parameters as z.ZodType, { target: "draft-7" }) : t.parameters,
         ) as Record<string, unknown>,
       }));
   },

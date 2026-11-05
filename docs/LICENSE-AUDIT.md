@@ -68,6 +68,11 @@ LGPL-3.0 2 · MPL-2.0 2 · CC-BY-4.0 1 · dual (MIT OR WTFPL) 1.
    MCP trust ≤500 tools ×200, install env ≤50 key ×2k, provider settings);
    upload route sudah cap 10MB pra-parse. Sisa 2 high di `npm audit` = zod
    (root cause tunggal) — hilang saat upgrade zod v4.
+   → ✅ **UPGRADE ZOD v4 SELESAI 2026-11**: zod ^4.6.7 di semua workspace +
+   override global (nested MCP SDK/openai ikut v4 — keduanya resmi dukung `^4.0`);
+   openai SDK 4.104 → **7.51** (menutup advisory high openai 4.55–5.23);
+   zod-to-json-schema diganti `z.toJSONSchema()` native; `npm audit --omit=dev`
+   = **0 vulnerabilities**.
 4. Moderate: vitest/vite/esbuild — **devDependency saja**, tidak ter-ship. Abaikan.
 
 ## 5. Aset & kode non-npm

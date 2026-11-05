@@ -52,7 +52,7 @@ export const ToolCallEvent = EventMeta.extend({
   turnId: z.string(),
   callId: z.string(),
   name: z.string(),
-  args: z.record(z.unknown()),
+  args: z.record(z.string(), z.unknown()),
 });
 
 export const ToolResultEvent = EventMeta.extend({
@@ -113,7 +113,7 @@ export const ApprovalRequestedEvent = EventMeta.extend({
   type: z.literal("approval.requested"),
   requestId: z.string(),
   tool: z.string(),
-  args: z.record(z.unknown()),
+  args: z.record(z.string(), z.unknown()),
   reason: z.string(),
 });
 

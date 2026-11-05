@@ -84,6 +84,6 @@ export type McpCatalogEntry = z.infer<typeof McpCatalogEntry>;
 export const InstallMcpRequest = z.object({
   catalogId: z.string().min(1).max(200),
   /** Nilai env dari form UI — hanya value non-kosong yang ditulis ke mcp.json. */
-  env: z.record(z.string().max(2_000)).refine((o) => Object.keys(o).length <= 50, "maks 50 env key").default({}),
+  env: z.record(z.string(), z.string().max(2_000)).refine((o) => Object.keys(o).length <= 50, "maks 50 env key").default({}),
 });
 export type InstallMcpRequest = z.infer<typeof InstallMcpRequest>;

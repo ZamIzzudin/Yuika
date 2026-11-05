@@ -42,13 +42,13 @@ export const PersonaManifest = z.object({
   expertise: z.string().min(1),
   tags: z.array(z.string()).default([]),
   description: z.string().max(120),
-  assets: AssetSpec.default({}),
+  assets: AssetSpec.prefault({}),
   model: z
     .object({ primary: ModelRoute, aux: ModelRoute })
     .default({ primary: { quality: "high" }, aux: { quality: "low" } }),
   memory: MemoryPolicy,
-  skills: SkillsBinding.default({}),
-  delegation: DelegationRules.default({}),
+  skills: SkillsBinding.prefault({}),
+  delegation: DelegationRules.prefault({}),
   /** Daftar tool aktif; dukung wildcard prefix `mcp__*` (filter di registry). */
   tools: z.array(z.string()).default([]),
 });
