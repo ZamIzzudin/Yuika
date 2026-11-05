@@ -38,25 +38,25 @@ test("CharacterStage: constellation stage, carousel, gallery, shape, skills, mis
   await page.locator('[data-shape-tile="orb"]').click(); // kembali default — idempoten
   await page.waitForTimeout(250);
 
-  // 5) Skill loadout ala game: slot penuh → flash pesan; belum → attach/detach
-  const slots = page.locator('[data-slot][aria-label^="Unequip"]');
-  const tile = page.locator('[data-skill-tile][aria-pressed="false"]').first();
-  if (await tile.count()) {
-    const before = await slots.count();
-    if (before >= 3) {
-      await tile.click();
+  // 5) Skill loadout: hover → tooltip popup; klik tile free → attach ATAU tooltip penuh
+  const free = page.locator('[data-skill-tile][aria-pressed="false"]').first();
+  if (await free.count()) {
+    await free.hover();
+    await expect(page.getByRole("tooltip")).toBeVisible(); // nama + bonus + deskripsi
+    const hdr = await page.getByText(/^Skills \(\d+\)/).innerText();
+    const n = parseInt(hdr.match(/\d+/)![0]!, 10);
+    await free.click();
+    if (n >= 3) {
       await expect(page.getByText("Slots full — unequip one skill first.")).toBeVisible();
     } else {
-      await tile.click();
-      await expect(slots).toHaveCount(before + 1, { timeout: 8000 });
-      await tile.hover(); // strip detail menampilkan nama + bonus skill
-      await slots.last().click(); // lepas
-      await expect(slots).toHaveCount(before, { timeout: 8000 });
+      await expect(free).toHaveAttribute("aria-pressed", "true", { timeout: 8000 });
+      await free.click(); // lepas (tile equipped = klik untuk unequip)
+      await expect(free).toHaveAttribute("aria-pressed", "false", { timeout: 8000 });
     }
   }
 
-  // 6) Dock galeri: counter + pilih via thumbnail
-  await expect(page.getByText(/· ← → to switch/)).toBeVisible();
+  // 6) Dock galeri: pilih via thumbnail
+  await expect(page.getByRole("listbox", { name: "Character gallery" })).toBeVisible();
   await page.getByRole("option").nth(2).click();
   await expect(page.getByRole("option").nth(2)).toHaveAttribute("aria-selected", "true");
 

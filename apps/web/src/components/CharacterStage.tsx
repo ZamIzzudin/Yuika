@@ -501,8 +501,10 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   const [emote, setEmote] = useState<PersonaState>("idle");
   const [busyShape, setBusyShape] = useState<OrinShapeKey | null>(null);
   const [greeted, setGreeted] = useState(false);
-  const [hoverSkill, setHoverSkill] = useState<string | null>(null);
-  const [fullFlash, setFullFlash] = useState(false);
+  // Tooltip skill melayang (layer stage — tak terpotong scroll card):
+  // posisi = pusat-atas tile, relatif stage.
+  const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(null);
+  const [fullTip, setFullTip] = useState<{ x: number; y: number } | null>(null);
   const growthMap = useGrowthMap();
   const overrides = useShapeOverridesMap();
   const { data: bindings, toggle, accept } = useBindings();
@@ -575,12 +577,20 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     });
   }, [persona?.id]);
 
-  // Flash "slot penuh" ±2 dtk.
+  // Flash "slot penuh" ±2 dtk (tooltip di posisi tile yang diklik).
   useEffect(() => {
-    if (!fullFlash) return;
-    const t = setTimeout(() => setFullFlash(false), 2000);
+    if (!fullTip) return;
+    const t = setTimeout(() => setFullTip(null), 2000);
     return () => clearTimeout(t);
-  }, [fullFlash]);
+  }, [fullTip]);
+
+  /** Anchor tooltip: pusat-atas elemen, relatif stage. */
+  const tipAt = useCallback((name: string, el: HTMLElement) => {
+    const b = boxRef.current?.getBoundingClientRect();
+    if (!b) return;
+    const r = el.getBoundingClientRect();
+    setTip({ name, x: r.left + r.width / 2 - b.left, y: r.top - b.top });
+  }, []);
 
   async function pickShape(k: OrinShapeKey) {
     if (!persona || busyShape) return;
@@ -610,12 +620,15 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     }
   }
 
-  /** Pasang/lepas skill — maks 3 slot; penuh → flash pesan (bukan error). */
-  function toggleSkill(name: string) {
+  /** Pasang/lepas skill — maks 3 slot; penuh → tooltip pesan (bukan error). */
+  function toggleSkill(name: string, el?: HTMLElement) {
     if (!bp) return;
     const on = bp.effective.includes(name);
     if (!on && bp.effective.length >= 3) {
-      setFullFlash(true);
+      const b = boxRef.current?.getBoundingClientRect();
+      const r = el?.getBoundingClientRect();
+      if (b && r)
+        setFullTip({ x: r.left + r.width / 2 - b.left, y: r.top - b.top });
       return;
     }
     const s = bindings?.skills.find((x) => x.name === name);
@@ -645,14 +658,14 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       for (const [ax, v] of skillBonus(n)) b[ax] = (b[ax] ?? 0) + v;
     return b;
   }, [bp?.effective]);
-  const detail = bindings?.skills.find((s) => s.name === hoverSkill) ?? null;
+  const detail = tip ? (bindings?.skills.find((s) => s.name === tip.name) ?? null) : null;
   const detailBonus = detail ? skillBonus(detail.name) : [];
 
   const galKey = (id: string): OrinShapeKey =>
     (overrides[id] as OrinShapeKey | undefined) ?? PERSONA_SHAPE[id] ?? "orb";
 
   const cardCls =
-    "z-[2] flex flex-col gap-3 rounded-[18px] border border-line bg-surface/75 p-5 shadow-[0_18px_50px_-24px_rgb(0_0_0/.55)] backdrop-blur-[14px] max-[1099px]:h-auto min-[1100px]:absolute min-[1100px]:top-[40%] min-[1100px]:h-[min(520px,calc(100%-240px))] min-[1100px]:w-[320px] min-[1100px]:-translate-y-1/2 min-[1100px]:overflow-y-auto";
+    "z-[2] flex flex-col gap-3 rounded-[18px] border border-line bg-surface/75 p-5 shadow-[0_18px_50px_-24px_rgb(0_0_0/.55)] backdrop-blur-[14px] max-[1099px]:h-auto min-[1100px]:absolute min-[1100px]:top-[40%] min-[1100px]:h-[min(520px,calc(100%-240px))] min-[1100px]:w-[320px] min-[1100px]:-translate-y-1/2";
 
   return (
     <div
@@ -724,7 +737,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
 
       {/* ===== CARD KIRI — identitas ===== */}
       <aside
-        className={cardCls + " min-[1100px]:left-[max(24px,calc(25%-580px))]"}
+        className={cardCls + " min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"}
       >
         <h2 className="text-2xl font-bold tracking-tight text-primary">
           {persona.name}
@@ -778,9 +791,10 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
             </div>
           ))}
         </div>
-        <div className="flex flex-col gap-1.5">
+        {/* Bentuk: satu-satunya bagian card yang scroll (identitas tetap terlihat). */}
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5">
           <b className="text-[13px] font-semibold text-secondary">Shape</b>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid min-h-0 flex-1 grid-cols-4 content-start gap-1.5 overflow-y-auto pr-0.5">
             {SHAPE_ORDER.map((k) => {
               const s = SHAPES[k];
               const on = k === activeShape;
@@ -833,43 +847,14 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
 
       {/* ===== CARD KANAN — stats & skill ===== */}
       <aside
-        className={cardCls + " min-[1100px]:right-[max(24px,calc(25%-580px))]"}
+        className={cardCls + " min-[1100px]:right-[max(24px,calc(25%-580px))] min-[1100px]:overflow-y-auto"}
       >
         <RadarChart base={base} bonus={bonus} accent={accent} />
         <div className="mt-1 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <b className="text-sm font-semibold text-secondary">
-              Skills {bp?.effective.length ?? 0}/3
+              Skills ({bp?.effective.length ?? 0})
             </b>
-            <div className="flex gap-1.5" aria-label="Equipped skill slots">
-              {[0, 1, 2].map((i) => {
-                const name = bp?.effective[i];
-                const Glyph = name ? skillGlyph(name) : null;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    data-slot={i}
-                    aria-label={
-                      name ? `Unequip ${name}` : `Empty slot ${i + 1}`
-                    }
-                    title={name ? `Unequip ${name}` : "Empty slot"}
-                    disabled={!name}
-                    onClick={() => name && toggleSkill(name)}
-                    className={`grid size-7 cursor-pointer place-items-center rounded-[9px] border transition-colors ${
-                      name
-                        ? "border-[var(--c)] text-[var(--c)]"
-                        : "cursor-default border-dashed border-line-strong"
-                    }`}
-                    style={
-                      name ? { backgroundColor: `${accent}1a` } : undefined
-                    }
-                  >
-                    {Glyph ? <Glyph size={14} aria-hidden /> : null}
-                  </button>
-                );
-              })}
-            </div>
           </div>
           <div className="grid grid-cols-5 gap-2">
             {bindings?.skills.map((s) => {
@@ -882,10 +867,11 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
                   data-skill-tile={s.name}
                   aria-pressed={on}
                   aria-label={`${s.name} — ${s.description}`}
-                  title={s.name}
-                  onFocus={() => setHoverSkill(s.name)}
-                  onMouseEnter={() => setHoverSkill(s.name)}
-                  onClick={() => toggleSkill(s.name)}
+                  onFocus={(e) => tipAt(s.name, e.currentTarget)}
+                  onMouseEnter={(e) => tipAt(s.name, e.currentTarget)}
+                  onMouseLeave={() => setTip(null)}
+                  onBlur={() => setTip(null)}
+                  onClick={(e) => toggleSkill(s.name, e.currentTarget)}
                   className={`grid aspect-square cursor-pointer place-items-center rounded-[12px] border transition-all duration-200 hover:-translate-y-0.5 ${
                     on
                       ? "border-[var(--c)] text-[var(--c)]"
@@ -898,44 +884,48 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
               );
             })}
           </div>
-          <div
-            className="min-h-[58px] rounded-[12px] bg-inset px-3 py-2 text-[12px] leading-5"
-            aria-live="polite"
-          >
-            {fullFlash ? (
-              <span className="font-medium" style={{ color: accent }}>
-                Slots full — unequip one skill first.
-              </span>
-            ) : detail ? (
-              <>
-                <b className="text-primary">{detail.name}</b>{" "}
-                <span style={{ color: accent }}>
-                  {detailBonus.map(([ax, v], i) => (
-                    <span key={i}>
-                      {i > 0 ? " " : ""}
-                      {"+"}
-                      {v} {AXES[ax] ?? ""}
-                    </span>
-                  ))}
-                </span>
-                <br />
-                <span className="text-muted">{detail.description}</span>
-              </>
-            ) : (
-              <span className="text-dim">
-                Hover a tile to preview · click to equip — max 3.
-              </span>
-            )}
-          </div>
         </div>
       </aside>
+
+      {/* ===== Tooltip skill — popup di layer stage (tak terpotong scroll card) ===== */}
+      {detail && tip && (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute z-[6] w-60 -translate-x-1/2 -translate-y-full rounded-xl border border-line bg-surface px-3 py-2 text-[12px] leading-5 shadow-[0_14px_36px_-14px_rgb(0_0_0/.7)]"
+          style={{ left: tip.x, top: tip.y - 10 }}
+        >
+          <b className="text-primary">{detail.name}</b>{" "}
+          <span style={{ color: accent }}>
+            {detailBonus.map(([ax, v], i) => (
+              <span key={i}>
+                {i > 0 ? " " : ""}
+                {"+"}
+                {v} {AXES[ax] ?? ""}
+              </span>
+            ))}
+          </span>
+          <br />
+          <span className="text-muted">{detail.description}</span>
+          <span className="absolute bottom-[-4px] left-1/2 size-2 -translate-x-1/2 rotate-45 border-r border-b border-line bg-surface" />
+        </div>
+      )}
+      {fullTip && (
+        <div
+          role="status"
+          className="pointer-events-none absolute z-[6] w-60 -translate-x-1/2 -translate-y-full rounded-xl border border-line bg-surface px-3 py-2 text-[12px] leading-5 font-medium shadow-[0_14px_36px_-14px_rgb(0_0_0/.7)]"
+          style={{ left: fullTip.x, top: fullTip.y - 10, color: accent }}
+        >
+          Slots full — unequip one skill first.
+          <span className="absolute bottom-[-4px] left-1/2 size-2 -translate-x-1/2 rotate-45 border-r border-b border-line bg-surface" />
+        </div>
+      )}
 
       {/* ===== DOCK — galeri karakter ===== */}
       <div className="absolute inset-x-0 bottom-5 z-[4] flex flex-col items-center gap-2 max-[1099px]:sticky max-[1099px]:bottom-0 max-[1099px]:mt-auto max-[1099px]:translate-y-0">
         <div
           role="listbox"
           aria-label="Character gallery"
-          className="flex max-w-[min(760px,calc(100vw-32px))] snap-x snap-mandatory gap-2.5 overflow-x-auto rounded-[22px] border border-line bg-surface/70 p-2.5 shadow-[0_16px_40px_-20px_rgb(0_0_0/.6)] backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex max-w-[min(760px,calc(100vw-32px))] snap-x snap-mandatory gap-2.5 overflow-x-auto rounded-[22px] border border-line bg-surface/70 px-5 pt-5 pb-3 shadow-[0_16px_40px_-20px_rgb(0_0_0/.6)] backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {personas.map((p) => {
             const on = p.id === persona.id;
