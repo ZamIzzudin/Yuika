@@ -1,6 +1,6 @@
 
 "use client";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 // Settings modal (feedback user sesi dev 9): menu khusus untuk hal yang tidak muat
 // di sidebar — seksi: Provider & Model (API key/base URL/model, swap panas),
 // MCP (katalog + trust + audit — dulunya sesak di dasar sidebar), + metering.
@@ -33,7 +33,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(apiUrl("/api/settings/provider"));
+      const res = await authFetch(apiUrl("/api/settings/provider"));
       if (res.ok) {
         const c = (await res.json()) as ProviderSettings;
         setCfg(c);
@@ -54,7 +54,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   async function save() {
     try {
-      const res = await fetch(apiUrl("/api/settings/provider"), {
+      const res = await authFetch(apiUrl("/api/settings/provider"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -186,7 +186,7 @@ function BudgetPanel() {
   const [draft, setDraft] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
-    const r = await fetch(apiUrl("/api/settings/budget"));
+    const r = await authFetch(apiUrl("/api/settings/budget"));
     if (r.ok) setSt(await r.json());
   }, []);
   useEffect(() => {
@@ -196,7 +196,7 @@ function BudgetPanel() {
   }, [load]);
 
   const save = (patch: Record<string, number | "warn" | "block" | null>) =>
-    void fetch(apiUrl("/api/settings/budget"), { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(patch) })
+    void authFetch(apiUrl("/api/settings/budget"), { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(patch) })
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => s && setSt(s));
 
@@ -302,8 +302,8 @@ function UsagePanel() {
   const load = useCallback(async () => {
     const since = hours > 0 ? Date.now() - hours * 3_600_000 : undefined;
     const [u, p] = await Promise.all([
-      fetch(apiUrl(`/api/usage?recent=8&matrix=1${since ? `&since=${since}` : ""}`)),
-      fetch(apiUrl("/api/settings/models/prices")),
+      authFetch(apiUrl(`/api/usage?recent=8&matrix=1${since ? `&since=${since}` : ""}`)),
+      authFetch(apiUrl("/api/settings/models/prices")),
     ]);
     if (u.ok) setData(await u.json());
     if (p.ok) setPrices(await p.json());
@@ -328,7 +328,7 @@ function UsagePanel() {
   const anyPriced = data?.summary.byModel.some((m) => cost(m) !== null) ?? false;
 
   async function savePrice(model: string, p: { inputPerMillion: number; outputPerMillion: number; currency: "USD" | "IDR" }) {
-    const r = await fetch(apiUrl("/api/settings/models/prices"), {
+    const r = await authFetch(apiUrl("/api/settings/models/prices"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ model, price: p }),

@@ -1,6 +1,6 @@
 
 "use client";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 // Tab Skill (P1-MEM-3): pengalaman → draf skill → validasi user → siap pakai.
 // Draf: agent usulkan via tool skill_propose; user edit bebas → Terima (lint +
 // aktif, langsung terlihat agent via skills_list) atau Tolak (hapus).
@@ -51,7 +51,7 @@ export function SkillsTab() {
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(apiUrl("/api/skills"));
+      const r = await authFetch(apiUrl("/api/skills"));
       if (r.ok) {
         const d = (await r.json()) as {
           drafts: DraftRow[];
@@ -75,7 +75,7 @@ export function SkillsTab() {
   /** P1-DUN-3: eval buta skill tested — lulus → ready (polling 5 dtk mengambil hasil). */
   async function evalSkill(name: string) {
     try {
-      const r = await fetch(apiUrl("/api/skills/eval"), {
+      const r = await authFetch(apiUrl("/api/skills/eval"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug: name }),
@@ -92,7 +92,7 @@ export function SkillsTab() {
     if (!edit) return;
     setBusy(true);
     try {
-      const r = await fetch(apiUrl("/api/skills"), {
+      const r = await authFetch(apiUrl("/api/skills"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug: d.slug, ...edit }),
@@ -109,7 +109,7 @@ export function SkillsTab() {
   async function accept(slug: string) {
     setBusy(true);
     try {
-      const r = await fetch(apiUrl("/api/skills"), {
+      const r = await authFetch(apiUrl("/api/skills"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug }),
@@ -126,7 +126,7 @@ export function SkillsTab() {
   async function reject(slug: string) {
     setBusy(true);
     try {
-      const r = await fetch(apiUrl(`/api/skills?slug=${encodeURIComponent(slug)}`), {
+      const r = await authFetch(apiUrl(`/api/skills?slug=${encodeURIComponent(slug)}`), {
         method: "DELETE",
       });
       if (!r.ok)

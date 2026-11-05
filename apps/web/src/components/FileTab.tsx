@@ -1,5 +1,5 @@
 "use client";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 // Tab File (P2-STU-3 v0): tree kiri + viewer kanan. Artefak agent (reports/,
 // code/, MEMORY.md) bisa diperiksa tanpa keluar app. File teks/kode ≤256 KB
 // dibaca; selain itu tampil info ukuran. DS-1: ui/* + Tailwind + Phosphor.
@@ -148,7 +148,7 @@ export function FileTab({ projectId }: { projectId: string }) {
 
   const loadTree = useCallback(async () => {
     try {
-      const r = await fetch(apiUrl(`/api/projects/${projectId}/files`));
+      const r = await authFetch(apiUrl(`/api/projects/${projectId}/files`));
       if (r.ok) setTree(((await r.json()) as { tree: FileNode[] }).tree);
       else
         toastErr(

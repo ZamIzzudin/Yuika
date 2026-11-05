@@ -1,6 +1,6 @@
 
 "use client";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 import { useCallback, useEffect, useState } from "react";
 import type {
   PersonaInfo,
@@ -213,9 +213,9 @@ export function ProjectTabs({
   const refresh = useCallback(async () => {
     try {
       const [t, r, m] = await Promise.all([
-        fetch(apiUrl(`/api/projects/${project.id}/tasks`)),
-        fetch(apiUrl(`/api/projects/${project.id}/roster`)),
-        fetch(apiUrl("/api/mcp/servers")),
+        authFetch(apiUrl(`/api/projects/${project.id}/tasks`)),
+        authFetch(apiUrl(`/api/projects/${project.id}/roster`)),
+        authFetch(apiUrl("/api/mcp/servers")),
       ]);
       if (t.ok) setTasks(((await t.json()) as { tasks: TaskItem[] }).tasks);
       if (r.ok) {
@@ -242,7 +242,7 @@ export function ProjectTabs({
 
   const refreshTree = useCallback(async () => {
     try {
-      const res = await fetch(apiUrl(`/api/projects/${project.id}/tree`));
+      const res = await authFetch(apiUrl(`/api/projects/${project.id}/tree`));
       if (res.ok) setTree(((await res.json()) as { nodes: TaskNode[] }).nodes);
     } catch {
       /* refresh berikutnya */
@@ -252,7 +252,7 @@ export function ProjectTabs({
   async function saveRoster(next: RosterEntry[]) {
     setBusy(true);
     try {
-      const res = await fetch(apiUrl(`/api/projects/${project.id}/roster`), {
+      const res = await authFetch(apiUrl(`/api/projects/${project.id}/roster`), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ roster: next }),
@@ -281,8 +281,8 @@ export function ProjectTabs({
     void (async () => {
       try {
         const [u, p] = await Promise.all([
-          fetch(apiUrl("/api/memory?scope=user")),
-          fetch(apiUrl(`/api/memory?scope=project&projectId=${project.id}`)),
+          authFetch(apiUrl("/api/memory?scope=user")),
+          authFetch(apiUrl(`/api/memory?scope=project&projectId=${project.id}`)),
         ]);
         if (u.ok) setUserMd(((await u.json()) as { content: string }).content);
         if (p.ok) setProjMd(((await p.json()) as { content: string }).content);
@@ -294,7 +294,7 @@ export function ProjectTabs({
 
   /** Simpan dokumen memori (PUT /api/memory). */
   async function saveMemoryDoc(scope: "user" | "project") {
-    const res = await fetch(apiUrl("/api/memory"), {
+    const res = await authFetch(apiUrl("/api/memory"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -332,7 +332,7 @@ export function ProjectTabs({
 
   /** P2-FLOW-7: pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
   async function moveTask(taskId: string, status: TaskStatus) {
-    await fetch(apiUrl(`/api/projects/${project.id}/tasks/${taskId}`), {
+    await authFetch(apiUrl(`/api/projects/${project.id}/tasks/${taskId}`), {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ status }),

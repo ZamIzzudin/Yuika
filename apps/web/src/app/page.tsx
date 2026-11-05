@@ -1,6 +1,6 @@
 "use client";
 
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
 /**
  * Yuika demo shell — orchestrator UI (DEMO-WEEK-1 §2):
  * persona picker → sesi → SSE event stream → render msg/activity/delegation/approval.
@@ -17,6 +17,7 @@ import {
   Users,
 } from "@phosphor-icons/react";
 import { PersonaStudioView } from "@/components/PersonaStudioView";
+import { AuthGate } from "@/components/AuthGate";
 import { setShapeOverrides } from "@/components/orinShapes";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
@@ -107,7 +108,7 @@ export default function Home() {
 
   const loadProjects = useCallback(async () => {
     try {
-      const r = await fetch(apiUrl("/api/projects"));
+      const r = await authFetch(apiUrl("/api/projects"));
       if (!r.ok) return;
       const d = (await r.json()) as { projects: ProjectInfo[] };
       setProjects(d.projects);
@@ -137,16 +138,18 @@ export default function Home() {
   }, [activeProjectId]);
 
   useEffect(() => {
-    fetch(apiUrl("/api/personas"))
-      .then((r) => r.json())
-      .then((d: { personas: PersonaInfo[] }) => setPersonas(d.personas))
+    authFetch(apiUrl("/api/personas"))
+      .then((r) => (r.ok ? r.json() : { personas: [] }))
+      .then((d: { personas: PersonaInfo[] }) =>
+        setPersonas(Array.isArray(d.personas) ? d.personas : []),
+      )
       .catch(console.error);
   }, []);
 
   // Override wujud persona (menu Persona): muat sekali — setShapeOverrides
   // membuat SEMUA PersonaFace/OrinPortrait reaktif (module-store + listener).
   useEffect(() => {
-    fetch(apiUrl("/api/personas/shapes"))
+    authFetch(apiUrl("/api/personas/shapes"))
       .then((r) => (r.ok ? r.json() : { shapes: [] }))
       .then((d: { shapes: { personaId: string; shape: string }[] }) =>
         setShapeOverrides(
@@ -501,7 +504,7 @@ export default function Home() {
       if (dead) return;
       es = new EventSource(
         apiUrl(
-          `/api/sessions/${sessionId}/stream?since=${lastEventId.current}`,
+          `/api/sessions/${sessionId}/stream?since=${lastEventId.current}${authTokenQuery()}`,
         ),
       );
       es.onmessage = (m) => {
@@ -568,7 +571,7 @@ export default function Home() {
     lastEventId.current = 0;
     const projectId =
       projectIdOverride !== undefined ? projectIdOverride : activeProjectId;
-    const res = await fetch(apiUrl("/api/sessions"), {
+    const res = await authFetch(apiUrl("/api/sessions"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ personaId: p.id, projectId: projectId ?? null }),
@@ -605,7 +608,7 @@ export default function Home() {
   async function loadProjectSessions(
     projectId: string,
   ): Promise<ProjectSessionSummary[]> {
-    const res = await fetch(apiUrl(`/api/sessions?projectId=${projectId}`));
+    const res = await authFetch(apiUrl(`/api/sessions?projectId=${projectId}`));
     const d = (await res.json()) as { sessions: ProjectSessionSummary[] };
     setProjSessions(d.sessions);
     return d.sessions;
@@ -658,7 +661,7 @@ export default function Home() {
   async function send(text: string) {
     if (!sessionId) return;
     setItems((prev) => [...prev, { kind: "msg", role: "user", text }]);
-    await fetch(apiUrl(`/api/sessions/${sessionId}/message`), {
+    await authFetch(apiUrl(`/api/sessions/${sessionId}/message`), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text }),
@@ -668,7 +671,7 @@ export default function Home() {
   /** P0-CORE-1: tombol Stop — abort turn aktif; progres & parsial tersimpan. */
   async function cancelTurn() {
     if (!sessionId) return;
-    await fetch(apiUrl(`/api/sessions/${sessionId}/cancel`), {
+    await authFetch(apiUrl(`/api/sessions/${sessionId}/cancel`), {
       method: "POST",
     });
   }
@@ -680,7 +683,7 @@ export default function Home() {
   // Mode approval (fix dev-10): "auto" = write_file & run_command bebas-approval.
   const [approvalMode, setApprovalMode] = useState<"ask" | "auto">("ask");
   useEffect(() => {
-    fetch(apiUrl("/api/settings/approval"))
+    authFetch(apiUrl("/api/settings/approval"))
       .then((r) => r.json())
       .then((d: { mode: "ask" | "auto" }) => setApprovalMode(d.mode ?? "ask"))
       .catch(() => {});
@@ -688,7 +691,7 @@ export default function Home() {
   const toggleApprovalMode = useCallback(() => {
     const next = approvalMode === "auto" ? "ask" : "auto";
     setApprovalMode(next); // optimistic — server persist (survive restart)
-    fetch(apiUrl("/api/settings/approval"), {
+    authFetch(apiUrl("/api/settings/approval"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mode: next }),
@@ -701,7 +704,7 @@ export default function Home() {
     remember = false,
   ) {
     try {
-      const res = await fetch(apiUrl(`/api/approvals/${requestId}`), {
+      const res = await authFetch(apiUrl(`/api/approvals/${requestId}`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ approved, remember }),
@@ -731,6 +734,7 @@ export default function Home() {
   }
 
   return (
+    <AuthGate>
     <div className="flex h-screen bg-canvas text-body text-secondary">
       <aside
         className={`flex shrink-0 flex-col border-r border-line bg-sidebar py-3 transition-[width] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
@@ -1172,6 +1176,7 @@ export default function Home() {
         )}
       </main>
     </div>
+    </AuthGate>
   );
 }
 

@@ -29,7 +29,10 @@ export default defineConfig({
       timeout: 20_000,
     },
     {
-      command: "npx tsx apps/api/src/server.ts",
+      // Wipe auth.db lama sebelum server start: run sebelumnya bisa meninggalkan
+      // user terdaftar → gerbang aktif → spec lain (smoke) kena 401.
+      command:
+        "node -e \"['auth.db','auth.db-wal','auth.db-shm'].forEach(f=>require('fs').rmSync('e2e/.tmp/'+f,{force:true}))\" && npx tsx apps/api/src/server.ts",
       url: `http://127.0.0.1:${API_PORT}/api/personas`,
       reuseExistingServer: false,
       timeout: 180_000,
@@ -40,6 +43,7 @@ export default defineConfig({
         YUI_API_PORT: String(API_PORT),
         YUI_API_HOST: "127.0.0.1",
         YUI_DB_PATH: "e2e/.tmp/e2e.db",
+        YUI_AUTH_DB: "e2e/.tmp/auth.db",
         YUI_WORKSPACE_DIR: "e2e/.tmp/ws",
         // MCP & learn dimatikan: turn provider deterministik (nudge = panggilan ekstra).
         YUI_MCP_CONFIG: "",

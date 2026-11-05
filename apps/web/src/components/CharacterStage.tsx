@@ -42,7 +42,7 @@ import {
   type OrinShapeKey,
 } from "./orinShapes";
 import { toastErr, toastOk } from "./ui/toast";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Util deterministik — lapisan kosmetik game (bukan data evaluasi).
@@ -164,7 +164,7 @@ function useBindings() {
   const [data, setData] = useState<BindingsPayload | null>(null);
   const load = useCallback(async () => {
     try {
-      const r = await fetch(apiUrl("/api/skills/bindings"));
+      const r = await authFetch(apiUrl("/api/skills/bindings"));
       if (r.ok) setData(await r.json());
     } catch {
       /* retry berikutnya */
@@ -202,7 +202,7 @@ function useBindings() {
           : prev,
       );
       try {
-        const res = await fetch(apiUrl("/api/skills/bindings"), {
+        const res = await authFetch(apiUrl("/api/skills/bindings"), {
           method: "PUT",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ personaId, skill, action }),
@@ -221,7 +221,7 @@ function useBindings() {
   const accept = useCallback(
     async (personaId: string, slug: string, name: string) => {
       try {
-        const res = await fetch(apiUrl("/api/skills"), {
+        const res = await authFetch(apiUrl("/api/skills"), {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ slug }),
@@ -445,7 +445,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     if (!persona || busyShape) return;
     setBusyShape(k);
     try {
-      const r = await fetch(apiUrl("/api/personas/shapes"), {
+      const r = await authFetch(apiUrl("/api/personas/shapes"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ personaId: persona.id, shape: k }),
@@ -850,7 +850,7 @@ function useGrowthMap(): Map<string, PersonaGrowth> {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch(apiUrl("/api/personas/growth"));
+        const r = await authFetch(apiUrl("/api/personas/growth"));
         if (!r.ok || !alive) return;
         const d = (await r.json()) as { growth: PersonaGrowth[] };
         if (alive) setMap(new Map(d.growth.map((x) => [x.id, x])));

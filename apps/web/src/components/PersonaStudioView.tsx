@@ -1,5 +1,5 @@
 "use client";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 // 🎮 Persona Studio — menu Persona (permintaan user 2026-11):
 // tab Characters = CharacterStage (layar character-select penuh — konstelasi,
 // maskot hero, dua card kaca, galeri dock; lihat CharacterStage.tsx).
@@ -115,7 +115,7 @@ export function PersonaStudioView({
 
   const refresh = useCallback(async () => {
     try {
-      const r = await fetch(apiUrl("/api/dungeons"));
+      const r = await authFetch(apiUrl("/api/dungeons"));
       if (r.ok)
         setDungeons(((await r.json()) as { dungeons: DungeonRow[] }).dungeons);
     } catch {
@@ -142,7 +142,7 @@ export function PersonaStudioView({
         mode === "research"
           ? `Research "${skillName}" from trusted sources and turn it into a practical, followable procedure.`
           : `Study every training material in this mission's folder until understood, then distill it into the skill "${skillName}".`;
-      const r = await fetch(apiUrl("/api/dungeons/mission"), {
+      const r = await authFetch(apiUrl("/api/dungeons/mission"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -187,7 +187,7 @@ export function PersonaStudioView({
 
   async function run(missionId: string) {
     try {
-      const r = await fetch(apiUrl("/api/dungeons"), {
+      const r = await authFetch(apiUrl("/api/dungeons"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ missionId }),

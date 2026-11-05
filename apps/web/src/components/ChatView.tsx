@@ -1,5 +1,5 @@
 "use client";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 /**
  * ChatView — pola visual OpenBot (D:\projects\openbot):
  * pesan agent = teks polos + gutter wajah + nama muted; user = bubble terang rata kanan;
@@ -124,7 +124,7 @@ export function ChatView({
     const text = steerText.trim();
     if (!text) return;
     try {
-      const r = await fetch(apiUrl(`/api/delegations/${childSessionId}`), {
+      const r = await authFetch(apiUrl(`/api/delegations/${childSessionId}`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "steer", text }),
@@ -142,7 +142,7 @@ export function ChatView({
   }
   async function cancelDelegation(childSessionId: string) {
     try {
-      const r = await fetch(apiUrl(`/api/delegations/${childSessionId}`), {
+      const r = await authFetch(apiUrl(`/api/delegations/${childSessionId}`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "cancel" }),
@@ -157,7 +157,7 @@ export function ChatView({
   }
   async function pauseDelegation(childSessionId: string, pause: boolean) {
     try {
-      const r = await fetch(apiUrl(`/api/delegations/${childSessionId}`), {
+      const r = await authFetch(apiUrl(`/api/delegations/${childSessionId}`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: pause ? "pause" : "resume" }),

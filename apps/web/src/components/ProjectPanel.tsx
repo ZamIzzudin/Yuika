@@ -1,5 +1,5 @@
 "use client";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 import { useState } from "react";
 import { DeleteProjectResult, type ProjectInfo } from "@yuika/contracts";
 import { Plus, Trash } from "@phosphor-icons/react";
@@ -43,7 +43,7 @@ export function ProjectPanel({
     if (!name.trim() || busy) return;
     setBusy(true);
     try {
-      const res = await fetch(apiUrl("/api/projects"), {
+      const res = await authFetch(apiUrl("/api/projects"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: name.trim(), description: desc.trim() }),

@@ -19,11 +19,13 @@
     "@fastify/cors": "^10.0.0",
     "@yuika/contracts": "*",
     "@yuika/core": "*",
+    "better-sqlite3": "^12.2.0",
     "fastify": "^5.2.0",
     "tsx": "^4.19.2",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22.9.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"

@@ -2,7 +2,7 @@
 // route handlers di apps/web/src/app/api/**. Path DIPERTAHANKAN persis
 // (prefix /api/…) sehingga frontend hanya ganti base URL (lib/api.ts).
 // buildApp(rt?) — runtime bisa di-inject (test); default: singleton proses api.
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import { ZodError } from "zod";
 import type { YuiRuntime } from "@yuika/core";
@@ -18,6 +18,8 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSkillRoutes } from "./routes/skills.js";
 import { registerUsageRoutes } from "./routes/usage.js";
 import { getRuntime } from "./runtime.js";
+import { registerAuthRoutes, bearerToken } from "./routes/auth.js";
+import { authUserCount, validateToken } from "./auth/store.js";
 
 export function buildApp(rt?: YuiRuntime): FastifyInstance {
   const app = Fastify({ logger: false, bodyLimit: 12 * 1024 * 1024 });
@@ -40,6 +42,22 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   });
 
   const getRt = (): YuiRuntime => rt ?? getRuntime();
+
+  // P1-INF-1: gerbang tenant. Selama belum ada user terdaftar → mode lokal
+  // (API terbuka, backward-compatible self-hosted). Setelah user pertama:
+  // semua route non-/api/auth/* wajib Bearer token (header, atau ?auth_token=
+  // untuk EventSource SSE yang tak bisa set header).
+  app.addHook("preHandler", async (req, reply) => {
+    const url = req.raw.url ?? "";
+    if (url.startsWith("/api/auth")) return;
+    if (authUserCount() === 0) return;
+    const token = bearerToken(req.headers.authorization, (req.query as Record<string, unknown>)?.auth_token);
+    const user = token ? validateToken(token) : null;
+    if (!user) return reply.code(401).send({ error: "authentication required" });
+    (req as FastifyRequest & { authUser: { id: string; email: string } }).authUser = user;
+  });
+
+  registerAuthRoutes(app);
   registerSessionRoutes(app, getRt);
   registerDelegationRoutes(app, getRt);
   registerApprovalRoutes(app, getRt);

@@ -576,3 +576,21 @@
   seluruh 138 commit ditulis-ulang author atas nama pemilik repo, branch
   `main` + `dev/p0-kernel` ter-push → CI (.github/workflows/ci.yml) kini
   dapat berjalan.
+
+### 2026-11 · P1-INF-1 auth gate (bagian 1)
+- [x] **P1-INF-1 (password auth + gerbang tenant)** — ✅ 2026-11: kontrak
+  `AuthCredentials/AuthUser/AuthSession/AuthStatus` (contracts/auth.ts);
+  auth store SQLite terpisah (`YUI_AUTH_DB`, default auth.db) — password
+  scrypt+salt (timingSafeEqual), token sesi 32B random disimpan HANYA sebagai
+  SHA-256 hash (TTL 30 hari, purge expired); REST `/api/auth/register|login|
+  logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
+  (backward-compat — smoke/latihan tetap jalan), setelah user pertama semua
+  route non-/api/auth wajib Bearer (header, atau `?auth_token=` untuk SSE
+  EventSource); web: `authFetch` (Bearer otomatis via localStorage) mengganti
+  semua fetch API + `AuthGate` (form sign in/create account + badge sign out,
+  oval latar ala CharacterStage); fix latent bug: fetch `/api/personas` tanpa
+  guard `r.ok` → `setPersonas(undefined)` crash saat 401. +5 test API (mode
+  lokal, register/duplikat, 401→token→200, logout, validasi zod) · e2e
+  `auth.spec.ts` (mode lokal → gate → login salah/benar → persist reload →
+  sign out; afterAll hapus users agar spec lain tetap mode lokal). Magic link
+  (butuh infra email) & workspace multi-tenant per user menyusul (bagian 2).

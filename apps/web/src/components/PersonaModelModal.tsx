@@ -10,7 +10,7 @@ import { Check, X } from "@phosphor-icons/react";
 import { Skeleton } from "./Skeleton";
 import { Button, Field, Modal, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 
 type Smoke = {
   running: boolean;
@@ -40,7 +40,7 @@ export function PersonaModelModal({
 
   const loadRoutes = useCallback(async () => {
     try {
-      const r = await fetch(apiUrl("/api/settings/models"));
+      const r = await authFetch(apiUrl("/api/settings/models"));
       if (!r.ok) return;
       const d = (await r.json()) as ModelRoutes;
       setRoutes(d);
@@ -54,7 +54,7 @@ export function PersonaModelModal({
 
   const loadSmoke = useCallback(async () => {
     try {
-      const r = await fetch(apiUrl("/api/settings/provider/smoke"));
+      const r = await authFetch(apiUrl("/api/settings/provider/smoke"));
       if (r.ok) setSmoke((await r.json()) as Smoke);
     } catch {
       /* diabaikan */
@@ -77,7 +77,7 @@ export function PersonaModelModal({
     if (!routes) return;
     setSaving(true);
     try {
-      const r = await fetch(apiUrl("/api/settings/models"), {
+      const r = await authFetch(apiUrl("/api/settings/models"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -102,7 +102,7 @@ export function PersonaModelModal({
   async function checkConnection() {
     setSmoke({ running: true, results: smoke?.results ?? [] });
     try {
-      const r = await fetch(apiUrl("/api/settings/provider/smoke"), {
+      const r = await authFetch(apiUrl("/api/settings/provider/smoke"), {
         method: "POST",
       });
       if (r.ok) setSmoke((await r.json()) as Smoke);
