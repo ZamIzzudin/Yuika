@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/orin.png" width="150" alt="Orin, the Yuika mascot" />
+<img src="docs/assets/logo.png" width="130" alt="Yuika logo" />
 
 # Yuika
 
@@ -9,13 +9,12 @@
 [![CI](https://github.com/ZamIzzudin/Yuika/actions/workflows/ci.yml/badge.svg)](https://github.com/ZamIzzudin/Yuika/actions/workflows/ci.yml)
 
 Yuika is a self-hosted workspace where AI personas do real work: researching,
-writing, coding, and planning — alone or as a team. Every persona has its own
+writing, coding, and planning, alone or as a team. Every persona has its own
 identity, skill set, model route, and growth history. You steer them from a
 single chat-first workspace with full visibility: approvals, traces, budgets,
 and metering are all inspectable.
 
-> The name combines *"yui"* (dream) and *"ka"* (excellence) — an excellent dream.
-> The star-shaped companion you see above is **Orin**, the in-app guide.
+> The name combines *yui* (dream) and *ka* (excellence): an excellent dream.
 
 </div>
 
@@ -23,30 +22,30 @@ and metering are all inspectable.
 
 ## Why Yuika
 
-- **Personas, not generic bots.** Pick a partner from the character studio —
+- **Personas, not generic bots.** Pick a partner from the character studio:
   Coder, Scholar, Scribe, Designer, Analyst, Operator, Planner, or the maestro
   Conductor. Each bundles its own prompt, tools, and learned skills.
 - **Skills that grow.** When a persona does something well, it can distill the
-  experience into a reusable skill. You review, edit, accept, or reject —
-  accepted skills are immediately usable by every persona.
+  experience into a reusable skill. You review, edit, accept, or reject.
+  Accepted skills are immediately usable by every persona.
 - **Team delegation.** The Conductor splits work and delegates to child
   personas with isolated sessions, live progress, and steering mid-run.
 - **You stay in control.** Risky tool calls (running code, writing files)
-  require explicit approval with a deadline; everything is logged per turn.
-- **Sandboxed execution.** `node` runs inside a disposable Docker container —
+  require explicit approval with a deadline, and everything is logged per turn.
+- **Sandboxed execution.** `node` runs inside a disposable Docker container:
   no network, capped resources, read-only filesystem, hard timeout.
-- **Honest metering.** Token usage per turn, per persona, per model — no
-  estimates, only provider-reported numbers.
+- **Honest metering.** Token usage per turn, per persona, per model, taken
+  only from provider-reported numbers. No estimates.
 
 ## Getting started
 
 ### Prerequisites
 
 - **Node.js 24+** and npm (the repo uses npm workspaces)
-- **Docker** (optional but recommended) — enables the execution sandbox;
-  without it, `node` falls back to local execution with a clear warning
-- Any **OpenAI-compatible API key** (OpenAI, GLM, OpenRouter, local
-  gateways — configurable per provider kind in Settings)
+- **Docker** (optional but recommended) enables the execution sandbox.
+  Without it, `node` falls back to local execution with a clear warning.
+- Any **OpenAI-compatible API key** (OpenAI, GLM, OpenRouter, or local
+  gateways), configurable per provider kind in Settings.
 
 ### Install and run
 
@@ -66,7 +65,7 @@ cp .env.example .env
 #   YUI_MODEL=gpt-4o
 ```
 
-Start the dev stack (Next.js web app + Fastify API, wired by turbo):
+Start the dev stack (Next.js web app plus Fastify API, wired by turbo):
 
 ```bash
 npm run dev
@@ -81,22 +80,22 @@ tuned later from the in-app Settings.
 
 ### Try these first
 
-1. **Chat with the Coder** and ask it to write and run a small Node script —
-   you will see the approval card, then the sandboxed output.
-2. **Delegate research**: ask the Conductor to have the Scholar summarize a
+1. **Chat with the Coder** and ask it to write and run a small Node script.
+   You will see the approval card, then the sandboxed output.
+2. **Delegate research.** Ask the Conductor to have the Scholar summarize a
    topic, then watch the delegation card stream progress.
-3. **Train a skill**: in the Persona page, create a training mission and let
+3. **Train a skill.** In the Persona page, create a training mission and let
    a persona study material you upload.
-4. **Inspect everything**: open the Logs tab for a per-turn trace, or
-   Settings > Metering for token usage.
+4. **Inspect everything.** Open the Logs tab for a per-turn trace, or
+   Settings, Metering for token usage.
 
 ## Monorepo layout
 
 ```
 Yuika/
 ├── apps/
-│   ├── web/            Next.js — chat, persona studio, approvals, panels
-│   └── api/            Fastify — REST owner of the agent runtime
+│   ├── web/            Next.js: chat, persona studio, approvals, panels
+│   └── api/            Fastify: REST owner of the agent runtime
 ├── packages/
 │   ├── contracts/      zod schemas: events, REST, personas (source of truth)
 │   ├── core/           agent loop, tools, delegation, sandbox, MCP, metering
@@ -114,22 +113,13 @@ Yuika/
 npm run dev          # web + api dev servers (turbo)
 npm run build        # production build
 npm test             # unit tests across all packages
-npm run e2e         # Playwright e2e (starts its own stack)
+npm run e2e          # Playwright e2e (starts its own stack)
 ```
 
 Core guarantees are pinned by tests: contract invariants, delegation
 isolation, approval persistence, sandbox integration (opt-in with
 `YUI_SANDBOX_IT=1`), and a deterministic smoke demo against a mock provider.
 
-## Documentation
-
-| Document | Contents |
-|---|---|
-| [docs/PLAN.md](docs/PLAN.md) | Vision, architecture decisions, roadmap |
-| [docs/TASKS.md](docs/TASKS.md) | Live progress checklist |
-| [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) | UI tokens, components, motion |
-| [docs/ART-DIRECTION.md](docs/ART-DIRECTION.md) | Orin mascot and Rive art direction |
-
 ## License
 
-UNLICENSED — proprietary, all rights reserved. See [LICENSE](LICENSE).
+UNLICENSED, proprietary, all rights reserved. See [LICENSE](LICENSE).
