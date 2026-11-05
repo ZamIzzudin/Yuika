@@ -10,13 +10,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
 import {
   CaretDown,
-  CommandIcon,
   Gear,
   Plus,
   SidebarSimple,
   Sword,
+  Users,
 } from "@phosphor-icons/react";
-import { DungeonView } from "@/components/DungeonView";
+import { PersonaStudioView } from "@/components/PersonaStudioView";
+import { setShapeOverrides } from "@/components/orinShapes";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, type ChatItem } from "@/components/ChatView";
@@ -59,8 +60,8 @@ const SUGGESTIONS: Record<string, string[]> = {
 
 export default function Home() {
   const [personas, setPersonas] = useState<PersonaInfo[]>([]);
-  /** P1-DUN-4: halaman Dungeon (arena latihan persona) — view terpisah di main. */
-  const [dungeonOpen, setDungeonOpen] = useState(false);
+  /** Menu Persona (2026-11, ex-Enhancer/Dungeon) — character studio + misi latihan. */
+  const [studioOpen, setStudioOpen] = useState(false);
   // Sidebar fold/unfold — persist di localStorage (yui.sidebar: "open" | "folded");
   // layar sempit (<768px) default lipat. Shortcut: Ctrl/Cmd+B.
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -140,6 +141,23 @@ export default function Home() {
       .then((r) => r.json())
       .then((d: { personas: PersonaInfo[] }) => setPersonas(d.personas))
       .catch(console.error);
+  }, []);
+
+  // Override wujud persona (menu Persona): muat sekali — setShapeOverrides
+  // membuat SEMUA PersonaFace/OrinPortrait reaktif (module-store + listener).
+  useEffect(() => {
+    fetch(apiUrl("/api/personas/shapes"))
+      .then((r) => (r.ok ? r.json() : { shapes: [] }))
+      .then(
+        (d: { shapes: { personaId: string; shape: string }[] }) =>
+          setShapeOverrides(
+            Object.fromEntries(d.shapes.map((s) => [s.personaId, s.shape])) as Record<
+              string,
+              import("@/components/orinShapes").OrinShapeKey
+            >,
+          ),
+      )
+      .catch(() => undefined);
   }, []);
 
   // Assistant streaming: delta ditumpuk ke item terakhir; id item disimpan di sini.
@@ -569,7 +587,7 @@ export default function Home() {
   async function pickProject(id: string | null) {
     setActiveProjectId(id);
     setMainTab("chat");
-    setDungeonOpen(false); // pilih project = keluar dari halaman Dungeon
+    setStudioOpen(false); // pilih project = keluar dari halaman Persona
     if (!id) {
       // Workspace global: persona dipilih dari kartu di tengah layar
       resetSession();
@@ -769,14 +787,14 @@ export default function Home() {
             <div className="mt-auto flex flex-col gap-1 border-t border-line pt-3">
               <button
                 className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-                  dungeonOpen
+                  studioOpen
                     ? "bg-hover text-primary"
                     : "text-dim hover:bg-hover hover:text-primary"
                 }`}
-                aria-current={dungeonOpen ? "page" : undefined}
-                onClick={() => setDungeonOpen((v) => !v)}
+                aria-current={studioOpen ? "page" : undefined}
+                onClick={() => setStudioOpen((v) => !v)}
               >
-                <CommandIcon size={20} aria-hidden /> Enhancer
+                <Users size={20} aria-hidden /> Persona
               </button>
               <button
                 className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
@@ -807,17 +825,17 @@ export default function Home() {
             <div className="mt-auto flex flex-col gap-1">
               <button
                 type="button"
-                title="Enhancer"
-                aria-label="Enhancer"
-                aria-current={dungeonOpen ? "page" : undefined}
-                onClick={() => setDungeonOpen((v) => !v)}
+                title="Persona"
+                aria-label="Persona"
+                aria-current={studioOpen ? "page" : undefined}
+                onClick={() => setStudioOpen((v) => !v)}
                 className={`flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-                  dungeonOpen
+                  studioOpen
                     ? "bg-hover text-primary"
                     : "text-dim hover:bg-hover hover:text-primary"
                 }`}
               >
-                <CommandIcon size={20} aria-hidden />
+                <Users size={20} aria-hidden />
               </button>
               <button
                 type="button"
@@ -834,13 +852,13 @@ export default function Home() {
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <main className="flex min-w-0 flex-1 flex-col">
-        {dungeonOpen ? (
-          <DungeonView
+        {studioOpen ? (
+          <PersonaStudioView
             personas={personas}
-            onBack={() => setDungeonOpen(false)}
+            onBack={() => setStudioOpen(false)}
             onOpenProject={(pid) => {
               setActiveProjectId(pid); // buka ruangan latihan seperti project
-              setDungeonOpen(false);
+              setStudioOpen(false);
             }}
           />
         ) : (

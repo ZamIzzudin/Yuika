@@ -91,7 +91,7 @@ export async function connectMcpServer(
     });
   });
 
-  const { tools } = await client.listTools({ timeout: connectTimeoutMs });
+  const { tools } = await client.listTools(undefined, { timeout: connectTimeoutMs });
 
   let current = new Set<string>();
 

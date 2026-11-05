@@ -3,7 +3,7 @@
 import { apiUrl } from "@/lib/api";
 import { useEffect, useState } from "react";
 import type { PersonaGrowth, PersonaInfo } from "@yui/contracts";
-import { personaShape, SHAPE_ORDER, SHAPES, PERSONA_SHAPE } from "./orinShapes";
+import { SHAPE_ORDER, SHAPES, PERSONA_SHAPE, usePersonaShape } from "./orinShapes";
 import { OrinPortrait } from "./OrinPortrait";
 import { Button, Modal } from "./ui";
 
@@ -70,7 +70,7 @@ export function PersonaFace({
   personaId: string;
   size?: number;
 }) {
-  const s = personaShape(personaId);
+  const { shape: s } = usePersonaShape(personaId);
   const w = 30 * s.es,
     h = 56 * s.es,
     gap = 34 * s.gs;

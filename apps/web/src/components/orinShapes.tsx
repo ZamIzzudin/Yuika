@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 
 /**
@@ -258,6 +259,37 @@ export function personaShapeKey(personaId?: string): OrinShapeKey {
 export function personaShape(personaId?: string): OrinShape {
   const key = personaShapeKey(personaId);
   return key in SHAPES ? SHAPES[key] : FALLBACK;
+}
+
+/** ===== Override bentuk per persona (menu Persona) =====
+ *  User dapat mengganti geometri maskot via PUT /api/personas/shapes —
+ *  persist workspace/persona-shapes.json (core). Override di sini:
+ *  module-store + useSyncExternalStore → semua PersonaFace/OrinPortrait
+ *  langsung ikut berubah (tanpa reload). */
+let shapeOverrides: Record<string, OrinShapeKey> = {};
+const shapeListeners = new Set<() => void>();
+
+/** Set peta override (dari GET /api/personas/shapes) — mengganti seluruh peta. */
+export function setShapeOverrides(map: Record<string, OrinShapeKey>): void {
+  shapeOverrides = { ...map };
+  shapeListeners.forEach((l) => l());
+}
+
+export function subscribeShapeOverrides(cb: () => void): () => void {
+  shapeListeners.add(cb);
+  return () => shapeListeners.delete(cb);
+}
+
+function useShapeOverrides(): Record<string, OrinShapeKey> {
+  return useSyncExternalStore(subscribeShapeOverrides, () => shapeOverrides, () => shapeOverrides);
+}
+
+/** Bentuk AKTIF persona: override user > default PERSONA_SHAPE. Reaktif —
+ *  dipakai PersonaFace & OrinPortrait (identitas visual konsisten seketika). */
+export function usePersonaShape(personaId?: string): { key: OrinShapeKey; shape: OrinShape } {
+  const ov = useShapeOverrides();
+  const key = (personaId && ov[personaId]) || personaShapeKey(personaId);
+  return { key, shape: key in SHAPES ? SHAPES[key] : FALLBACK };
 }
 
 /** Campur dua warna hex (v8 paintBody) — untuk stop gradient badan:

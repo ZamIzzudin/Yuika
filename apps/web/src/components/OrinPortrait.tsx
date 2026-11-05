@@ -26,7 +26,7 @@
  */
 import { useEffect, useId, useRef } from "react";
 import type { PersonaState } from "@yui/contracts";
-import { mixHex, personaShape, personaShapeKey } from "./orinShapes";
+import { mixHex, usePersonaShape } from "./orinShapes";
 
 type MoodName =
   | "idle"
@@ -119,8 +119,8 @@ export function OrinPortrait({
   // FX layer: [d0,d1,d2, q0,q1, n0,n1, z0,z1,z2]
   const fxRef = useRef<(SVGElement | null)[]>([]);
 
-  const shape = personaShape(personaId);
-  const shapeKeyOrb = personaShapeKey(personaId) === "orb";
+  const { key: shapeKey, shape } = usePersonaShape(personaId);
+  const shapeKeyOrb = shapeKey === "orb";
   const gid = useId(); // id gradient/filter unik per instance (banyak Orin di 1 halaman)
   const gradId = `orinBody-${gid.replace(/[^a-zA-Z0-9-]/g, "")}`;
   const shadowId = `orinShadow-${gid.replace(/[^a-zA-Z0-9-]/g, "")}`;

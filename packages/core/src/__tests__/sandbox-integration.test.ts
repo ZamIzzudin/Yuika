@@ -32,7 +32,7 @@ describe("P0-SEC-1 sandbox integration (docker nyata)", () => {
     expect(r.stdout.trim()).toMatch(/^v\d+\./);
   });
 
-  it.skipIf(!GATED)("EGRESS DIBLOKIR: fetch keluar harus gagal", { timeout: 30_000 }, async (ctx) => {
+  it.skipIf(!GATED)("EGRESS DIBLOKIR: fetch keluar harus gagal", async (ctx) => {
     if (!haveDocker) return ctx.skip();
     const r = await runInSandbox(
       "node",
@@ -55,7 +55,7 @@ describe("P0-SEC-1 sandbox integration (docker nyata)", () => {
     expect(r.stderr).toContain("EROFS"); // read-only rootfs (node: EROFS, bukan EPERM)
   });
 
-  it.skipIf(!GATED)("timeout: container dibunuh setelah batas waktu", { timeout: 30_000 }, async (ctx) => {
+  it.skipIf(!GATED)("timeout: container dibunuh setelah batas waktu", async (ctx) => {
     if (!haveDocker) return ctx.skip();
     const r = await runInSandbox("node", ["-e", "while(true){}"], dir, { timeoutMs: 3_000 });
     expect(r.timedOut).toBe(true);

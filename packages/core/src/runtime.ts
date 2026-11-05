@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
+import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type PersonaShapeOverride, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
 import { createSessionStore, type ISessionStore } from "./session/store.js";
 import { moduleLogger } from "./logger.js";
 import { makeEmitter } from "./session/emit.js";
@@ -17,6 +17,7 @@ import { registry } from "./registry.js";
 import { ApprovalEngine, resolvePendingApproval, getApprovalMode, setApprovalMode, type ApprovalMode } from "./approval/engine.js";
 import { listPersonas } from "./personas/loader.js";
 import { buildPersonaGrowth } from "./personas/growth.js";
+import { loadPersonaShapes, savePersonaShape } from "./personas/shapes.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
 import { loadSkillBindings, saveSkillBindings, applyBindingAction, effectiveSkillNames, type SkillBinding, type SkillBindingsFile } from "./skills/bindings.js";
 import { registerFileTools } from "./tools/file-tools.js";
@@ -408,6 +409,25 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     );
   }
 
+  /** Menu Persona (2026-11): override bentuk geometri maskot — hanya entri
+   *  yang dipilih user; tanpa entri = default web (PERSONA_SHAPE). */
+  function personaShapes(): PersonaShapeOverride[] {
+    const map = loadPersonaShapes(paths.workspacePath);
+    return Object.entries(map)
+      .filter(([, shape]) => shape)
+      .map(([personaId, shape]) => ({ personaId, shape: shape as PersonaShapeOverride["shape"] }))
+      .sort((a, b) => a.personaId.localeCompare(b.personaId));
+  }
+
+  function setPersonaShape(personaId: string, shape: string): PersonaShapeOverride {
+    return savePersonaShape(
+      paths.workspacePath,
+      personaId,
+      shape,
+      listPersonas(paths.personasDir).map((p) => p.manifest.id),
+    );
+  }
+
   function createSession(
     personaId: string,
     projectId?: string | null,
@@ -600,6 +620,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     listPersonas: listPersonaInfos,
     personaGrowth,
+    personaShapes,
+    setPersonaShape,
     createSession,
     listProjectSessions,
     runTurn: (sessionId: string, text: string) => runTurnInternal(sessionId, text),

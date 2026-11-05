@@ -58,3 +58,45 @@ export const PersonaManifest = z.object({
   tools: z.array(z.string()).default([]),
 });
 export type PersonaManifest = z.infer<typeof PersonaManifest>;
+
+/** Bentuk geometri maskot Orin (v8) — 15 bentuk; urutan = indeks input Rive
+ *  `shape` 0–14 (satu sumber kebenaran bersama SHAPE_ORDER di web).
+ *  Menu Persona: user dapat mengganti bentuk per persona (persist di
+ *  workspace/persona-shapes.json — override di atas default PERSONA_SHAPE). */
+export const ORIN_SHAPE_KEYS = [
+  "orb",
+  "cloud",
+  "blob",
+  "square",
+  "tri",
+  "pill",
+  "bean",
+  "drop",
+  "star",
+  "flower",
+  "hex",
+  "trap",
+  "diamond",
+  "dome",
+  "tube",
+] as const;
+export const OrinShapeKey = z.enum(ORIN_SHAPE_KEYS);
+export type OrinShapeKey = z.infer<typeof OrinShapeKey>;
+
+/** Entri override bentuk persona (persona tanpa entri = default manifest). */
+export const PersonaShapeOverride = z.object({
+  personaId: z.string().regex(/^[a-z0-9-]+$/),
+  shape: OrinShapeKey,
+});
+export type PersonaShapeOverride = z.infer<typeof PersonaShapeOverride>;
+
+export const PersonaShapesResponse = z.object({
+  shapes: z.array(PersonaShapeOverride),
+});
+export type PersonaShapesResponse = z.infer<typeof PersonaShapesResponse>;
+
+export const SetPersonaShapeRequest = z.object({
+  personaId: z.string().regex(/^[a-z0-9-]+$/),
+  shape: OrinShapeKey,
+});
+export type SetPersonaShapeRequest = z.infer<typeof SetPersonaShapeRequest>;

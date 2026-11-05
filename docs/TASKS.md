@@ -533,5 +533,22 @@
 > Settings non-modal). Tab Sesi → header Chat: status persona di tengah +
 > dropdown sesi + tombol sesi baru di kanan.
 > **Scrollbar compact** 7px bertoken (default Windows terlalu tebal).
+> **MCP cold-start tak lagi -32001 & mati permanen:** timeout handshake naik
+> 60 dtk→150 dtk (`connectTimeoutMs`) + kegagalan connect STARTUP kini masuk
+> reconnect backoff 2s..300s (dulu: satu warn lalu mati sampai restart walau
+> cache `uvx`/`npx` sudah terisi) + handshake gagal → proses anak dimatikan.
+> **Menu Enhancer → Persona (character studio ala game, permintaan user):**
+> `PersonaStudioView` — tab **Characters**: roster persona (level/XP growth
+> nyata) + preview maskot hidup `OrinPortrait` dengan emote (7 state) + **ganti
+> wujud geometri** (15 bentuk, persist `workspace/persona-shapes.json` via
+> REST `/api/personas/shapes`; reaktif di SEMUA UI via module-store +
+> `useSyncExternalStore`) + **skill loadout** (attach/detach chip, accept draft
+> latihan langsung); tab **Missions** + **Training history** (warisan Dungeon,
+> polling run live). Kontrak `OrinShapeKey`/`PersonaShapeOverride` (contracts).
+> **Orin v8 “Larger Star” + geometri organik v6 penuh** (lihat commit a433824):
+> 15 bentuk path filled membulat (v4 stroke-based dihapus), bintang 1.18×
+> HANYA siluet, gradient radial + soft shadow + kilau mata ganda, rig v8
+> (blink halus, gaze smoothing, squash seragam bola, look smoothstep).
+> Spec Rive: `docs/ART-DIRECTION.md` (P1-PER-1).
 > **Konsep Runner masuk PLAN §13.5** (port registry + preview iframe + jembatan
 > Penpot) — belum dikerjakan, menunggu fase.
