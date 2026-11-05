@@ -326,8 +326,8 @@
   prompt kerja), audit secrets/history git, .gitignore data workspace · *B · 0.5d*
 - [ ] **PUB-4** CONTRIBUTING.md + CLA/DCO (syarat agar bisa relicense/dual-license
   di masa depan) + cek trademark "Your-Yui"/"Orin" (PDKI kelas 9 & 42) · *B · 1d*
-- [ ] **PUB-5** CI: gerbang `npm audit --omit=dev --audit-level=high` (saat ini 2 high =
-  zod; hilang setelah upgrade zod v4) + regenerasi laporan lisensi berkala · *C · 0.5d*
+- [x] **PUB-5** CI: gerbang `npm audit --omit=dev --audit-level=high` (saat ini 2 high =
+  zod; hilang setelah upgrade zod v4) + regenerasi laporan lisensi berkala · *C · 0.5d* — ✅ 2026-11: step **Security audit gate (prod deps)** di ci.yml setelah `npm ci` (audit prod = 0 vulnerabilities pasca zod v4 + openai 7.51); waiver hanya lewat keputusan eksplisit + catatan di LICENSE-AUDIT §4. Regenerasi laporan lisensi berkala = manual (skrip audit lokal, §LICENSE-AUDIT) — dijalankan tiap tambah dep signifikan.
 
 ### P1-PRJ — Project entity v0 (Studio §13.2; D14)
 
