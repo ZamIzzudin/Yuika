@@ -98,6 +98,8 @@
 | **P3** | Marketplace · teams · voice · self-host | ±3–4 bulan | G-P3 |
 | **P4** | Workflow builder · eval · enterprise | berkelanjutan | — |
 
+> **Peta BATCH fitur utuh** (pengelompokkan task → fitur bisa didemokan; urutan eksekusi + acceptance per batch): lihat **docs/BATCHES.md** — sumber rencana batch; file ini tetap sumber status per task.
+>
 > **Track Studio (v0.4–v0.5, PLAN §13):** P1-PRJ + P1-DUN + P1-MDL numpang di P1;
 > P2-FLOW + P2-STU + P2-DSN numpang di P2. Gerbang tambahan masuk G-BETA. UI hasil
 > sesi dev 3 sudah tab-ready.
