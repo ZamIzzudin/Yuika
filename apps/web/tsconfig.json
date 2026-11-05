@@ -23,8 +23,9 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    ".next-pi/types/**/*.ts",
     "next-env.d.ts",
-    ".next-pi/types/**/*.ts"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
