@@ -6,6 +6,7 @@ import { defineConfig } from "@playwright/test";
 const MOCK_PORT = 3299;
 const API_PORT = 3291;
 const WEB_PORT = 3990;
+const DOUBLE_PORT = 3110; // P1-PRT-6: claim stub + SpecRelay (portal double)
 
 export default defineConfig({
   testDir: "./e2e",
@@ -29,10 +30,10 @@ export default defineConfig({
       timeout: 20_000,
     },
     {
-      // Wipe auth.db lama sebelum server start: run sebelumnya bisa meninggalkan
-      // user terdaftar → gerbang aktif → spec lain (smoke) kena 401.
+      // Wipe auth.db & portal-device.db lama sebelum server start (gate & host
+      // pairing e2e perlu state bersih).
       command:
-        "node -e \"['auth.db','auth.db-wal','auth.db-shm'].forEach(f=>require('fs').rmSync('e2e/.tmp/'+f,{force:true}))\" && npx tsx apps/api/src/server.ts",
+        "node -e \"['auth.db','auth.db-wal','auth.db-shm','portal-device.db','portal-device.db-wal','portal-device.db-shm'].forEach(f=>require('fs').rmSync('e2e/.tmp/'+f,{force:true}))\" && npx tsx apps/api/src/server.ts",
       url: `http://127.0.0.1:${API_PORT}/api/personas`,
       reuseExistingServer: false,
       timeout: 180_000,
@@ -50,6 +51,19 @@ export default defineConfig({
         YUI_LEARN: "0",
         YUI_TRACE: "0",
         YUI_LOG_LEVEL: "warn",
+        YUI_PORTAL_DEVICE_DB: "e2e/.tmp/portal-device.db",
+      },
+    },
+    {
+      // P1-PRT-6 — double portal: claim stub :3110 + SpecRelay ws://3111
+      // (semantik SPEC-PROTOCOL v1; relay produksi = repo yuika-portal).
+      command: "npx tsx e2e/portal-double.mjs",
+      url: `http://127.0.0.1:${DOUBLE_PORT}/healthz`,
+      reuseExistingServer: false,
+      timeout: 60_000,
+      env: {
+        PORTAL_DOUBLE_PORT: String(DOUBLE_PORT),
+        PORTAL_DOUBLE_RELAY_PORT: "3111",
       },
     },
     {

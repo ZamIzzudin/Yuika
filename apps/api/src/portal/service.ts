@@ -89,6 +89,7 @@ export class PortalHostService {
   private remoteSubs = new Map<string, Set<string>>(); // remoteDeviceId → sessionIds
   private known = new Set<string>(); // session id yang pernah divalidasi/dibuat
   private unsubAll: (() => void) | null = null;
+  private introSent = new Set<string>();
 
   get running(): boolean {
     return !!this.host;
@@ -123,6 +124,16 @@ export class PortalHostService {
         // remote pergi → berhenti kirim sesi langganannya
         for (const id of [...this.remoteSubs.keys()]) {
           if (!remotes.has(id)) this.remoteSubs.delete(id);
+        }
+        // remote BARU menempel → kirim host.state (CONTRACTS §3: intro roster)
+        for (const id of remotes.keys()) {
+          if (!this.introSent.has(id)) {
+            this.introSent.add(id);
+            void host.sendEvent(id, {
+              proto: 1, ev: "host.state",
+              sessions: this.rt!.listRecentSessions(20),
+            }).catch(() => undefined);
+          }
         }
       },
     });

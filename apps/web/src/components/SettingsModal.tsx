@@ -9,16 +9,18 @@ import { useCallback, useEffect, useState } from "react";
 import type { ProviderSettings } from "@yuika/contracts";
 import { Check, Prohibit, Warning, X } from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
+import { PortalSettings } from "./PortalSettings";
 import { Skeleton } from "./Skeleton";
 import { toastErr, toastOk } from "./ui/toast";
 import { Button, Card, Field, Modal, Select, TextInput } from "./ui";
 
-type Section = "provider" | "mcp" | "usage";
+type Section = "provider" | "mcp" | "usage" | "portal";
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   { id: "provider", label: "Provider & Model", hint: "API key, base URL, model" },
   { id: "mcp", label: "MCP & Tools", hint: "catalog, trust, audit" },
   { id: "usage", label: "Usage", hint: "token usage per persona/model" },
+  { id: "portal", label: "Portal", hint: "link devices, remote control" },
 ];
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
@@ -167,6 +169,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               <UsagePanel />
             </section>
           )}
+          {section === "portal" && <PortalSettings />}
         </div>
       </div>
     </Modal>

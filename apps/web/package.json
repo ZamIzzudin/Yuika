@@ -16,7 +16,9 @@
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hot-toast": "^2.6.1"
+    "react-hot-toast": "^2.6.1",
+    "@yuika/relay-client": "*",
+    "@yuika/crypto": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.4",

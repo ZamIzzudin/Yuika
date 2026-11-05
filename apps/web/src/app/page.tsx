@@ -24,6 +24,7 @@ import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { ChatView, type ChatItem } from "@/components/ChatView";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { SettingsModal } from "@/components/SettingsModal";
+import { RemoteBadge } from "@/components/RemoteBadge";
 import {
   ProjectTabs,
   type LiveDelegation,
@@ -677,6 +678,12 @@ export default function Home() {
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // P1-PRT-3: badge compact (sidebar kolaps) memancarkan event → buka Settings.
+  useEffect(() => {
+    const open = () => setSettingsOpen(true);
+    window.addEventListener("yui:open-settings", open);
+    return () => window.removeEventListener("yui:open-settings", open);
+  }, []);
   // Trace realtime (fix dev-10): naik tiap event SSE — TracePanel refetch
   // trace terstruktur saat itu (debounce), BUKAN polling 3 dtk buta.
   const [traceTick, setTraceTick] = useState(0);
@@ -797,6 +804,9 @@ export default function Home() {
               >
                 <Users size={20} aria-hidden /> Persona
               </button>
+              <div className="px-2.5 pb-1">
+                <RemoteBadge />
+              </div>
               <button
                 className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
                 onClick={() => setSettingsOpen(true)}
@@ -838,6 +848,7 @@ export default function Home() {
               >
                 <Users size={20} aria-hidden />
               </button>
+              <RemoteBadge compact />
               <button
                 type="button"
                 title="Settings"
@@ -852,6 +863,7 @@ export default function Home() {
         )}
       </aside>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {/* badge compact sidebar kolaps → buka tab Portal */}
       <main className="flex min-w-0 flex-1 flex-col">
         {studioOpen ? (
           <PersonaStudioView
