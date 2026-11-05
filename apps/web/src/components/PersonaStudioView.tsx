@@ -1,41 +1,29 @@
 "use client";
 import { apiUrl } from "@/lib/api";
-// 🎮 Persona Studio — character customization ala game (permintaan user 2026-11):
-// pilih karakter dari roster → preview maskot hidup (OrinPortrait + emote) →
-// sesuaikan wujud (geometri) → pasang skill loadout — level/XP dari kerja nyata.
-// Seksi Missions (melatih skill baru) + Training history = warisan Dungeon (P1-DUN).
+// 🎮 Persona Studio — menu Persona (permintaan user 2026-11):
+// tab Characters = CharacterStage (layar character-select penuh — konstelasi,
+// maskot hero, dua card kaca, galeri dock; lihat CharacterStage.tsx).
+// Tab Missions (melatih skill baru) + Training history = warisan Dungeon (P1-DUN).
 // DS-1: hanya komponen ui/* + utility Tailwind semantik (docs/DESIGN-SYSTEM.md).
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PersonaGrowth, PersonaInfo, PersonaState } from "@yui/contracts";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { PersonaInfo } from "@yui/contracts";
 import {
   ArrowLeft,
-  CaretLeft,
-  CaretRight,
   Books,
   Check,
   CircleNotch,
   Clock,
   MagnifyingGlass,
-  Shapes,
-  Sparkle,
   Sword,
   Trash,
   UploadSimple,
   Users,
   X,
 } from "@phosphor-icons/react";
-import { GrowthBadge, PersonaFace, usePersonaGrowth } from "./PersonaPicker";
-import { OrinPortrait } from "./OrinPortrait";
-import {
-  PERSONA_SHAPE,
-  SHAPE_ORDER,
-  SHAPES,
-  setShapeOverrides,
-  usePersonaShape,
-  type OrinShapeKey,
-} from "./orinShapes";
+import { PersonaFace } from "./PersonaPicker";
+import { CharacterStage } from "./CharacterStage";
 import { Skeleton } from "./Skeleton";
-import { toastErr, toastOk } from "./ui/toast";
+import { toastErr } from "./ui/toast";
 import {
   Button,
   Chip,
@@ -88,520 +76,6 @@ const DEFAULT_ACC: Record<"research" | "documents", string[]> = {
   ],
 };
 
-/** Emote preview — maskot hidup bisa dicoba semua ekspresi (ala pilih emote game). */
-const EMOTES: { state: PersonaState; label: string }[] = [
-  { state: "idle", label: "Idle" },
-  { state: "thinking", label: "Think" },
-  { state: "working", label: "Work" },
-  { state: "awaiting_input", label: "Wait" },
-  { state: "done", label: "Done" },
-  { state: "celebrating", label: "Party" },
-  { state: "error", label: "Oops" },
-];
-
-// ---------------------------------------------------------------------------
-// Skill bindings (attach/detach + accept draft) — dipakai tab Characters.
-// ---------------------------------------------------------------------------
-interface BindingPersona {
-  id: string;
-  name: string;
-  bundled: string[];
-  attached: string[];
-  detached: string[];
-  effective: string[];
-}
-interface BindingsPayload {
-  skills: {
-    name: string;
-    description: string;
-    status: string;
-    slug: string | null;
-  }[];
-  personas: BindingPersona[];
-}
-
-function useBindings() {
-  const [data, setData] = useState<BindingsPayload | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      const r = await fetch(apiUrl("/api/skills/bindings"));
-      if (r.ok) setData(await r.json());
-    } catch {
-      /* coba lagi nanti */
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const toggle = useCallback(
-    async (personaId: string, skill: string, action: "attach" | "detach") => {
-      // optimistic — PUT persist; gagal → reload (state server yang benar)
-      setData((prev) =>
-        prev
-          ? {
-              ...prev,
-              personas: prev.personas.map((p) =>
-                p.id === personaId
-                  ? {
-                      ...p,
-                      attached:
-                        action === "attach"
-                          ? [...new Set([...p.attached, skill])]
-                          : p.attached.filter((s) => s !== skill),
-                      detached:
-                        action === "detach"
-                          ? [...new Set([...p.detached, skill])]
-                          : p.detached.filter((s) => s !== skill),
-                      effective:
-                        action === "attach"
-                          ? [...new Set([...p.effective, skill])]
-                          : p.effective.filter((s) => s !== skill),
-                    }
-                  : p,
-              ),
-            }
-          : prev,
-      );
-      try {
-        const res = await fetch(apiUrl("/api/skills/bindings"), {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ personaId, skill, action }),
-        });
-        if (!res.ok)
-          throw new Error(
-            (await res.json().catch(() => ({}))).error ?? "request failed",
-          );
-      } catch (e) {
-        toastErr(e instanceof Error ? e.message : "failed to save");
-        void load();
-      }
-    },
-    [load],
-  );
-
-  /** Draf latihan → terima (lint + aktif) → langsung dipasang ke persona. */
-  const accept = useCallback(
-    async (personaId: string, slug: string, name: string) => {
-      try {
-        const res = await fetch(apiUrl("/api/skills"), {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ slug }),
-        });
-        if (!res.ok)
-          throw new Error(
-            (await res.json().catch(() => ({}))).error ??
-              "failed to accept the draft",
-          );
-        await load();
-        await toggle(personaId, name, "attach");
-        toastOk(`Skill "${name}" accepted & equipped.`);
-      } catch (e) {
-        toastErr(e instanceof Error ? e.message : "failed to accept the draft");
-      }
-    },
-    [load, toggle],
-  );
-
-  return { data, toggle, accept };
-}
-
-// ---------------------------------------------------------------------------
-// Tab Characters — character customization ala game.
-// ---------------------------------------------------------------------------
-function CharacterStudio({ personas }: { personas: PersonaInfo[] }) {
-  const [selId, setSelId] = useState(personas[0]?.id ?? "");
-  const [emote, setEmote] = useState<PersonaState>("idle");
-  const [panel, setPanel] = useState<"shape" | "skill">("shape");
-  const [busyShape, setBusyShape] = useState<OrinShapeKey | null>(null);
-  const growth = usePersonaGrowth();
-  const { data: bindings, toggle, accept } = useBindings();
-
-  const persona = personas.find((p) => p.id === selId) ?? personas[0];
-  const { key: activeShape } = usePersonaShape(persona?.id);
-  const bp = bindings?.personas.find((p) => p.id === persona?.id);
-  const g: PersonaGrowth | undefined = growth.get(persona?.id ?? "");
-  const idx = persona ? personas.findIndex((p) => p.id === persona.id) : -1;
-
-  const xpPct = useMemo(
-    () =>
-      g
-        ? g.nextLevelAt === null
-          ? 100
-          : Math.min(100, Math.round((g.turns / g.nextLevelAt) * 100))
-        : 0,
-    [g],
-  );
-
-  /** Switch character (wrap-around carousel) + reset emote to neutral. */
-  const go = useCallback(
-    (dir: -1 | 1) => {
-      setSelId((cur) => {
-        const i = personas.findIndex((p) => p.id === cur);
-        if (i < 0 || personas.length < 2) return cur;
-        return personas[(i + dir + personas.length) % personas.length]!.id;
-      });
-      setEmote("idle");
-    },
-    [personas],
-  );
-
-  // Game-style keyboard: ← / → switch character (ignored while typing).
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (
-        t &&
-        (t.tagName === "INPUT" ||
-          t.tagName === "TEXTAREA" ||
-          t.tagName === "SELECT" ||
-          t.isContentEditable)
-      )
-        return;
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        go(-1);
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        go(1);
-      }
-    };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [go]);
-
-  // Gallery: keep the selected card visible (auto-center on switch).
-  useEffect(() => {
-    document
-      .querySelector(`[data-gal-id="${persona?.id}"]`)
-      ?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [persona?.id]);
-
-  async function pickShape(k: OrinShapeKey) {
-    if (!persona || busyShape) return;
-    setBusyShape(k);
-    try {
-      const r = await fetch(apiUrl("/api/personas/shapes"), {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ personaId: persona.id, shape: k }),
-      });
-      if (!r.ok)
-        throw new Error(
-          (await r.json().catch(() => ({})))?.error ?? "failed to save the shape",
-        );
-      const { shapes } = (await r.json()) as {
-        shapes: { personaId: string; shape: OrinShapeKey }[];
-      };
-      setShapeOverrides(
-        Object.fromEntries(shapes.map((s) => [s.personaId, s.shape])),
-      );
-      toastOk(`${persona.name} now takes the "${SHAPES[k].name}" form.`);
-    } catch (e) {
-      toastErr(e instanceof Error ? e.message : "failed to save the shape");
-    } finally {
-      setBusyShape(null);
-    }
-  }
-
-  if (!persona)
-    return (
-      <EmptyState
-        icon={<Users size={20} />}
-        title="No personas yet"
-        hint="Personas are loaded from packages/personas."
-      />
-    );
-
-  const defaultShape = PERSONA_SHAPE[persona.id];
-  const isCustom = activeShape !== defaultShape;
-
-  return (
-    <div className="flex flex-col gap-4">
-      {/* ===== Stage: detail · mascot carousel · customization ===== */}
-      <div className="grid items-start gap-3 lg:grid-cols-[minmax(200px,0.85fr)_1.2fr_minmax(240px,1fr)]">
-        {/* --- Left: identity & stats card --- */}
-        <Card className="order-2 flex flex-col gap-3 p-4 lg:order-1">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-display font-semibold text-primary">
-              {persona.name}
-            </h2>
-            <p className="text-caption leading-5 text-muted">
-              {persona.expertise}
-            </p>
-            {isCustom && (
-              <div className="pt-1">
-                <Chip tone="info">
-                  <Shapes size={11} aria-hidden className="mr-1 inline align-[-1px]" />
-                  custom shape
-                </Chip>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between text-caption text-muted">
-              <b className="text-secondary">{g?.level ?? "no level yet"}</b>
-              <span>
-                {g ? `${g.turns}/${g.nextLevelAt ?? "MAX"} turns` : "0 turns"}
-              </span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-pill bg-line-strong">
-              <div
-                className="h-full rounded-pill bg-accent transition-all duration-500"
-                style={{ width: `${xpPct}%` }}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5 rounded-lg2 bg-inset px-3 py-2.5">
-            {[
-              { icon: "💠", label: "Sessions", v: g?.sessions ?? 0 },
-              { icon: "⚡", label: "Turns done", v: g?.turns ?? 0 },
-              { icon: "✅", label: "Tasks done", v: g?.tasksDone ?? 0 },
-            ].map((r) => (
-              <div
-                key={r.label}
-                className="flex items-center justify-between text-caption text-muted"
-                title={r.label}
-              >
-                <span>
-                  {r.icon} {r.label}
-                </span>
-                <b className="font-mono text-body text-primary">{r.v}</b>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* --- Center: mascot stage + carousel chevrons --- */}
-        <div className="order-1 flex flex-col items-center gap-3 rounded-card border border-line bg-inset px-2 py-4 lg:order-2">
-          <div className="flex w-full items-center justify-center gap-1 sm:gap-3">
-            <button
-              type="button"
-              aria-label="Previous persona"
-              onClick={() => go(-1)}
-              disabled={personas.length < 2}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-pill border border-line bg-surface text-muted transition-all ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25"
-            >
-              <CaretLeft size={24} aria-hidden />
-            </button>
-            {/* pop-yui: mascot "pops in" on every character switch (character-select feel) */}
-            <div key={persona.id} className="pop-yui flex items-center justify-center">
-              <OrinPortrait state={emote} personaId={persona.id} size={230} />
-            </div>
-            <button
-              type="button"
-              aria-label="Next persona"
-              onClick={() => go(1)}
-              disabled={personas.length < 2}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-pill border border-line bg-surface text-muted transition-all ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25"
-            >
-              <CaretRight size={24} aria-hidden />
-            </button>
-          </div>
-          <div className="flex flex-wrap justify-center gap-1">
-            {EMOTES.map((e) => (
-              <ChipToggle
-                key={e.state}
-                active={emote === e.state}
-                onClick={() => setEmote(e.state)}
-              >
-                {e.label}
-              </ChipToggle>
-            ))}
-          </div>
-          <small className="text-dim">
-            click the mascot to greet it · try the emotes
-          </small>
-        </div>
-
-        {/* --- Right: customization tabs (Shape / Skills) --- */}
-        <div className="order-3 flex flex-col gap-2 rounded-card border border-line bg-surface p-3">
-          <TabList
-            value={panel}
-            onChange={(id) => setPanel(id as typeof panel)}
-            tabs={[
-              { id: "shape", label: "Shape" },
-              { id: "skill", label: `Skills (${bp?.effective.length ?? 0})` },
-            ]}
-          />
-          {panel === "shape" ? (
-            <div className="grid max-h-[430px] grid-cols-3 gap-1.5 overflow-y-auto pr-0.5">
-              {SHAPE_ORDER.map((k) => {
-                const s = SHAPES[k];
-                const on = k === activeShape;
-                return (
-                  <button
-                    key={k}
-                    aria-pressed={on}
-                    disabled={busyShape !== null}
-                    onClick={() => void pickShape(k)}
-                    title={`Set ${persona.name}'s form: ${s.name}${
-                      defaultShape === k ? " (default)" : ""
-                    }`}
-                    className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-lg2 border px-1 py-1.5 text-center transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-                      on
-                        ? "border-accent bg-accent-soft text-accent-text"
-                        : "border-line bg-inset text-muted hover:border-line-strong hover:text-primary"
-                    }`}
-                  >
-                    <svg
-                      width={38}
-                      height={38}
-                      viewBox="-165 -165 330 330"
-                      aria-hidden
-                      focusable="false"
-                    >
-                      <g
-                        fill={s.color}
-                        transform={
-                          s.bodyScale && s.bodyScale !== 1
-                            ? `scale(${s.bodyScale})`
-                            : undefined
-                        }
-                      >
-                        {s.geom}
-                      </g>
-                    </svg>
-                    <b className="text-dim text-[11px] leading-3 font-medium">
-                      {s.name}
-                    </b>
-                  </button>
-                );
-              })}
-            </div>
-          ) : !bp ? (
-            <Skeleton lines={5} />
-          ) : (
-            <div className="flex max-h-[430px] flex-col gap-1.5 overflow-y-auto pr-0.5">
-              <small className="flex items-center gap-1 text-dim">
-                <Sparkle size={11} aria-hidden /> {bp.effective.length} equipped
-                · applies to new sessions · click a chip to unequip
-              </small>
-              {bp.effective.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {bp.effective.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => void toggle(bp.id, s, "detach")}
-                      title="Unequip this skill"
-                      className="cursor-pointer"
-                    >
-                      <Chip tone="ok">
-                        {s}{" "}
-                        <X
-                          size={10}
-                          weight="bold"
-                          aria-hidden
-                          className="ml-0.5 inline align-[-1px]"
-                        />
-                      </Chip>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {bindings?.skills.map((s) => {
-                const on = bp.effective.includes(s.name);
-                const native = bp.bundled.includes(s.name);
-                const draft = s.status === "draft";
-                return (
-                  <div
-                    key={s.name}
-                    className={`flex items-center gap-2 rounded-lg2 border px-2.5 py-1.5 ${
-                      on ? "border-accent/45 bg-surface" : "border-line bg-surface"
-                    }`}
-                  >
-                    <b
-                      className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-caption font-semibold text-primary"
-                      title={s.description}
-                    >
-                      {s.name}
-                      {draft ? <Chip tone="warn">draft</Chip> : null}
-                      {!draft && s.status === "tested" ? (
-                        <Chip tone="info">tested</Chip>
-                      ) : null}
-                      {native && on ? <Chip tone="muted">bundled</Chip> : null}
-                    </b>
-                    {draft ? (
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => void accept(bp.id, s.slug!, s.name)}
-                        title="Lint + activate + equip on this persona"
-                      >
-                        Accept
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        active={on}
-                        onClick={() =>
-                          void toggle(bp.id, s.name, on ? "detach" : "attach")
-                        }
-                      >
-                        {on ? "✓" : "Equip"}
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ===== Character gallery — horizontal slider (character select) ===== */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <SectionTitle>
-            <Users size={14} aria-hidden className="mr-1 inline align-[-2px]" />{" "}
-            Characters
-          </SectionTitle>
-          <span className="text-dim" title="Keyboard arrows work too">
-            {idx + 1} / {personas.length} · ← → to switch
-          </span>
-        </div>
-        <div
-          role="listbox"
-          aria-label="Persona gallery"
-          className="flex snap-x gap-2 overflow-x-auto pb-1"
-        >
-          {personas.map((p) => {
-            const on = p.id === persona.id;
-            return (
-              <button
-                key={p.id}
-                data-gal-id={p.id}
-                role="option"
-                aria-selected={on}
-                onClick={() => {
-                  setSelId(p.id);
-                  setEmote("idle");
-                }}
-                className={`flex w-[88px] shrink-0 cursor-pointer snap-center flex-col items-center gap-1 rounded-card border px-2 py-2.5 transition-all ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-                  on
-                    ? "scale-[1.04] border-accent bg-accent-soft text-accent-text shadow-[0_0_0_1px_var(--color-accent)]"
-                    : "border-line bg-inset text-muted hover:scale-[1.02] hover:border-line-strong hover:text-primary"
-                }`}
-              >
-                <PersonaFace personaId={p.id} size={52} />
-                <b className="w-full truncate text-center text-caption font-semibold">
-                  {p.name}
-                </b>
-                <GrowthBadge g={growth.get(p.id)} />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // View utama — menu Persona (menggantikan Enhancer/Dungeon).
 // ---------------------------------------------------------------------------
 export function PersonaStudioView({
@@ -892,41 +366,38 @@ export function PersonaStudioView({
 
   return (
     <section
-      className="mx-auto flex w-full flex-col gap-5 px-4 py-6"
+      className="flex h-full min-h-0 w-full flex-col px-4 pt-3 lg:px-6"
       aria-label="Persona — character studio"
     >
-      <header className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <Button onClick={onBack}>
-            <ArrowLeft size={13} aria-hidden />
-          </Button>
-          <h1 className="flex items-center gap-2 text-display font-semibold text-primary">
-            <Users size={22} aria-hidden /> Persona
-          </h1>
+      {/* Header ringkas satu baris — panggung Characters butuh ruang setinggi mungkin. */}
+      <header className="flex flex-wrap items-center gap-3 pb-3">
+        <Button onClick={onBack} aria-label="Back to workspace">
+          <ArrowLeft size={13} aria-hidden />
+        </Button>
+        <h1 className="flex items-center gap-2 text-lg font-semibold text-primary">
+          <Users size={18} aria-hidden /> Persona
+        </h1>
+        <div className="ml-auto">
+          <TabList
+            value={view}
+            onChange={(id) => setView(id as typeof view)}
+            tabs={[
+              { id: "characters", label: "Characters" },
+              { id: "missions", label: "Missions" },
+              { id: "history", label: `Training history (${allRuns.length})` },
+            ]}
+          />
         </div>
-        <p className="max-w-3xl text-body leading-6 text-muted">
-          Build your team like building game characters: pick a persona from
-          the <b className="text-secondary">gallery</b>, restyle its{" "}
-          <b className="text-secondary">mascot form</b>, equip a{" "}
-          <b className="text-secondary">skill loadout</b> — then send it on a{" "}
-          <b className="text-secondary">training mission</b> to master new
-          skills (results can be equipped right away; every run is recorded).
-        </p>
-        <TabList
-          value={view}
-          onChange={(id) => setView(id as typeof view)}
-          tabs={[
-            { id: "characters", label: "Characters" },
-            { id: "missions", label: "Missions" },
-            { id: "history", label: `Training history (${allRuns.length})` },
-          ]}
-        />
       </header>
 
       {view === "characters" ? (
-        <CharacterStudio personas={personas} />
-      ) : view === "history" ? (
-        allRuns.length === 0 ? (
+        <div className="min-h-0 w-full flex-1 overflow-y-auto">
+          <CharacterStage personas={personas} />
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto pb-6">
+          {view === "history" ? (
+            allRuns.length === 0 ? (
           <EmptyState
             icon={<Clock size={20} />}
             title="No training runs yet"
@@ -1158,6 +629,8 @@ export function PersonaStudioView({
             </div>
           </Modal>
         </>
+      )}
+        </div>
       )}
     </section>
   );

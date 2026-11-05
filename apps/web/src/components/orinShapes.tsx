@@ -284,6 +284,11 @@ function useShapeOverrides(): Record<string, OrinShapeKey> {
   return useSyncExternalStore(subscribeShapeOverrides, () => shapeOverrides, () => shapeOverrides);
 }
 
+/** Map override lengkap (reaktif) — untuk daftar item (galeri) tanpa hook per item. */
+export function useShapeOverridesMap(): Record<string, OrinShapeKey> {
+  return useShapeOverrides();
+}
+
 /** Bentuk AKTIF persona: override user > default PERSONA_SHAPE. Reaktif —
  *  dipakai PersonaFace & OrinPortrait (identitas visual konsisten seketika). */
 export function usePersonaShape(personaId?: string): { key: OrinShapeKey; shape: OrinShape } {

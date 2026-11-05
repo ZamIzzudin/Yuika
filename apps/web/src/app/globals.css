@@ -92,6 +92,10 @@
 @utility pop-yui {
   animation: pop-in 380ms var(--ease-out-yui) both;
 }
+/* Persona Studio: bintang konstelasi berkedip (dimatikan oleh reduced-motion). */
+@utility twinkle-yui {
+  animation: star-twinkle 4s ease-in-out infinite alternate;
+}
 @utility caret-blink {
   display: inline-block;
   width: 8px;
@@ -214,6 +218,11 @@ html, body {
   from { opacity: 0; transform: scale(0.86); }
   to { opacity: 1; transform: scale(1); }
 }
+/* Persona Studio: bintang konstelasi berkedip pelan. */
+@keyframes star-twinkle {
+  from { opacity: 0.12; }
+  to { opacity: 0.5; }
+}
 
 @keyframes yui-float {
   from {
@@ -304,6 +313,8 @@ html, body {
 .portrait-hero { width: 220px; }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Konstelasi CharacterStage: kedip bintang dimatikan. */
+  .twinkle-yui { animation: none; }
 }
 
 /* ── Project panel (P1-PRJ-6 shell v0) ─────────────────────────── */
