@@ -345,6 +345,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         if (c) c.toolNames = r.toolNames;
         moduleLogger("mcp").info({ server: name, added: r.added.length, removed: r.removed.length, total: r.toolNames.length }, "tool list changed");
       },
+      connectTimeoutMs: 150_000,
     });
     clearMcpRetry(name);
     mcpConns.set(name, { ...conn, state: "connected", lastError: null, nextRetryAt: null });
@@ -354,8 +355,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
 
   // Startup: connect semua server yang sudah di-trust (via helper di atas supaya
   // mcpConns terisi — connectMcpFromConfig hanya untuk pemakaian standalone).
+  // Gagal startup → scheduleMcpRetry (sama seperti server mati): cold start
+  // `uvx`/`npx` (unduh paket pertama) bisa timeout — retry backoff akan sukses
+  // begitu cache terisi; tanpa ini server mati permanen sampai restart proses.
   for (const name of Object.keys(mcpConfig?.mcpServers ?? {})) {
-    void connectMcp(name).catch((e) => moduleLogger("mcp").warn({ server: name }, e instanceof Error ? e.message : String(e)));
+    void connectMcp(name).catch((e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      moduleLogger("mcp").warn({ server: name }, `startup connect gagal: ${msg}`);
+      scheduleMcpRetry(name, msg);
+    });
   }
 
   // P0-MCP-1: health check — ping tiap 60 dtk (fix 2026-11: 30 dtk terlalu

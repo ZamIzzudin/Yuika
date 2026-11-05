@@ -40,6 +40,10 @@ export async function connectMcpServer(
     /** P1-MCP-6: server menambah/menghapus tool (notifikasi tools/list_changed).
      *  Dipanggil SETELAH re-register selesai — runtime memperbarui status/allowlist. */
     onToolsChanged?: (info: { toolNames: string[]; added: string[]; removed: string[] }) => void;
+    /** Timeout handshake connect + listTools awal. Default 150 dtk — cold start
+     *  `uvx`/`npx` mengunduh paket pertama kali (PyPI/npm bisa lambat); timeout
+     *  SDK default 60 dtk terlalu ketat → -32001 "Request timed out". */
+    connectTimeoutMs?: number;
   } = {},
 ): Promise<{
   close: () => Promise<void>;
@@ -49,6 +53,7 @@ export async function connectMcpServer(
   /** P1-MCP-6: tarik ulang daftar tool (dipanggil saat notifikasi list_changed). */
   refreshTools: () => Promise<{ toolNames: string[]; added: string[]; removed: string[] }>;
 }> {
+  const connectTimeoutMs = opts.connectTimeoutMs ?? 150_000;
   const client = new Client({ name: "yuika", version: "0.1.0" }, { capabilities: {} });
   // Server Python (uvx): bila uvx tak di PATH (mis. baru di-install via UI dan
   // PATH proses belum menyegarkan), pakai path absolut — tanpa restart server.
@@ -61,7 +66,18 @@ export async function connectMcpServer(
     args: cfg.args ?? [],
     env: cfg.env as Record<string, string> | undefined,
   });
-  await client.connect(transport);
+  // Gagal handshake (timeout/initialize) → tutup transport agar proses anak
+  // `uvx`/`npx` tak jadi zombie (unduhan lanjut di cache, retry berikutnya cepat).
+  try {
+    await client.connect(transport, { timeout: connectTimeoutMs });
+  } catch (err) {
+    try {
+      await transport.close();
+    } catch {
+      /* proses anak mungkin sudah mati */
+    }
+    throw err;
+  }
   // P0-MCP-1: proses server mati / crash → beri tahu runtime (reconnect backoff).
   // onclose juga terpicu saat penutupan disengaja — runtime memfilter lewat flag.
   transport.onclose = () => opts.onDown?.("transport closed");
@@ -75,7 +91,8 @@ export async function connectMcpServer(
     });
   });
 
-  const { tools } = await client.listTools();
+  const { tools } = await client.listTools({ timeout: connectTimeoutMs });
+
   let current = new Set<string>();
 
   /** Daftar ulang tool server → register baru, unregister yang hilang.
