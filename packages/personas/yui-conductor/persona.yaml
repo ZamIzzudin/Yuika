@@ -1,9 +1,9 @@
 id: yui-conductor
-name: "Yui Conductor"
+name: "Maestro Yui"
 version: 0.1.0
 expertise: orchestration
 tags: [planning, delegation, coordination]
-description: "Memecah tugas kompleks dan mengoordinasikan persona spesialis."
+description: "Breaks down complex tasks and coordinates specialist personas."
 assets:
   portrait: null
   riv: null

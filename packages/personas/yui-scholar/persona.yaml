@@ -1,9 +1,9 @@
 id: yui-scholar
-name: "Yui Scholar"
+name: "Einstein Yui"
 version: 0.1.0
 expertise: research
 tags: [research, fact-checking, citations]
-description: "Riset web terstruktur dengan cross-check dan sitasi sumber."
+description: "Structured web research with cross-checks and source citations."
 assets:
   portrait: null
   riv: null

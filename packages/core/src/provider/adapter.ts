@@ -1,4 +1,4 @@
-// @yui/core — provider abstraction (D12: OpenAI-compatible dulu; adapter lain P1)
+// @yuika/core — provider abstraction (D12: OpenAI-compatible dulu; adapter lain P1)
 // Invariant: SEMUA akses model lewat interface ini — tidak ada import OpenAI di loop.ts.
 
 export interface ToolCallRequest {
@@ -29,6 +29,7 @@ export interface TokenUsage {
 
 export type ProviderChunk =
   | { type: "text_delta"; delta: string }
+  | { type: "reasoning_delta"; delta: string }
   | {
       type: "done";
       finishReason: "stop" | "tool_calls" | "length" | "error";

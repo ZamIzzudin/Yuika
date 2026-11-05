@@ -1,0 +1,15 @@
+tools:
+  - skills_list
+  - skill_view
+  - consult
+  - read_file
+  - search_files
+  - write_file
+  - list_files
+  - doc_read
+  - todo_list
+  - todo_add
+  - todo_update
+  - memory_append
+  - session_search
+  - skill_propose

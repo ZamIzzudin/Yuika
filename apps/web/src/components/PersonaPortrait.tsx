@@ -1,30 +1,30 @@
 "use client";
-import type { PersonaState } from "@yui/contracts";
-
-const EMOJI: Record<PersonaState, string> = {
-  idle: "😴",
-  thinking: "💭",
-  working: "🔧",
-  awaiting_input: "🙋",
-  done: "✅",
-  error: "⚠️",
-  celebrating: "🎉",
-};
+import type { PersonaState } from "@yuika/contracts";
+import { OrinPortrait } from "./OrinPortrait";
 
 /**
- * Placeholder CSS portrait — mapping event → state SUDAH final (kontrak persona.state).
- * D8 (PLAN §7.6): ganti isi komponen ini dengan <Rive> saat file .riv siap; ABI-nya
- * sudah disiapkan (props personaId + state). Timebox demo: 3 jam, lalu tetap fallback ini.
+ * Portrait persona — Orin v4 (rig geometris, docs/Orin v4; .riv menyusul P1-PER-2
+ * dengan input shape 0–4 + mood 0–5, hirarki identik). compact = wajah kecil header
+ * chat; hero = empty state (pola agent-chat-empty OpenBot).
  */
-export function PersonaPortrait({ name, state }: { name: string; state: PersonaState }) {
+export function PersonaPortrait({
+  name,
+  state,
+  personaId,
+  variant = "hero",
+}: {
+  name: string;
+  state: PersonaState;
+  personaId?: string;
+  variant?: "compact" | "hero";
+}) {
+  if (variant === "compact") {
+    return <OrinPortrait state={state} personaId={personaId} size={40} />;
+  }
   return (
-    <div>
-      <div className="portrait" data-state={state} aria-label={`${name} ${state}`}>
-        {EMOJI[state]}
-      </div>
-      <div className="state-label">
-        {name} · {state}
-      </div>
+    <div className="portrait-hero-wrap" data-state={state}>
+      <OrinPortrait state={state} personaId={personaId} size={220} />
+      <span className="sr-only">{name}</span>
     </div>
   );
 }

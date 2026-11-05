@@ -2,5 +2,12 @@ tools:
   - skills_list
   - skill_view
   - read_file
+  - search_files
+  - doc_read
   - write_file
   - list_files
+  - todo_list
+  - todo_update
+  - memory_append
+  - session_search
+  - skill_propose

@@ -1,2 +1,6 @@
-can_spawn: [yui-scholar, yui-scribe, yui-coder]
+# P1-DEL-1: max_concurrent = cap paralel MILIK SI PENDELEGASI (conductor).
+# Maestro: 3 front sekaligus (riset + susun + develop). Final cap juga
+# di-min() dengan cap budget workspace (Settings → Metering).
+max_concurrent: 3
+can_spawn: [yui-scholar, yui-scribe, yui-coder, yui-designer, yui-analyst, yui-operator, yui-planner]
 spawnable_by: [user]

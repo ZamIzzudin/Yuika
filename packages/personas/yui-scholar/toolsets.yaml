@@ -3,6 +3,12 @@ tools:
   - skill_view
   - web_fetch
   - read_file
+  - search_files
   - write_file
   - list_files
   - mcp__*
+  - todo_list
+  - todo_update
+  - memory_append
+  - session_search
+  - skill_propose

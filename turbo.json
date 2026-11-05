@@ -3,6 +3,7 @@
   "tasks": {
     "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
     "dev": { "cache": false, "persistent": true },
+    "@yuika/web#dev": { "cache": false, "persistent": true, "with": ["@yuika/api#dev"] },
     "test": { "dependsOn": ["^build"] },
     "lint": {},
     "typecheck": { "dependsOn": ["^build"] }

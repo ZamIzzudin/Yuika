@@ -1,0 +1,14 @@
+# Override untuk smoke test terisolasi (port bebas saat dev server lokal hidup):
+#   docker compose -f docker-compose.yml -f docker-compose.smoke.yml -p yui-smoke up -d --build
+#   curl http://localhost:3300  &  http://localhost:3290/api/personas
+#   docker compose -p yui-smoke down -v
+services:
+  api:
+    ports: !override
+      - "3290:3211"
+  web:
+    build:
+      args:
+        NEXT_PUBLIC_API_BASE: http://127.0.0.1:3290
+    ports: !override
+      - "3300:3000"

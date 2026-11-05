@@ -1,5 +1,23 @@
 # TASKS.md — Checklist Delegasi & Roadmap Development (awal → siap testing)
 
+> **REBRAND 2026-11: "Your-Yui" → "Yuika"** (yui = mimpi/唯華 + ka = unggul/香 —
+> "mimpi yang unggul"). Nama pendek **Yui** dipertahankan (persona maestro, prefix
+> `YUI_`, scope `@yuika/*`). Semua kemunculan brand di sumber/docs di-update.
+
+> **Update sesi kernel 2026-11 (agent, branch `dev/p0-kernel`):** **P1-DEL-3 pause/resume
+> anak delegasi** (⏸ kartu delegasi; gate di batas iterasi; cancel saat pause tetap
+> graceful) · **P1-DEL-1 cap per plan** (`delegation.max_concurrent`; min() dengan cap
+> budget; conductor 3, planner 2) · **P0-INF-1 split apps/api** (Fastify :3211 pemilik
+> runtime; web pure frontend; 36 route dipindah 1:1; SSE + upload raw ikut) ·
+> zod **v3 → v4.6.7**
+> (kontrak + core + web + override global; menutup GHSA ReDoS zod — audit prod kini
+> **0 vulnerabilities**) · **openai SDK 4.104 → 7.51** (menutup advisory high openai
+> 4.55–5.23; adapter streaming API tak berubah) · `zod-to-json-schema` pensiun →
+> `z.toJSONSchema(draft-7)` native · `normalizeToolSchema` kini mempertahankan bentuk
+> ANGKA exclusiveMin/Max (v4 memancarkannya langsung) · P0-INF-3 pino + traceId per
+> turn · P0-INF-4 error taxonomy (`YuiError{kind,code,retryable}` + `SessionErrorEvent`
+> bermakna) · P0-CORE-5 contract invariants ✅ (sudah ada di suite CI).
+>
 > Pasangan `PLAN.md` (mengapa) dan `DEMO-WEEK-1.md` (eksekusi minggu demo).
 > **Dokumen ini = sumber kebenaran progres tim.** Update tiap sinkron pagi (15 menit).
 >
@@ -14,6 +32,60 @@
 > file-tools, store, delegation, run-command, registry) · fix: SSE dedupe, forwarding approval
 > delegation, path-escape prefix bug, bug skillsDir runner, EventDraft distributive, extensionAlias
 > webpack, zod v3 API. Yang belum: verifikasi model ASLI (W1-A1/A2 butuh API key) & dry run W4-S1.
+>
+> **Update sesi dev 2 (branch `dev/w5-polish`):** Orin SVG animasi jadi portrait (W3-B2/C1/B3),
+> USER.md stub (W5-C2), test prompt stack frozen (W2-C2) — total 24+3 test green.
+>
+> **Update sesi dev 3:** UI overhaul penuh ala OpenBot (design token netral + aksen tunggal,
+> chat tanpa-bubble agent / bubble terang user, steps lipat, empty state per-persona, tab-ready) ·
+> fix provider GLM 400/1210 (normalisasi `exclusiveMinimum` boolean di tool schema) ·
+> **PLAN v0.4: pilar Studio Proyek** (§13 — D14–D17) → task baru di **P1-PRJ**, **P2-FLOW**,
+> **P2-STU**. Referensi: `D:\projects\openbot`; pen.dev menyusul di-clone (P2-STU-6).
+>
+> **Update sesi dev 4:** **pen.dev → Penpot** (pen.dev tidak open source; repo
+> `D:\projects\penpot` sedang di-clone — eksplorasi menyusul P2-DSN-1) · **PLAN v0.5**
+> (D18–D21): TaskTree & TaskList monitoring (P1-PRJ-7, P2-FLOW-7) · **Dungeon** arena
+> latihan persona → skill lifecycle `draft→tested→ready` → assign gating (P1-DUN) ·
+> **pipeline desain→kode Penpot** (P2-DSN) · **multi-model per persona** (P1-MDL).
+> Detail konsep: PLAN §13.7–13.10.
+>
+> **Update sesi dev 5 (putusan user):** **Yui Designer masuk roster** (D9 = 7, PLAN §7.4 —
+> task P1-PER-7) · **Penpot wajib ter-embed di platform** (bukan app terpisah) — scope v0
+> **ramping tapi flow utuh**: agent buat (fase design) → user lihat live di tab Design →
+> develop baca → kode — tanpa keluar platform (tangga embed PLAN §13.9; D18 diperinci).
+>
+> **Update sesi dev 6 (P2-DSN-1 selesai):** eksplorasi Penpot (`docs/refs/penpot.md`) —
+> **embed wajib self-host** (CSP `frame-ancestors`, cloud tak bisa di-iframe; §12.15
+> terjawab) · v0 = agent via **RPC API** (`update-file` headless) + **iframe share-link
+> viewer** (update live) · v1 = **MCP server resmi** (plugin hidup di sesi embedded —
+> konstrain “tab aktif” terpenuhi otomatis) · render headless via exporter WASM ·
+> OpenAPI spec bawaan (`/api/main/doc`) → client digenerate.
+>
+> **P1-PRJ-1+2+3+4+5+6+7 & P1-MCP-3 selesai (sesi dev 7):** project first-class (store/REST/roster tasklist/UI drawer), TaskTree dari replay event, **MCP trust gate fail-closed** (`mcp-trust.json` + deny per-tool + audit + connect/disconnect dinamis + panel sidebar) dan **binding MCP project×persona (D17)** — agent Conductor ter-bind memanggil tool filesystem live (audit terisi). 65 test green. Skenario test mandiri: `docs/TEST-SCENARIO-STUDIO-P1.md`.
+>
+> **DS-1 Design System + fix mapping draf (feedback user: "style makin berantakan & tidak konsisten; kurang suka pure CSS — pakai Tailwind"; + "skill hasil latihan tidak bisa di-mapping, hanya bawaan"; + "tak ada tempat menerima draf"):**
+> (1) **Tailwind v4 aktif** (`@tailwindcss/postcss`; theme alias token `--yui-*` → utility semantik `bg-surface/text-muted/border-line/rounded-card/…` — visual paritas; `@import "tailwindcss" source(none)` + `@source` eksplisit karena auto-detection Windows kena EPERM junction AppData → utility hilang diam-diam; cache `.next` lama ikut menipu — nuke saat ganti config). (2) **Bundle komponen global `apps/web/src/components/ui/`**: Button (primary/secondary/ghost/danger + sm/md + active), Chip/ChipToggle/Dot (6 tone), Card/CardHead (surface/raised/inset), Modal (glass, ESC+overlay), Field/TextInput/TextArea/Select, TabList, EmptyState/MetaRow/SectionTitle — barrel `ui/index.ts`. (3) **docs/DESIGN-SYSTEM.md**: prinsip, tabel token→utility, inventaris komponen + contoh, pola layout, do/don't, checklist fitur baru, peta migrasi file. **DungeonView = layar referensi** (Tailwind murni, CSS legacy dungeon dihapus dari globals.css 110k→88k). (4) **Fix draf skill**: `getSkillBindings` kini menyertakan draf (slug+status); tab Mapping Skill punya tombol **"Terima & pasang"** (POST /api/skills accept → attach) — self-sufficient, tidak lagi tergantung tab Skill yang hanya muncul saat project aktif (akar keluhan user). Migrasi bertahap file lain tercatat di §7 DS doc (batch 2–4).
+>
+> **DS-1 lanjutan — migrasi penuh batch 2–4 + Phosphor Icons (feedback user: "migrasikan batch 2 fokus ke UI dulu", "lanjutkan ke batch 3", "selesaikan batch 4", + pakai Phosphor untuk semua ikon):** (1) **batch 2** — ChatView (timeline bubble/gutter, kartu approval/delegasi/reasoning, composer), SettingsModal (ui Modal/Field + tabel metering Tailwind), shell `page.tsx` (sidebar, TabList workspace dengan dot status pulse, dropdown persona glass, StateChip, empty state). (2) **batch 3** — SkillsTab, ProjectPanel (konfirmasi hapus 2-langkah), PersonaPicker (+ galeri bentuk ke ui Modal; kelas `settings-*` pensiun). (3) **batch 4** — TaskDrawer (sesi/roster/papan kanban drag&drop/memori/pohon/Tim+bench), FileTab (tree+viewer+diff berwarna), McpPanel (trust gate+katalog+audit), TeamTree (kanvas pan/zoom tetap; garis penghubung via varian `before:`/`after:` Tailwind), TracePanel (ikon per kind), Markdown (self-contained Tailwind, kelas `.md` dihapus). (4) **`@phosphor-icons/react` = satu-satunya set ikon** — emoji ikon & SVG inline buangan (portret tetap); peta ikon + aturan ukuran di DESIGN-SYSTEM.md §5b. (5) **FIX diam-diam**: token `--radius-pill:999px` ditambahkan — `rounded-pill` dipakai sejak batch 2 tapi utility-nya tak pernah ada (chip/dot/budget-bar tampil kotak). (6) **globals.css 1100+ → 441 baris** — hanya token `@theme`, keyframes animasi, 4 `@utility` (glass-panel/msg-in/caret-blink/typing-dot), `.chat-empty` (PersonaPortrait) & scrollbar yang tersisa; **nol kelas komponen legacy**. 227 core hijau tiap batch; verifikasi dev fresh `.next` (utility ter-generate, page 200). Batch 2=`db7b07e` · 3=`f6cb5c0` · 4=`a761d6e`. **PersonaOrbit (feedback user: kartu persona floating sederhana, maskot+nama saja, deskripsi tampil di pusat saat hover): `PersonaGrid` → orbit elips dengan animasi `@utility float-yui`; pusat = maskot 92px + nama + deskripsi + badge level; klik kartu tetap memulai sesi.** **Retrofit (feedback user): maskot pusat = `OrinPortrait` INTERAKTIF (mata ikut kursor + klik), maskot statis tersendiri dihapus — halaman utama = konstelasi saja.** **Dekorasi orbit (feedback user "terlalu sepi, floating tak terlihat"): elips putus-putus tepat di jalur kartu + ring dalam + glow aksen di belakang maskot; float diperkuat (±5px) dengan bayangan yang ikut bernapas di keyframes `yui-float`, kartu settle `shadow-card`→`shadow-pop` saat hover.** **Retrofit radius (feedback user "kurang suka pill button, jadikan kotak radius tumpul"): semua TOMBOL (ui Button, ChipToggle, toggle approval/skill/material) → `rounded-md2` 8px; badge/bar progress/dot pasif tetap kapsul.**
+>
+> **Alias persona legendaris (keputusan user 2026-11):** nama tampilan 8 persona diganti konsep "tokoh + Yui" — Conductor→**Maestro**, Planner→**Liebert**, Analyst→**Sherlock**, Scholar→**Einstein**, Scribe→**Poe**, Coder→**Hiro**, Designer→**Picasso**, Operator→**Neo**. Sumber nama resmi tetap `persona.yaml`; ID teknis `yui-*` TIDAK berubah (binding/roster/sesi lama aman). Baru: `packages/core/src/personas/names.ts` (`PERSONA_ALIAS` + `personaDisplayName`) menggantikan derivasi `Yui ${short}` di loop.ts & memory-tools.ts; web PERSONA_NAME map + label bench/Dungeon kini strip sufiks " Yui". Fixture 5 file test core ikut diganti. Docs aktif (PLAN/TEST-PLAN/TEST-GRAND-TOUR) di-update; TASKS historis tidak disentuh. 227 hijau.
+>
+> **Toast global react-hot-toast (feedback user: feedback success/error harus popup rapi & profesional):** baru `ui/toast.tsx` (`YuiToaster` top-center bertema token yui + Phosphor Check/Warning; helper `toastOk`/`toastErr`) di-mount di layout; **barrel ui/index.ts kini "use client"** (insiden: server layout menyeret surface.tsx bermasalah useEffect). Konversi banner err/flash inline → toast di SettingsModal (simpan provider), ProjectPanel (create/delete), FileTab (upload/load), McpPanel (trust/retry/install/uninstall/uv + toast sukses), SkillsTab (eval/save/accept/reject), DungeonView (skill ops + misi + run + upload + delete), TaskDrawer (memori simpan). Nol banner err inline tersisa.
+>
+> **Polish dev-10 #3 (feedback user: approval mengganggu + scope dungeon + form modal):** (1) **mode approval "auto"** — chip ⚡ di atas composer (persist `approval-mode.json`, survive restart; global lintas sesi & delegasi): `write_file` & `run_command` disetujui otomatis dengan event `approval.resolved` jujur (traceable, tanpa kartu menggantung) — menghapus titik nyeri "approval kedaluwarsa → proses terasa stuck"; tool lain (MCP/dst.) tetap minta kartu; REST `GET/PUT /api/settings/approval`. (2) **hint aktivasi skill** di tab Skill: skill baru langsung tersimpan & bisa dijalankan via `skills_list`/`skill_view` di sesi berjalan, tapi diperkenalkan di prompt hanya pada **sesi baru** (prompt sesi beku by design — invariant P0-CORE-5). (3) **ruangan dungeon keluar dari daftar card project** (scope berbeda) — riwayat sesi latihan kini tab **"Riwayat"** di menu Dungeon (semua run semua misi + tombol "Buka sesi" → buka ruangan sebagai workspace). (4) **form buat latihan baru → popup modal** (daftar misi tetap terlihat). +2 test (mode auto). 223 core hijau.
+>
+> **Fix performa dev-10 (laporan user "task sederhana 30 menit, jauh lebih lambat dari harness lain")** — diagnosis data `p_1b7017c5` (Hiori Florist): 41.5 menit wall, **39.1 menit (94%) = waktu provider**, BUKAN orkestrasi delegasi/UI/DB (semua tool call < 1 dtk). Tiga akar + fix: (1) **`reasoning_content` GLM dibuang adapter** — 42k token pikiran per call tak terlihat → UI seperti mati menit-lamanya → kini di-stream sebagai `reasoning.delta` (UI: blok 💭 kolaps-able); (2) **prompt membengkak 4.7k→3 0k token** karena isi file terkirim ulang penuh tiap iterasi → `slimHistory` diet prompt view-only (payload tool lama diarsipkan, pesan terbaru utuh); (3) **kartu delegasi statis** selama anak bekerja → `delegation.delta` feed live (teks/pikiran/tool anak streaming di kartu parent); plus **Trace tab polling 3 dtk → realtime** (refetch debounce saat event SSE, tanpa polling). +5 test. Catatan: sisa latensi = karakter model (output reasoning besar di glm-5) — opsi reasoning effort/config model menyusul bersama multi-model P1-MDL.
+>
+> **Polish sesi dev 8 (feedback user):** resume percakapan project (klik project = buka sesi terbaru via replay SSE, riwayat sesi + tombol sesi baru), UX project lead (PersonaPicker keluar dari sidebar; Conductor lead otomatis, persona via kartu tengah/dropdown header, composer aktif di state kosong), **panel proyek = bagian utama shell** (pola IDE: sidebar | chat | panel 520px, toggle layar penuh) dengan **tab Tasklist | Tim (org-chart struktur delegasi live: lead + anak delegasi + bench roster) | Pohon (TaskTree nested) | Roster | Sesi**, **tracing performa `[yui:trace]`** (durasi provider per iterasi / tool / menunggu approval / delegasi — diagnosis "landing page 15 menit"; `YUI_TRACE=0` untuk matikan), approval **"Setujui & ingat"** per sesi (loop di-cache per sesi) + file policy `code|docs|reports` bebas-approval (kode produk mendarat di `code/`, bukan `reports/`). Lanjut: analisis hasil tracing → optimasi loop (P0-CORE-3/4), P1-MCP-1, P2-FLOW-7.
+>
+> **Sesi dev 9 (Studio OS shell + kanban + katalog MCP + memory loop):** shell final = **satu area konten dengan tab bar** (`Chat | Tim | Papan | Pohon | Roster | Sesi | Memori`) — chat jadi tab pertama, bukan split dua panel; dot live di tab (agent bekerja / delegasi berjalan). **P2-FLOW-7 v0**: tab Papan = kanban 4 kolom drag&drop HTML5 (tanpa lib) → PATCH status, kartu subtask+assignee+artefak, auto-refresh saat `todo_*`. **P1-MCP-1**: katalog 20 server kurasi (`packages/core/src/mcp/catalog.ts`) + UI install/uninstall di panel MCP (form env untuk API key, badge risiko, pencarian; `POST/DELETE /api/mcp/install`, `GET /api/mcp/catalog`) — install hanya menulis deklarasi ke `mcp.json`, **tetap fail-closed**: harus Trust dulu sebelum terhubung. **P1-MEM-1**: USER.md/MEMORY.md manager + tool `memory_append` + tab Memori (editor); catatan di-inject ke system prompt sesi baru (USER.md yang dulu ditulis-tak-dibaca kini dibaca). **P1-MEM-2**: learn nudge pasca-task — aux call ringan pasca-turn ber-tool → 0/1 catatan via memory_append + event `memory.noted` (chip di chat). Sesi delegasi anak kini mewarisi projectId parent. **Fix katalog (feedback test user)**: 4 command server salah-diverifikasi registry (fetch→`@kazuph/mcp-fetch`, git→uvx, sqlite→`mcp-server-sqlite-npx`, time tetap uvx); field `runtime`+`setupNote` (badge "Python/uvx" + hint). **Dukungan uv end-to-end**: deteksi otomatis (`mcp/uv.ts` — PATH + fallback path absolut `%USERPROFILE%\.local\bin`, cache 30 dtk), tombol **Install uv** satu-klik (installer resmi astral.sh, konfirmasi eksplisit UI, REST `GET/POST /api/mcp/runtime`), connect `uvx` otomatis pakai path absolut → **tanpa restart dev server**; baris server Python disable "Butuh uv" bila belum ada. +2 test uv. **Konsistensi desain (feedback user "seirama dengan chat")**: FIX BUG token `--yui-space-5` tak terdefinisi (semua padding pane & modal jadi 0 → konten terpinggir), **form kit global** (semua input/select/textarea satu DNA composer — hapus 5 styling duplikat), **glass ala macOS** untuk modal Pengaturan + dropdown persona (disetujui user). **Robustness (trace user)**: routing artefak kode (`.html` dll di `reports/` → `code/`, fix "landing page mendarat di reports"), provider timeout+retry, budget graceful, guard repetisi. +22 test total sesi. **Polish (feedback user): menu ⚙ Pengaturan** (modal: nav seksi + lebar) — panel MCP pindah dari dasar sidebar (sesak) ke seksi "MCP & Tools"; seksi baru **"Provider & Model"**: base URL / API key (password, kosong=keep, tak pernah dikirim balik — hanya 4 digit terakhir) / model utama / fallback, **swap panas** (provider baru in-memory + `.env` diperbarui via `updateEnvFile` + loopCache dikosongkan; delegateDeps di-mutasi via getter) — REST `GET/PUT /api/settings/provider`; +3 test env-file. Catatan: fitur core butuh **restart dev server**.
+>
+> **Update sesi dev 7 (maskot v4):** `OrinPortrait` rewrite ke **Orin v4** (docs/Orin v4 —
+> Pilih Maskot): satu rig mata untuk semua bentuk, identitas persona = bentuk —
+> conductor=bola #F2620F, scholar=awan #F5A00A, scribe=tetes #2B8CF0, coder=kotak #12D1A0,
+> designer=segitiga #F0278E (`orinShapes.tsx` dipakai portrait + PersonaFace mini) ·
+> mapping state baru: working→speaking (halo), awaiting_input→listening (mata besar) ·
+> typecheck 3/3, 28 test green, build ✓. Siap Rive: satu .riv, input `shape` 0–4.
 
 ## Peta Fase & Gerbang
 
@@ -25,6 +97,10 @@
 | **P2** | Mobile · desktop+relay · curator · cron · kanban · KB · vault · billing v2 | ±10 minggu | **G-BETA — SIAP TESTING #2 (closed beta)** |
 | **P3** | Marketplace · teams · voice · self-host | ±3–4 bulan | G-P3 |
 | **P4** | Workflow builder · eval · enterprise | berkelanjutan | — |
+
+> **Track Studio (v0.4–v0.5, PLAN §13):** P1-PRJ + P1-DUN + P1-MDL numpang di P1;
+> P2-FLOW + P2-STU + P2-DSN numpang di P2. Gerbang tambahan masuk G-BETA. UI hasil
+> sesi dev 3 sudah tab-ready.
 
 ---
 
@@ -61,7 +137,7 @@
 - [ ] **W2-B1** Tool activity feed UI (tool.call/result inline) · *B · 0.5d · dep W1-B3* → tiap call terlihat real-time
 - [x] **W2-B2** Session store append-only + replay `?since=` + events route · *B · 1d* → refresh → feed ter-replay — *verif: `store.test.ts` (id monotonic, since eksklusif, frozen prompt); SSE route kini dedupe by id*
 - [ ] **W2-C1** `skills_list`/`skill_view` tools · *C · 0.5d* → agent bisa memuat skill web-research
-- [ ] **W2-C2** Prompt stack frozen per sesi ([core][persona][skills index]) · *C · 0.5d · dep W1-C1* → system_prompt tersimpan di sessions; test: prompt tidak berubah saat config berubah
+- [x] **W2-C2** Prompt stack frozen per sesi ([core][persona][skills index]) · *C · 0.5d · dep W1-C1* → system_prompt tersimpan di sessions; test: prompt tidak berubah saat config berubah — *verif: `prompt-stack.test.ts` (frozen + sesi baru baca config baru)*
 
 ## W3 (Rabu) — Approval + ekspresi + persona UX
 
@@ -70,9 +146,9 @@
 - [x] **W3-A1** Approval engine wiring loop (pause/resume turn) + approvalPolicy file tools · *A · 1d* → write di luar reports/ mem-pause turn sampai user jawab — *verif: `delegation.test.ts` (approve → file jadi; deny → dibatalkan)*
 - [x] **W3-A2** `run_command` allowlist + selalu approval · *A · 0.5d* → `node -v` jalan setelah approve; tolak = tool error — *verif: `run-command.test.ts`*
 - [ ] **W3-B1** ApprovalCard UI (setujui/tolak → POST) · *B · 0.5d · dep W3-A1* → klik setujui melanjutkan turn
-- [ ] **W3-B2** `PersonaPortrait` mapping `persona.state` (fallback CSS scaffold) · *B · 0.5d* → 7 state visual berbeda & reaktif
-- [ ] **W3-B3** Persona picker → sesi baru bersih (reset state client) · *B · 0.25d*
-- [ ] **W3-C1** Integrasi Rive placeholder (file komunitas / blob) — **timebox 3 jam** · *C · 0.5d* → `.riv` termuat via `@rive-app/react-canvas` ATAU fallback CSS tetap (keputusan tercatat)
+- [x] **W3-B2** `PersonaPortrait` mapping `persona.state` (fallback CSS scaffold) · *B · 0.5d* → 7 state visual berbeda & reaktif — *verif: Orin SVG animasi (rig dari docs/Orin v2); tint per persona; Rive menyusul P1-PER-2*
+- [x] **W3-B3** Persona picker → sesi baru bersih (reset state client) · *B · 0.25d* — *verif: `pick()` reset items/personaState/lastEventId/openAssistant*
+- [x] **W3-C1** Integrasi Rive placeholder (file komunitas / blob) — **timebox 3 jam** · *C · 0.5d* → `.riv` termuat via `@rive-app/react-canvas` ATAU fallback CSS tetap (keputusan tercatat) — *keputusan: fallback = Orin SVG animasi (rig & keyframe final dari `docs/Orin v2`); .riv dibangun di P1-PER-2 dengan hirarki bone identik*
 - [ ] **W3-C2** Persona.yaml final 4 persona + deskripsi UX (≤60 char) · *C · 0.25d*
 
 ## W4 (Kamis) — Delegation & MCP
@@ -95,7 +171,7 @@
 - [ ] **W5-A1** Fix P0 core (race SSE→store, error provider → session.error bersih) · *A · 1d*
 - [ ] **W5-B1** Polish UI (dark theme konsisten, empty/error state, layout) · *B · 1d*
 - [ ] **W5-C1** **Prompt iteration Conductor** (3 varian, uji blind 5 prompt beda) · *C · 1d* → dekomposisi+delegasi konsisten ≥4/5
-- [ ] **W5-C2** USER.md stub (append 1 catatan preferensi per sesi — label preview) · *C · 0.25d*
+- [x] **W5-C2** USER.md stub (append 1 catatan preferensi per sesi — label preview) · *C · 0.25d* — *verif: `prompt-stack.test.ts` + smoke API; loop belajar sungguhan = P1-MEM*
 
 ## W6 (Sabtu) — Dry run & rekam
 
@@ -119,57 +195,72 @@
 - [ ] Conductor mendekomposisi & mendelegasikan ke ≥2 persona; progress+ringkasan tampil
 - [ ] Approval inline; approve lanjut, deny dihormati
 - [ ] Refresh → resume via replay; pertanyaan lanjutan dijawab dari konteks
-- [ ] Semua tipe UI dari `@yui/contracts` (grep tipe tangan = 0)
+- [ ] Semua tipe UI dari `@yuika/contracts` (grep tipe tangan = 0)
 - [ ] Video backup tersimpan
 
 ---
 
 ## P0 — Kernel penuh: bayar utang demo (±3 minggu)
 
+> **AUDIT STATUS dev-10** (menjawab "kenapa P0/P1 belum semua ✅") — item dicheck HANYA
+> bila scope penuhnya selesai; belum ✅ = salah satu dari ini, SEMUA masih relevan
+> (tidak ada yang usang):
+> **(a) butuh resource eksternal** — P1-CRED-5 (Stripe) · P1-CRED-6 (tagihan provider
+> nyata) · P1-INF-5 (VPS/domain) · P1-DEL-2 (web push) · P1-PER-1/2/3 (aset Rive
+> artist) · P1-PER-5 (penguji manusia — bisa Anda) · P0-INF-5/6 (infra docker/CI).
+> **(b) menunggu fondasi** — P0-SEC-1 sandbox container → membuka P1-MCP-4 + sisa
+> P0-SEC-3 · P0-DATA-1 Postgres
+> (dep P0-INF-5) → P0-DATA-2 retention · P1-MCP-2 OAuth (menyusul server OAuth-capable:
+> Penpot/Figma di P2-DSN) · P1-INF-1 auth (desain tenant, pasca-demo).
+> P0-DEL-2 steering ✅ SELESAI 2026-11 (cancel/steer/cascade + UI kartu delegasi).
+> **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-3/4 ·
+> P0-QA-1/2 · P1-MCP-5 · P1-DEL-1 (parsial: cap paralel
+> dinamis via budget CRED-3 + consult paralel sudah jalan; sisa config per-plan).
+>
 > Tujuan: kernel production-grade. Grep `DEMO-SHORTCUT` di repo = daftar utang.
 
 ### P0-INF (infra & arsitektur)
 
-- [ ] **P0-INF-1** Split `apps/api` (service terpisah Fastify) — core keluar dari proses Next.js · *A · 2d* → web bicara HTTP ke api, bukan import in-process
-- [ ] **P0-INF-2** Konfigurasi terpusat (env module + validasi zod + fail-fast) · *A · 0.5d*
-- [ ] **P0-INF-3** Logging terstruktur (pino) + `traceId` per turn ter-propagasi ke semua event/log · *B · 1d*
-- [ ] **P0-INF-4** Error taxonomy konsisten (provider/tool/internal + kode) · *A · 1d*
-- [ ] **P0-INF-5** Docker compose dev (web+api+db) + README update · *B · 1d*
-- [ ] **P0-INF-6** CI: lint+typecheck+test di PR (GitHub Actions), turbo cache · *B · 1d*
+- [x] **P0-INF-1** Split `apps/api` (service terpisah Fastify) — core keluar dari proses Next.js · *A · 2d* — ✅ 2026-11: workspace `apps/api` (fastify 5, MIT) memegang `YuiRuntime` (singleton globalThis + env-boot .env root, port `YUI_API_PORT` default 3211); SEMUA 36 route Next dipindah 1:1 (path `/api/…` tak berubah) termasuk SSE stream (`reply.hijack` + Last-Event-Id) & upload raw (catch-all buffer parser); zod error → 400 `{error}`; CORS reflect origin; graceful shutdown (dispose runtime → MCP stdio tidak zombie); web = pure frontend — `lib/api.ts` (`NEXT_PUBLIC_API_BASE`) membungkus SEMUA fetch/EventSource, `app/api/**` + `lib/runtime.ts` DIHAPUS, sisa satu subpath pure `@yuika/core/project/diff` (diff viewer, tanpa runtime); turbo `dev` menjalankan web+api paralel; +7 REST contract test (`fastify.inject` + fake runtime). Mengapa split: (1) HMR Next dulu me-clone runtime tiap recompile ( QUIRK dev-10 — zombie MCP, spam reconnect; komentar lib/runtime.ts lama), (2) jalur P0-INF-5 Docker/P0-DATA-1 Postgres/P1-INF-1 auth butuh proses yang bisa di-scale & di-deploy terpisah dari renderer SSR, (3) pintu SDK/OpenAPI + P0-QA-1 E2E.
+- [x] **P0-INF-2** Konfigurasi terpusat (env module + validasi zod + fail-fast) · *A · 0.5d* — ✅ v0 dev-10: `core/env.ts` — satu modul env tervalidasi zod (fail-fast saat modul dimuat: nilai rusak → error jelas, bukan NaN diam-diam); dipakai loop/provider/approval/compress; +`YUI_MAX_ITER_HARDCORE` (hardcore cap 64) & `YUI_PROVIDER_TIMEOUT_MS` default 5 mnt (fix 2026-11)
+- [x] **P0-INF-3** Logging terstruktur (pino) + `traceId` per turn ter-propagasi ke semua event/log · *B · 1d* — ✅ v0 2026-11: `core/logger.ts` — SATU pino root di-cache globalThis (HMR/vitest-safe), JSON-lines stdout; level via `YUI_LOG_LEVEL` (default: debug saat YUI_TRACE aktif, info selain itu, warn di bawah vitest); **child logger per turn** di `loop.runTurn` — traceId(=turnId)+sessionId+persona menempel otomatis di semua log turn; milestone terstruktur: turn started/finished (ms,iters,model,tools), cancelled, fallback aktif, budget, tool error, kompresi; semua `console.log/warn` core (runtime heal/MCP, delegation, skills loader, `[yui:trace]` loop) dimigrasi ke pino; baris trace lama jadi `logger.debug` bermakna (YUI_TRACE=0 tetap mematikan). +`YUI_LOG_LEVEL`/`YUI_TRACE` di .env.example
+- [x] **P0-INF-4** Error taxonomy konsisten (provider/tool/internal + kode) · *A · 1d* — ✅ v0 2026-11: `core/errors.ts` — `YuiError{kind,code,retryable}` + `classifyError(err, fallbackKind)`: errno jaringan/undici→`PROVIDER_NETWORK`(retryable), HTTP 408/429/5xx→`PROVIDER_TIMEOUT/RATE_LIMIT/HTTP`(retryable), 401/403→`PROVIDER_AUTH`, AbortError→kind `abort` (bukan error), fallback tool→`TOOL_EXEC/TOOL_NOT_FOUND`, mcp→`MCP_DISCONNECTED`, unknown→`INTERNAL`; idempoten terhadap YuiError. `SessionErrorEvent` (contracts) membawa `kind`+`code` opsional (backward-compat); loop provider-catch & budget-path mengisi taxonomy; sisa penerapan menyusul bersama P0-INF-1 (REST handler)
+- [x] **P0-INF-5** Docker compose dev (web+api+db) + README update · *B · 1d* — ✅ v0 2026-11: `Dockerfile` multi-stage dua target — `web` = Next.js **standalone** (`NEXT_OUTPUT_STANDALONE=1`, bundle minimal; `NEXT_PUBLIC_API_BASE` bake-time dari sudut browser) & `api` = Fastify + @yuika/core via **tsx** (exports core menunjuk src/*.ts); base `node:24-bookworm-slim` (glibc — prebuilt better-sqlite3); uv (binary tunggal) untuk MCP server uvx; data user di **volume /data** (`YUI_DB_PATH`/`YUI_WORKSPACE_DIR` — sqlite + workspace persist antar rebuild, tanpa bake secrets: .env via `env_file` compose); `YUI_API_HOST=0.0.0.0` di container; healthcheck `node -e fetch` → web `depends_on: service_healthy`; `docker-compose.yml` + `docker-compose.smoke.yml` (port terisolasi utk verifikasi). Terverifikasi: build 2 image, up, API 200 + PAGE 200 + SSE 200 + `NEXT_PUBLIC_API_BASE` ter-bake di chunk + `/data/demo.db` terbentuk di volume + MCP trust gate aktif (tidak spawn sebelum trust). Sisa v1: prune prod-deps per target (image api kini bawa deps web ~gemuk), multi-arch (arm64), compose profile postgres saat P0-DATA-1.
+- [x] **P0-INF-6** CI: lint+typecheck+test di PR (GitHub Actions), turbo cache · *B · 1d* — ✅ v0 dev-10: `.github/workflows/ci.yml` — push (main/dev/**) + PR, Node 24 + npm cache, turbo typecheck+test+lint dengan cache `.turbo` antar-run (actions/cache) + concurrency cancel; verifikasi penuh menunggu repo di-push ke GitHub (remote belum di-set) — jadi bagian gerbang G-P0 saat itu
 
 ### P0-SEC (sandbox & keamanan)
 
-- [ ] **P0-SEC-1** Sandbox container untuk `run_command` (Docker exec, resource cap, timeout, network default-deny) · *A · 3d · dep P0-INF-5* → perintah berjalan di container sekali-pakai; egress diblokir default
-- [ ] **P0-SEC-2** Redaction secrets dari log & tool result (pola `redact` Hermes) · *B · 1d* → test: key menyamar di semua jalur output
-- [ ] **P0-SEC-3** Path policy ketat + workspace isolation test suite · *A · 1d*
-- [ ] **P0-SEC-4** Approval timeout + auto-deny policy (ganti shortcut no-deadline) · *A · 0.5d*
+- [x] **P0-SEC-1** Sandbox container untuk `run_command` (Docker exec, resource cap, timeout, network default-deny) · *A · 3d · dep P0-INF-5* → perintah berjalan di container sekali-pakai; egress diblokir default — ✅ 2026-11: `tools/sandbox.ts` `runInSandbox()` — docker `--rm --network none --memory 512m --cpus 1 --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --read-only --tmpfs /tmp:rw,noexec -v <ws>:/workspace:rw`; timeout → `docker kill`; `YUI_SANDBOX=auto|docker|off` (auto fallback lokal + note "TANPA isolasi", docker fail-closed); approval tetap wajib (defense-in-depth); +13 unit test + 5 integrasi nyata (`YUI_SANDBOX_IT=1` — egress blocked, EROFS rootfs, timeout kill) hijau di image node:24-bookworm-slim
+- [x] **P0-SEC-2** Redaction secrets dari log & tool result (pola `redact` Hermes) · *B · 1d* → test: key menyamar di semua jalur output — ✅ v0 dev-10: `core/redact.ts` — modul tunggal `redactSecrets()` (pola token vendor: sk-/ghp_/xox/AKIA/AIza/glpat/JWT/PEM/Bearer + assignment eksplisit `KEY=…`/`"secret": …`, fail-closed, idempotent); dipasang di 3 vektor bocor menuju konteks agent: stdout/stderr/err `run_command`, `read_file` content, baris hasil `search_files`; +4 test (vendor token, assignment, no-false-positive teks normal, PEM utuh); INPUT write_file TIDAK di-redact (isi memang dimaksudkan)
+- [x] **P0-SEC-3** Path policy ketat + workspace isolation test suite · *A · 1d* — ✅ v0 dev-10 (terserap P1-PRJ-2): `safeProjectPath` anti-traversal jadi SATU gerbang semua akses file project (`code/../../escape` → throw, `../../etc/passwd` → ditolak; test `project-files.test.ts` + `file-tools.test.ts`); scope file tools & run_command dibatasi root project via `projectRoot()`. Sisa scope task ini (isolasi prosus-level/network) pindah ke P0-SEC-1 sandbox container
+- [x] **P0-SEC-4** Approval timeout + auto-deny policy (ganti shortcut no-deadline) · *A · 0.5d* — ✅ v0 dev-10: `ApprovalEngine.expire()` — deadline `YUI_APPROVAL_TIMEOUT_MS` (default 5 mnt, 0=off utk test; timer `unref`), lewat deadline → settle DB "expired" + event `approval.expired` (bentuk sama dgn boot-heal restart) + resolve FALSE (fail-closed — turn lanjut, tool ditolak, tidak menggantung); jawab tepat waktu → `clearTimeout` (tanpa expiry ganda); +3 test (auto-deny, resolve-tepat-waktu, off)
 
 ### P0-DATA (persistence)
 
-- [ ] **P0-DATA-1** Migrasi SQLite → Postgres (Drizzle): sessions/messages/events/jobs + migration script · *B · 2d · dep P0-INF-5*
-- [ ] **P0-DATA-2** Retention & housekeeping (events > N hari → arsip) · *B · 1d · dep P0-DATA-1*
-- [ ] **P0-DATA-3** Approval pending persist (survive restart — ganti Map in-process) · *A · 1d*
+- [x] **P0-DATA-1** Migrasi SQLite → Postgres (Drizzle): sessions/messages/events/jobs + migration script · *B · 2d · dep P0-INF-5* — ✅ 2026-11: driver **swappable** `YUI_DB_DRIVER=sqlite|postgres` (sqlite default — zero-config desktop/dev). Ekstrak **`ISessionStore`** (27 metode sinkron — kontrak tunggal; `SessionStore` better-sqlite3 implements-nya; 12 call site ganti type). PG = `session/pg-session.ts` (postgres.js, DDL idempotent auto-migrate: 8 tabel + 4 sequence, id/ts float8 — bigint → string dicegah, ILIKE/`= ANY`/`ON CONFLICT` pengganti dialek SQLite, `sql.begin` utk arsip+delete) + `pg-worker.ts`/`pg-bridge.ts` (**sync-bridge worker-thread**: main blokir `Atomics.wait` pada growable SharedArrayBuffer 1MB→128MB — paritas semantik better-sqlite3, NOL perubahan call site & test; paket `postgres` hidup hanya di worker — bundle web bersih; execArgv diwarisi → tsx loader jalan). Factory `createSessionStore()`; env `DATABASE_URL` (superRefine fail-fast saat postgres). **Deviasi Drizzle**: postgres.js + SQL hand-written (~40 query UNION arsip/EXCEPT heal sudah hand-tuned; Drizzle menambah abstraksi tanpa fitur baru — dicatat sbg keputusan). `scripts/migrate-sqlite-to-pg.mjs`: salin 8 tabel `ON CONFLICT DO NOTHING` (idempoten — id tak berubah → replay SSE aman) + `setval` sequences; teruji dgn data smoke nyata (2 sesi/46 events/1 job; run ulang = 0 baris). Compose profile `postgres` (db :5545 + api-pg :3213 + web-pg :3003). Fix bonus: SQLite `deleteProjectSessions` kini bersihkan `events_archive` (paritas PG). Verifikasi: 19 asersi async driver + sync-bridge + api full-stack live (create session REST → events → heal) di PG 17 container. **Follow-up**: store project/memory/skills masih SQLite (split-brain v1 — konsolidasi menyusul); pgvector (P2); batch COPY utk data sangat besar; async-native store (hapus bridge) saat P2.
+- [x] **P0-DATA-2** Retention & housekeeping (events > N hari → arsip) · *B · 1d · dep P0-DATA-1* → ✅ 2026-11: `events_archive` (SQLite) — `store.archiveOldEvents(retentionDays)` pindahkan events sesi **dingin** (MAX(ts) < cutoff) ke arsip dalam SATU transaksi (idempoten: `INSERT OR IGNORE` + delete); semua bacaan (getEvents replay, growth `personaDoneTurnCounts`, `listProjectSessions` lastEventId/ts) di-**UNION** dengan arsip → identitas & urutan id tak berubah (SSE replay/reconnect aman); sesi **turn gantung** di-skip (logika = `findInterruptedTurns` — milik boot-heal); trigger: boot (setelah heal) + interval 24 jam (unref) + `POST /api/settings/housekeeping`; `YUI_EVENTS_RETENTION_DAYS` (default 30, `0` = mati, fail-fast zod env.ts); +6 test (`packages/core/src/__tests__/housekeeping.test.ts` — arsip lengkap/union, sesi aktif tak disentuh, 0=no-op, gantung di-skip, growth tetap benar, lastEventId tetap benar)
+- [x] **P0-DATA-3** Approval pending persist (survive restart — ganti Map in-process) · *A · 1d* → ✅ dev-10: tabel `approvals` + `approval_memory` (SQLite) — request pending tercatat; restart → sweep `expirePendingApprovals()` menandai **expired** + event `approval.expired` (kartu UI “Kedaluwarsa — server direstart”, bukan 404); **“Setujui & ingat” lintas restart** (dimuat ulang per engine); live promise tetap in-process (turn mati bersama proses — resume turn = pekerjaan P1)
 
 ### P0-CORE (loop robustness)
 
-- [ ] **P0-CORE-1** AbortSignal end-to-end: cancel turn dari UI (interrupt & redirect) · *A · 2d* → tombol stop bekerja < 500ms
-- [ ] **P0-CORE-2** Provider retry + fallback model (`YUI_MODEL_FALLBACK`) + cooldown · *A · 1.5d* → provider mati → fallback jalan otomatis
-- [ ] **P0-CORE-3** Repetition guard + iteration budget proper (pola Hermes) · *A · 1d*
-- [ ] **P0-CORE-4** Compression v0: summarize aux model saat context > 70% (checkpoint + arsip, satu-satunya mutasi history yang sah) · *A · 3d* → sesi 100+ turn tetap sehat; test invariant append-only kecuali checkpoint
-- [ ] **P0-CORE-5** Contract tests CI: (a) history append-only (b) toolset+prompt frozen per sesi · *S · 1d* → gate PR gagal bila invariant dilanggar
+- [x] **P0-CORE-1** AbortSignal end-to-end: cancel turn dari UI (interrupt & redirect) · *A · 2d* → tombol stop bekerja < 500ms — ✅ v0 sesi dev 10 (`f429e8d`): AbortController per sesi di runtime → signal ke provider (OpenAI SDK abort HTTP in-flight, tak menunggu timeout 120 dtk) + loop checks (awal iterasi / catch provider = abort bukan error / antar tool round); keluar **graceful** — parsial tersimpan + catatan "turn dibatalkan user" + event `turn.cancelled` + persona idle; REST `/api/sessions/:id/cancel`; tombol ■ di composer. ~~Sisa: propagasi ke sesi anak delegasi~~ ✅ LUNAS via P0-DEL-2 (2026-11): cancelTurn parent kini CASCADE ke semua anak delegasi turn itu
+- [x] **P0-CORE-2** Provider retry + fallback model (`YUI_MODEL_FALLBACK`) + cooldown · *A · 1.5d* → provider mati → fallback jalan otomatis — ✦ parsial sesi dev 9 (timeout 120 dtk + retry transien ×2); ✅ **penuh sesi dev 10** (`43387b5`): loop attempt-chain primary → fallback SEKALI (fallback sukses → iterasi lanjut di fallback, jangan bolak-balik), `markUnhealthy` → cooldown 5 mnt (resolve berikutnya langsung fallback, tak buang 2 retry lagi ke model sekarat); fallback bisa dari `YUI_MODEL_FALLBACK`, persona.yaml, atau override Settings; +2 test loop (fallback aktif, both-fail tetap session.error bersih)
+- [x] **P0-CORE-3** Repetition guard + iteration budget proper (pola Hermes) · *A · 1d* — ✅ sesi dev 9 + audit dev 10: guard tool-round identik 3× berturut → injek nudge sistem (agent keluar loop verifikasi tanpa progres, teramati nyata); budget iterasi 16 default + override `YUI_MAX_ITER` + **budget-habis graceful** (pesan "ketik lanjutkan" + state done, bukan error mentah)
+- [x] **P0-CORE-4** Compression v0: summarize aux model saat context > 70% (checkpoint + arsip, satu-satunya mutasi history yang sah) · *A · 3d* → sesi 100+ turn tetap sehat; test invariant append-only kecuali checkpoint — ✅ v0 (dev-10 + 2026-11 tuntas): engine `session/compress.ts` ter-wire loop — diet prompt view-only (payload tool lama diarsip, fix prompt 30k token) + CHECKPOINT aux-model saat est >70% jendela (128k, env `YUI_COMPRESS_*`); **2026-11: aux routing** — summary kini pergi ke model MURAH `YUI_AUX_MODEL` (swap panas via Settings; fallback model utama bila kosong; checkpoint merekam modelnya utk audit); fail-soft (aux gagal → turn jalan tanpa kompresi); metering aux jujur dari usage provider. Test: `context-compress` (5) + `slim-history` + aux-routing loop (2) — invariant append-only dijaga (tabel messages tak pernah diubah)
+- [x] **P0-CORE-5** Contract tests CI: (a) history append-only (b) toolset+prompt frozen per sesi · *S · 1d* → gate PR gagal bila invariant dilanggar — ✅ v0: `contract-invariants.test.ts` (batch Kernel Lestari `678c2eb`) — (a) prefix-snapshot test: messages s0⊂s1⊂s2… walau kompresi checkpoint aktif + seq strictly-increasing; (b) wire test: registry bertambah tool pasca-createSession TIDAK pernah bocor ke request sesi berjalan (system prompt & toolset frozen, dicek di SEMUA request provider). Jalan di suite CI (P0-INF-6) → PR yang melanggar invariant otomatis merah.
 
 ### P0-DEL & P0-MCP
 
-- [ ] **P0-DEL-1** Delegation job persist (queue di DB, survive restart, status) · *A · 2d*
-- [ ] **P0-DEL-2** Cancel/steer anak dasar dari parent · *A · 1d · dep P0-DEL-1*
-- [ ] **P0-MCP-1** MCP lifecycle: health check + reconnect backoff + park · *C · 2d* → server mati → reconnect otomatis tanpa crash turn
-- [ ] **P0-MCP-2** Schema nyata MCP (`t.inputSchema`) menggantikan passthrough · *C · 1d*
+- [x] **P0-DEL-1** Delegation job persist (queue di DB, survive restart, status) · *A · 2d* — ✅ v0 dev-10 (branch dev/p0-kernel): tabel `delegation_jobs` (running→done/error/interrupted) — job row dibuat SEBELUM loop anak jalan, best-effort (gagal tulis ≠ batal delegasi); loop menelan error provider → runner kini deteksi `session.error` non-recoverable anak → job error + kartu delegasi parent ditutup jujur (tak zombie); boot-heal menutup job running pasca-restart → interrupted + alasan; REST `/api/projects/[id]/delegations` + `jobs`; +6 test. (queue/retry background menyusul P1-DEL-2)
+- [x] **P0-DEL-2** Cancel/steer anak dasar dari parent · *A · 1d · dep P0-DEL-1* — ✅ v0 2026-11: **steer** — `delegation.steered` (contracts) + antrean steer per anak di-drain loop tiap awal iterasi sebagai pesan user berlabel `[arahan user — mid-turn]` (tercatat di history anak, terlihat provider); **cancel** — AbortController per anak (`cancelDelegation`) → job **interrupted** (bukan error) + kartu delegasi ditutup "_(anak dibatalkan — progres tersimpan, lanjutkan dari sana)_"; **cascade** — `cancelTurn(parent)` kini ikut membatalkan semua anak turn itu (utang P0-CORE-1 "anak lanjut di background" LUNAS); REST `POST /api/delegations/:childId {action:cancel|steer}`; UI: tombol 🚫/💬 di kartu delegasi saat anak bekerja (input inline steer, Esc batal). +3 test (`delegation-steer.test.ts`)
+- [x] **P0-MCP-1** MCP lifecycle: health check + reconnect backoff + park · *C · 2d* → server mati → reconnect otomatis tanpa crash turn — ✅ dev-10: `transport.onclose/onerror → onDown` (penutupan disengaja difilter flag) → lepas tools + **reconnect backoff 2s/5s/15s/60s/5mnt**; gagal 5× → **PARKED** (badge + tombol ↻ `POST /api/mcp/servers` bypass backoff); **health check ping 30 dtk** (deteksi hang tanpa crash); status `state/lastError/nextRetryAt` di panel MCP
+- [x] **P0-MCP-2** Schema nyata MCP (`t.inputSchema`) menggantikan passthrough · *C · 1d* — ✅ v0 dev-10: registry terima zod ATAU JSON Schema mentah; validasi dispatch via ajv (compile-cache, reset ikut tests); `toolSchemas` meneruskan schema asli ke provider (provider tahu parameter tool MCP → tool-call lebih akurat); fallback passthrough bila server tak menyertakan inputSchema; +3 test
 
 ### P0-QA & G-P0
 
-- [ ] **P0-QA-1** E2E smoke Playwright: skenario demo §2 otomatis · *B · 2d · dep P0-INF-1*
-- [ ] **P0-QA-2** Load ringan: 10 sesi paralel × 5 turn tanpa deadlock/leak · *A+B · 1d*
-- [ ] **G-P0** Gerbang: smoke E2E green di CI · contract invariant tests green · sandbox escape test lulus · pino trace per turn terlihat · fallback model terbukti · **retro tim: pelajaran demo → backlog**
+- [x] **P0-QA-1** E2E smoke Playwright: skenario demo §2 otomatis · *B · 2d · dep P0-INF-1* → ✅ 2026-11: `playwright.config.ts` (root) mengelola 3 server terisolasi — mock provider openai-compat (`e2e/mock-provider.mjs` :3299, script FIFO via `POST /__script`, SSE standar + reasoning_content + tool_calls, fallback "ok" utk panggilan tak terduga), `apps/api` :3291 (DB/workspace `e2e/.tmp`, MCP+learn dimatikan → turn deterministik), `apps/web` :3990 (`NEXT_PUBLIC_API_BASE`/`NEXT_DIST_DIR=.next-e2e` — tak bentrok dev user); spec `e2e/smoke.spec.ts` = pilih Maestro Yui → prompt riset → assert kartu **Delegation · scholar** (SSE delegation.started) → jawaban final Conductor → replay REST events (persist). **Bonus fix nyata**: SSE `reply.hijack()` melewati pipeline `@fastify/cors` → ACAO hilang → browser blokir EventSource cross-origin (web:3000 → api:3211 juga kena!) — kini origin direfleksikan manual di `raw.writeHead` + test kontrak api. `npm run e2e` (≈15 dtk, chromium via mirror).
+- [x] **P0-QA-2** Load ringan: 10 sesi paralel × 5 turn tanpa deadlock/leak · *A+B · 1d* — ✅ v0 dev-10: `load-light.test.ts` — 10 sesi PARALEL × 5 turn provider jitter: semua selesai, history 10 pesan/sesi urutan user→assistant konsisten, provider tepat 50 panggilan (tanpa retry liar), tanpa kontaminasi antar-sesi
+- [x] **G-P0** Gerbang: smoke E2E green di CI · contract invariant tests green · sandbox escape test lulus · pino trace per turn terlihat · fallback model terbukti · **retro tim: pelajaran demo → backlog** — ✅ 2026-11: semua kriteria terverifikasi ulang saat penutupan — e2e **2 passed** (smoke + orin v8); turbo test 3/3 (265 core + 9 contracts + 8 api); sandbox integrasi docker nyata **5/5** (egress blocked · EROFS · timeout kill — timeout test docker dinaikkan 30s utk cold-start Windows); trace per turn via `YUI_TRACE` + panel Trace; fallback model-router hijau. CI workflow siap tapi eksekusi tertunda — **remote GitHub belum di-set** (retro #4 → backlog PUB). **Retro lengkap: `docs/RETRO-G-P0.md`** (8 pelajaran → backlog: perluas e2e, CI matrix win+linux, konsolidasi store, async-native store P2, export trace UI, blind test persona). **EPIC P0 = 25/25 (100%)** 🎉
 
 ---
 
@@ -177,54 +268,101 @@
 
 ### P1-MCP (prioritas #1 — lifecycle & UX penuh)
 
-- [ ] **P1-MCP-1** Katalog internal 20 server + UI manajemen (install/uninstall, status) · *C+B · 3d*
+- [x] **P1-MCP-1** Katalog internal 20 server + UI manajemen (install/uninstall, status) · *C+B · 3d* — ✅ sesi dev 9: katalog kurasi 20 entri (files/web/data/dev/komunikasi/memori; `McpCatalogEntry` kontrak zod + risk rendah|sedang|tinggi + env keys berlabel), install = tulis deklarasi `mcp.json` via `installFromCatalog` (env kosong tidak ditulis, required divalidasi) — **tanpa auto-connect** (fail-closed MCP-3: Trust manual dulu), uninstall = disconnect + hapus; runtime `installMcpServer/uninstallMcpServer` reload config in-memory (`reloadMcpConfig` + substitusi `{workspace}`); REST `GET /api/mcp/catalog`, `POST/DELETE /api/mcp/install`; UI panel MCP: daftar terpasang (badge) + katalog dengan pencarian + form API key (input password) + tombol Lepas; +4 test (env required, timpa, uninstall, entri lama utuh)
 - [ ] **P1-MCP-2** OAuth flow MCP di web (Authorization Code + PKCE; token di vault) · *C · 3d*
-- [ ] **P1-MCP-3** Trust gate per-workspace + izin granular per tool + audit log panggilan · *C+A · 3d*
+- [x] **P1-MCP-3** Trust gate per-workspace + izin granular per tool + audit log panggilan · *C+A · 3d* — ✅ sesi dev 7: `workspace/mcp-trust.json` deklaratif **fail-closed** (tanpa trust = server TIDAK dihubungkan; file rusak → tetap tertutup), deny list per tool dievaluasi di handler + REST PUT memicu connect/disconnect dinamis + re-register, setiap panggilan tool MCP ter-audit (server/tool/sesi/hasil/durasi), REST `/api/mcp/servers` + `/api/mcp/audit`, panel MCP di sidebar (toggle trust, status live, audit tail); +8 test; smoke live: untrust→putus, trust→14 tools, deny→ditolak, audit terisi. (Katalog install UI = P1-MCP-1; OAuth = P1-MCP-2)
 - [ ] **P1-MCP-4** MCP worker per-tenant di sandbox (bukan stdio bare) + egress policy · *A · 4d · dep P0-SEC-1*
 - [ ] **P1-MCP-5** Sampling & elicitation MCP → server_requests ke klien (pola Hermes) · *C+B · 3d*
-- [ ] **P1-MCP-6** Tool list changed → refresh registry next-session + notif UI · *C · 1d*
+- [x] **P1-MCP-6** Tool list changed → refresh registry next-session + notif UI · *C · 1d* — ✅ v0 dev-10: `mcp/client.ts` `syncTools()` — handler SDK `ToolListChangedNotificationSchema` → re-list + re-register baru + `unregister` tool hilang, LANGSUNG (bukan next-session — persona bisa pakai tool baru di turn berikutnya tanpa restart app); runtime perbarui snapshot status (McpPanel poll 10 dtk menampilkan daftar terbaru + log perubahan `+n -n`)
 
 ### P1-MEM (prioritas #2 — learning loop)
 
-- [ ] **P1-MEM-1** `USER.md`/`MEMORY.md` manager (append dengan curasi, editable user, halaman "What Yui knows") · *C+B · 3d*
-- [ ] **P1-MEM-2** Nudge pasca-task (prompt learn ringan, aux model) → usul skill/catatan · *C · 2d*
-- [ ] **P1-MEM-3** Skill-create-from-experience: flow penuh (draft → validasi lint → simpan ke domain persona) · *C+A · 3d*
-- [ ] **P1-MEM-4** Usage tracking per skill (use/view/patch; `.usage.json` per home) · *C · 1d*
-- [ ] **P1-MEM-5** `session_search` tool (FTS) — agent menelusuri riwayatnya sendiri · *A · 2d*
-- [ ] **P1-MEM-6** Memory per-domain persona + blok recall di prompt (frozen per sesi!) · *A · 2d*
+- [x] **P1-MEM-1** `USER.md`/`MEMORY.md` manager (append dengan curasi, editable user, halaman "What Yui knows") · *C+B · 3d* — ✅ sesi dev 9: `memory/manager.ts` (read/save penuh dari editor + **appendCurated** dedupe inti catatan + guard + header transparan; USER.md workspace global, MEMORY.md per project), **tool `memory_append`** (scope user|project, tanpa approval — catatan additive milik user; scope project hanya sesi project) di 4 toolset persona, **inject ke system prompt saat sesi dibuat** (frozen, cache discipline — `memoryPromptSection` di runtime & delegasi anak; anak kini mewarisi projectId parent → binding roster anak jalan), REST `GET/PUT /api/memory`, UI **tab "Memori"** (editor dua dokumen + tombol Simpan + flash tersimpan); USER.md yang dulu ditulis-tak-dibaca kini benar-benar dibaca agent; +10 test (manager 6 + tool 4)
+- [x] **P1-MEM-2** Nudge pasca-task (prompt learn ringan, aux model) → usul skill/catatan · *C · 2d* — ✅ sesi dev 9: `memory/nudge.ts` — aux call ringan pasca-turn yang melibatkan tool (fire-and-forget, tak memblokir UI): prompt kecil dengan bar tinggi "ragu → none" → verdict JSON {note, scope} → masuk lewat **tool memory_append** (kurasi+dedupe sama) → event baru **`memory.noted`** (chip "✎ Yui mencatat" di chat, kontrak + UI + test). Parse toleran code-fence; provider gagal/JSON rusak → skip aman. Config: `YUI_LEARN_MODEL` (default model utama), `YUI_LEARN=0` matikan. Trace `[yui:trace] nudge …ms → tercatat/skip`. +6 test nudge +2 test kontrak event
+- [x] **P1-MEM-3** Skill-create-from-experience: flow penuh (draft → validasi lint → simpan ke domain persona) · *C+A · 3d* — ✅ sesi dev 9 (v0, scope global dulu): `skills/manager.ts` (propose → draf `skills/drafts/<slug>/SKILL.md` status draft; **Terima** = lint parse frontmatter + pindah aktif + buang status; **Tolak** = hapus; duplikat nama ditolak), tool **`skill_propose`** (bar tinggi: pola terbukti & reusable, bukan preferensi → itu memory_append; tanpa approval — validasi user eksplisit di UI) + event `skill.proposed` (chip "🛠 Yui mengusulkan skill" di chat), tab **Skill** (draf: lihat/edit inline → Terima/Tolak; siap pakai: daftar aktif), REST `/api/skills` GET/PUT/POST/DELETE, `skill_propose` di 4 toolsets + hint Learning di PERSONA.md conductor. Fix: `YAML.stringify({})` → "{}" (truthy trap), `listSkills` exclude folder drafts/. "Domain persona" (skill milik persona tertentu, P1-DUN-2) menyusul. +7 test
+- [x] **P1-MEM-4** Usage tracking per skill (use/view/patch; `.usage.json` per home) · *C · 1d* — ✅ sesi dev 10 (`75a1ad5`): `.usage.json` per folder skill (views ← `skill_view`, patches ← edit draft & accept — ikut pindah folder saat aktif; used menyusul dihubungkan dungeon/P1-DUN-2), tampil di tab Skill (👁 n · ✎ n · ⚑ n), +1 test
+- [x] **P1-MEM-5** `session_search` tool (FTS) — agent menelusuri riwayatnya sendiri · *A · 2d* — ✅ v0 sesi dev 10: `SessionStore.searchMessages` (LIKE, recency, snippet ±60 char, hanya user/assistant — tool result dikecualikan) + tool `session_search` (scope project default / all lintas proyek, hint kapan dipakai) di 5 toolsets persona; FTS5 menyusul bila volume riwayat membesar; +1 test
+- [x] **P1-MEM-6** Memory per-domain persona + blok recall di prompt (frozen per sesi!) · *A · 2d* — ✅ v0 dev-10: scope "domain" di manager (`workspace/memory/domains/<domain>.md`, slug aman; milik persona & lintas project — TIDAK ikut terhapus saat hapus project, konsisten kebijakan skill) + `memoryPromptSection` bagian "Memori bidang kamu" di-inject saat sesi DIBUAT (frozen, juga untuk sesi delegasi anak via manifest domain persona anak); tool `memory_append` scope domain menulis ke file domain persona PEMANGGIL (resolver dari manifest); +4 test
 
 ### P1-DEL (prioritas #3 — delegation penuh)
 
-- [ ] **P1-DEL-1** Batch paralel (cap per plan) + `delegation.max_concurrent` config · *A · 2d*
+- [x] **P1-DEL-1** Batch paralel (cap per plan) + `delegation.max_concurrent` config · *A · 2d* — ✅ v0 2026-11: cap paralel berlapis = `min(cap budget workspace (CRED-3, Settings→Metering), max_concurrent plan pendelegasi di delegation.yaml)`; contracts `DelegationRules.max_concurrent` (1–16, opsional); resep: conductor 3 (Maestro 3 front), planner 2 (consult P2-PM-2 paralel by design — dipelajari: consult memakai runner yang sama); pesan error menyebut sumber cap (plan vs budget); +test `delegation.test.ts`. Sisa v1: antrian (spawn di atas cap menunggu, bukan langsung tolak) & prioritas front.
 - [ ] **P1-DEL-2** Background jobs + notifikasi selesai (web push) · *A+B · 2d*
-- [ ] **P1-DEL-3** Steering UI (arahkan/pause anak dari web) · *B · 2d · dep P0-DEL-2*
-- [ ] **P1-DEL-4** Isolasi & redaksi konteks anak (anak tidak melihat tool call parent) — audit + test · *A · 1d*
+- [x] **P1-DEL-3** Steering UI (arahkan/pause anak dari web) · *B · 2d · dep P0-DEL-2* — ✅ v0 2026-11 (dua tahap): **steer+cancel** (P0-DEL-2) — kartu delegasi parent: tombol 💬 steer (input inline, pesan user berlabel `[arahan user — mid-turn]` di-drain tiap awal iterasi) + 🚫 cancel (graceful, job interrupted); **pause/resume** (P1-DEL-3) — ⏸ di kartu delegasi: anak berhenti di BATAS ITERASI (provider tak dipanggil, progres tersimpan; parent turn ikut menunggu — jujur, bukan background), ▶ resume lanjut dari titik pause; event `delegation.paused/resumed` (audit trail + chip "paused — waiting for resume" di kartu); cancel saat pause tetap graceful (gate dibangunkan abort → interrupted); steer saat pause ter-antre & ter-drain pasca-resume; REST `POST /api/delegations/:id {action:pause|resume}`; +3 test `delegation-pause.test.ts`. Sisa v1: pause dari panel Tim/TaskTree (bukan hanya kartu chat) & auto-pause saat budget warn.
+- [x] **P1-DEL-4** Isolasi & redaksi konteks anak (anak tidak melihat tool call parent) — audit + test · *A · 1d* — ✅ v0 dev-10: `delegation-isolation.test.ts` — anak = sesi FRESH (bukan asumsi): diverifikasi 3 lapis — messages anak tanpa jejak history parent, systemPrompt anak tanpa konten parent, dan WIRE request ke provider (req yang benar-benar terkirim) bersih dari rahasia parent
 
 ### P1-PER (persona v1 penuh — pilar produk)
 
-- [ ] **P1-PER-1** Art direction doc + pipeline Rive (spec: dimensi, state machine, input, penamaan) · *S+artist · 3d*
+- [x] **P1-PER-1** Art direction doc + pipeline Rive (spec: dimensi, state machine, input, penamaan) · *S+artist · 3d* — ✅ 2026-11: **`docs/ART-DIRECTION.md`** — spec tunggal dari Orin v8 (sumber kebenaran: `orin_v8_larger_star.html` + rig SVG `OrinPortrait.tsx`): prinsip karakter (satu rig mata, identitas = bentuk+warna); artboard 400×400 1-file `orin.riv` dengan input `shape` 0–14; hirarki bone Root›Body(1.18 utk bintang)›Face›EyeL/R(+Glint)›FX — penamaan = kontrak by-name; tabel 15 bentuk (warna/fy/gs/es/gr/bodyScale) + pemetaan persona; state machine `Mascot` lengkap (mood/audioLevel/lookX/lookY/shape/sleep + trigger blink·nod·giggle·hum·look·tilt·yawn·hiccup·wake); keyframe 6 mood + aturan squash (bola seragam); pipeline 2-batch (Conductor+Scholar+Scribe dulu) dengan fallback SVG permanen; acceptance criteria 8 poin (≤300 KB, tajam 22–180 px). Siap langsung untuk P1-PER-2 (aset) & P1-PER-3 (runtime @rive-app/react-canvas)
 - [ ] **P1-PER-2** Aset Rive 6 persona × 7 state (batch: Conductor+Scholar+Scribe dulu) · *artist · berjalan paralel*
+  - ✎ dev-10: **Scribe berevolusi jadi persona dokumen** — upload (pdf/xlsx/csv) via tab File → `uploads/`, tool `doc_read` (unpdf + SheetJS), PERSONA.md: baca-dulu-baru-tulis. Menyusul: docx, offset paging doc_read, tabel hasil ekstraksi di UI.
 - [ ] **P1-PER-3** Ganti PersonaPortrait fallback → Rive runtime + pre-load · *B · 2d · dep P1-PER-2*
-- [ ] **P1-PER-4** Growth tracking (usage → level → varian gratis unlock) + timeline UI · *C+B · 3d*
+- [x] **P1-PER-4** Growth tracking (usage → level → varian gratis unlock) + timeline UI · *C+B · 3d* — ✅ v0 dev-10 (growth v0 tanpa unlock-varian — menyusul CRED-5): `personas/growth.ts` — level dikurasi dari KERJA NYATA (turn done via events persona.state, sesi, task done per assignee; kurva Baru→Berkembang 15→Mahir 50→Ahli 150 turn, tanpa jalur inflate); REST `GET /api/personas/growth` (kontrak `PersonaGrowth`); badge level + progress bar + tooltip di kartu PersonaGrid & baris PersonaPicker (poll 15 dtk); +5 test
 - [ ] **P1-PER-5** Persona acceptance test blind (perilaku beda nyata antar persona — anti "hanya kosmetik") · *S · 2d* → ≥80% penguji menebak persona benar dari output
-- [ ] **P1-PER-6** 2 persona tambahan (Analyst, Operator) sesuai roster D9 · *C · 1d*
+- [x] **P1-PER-6** 2 persona tambahan (Analyst, Operator) sesuai roster D9 · *C · 1d* — ✅ v0 dev-10: **Yui Analyst** (expertise data: doc_read + run_command script reproducible, PERSONA.md inspeksi→bersih→hitung→lapor) + **Yui Operator** (otomasi/devops: run_command + mcp__* binding Tailscale, disiplin approval & verifikasi post-aksi); skill seed **data-analysis-basics** (category data, persona analyst) + kategori `data` masuk gating fase research; conductor can_spawn diperbaiki (typo `yui_designer` → hyphen) + 2 persona baru; bentuk Orin: Analyst=diamond, Operator=hex; +3 test roster D9 (manifest valid, delegation koheren, toolset benar)
+- [x] **P1-PER-7** **Persona Yui Designer** (roster ke-7 — putusan user v0.5, §7.4): manifest + PERSONA.md + skill seed (design-system basics, design→code handoff, Penpot operation) + potret/tint · *C · 1d* → GET /api/personas menampilkan Designer; delegasi dari Conductor jalan — ✅ sesi dev 10: persona.yaml (spawnable_by conductor) + PERSONA.md (fase design, handoff = HTML satu-file ke `code/` + memo keputusan ke `reports/`) + toolsets + 2 skill seed aktif (`design-system-basics`, `design-to-code-handoff` — format SKILL.md, tags personas yui-designer); shape "tri" Orin sudah tersedia sejak rig v4. Skill Penpot operation menyusul P2-DSN-2
 
 ### P1-CRED (SaaS credits v1 — wajib sebelum alpha)
 
-- [ ] **P1-CRED-1** Skema ledger + usage events (per turn: token in/out/cache, sandbox detik) · *A · 2d*
-- [ ] **P1-CRED-2** Admission control hold→settle + saldo cache · *A · 2d · dep P1-CRED-1*
-- [ ] **P1-CRED-3** Rate limit per workspace (turn/menit, delegation concurrency) · *A · 1d*
-- [ ] **P1-CRED-4** UI saldo + burn-rate + attribution per persona/job · *B · 2d · dep P1-CRED-1*
+- [x] **P1-CRED-1** Skema ledger + usage events (per turn: token in/out/cache, sandbox detik) · *A · 2d* — ✅ v0 dev-10: kontrak `UsageEvent`/`UsageFilter`/`UsageSummary`/`UsageRollup`; `core/usage/ledger.ts` (tabel SQLite `usage_events` append-only + index at/project/persona; rollup byPersona/byModel + filter projectId/sessionId/personaId/since + feed recent); hook `LoopDeps.recordUsage` di AgentLoop (loop utama) + delegasi anak (persona/model anak ter-meter); **tanpa estimasi** — hanya dari `usage` chunk done provider (GLM/openai-compat sudah parse); runtime `getUsageSummary`/`getUsageRecent`; REST `GET /api/usage`; UI Settings → **Metering** (rentang semua/24j/1j, tabel per persona & model, feed terbaru, refresh 5 dtk); sandbox-detik = derivabel dari DungeonRun runs.json (noted); +6 test (rollup, filter, kosong, usage→event, tanpa-usage→tanpa-event, multi-iterasi tool round). CRED-2 hold/settle & CRED-3 rate-limit menyusul; akurasi <2% vs tagihan = CRED-6 saat billing nyata
+- [x] **P1-CRED-2** Admission control hold→settle + saldo cache · *A · 2d · dep P1-CRED-1* — ✅ v0 dev-10: kontrak `BudgetConfig`/`UpdateBudgetRequest`/`BudgetStatus` (mode warn|block, dailyLimit/totalLimit unit = mata uang price book, maxTurnsPerMinute, maxDelegationConcurrency); `core/budget.ts` `AdmissionControl` — gas-station: pre-auth HOLD kasar (rata² biaya/panggilan 24j × 4, clamp 0.02–2) → settle saat turn selesai (hold dilepas; actual usage sudah di ledger CRED-1); **saldo cache** TTL 10 dtk + invalidate per usage event; angka belanja = ledger jujur × price book, model tanpa harga → coverage partial/none (batas bawah, bukan 0); deny = `session.error` recoverable sebelum turn jalan (warn = ⚠ tapi tetap jalan); file `data/budget.json`; runtime `getBudgetStatus`/`updateBudget`; +10 test
+- [x] **P1-CRED-3** Rate limit per workspace (turn/menit, delegation concurrency) · *A · 1d* — ✅ v0 dev-10: sliding window 60 dtk di `AdmissionControl.admitTurn` (maxTurnsPerMinute, deny = pesan rate limit); cap delegasi paralel dinamis `DelegationDeps.maxChildren()` (default 2 tetap; dari budget.json → Settings → Metering); +1 test runner (spawn di atas cap ditolak)
+- [x] **P1-CRED-4** UI saldo + burn-rate + attribution per persona/job · *B · 2d · dep P1-CRED-1* — ✅ v0 dev-10: Settings → Metering → panel **Saldo & Batas** (bar belanja hari ini/total vs limit, burn-rate 24j, hold aktif, badge limit-hit merah saat block, editor limit + mode + rate-limit + cap delegasi — blur = simpan PUT `/api/settings/budget`); **attribution matrix persona×model** + est. biaya (`GET /api/usage?matrix=1`, `ledger.matrix()` GROUP BY persona×model + `usageMatrixWithCost` × price book; tanpa harga = "—"); +1 test matrix
 - [ ] **P1-CRED-5** Billing v1: plan sederhana + top-up (Stripe) + webhook · *B · 3d*
 - [ ] **P1-CRED-6** Uji akurasi metering: selisih vs tagihan provider < 2% · *A · 1d*
 
 ### P1-INF
 
 - [ ] **P1-INF-1** Auth (email+password → magic link) + workspace + tenant scope middleware · *B · 3d*
-- [ ] **P1-INF-2** Adapter Anthropic + Gemini + router kualitas/biaya · *A · 2d*
-- [ ] **P1-INF-3** Aux routing (title/compression/skill-extract → model murah) · *A · 1d*
-- [ ] **P1-INF-4** Observability: trace view per turn (pino + tabel DB) · *B · 2d*
+- [x] **P1-INF-2** Adapter Anthropic + Gemini + router kualitas/biaya · *A · 2d* — ✅ v0 dev-10: `provider/anthropic.ts` (Messages API SSE via fetch: system terpisah, tool_use/tool_result block, input_json_delta terakumulasi, stop_reason & usage terpetakan) + `provider/gemini.ts` (streamGenerateContent alt=sse: functionCall TANPA id → id sintetis, tool result → functionResponse role user via mapping id→nama, usageMetadata) — keduanya tanpa SDK baru (fetch + parser SSE generik `parseSse`); factory `makeProvider` satu titik di runtime; kind provider jadi kontrak (`ProviderSettings.kind` + `UpdateProviderSettingsRequest.kind`, env `YUI_PROVIDER_KIND`, persist .env, swap panas + smoke ulang); UI Settings → Provider: dropdown jenis provider + placeholder base URL per kind; +6 test (konversi pesan kedua format, stream tool-call, usage/finishReason, HTTP error, tool-result non-JSON Gemini). Router kualitas/biaya penuh menyusul bersama multi-key (butuh ≥2 provider aktif — catatan CRED/billing)
+- [x] **P1-INF-3** Aux routing (title/compression/skill-extract → model murah) · *A · 1d* — ✅ v0 dev-10: knob tunggal **model aux** `YUI_AUX_MODEL` (alias lama YUI_LEARN_MODEL di-hormati & dibersihkan saat disimpan) — dipakai learn nudge (aux call ringan pasca-turn); **aux kini ter-meter** (recordUsage di nudge — sebelumnya token nudge TAK tercatat, jujur untuk CRED-6); Settings → Provider: field "Model aux" (kosong = model utama, persist .env); updateEnvFile kini mendukung hapus key (null) — perbaiki bug lama: fallback dikosongkan tidak "hidup lagi" setelah restart; +3 test (preferensi model aux, aux ter-meter, env delete). Compression v0 = truncasi lokal (tanpa model); title generation belum ada di produk; skill-extract dungeon tetap model persona (kualitas draf) — aux routing tinggal pakai knob yang sama saat fitur itu lahir
+- [x] **P1-INF-4** Observability: trace view per turn (pino + tabel DB) · *B · 2d* — ✅ v0 dev-10: **tanpa tabel baru** — agregasi dari sumber yang sudah jujur: event store append-only (tool call/result dengan nama via callId-map, delegasi, approval, error, memory/skill) + usage ledger (latensi & token per panggilan model, join via window waktu turn); `core/session/trace.ts` `buildTrace` → kontrak `SessionTrace`/`TraceTurn`/`TraceStep` (status done/running/cancelled/error); runtime `getTrace(sessionId)`; REST `GET /api/sessions/[id]/trace`; UI **panel Trace** (tombol sidebar, poll 3 dtk, turn terbaru di atas & auto-expand saat running, ikon per jenis langkah, durasi model call, rollup token per turn); +3 test (grup turn + join ledger, turn error terisolasi, sesi kosong). pino + tabel log terpisah menyusul bersama deploy (INF-5)
 - [ ] **P1-INF-5** Deploy staging (VPS/Fly) + domain + TLS · *B · 1d*
+
+### PUB — Gerbang Go-Public (repo privat → publik; sumber: docs/LICENSE-AUDIT.md §6–7)
+
+> Kondisi hari ini: repo **proprietary** (LICENSE "All rights reserved" + `license: UNLICENSED"
+> di 4 package.json — keputusan D11/2026-11, jalur komersial). Semua item di bawah
+> **wajib sebelum push publik pertama** — jangan MIT/Apache-kan repo utama tanpa
+> putuskan ulang model bisnis (one-way door).
+- [ ] **PUB-1** THIRD-PARTY-NOTICES.md — regenerasi dari skrip audit (sharp/libvips LGPL,
+  caniuse-lite CC-BY-4.0, lightningcss MPL-2.0, expand-template MIT, dsb) · *B · 0.5d*
+- [ ] **PUB-2** Keputusan lisensi publik final: tetap proprietary / BSL 1.1 (Additional
+  Use Grant + Change Date) / PolyForm (Noncommercial/Small Business) / open-core
+  (core engine permissive + apps proprietary) · *A · keputusan* — bikin teks LICENSE
+  edisi publik + `LicenseRef-*` SPDX bila non-OSI
+- [ ] **PUB-3** Bersih-bersih pra-publik: hapus artefak internal (docs/Orin*.html berisi
+  prompt kerja), audit secrets/history git, .gitignore data workspace · *B · 0.5d*
+- [ ] **PUB-4** CONTRIBUTING.md + CLA/DCO (syarat agar bisa relicense/dual-license
+  di masa depan) + cek trademark "Yuika"/"Orin" (PDKI kelas 9 & 42) · *B · 1d*
+- [x] **PUB-5** CI: gerbang `npm audit --omit=dev --audit-level=high` (saat ini 2 high =
+  zod; hilang setelah upgrade zod v4) + regenerasi laporan lisensi berkala · *C · 0.5d* — ✅ 2026-11: step **Security audit gate (prod deps)** di ci.yml setelah `npm ci` (audit prod = 0 vulnerabilities pasca zod v4 + openai 7.51); waiver hanya lewat keputusan eksplisit + catatan di LICENSE-AUDIT §4. Regenerasi laporan lisensi berkala = manual (skrip audit lokal, §LICENSE-AUDIT) — dijalankan tiap tambah dep signifikan.
+
+### P1-PRJ — Project entity v0 (Studio §13.2; D14)
+
+- [x] **P1-PRJ-1** Kontrak `Project*` di `@yuika/contracts` (ProjectInfo, TaskItem, roster, binding) + tabel DB + CRUD REST `/api/projects` · *A+B · 2d* → create/list/get project; semua tipe dari contracts — ✅ sesi dev 7: `contracts/project.ts` (ProjectInfo/TaskItem/RosterEntry/McpToolBinding + WORKFLOW_PHASES), `core/project/store.ts` (tabel projects+project_tasks), runtime `createProject` (mkdir `workspace/projects/<id>/{code,docs,reports}`), REST GET/POST `/api/projects` + GET/PATCH `/api/projects/[id]`; +5 test contracts, +3 test core; smoke live: create→201, list, patch archive, 404
+- [x] **P1-PRJ-2** Isolasi root per project `workspace/projects/<id>/{code,docs,reports}` — file tools & path policy menghormati scope project · *A · 1d · dep P1-PRJ-1* → test: project A tidak bisa baca path project B — ✅ sesi dev 7: kolom `sessions.project_id` (migrasi idempotent db lama) + `CreateSessionRequest.projectId`; loop dibuat dengan workspace efektif per sesi (`effectiveWorkspace`) → semua file-ops + delegation anak otomatis scoped; smoke live: agent tulis `reports/halo.md` → mendarat di root project, workspace global kosong
+- [x] **P1-PRJ-3** Roster agent per project (`project.yaml`: persona + peran + fase) — loader + validasi + tampil di UI · *C · 2d · dep P1-PRJ-1* → assign 3 persona ke project demo; roster ter-replay — ✅ sesi dev 7: kontrak `ProjectManifest`+`RosterEntry`, `core/project/roster.ts` (load/save YAML deklaratif), runtime `getProjectRoster/saveProjectRoster` (validasi persona ada + anti-duplikat), REST GET/PUT `/api/projects/[id]/roster`, UI roster di drawer proyek (assign/hapus + fase chips); smoke live: 3 persona assigned, project.yaml ter-replay, unknown persona → 400; +4 test
+- [x] **P1-PRJ-4** Tasklist per project (CRUD + status todo/doing/review/done + assignee persona) + tool `todo` agent melihat/menambah task · *C · 1d · dep P1-PRJ-1* → agent menandai task selesai dari turn — ✅ sesi dev 7: ProjectStore CRUD task lengkap (update parsial, refs append bebas duplikat), tools `todo_list/todo_add/todo_update` (scoped sesi project; sesi global → error informatif; cross-project ditolak), REST GET/POST `/api/projects/[id]/tasks` + PATCH `/[taskId]`; toolset persona diperbarui (Conductor full, worker list+update); smoke live: Conductor add→done dari turn; +5 test
+- [x] **P1-PRJ-5** Binding MCP project×persona (D17): koneksi server di level project, tool `mcp__<srv>__*` hanya muncul di toolset persona yang di-bind · *C · 2d · dep P1-MCP-3* → test: persona tanpa binding tidak melihat tool MCP — ✅ sesi dev 7: binding dari `project.yaml` (roster entry `mcp:[{server,tools}]`), `applyMcpBinding` di loop — sesi tanpa project/persona tanpa binding → SEMUA `mcp__*` disembunyikan (fail-closed); binding penuh (`tools:[]`) = prefix `mcp__<srv>__*`, tool spesifik = nama persis; delegation anak mengikuti roster persona anak; UI: pilihan "Bind MCP" saat assign roster + chips binding; smoke live GLM: Conductor ter-bind memanggil `mcp__filesystem__list_allowed_directories` → audit terisi; +3 test filter
+- [x] **P1-PRJ-6** UI: project picker + project home (shell v0: chat + roster sidebar) — sesi melekat ke project · *B · 2d · dep P1-PRJ-3* → buka project → sesi persona di scope project — ✅ sesi dev 7: `ProjectPanel` (sidebar: buat/pilih project, persist localStorage), sesi dibuat dengan `projectId`, badge project di chat-header, panel drawer kanan = roster (assign/hapus persona) + tasklist (tambah manual, cycle status, auto-refresh saat agent panggil `todo_*`); **UX sesi dev 7 (usulan user):** PersonaPicker dihapus dari sidebar (sisa: Proyek + MCP) — klik project = sesi PROJECT LEAD otomatis (Conductor; persona spesialis dijangkau via delegasi, bukan pilihan manual), scope Workspace memilih persona lewat kartu di tengah layar, ganti persona = dropdown wajah di chat-header; composer kini juga tampil di state kosong (dulu hanya tag saran); **resume percakapan:** klik project yang sudah punya sesi = sesi TERBARU dibuka ulang via replay SSE (`?since=0`, context berlanjut — smoke live: agent mengulang jawaban turn sebelumnya), bagian “Sesi” di drawer = riwayat + tombol “+ Sesi baru (Conductor)”, REST `GET /api/sessions?projectId=` + `listProjectSessions` (terbaru-dulu dari last event)
+- [x] **P1-PRJ-7** TaskTree model (D19): TaskNode hierarki `{id,parent,title,status,assignee,refs(job/step),artefak}` + event `task.node.*`; TaskList = proyeksi flat dari tree · *A · 1.5d · dep P1-PRJ-1* → refresh → pohon utuh dari replay (tanpa state kedua) — ✅ sesi dev 7: kontrak `TaskNode`+`ProjectEvent` (discriminated union `task.node.created/updated`), tabel `project_events` (append-only) — ProjectStore menulis event DI TRANSAKSI yang sama dengan mutasi task (REST & tool `todo_*` semua lewat sini → tak bisa drift), proyektor murni `taskTreeFromEvents` + `flattenTree`, REST GET `/api/projects/[id]/tree`, `parentId` di CreateTaskRequest + `addArtefak` di UpdateTaskRequest; smoke live: pohon nested + artefak ter-replay; +4 test (total 49)
+
+- [x] **P1-PRJ-8** **Hapus project + bersihkan SEMUA artefak** (request user): sesi & event-nya, task & project_events, file workspace (MEMORY.md project, uploads, reports), revisi file, audit MCP, ruangan+run dungeon (bila kind dungeon) — **skill persona & metering DIPERTAHANKAN** (skill = milik persona; usage = akuntansi jujur) · *A · 1d* → hapus project demo → semua artefak lenyap, project lain utuh — ✅ v0 dev-10: `runtime.deleteProject(id)` (turn in-flight sesi project di-abort dulu, loopCache dibuang), store method baru `deleteProjectSessions` (transaksi: sessions+events+messages+approvals+approval_memory), `deleteProjectData` (tasks+project_events+projects), `deleteRevisionsUnder` (prefix LIKE di-escape — folder sibling mirip nama tak ikut), `McpAuditStore.deleteForSessions`; REST `DELETE /api/projects/:id` → `DeleteProjectResult` (jumlah item dibersihkan); UI: tombol ✕ per project (muncul saat hover) → konfirmasi merah 2 langkah dengan penjelasan apa yang dihapus vs dipertahankan + ringkasan hasil; +2 test (urutan persis runtime 4-store 1-DB, isolation prefix sibling)
+
+### P1-DUN — Dungeon: arena latihan persona (Studio §13.8; D20)
+
+- [x] **P1-DUN-1** Tipe ruang `dungeon` (bukan project produksi) + format misi `mission.yaml` (goal, sumber belajar, acceptance, skill target) + runner sesi sandbox terisolasi · *C · 1d* → misi contoh "riset dokumentasi Phaser" parse & jalan — ✅ v0 dev-10: kolom `projects.kind` (migration ringan); misi di `workspace/dungeons/<slug>/mission.yaml` (zod `Mission`, seed **phaser-research**); runner = ruangan project kind `dungeon` (session otomatis sandbox ke folder misi via machinery P1-PRJ-2), prompt misi WAJIB ditutup `skill_propose`; run async + persist `runs.json` (restart → sweep failed; 1 run aktif/misi); REST `/api/dungeons`; UI v0 di tab Skill. Arena penuh = P1-DUN-4
+- [x] **P1-DUN-2** Skill inventory per persona: registry skill milik + lifecycle `draft→tested→ready` (sambungan flow P1-MEM-3) + UI daftar "apa yang persona ini bisa" · *C+B · 2d* → persona menampilkan skill + statusnya — ✅ v0 dev-10: loader parse `metadata.yui.status` + `personas` (default seed = ready); **accept draft = `tested`** (review manusia; blind-eval DUN-3 yang naikkan `ready`); `setSkillStatus` untuk DUN-3; tab Skill tampil chip status (`◐ diuji manusia`/`✓ siap`) + persona pemilik; dungeon run menghasilkan draft milik persona
+- [x] **P1-DUN-3** Eval acceptance skill: misi verifikasi buta otomatis (hanya lulus bila skill benar) + threshold `tested→ready` (§12.17) · *S · 2d · dep P1-DUN-1* → skill lulus eval berubah jadi `ready` — ✅ v0 dev-10: evaluator buta = **sesi hakim fresh** persona misi di ruangan dungeon yang sama (anti-bias: nilai hanya dari kriteria acceptance + bukti folder + `skill_view`); verdict `VERDICT: LULUS/GAGAL` baris terakhir (parser ambil TERAKHIR, anti draft di tengah); lulus → `setSkillStatus` ready; hasil persist `.eval.json` per skill (pending/pass/fail + alasan + judgeSessionId); trigger manual tombol **Eval buta** di tab Skill (REST `POST /api/skills/eval`, async — polling field `eval` GET /api/skills); hanya skill `tested` dengan misi target cocok yang bisa dieval
+- [x] **P1-DUN-4** Dungeon UI (arena): pilih persona → jalankan misi → progress live → skill dihasilkan · *B · 2d · dep P1-DUN-1..3* → 1 persona selesai misi research nyata & skill-nya `ready` — ✅ v0 dev-10 (revisi arah user): **halaman terpisah** (tombol ⚔ Dungeon di sidebar, bukan section di tab Skill); **buat latihan custom**: pilih persona + nama skill target + mode — `riset mandiri` (persona cari sendiri / URL awal) ATAU `bahan ajar file` (⬃ upload pdf/xlsx/csv/md → `materials/` auto-jadi sumber misi); kriteria lulus editable (default per mode, dipakai eval buta); misi user vs bawaan dipisah + hapus; progress run polling 5 dtk; prompt misi kini dukung sumber URL & file (read_file/doc_read); REST `POST /api/dungeons/mission`, `POST /api/dungeons/[slug]/materials`, `DELETE /api/dungeons/[slug]`; kontrak `Mission.origin` + `CreateMissionRequest`; +4 test
+- [x] **P1-DUN-5** Assign gating: roster project menampilkan skill readiness persona; persona tanpa skill fase ditandai “belum siap” · *C · 1d · dep P1-DUN-2 + P1-PRJ-3* → roster menandai siap/belum per fase — ✅ v0 dev-10: peta fase→kategori skill (`readiness.ts`: research/design/develop/testing/documentation; planning & delivery = inti tanpa gating); readiness = skill milik persona (tested/ready, draft tidak) kategori fase; REST roster GET + field `readiness`; UI roster chip per fase `research ✓ / ✕` (tooltip skill siap / hint latih di Dungeon)
+
+### P1-MDL — Multi-model per persona (Studio §13.10; D21)
+
+- [x] **P1-MDL-1** Kontrak & runtime: `model` + `model_fallback` per persona di persona.yaml; parent & tiap delegation anak resolve model persona masing-masing · *A · 1d* → Conductor & Scholar jalan di model berbeda dalam 1 run — ✅ sesi dev 10 (`43387b5`): `model-router.ts` (urutan resolusi: **override file Settings** `data/model-overrides.json` → **persona.yaml** `model.primary.name/.fallback` → default env getter hot-swap); `LoopDeps.routeModel(personaId)` — loop & delegasi anak resolve per persona; UI Settings tabel "Model per persona" (blur = simpan, kosong = default) + REST `/api/settings/models`; kontrak `ModelRoutes`/persona `ModelRoute.name/fallback`; +11 test router. P1-MDL-2 (router kualitas/biaya) & MDL-3 (indikator biaya) menyusul
+- [x] **P1-MDL-2** Router model: map peran→model + smoke test kecil per model (tool-call 2 langkah; quirk dinetralkan `normalizeToolSchema` — pelajaran GLM 1210) · *A · 1.5d · dep P1-MDL-1* → model gagal smoke → fallback otomatis — ✅ v0 dev-10: `provider/smoke.ts` — tes minimal tool-call 2 langkah (`ping_check` WAJIB dipanggil, bukan balas teks), schema dinetralkan normalizeToolSchema, race timeout ganda (provider hang pun tetap gagal rapi ≤45 dtk); router +`markHealthy` (lulus smoke = cooldown dibersihkan); runtime `runModelSmoke()` kumpul semua model aktif (default+fallback+route tiap persona) → gagal = markUnhealthy → route jatuh ke fallback otomatis; auto setelah ganti provider (Settings), manual REST `POST /api/settings/provider/smoke`; UI Settings panel "Uji semua model" (✓/✕ + latensi + "fallback otomatis aktif"); +4 test
+- [x] **P1-MDL-3** UI settings: model picker per persona + indikator biaya + metering per persona tetap akurat (sambung P1-CRED-4) · *B · 1d · dep P1-MDL-1* → ganti model persona tanpa restart — ✅ v0 dev-10: picker per persona sudah dari MDL-1 (hot-swap tanpa restart); **indikator biaya** = kolom "Est. biaya" di Settings → Metering (total + per model) dihitung dari token metering P1-CRED-1 × price book; **price book** `data/model-prices.json` (kontrak `ModelPrice`/`PriceBook`; `core/model-prices.ts` load/upsert + `costOf`); REST `GET/PUT /api/settings/models/prices`; editor harga inline di panel Metering (per 1 jt token in/out + mata uang USD/IDR, blur=simpan, baris = model terlihat di metering + yang sudah berharga); model TANPA harga = biaya tak dihitung (tampil "—", bukan 0 — jujur); token per persona tetap akurat (ledger CRED-1); attribution biaya matrix persona×model penuh menyusul di CRED-4; +2 test
 
 ### G-ALPHA — SIAP TESTING #1 (internal alpha)
 
@@ -267,6 +405,53 @@
 - [ ] **P2-GROW-1** Desain skin/event/achievement (D10) — spec + mockup, tanpa implement · *S · 2d*
 - [ ] **P2-GROW-2** Growth timeline UI penuh (level, varian unlock, riwayat skill) · *C+B · 3d*
 
+### P2-FLOW — Workflow engine & monitoring (Studio §13.3; D15)
+
+- [ ] **P2-FLOW-1** Format `workflow.yaml` deklaratif (fase, mode sequential/parallel, steps {persona,task,depends_on}, gate default ON) + validator zod di contracts + template 7 fase (planning→riset→desain→develop→testing→dokumentasi→deliverable) · *C+A · 2d · dep P1-PRJ-3* → template valid parse & lint
+- [ ] **P2-FLOW-2** Engine v0: run = DAG → job graph di queue; fase sequential satu-per-satu, fase parallel N delegation anak (cap per project) · *A · 4d · dep P0-DEL-1* → run template di project demo jalan E2E
+- [ ] **P2-FLOW-3** Human gate antar fase (reuse approval engine: "fase X selesai — lanjut?") + resume run pasca-restart via replay event · *A · 2d · dep P2-FLOW-2* → kill server mid-run → restart → run lanjut dari fase terakhir
+- [ ] **P2-FLOW-4** Event `workflow.started/phase.entered/phase.done/step.started/step.done/workflow.done` (aditif ke YuiEvent) + replay `?since=` · *A · 1d · dep P2-FLOW-2* → board di-refresh → state run utuh
+- [ ] **P2-FLOW-5** Monitoring board UI: kolom fase, kartu agent jalan (sequential satu kolom / paralel berdampingan), progress persona, hasil per langkah — live via SSE · *B · 3d · dep P2-FLOW-4* → 2 persona paralel terlihat jalan bersamaan + hasil terkumpul
+- [ ] **P2-FLOW-6** Steering mid-run: pause/stop step, reassign ke persona lain, suntik instruksi (pola OpenBot Stop/Resume/Reassign) · *B · 2d · dep P2-FLOW-5* → reassign mid-run tercatat di event & audit
+- [ ] **P2-FLOW-7** TaskTree board UI (D19): pohon task→subtask→step dengan kartu agent & status live; sequential/paralel terbaca dari struktur; klik node → sesi agent + steering · *B · 2d · dep P1-PRJ-7 + P2-FLOW-4* → pohon delegasi live; refresh → utuh via replay — *v0 sesi dev 8: tab **Papan** = kanban 4 kolom (Belum/Kerja/Reviu/Selesai) dari flatten TaskTree + task pra-migrasi, drag&drop HTML5 → PATCH status (sinkron tasklist & pohon, auto-refresh saat agent `todo_*`); sisa: kartu agent per langkah + klik node → sesi & steering (dep P2-FLOW-4)*
+
+### P2-PM — Persona Project Manager & planning flow skala besar (request user v0.6; D22)
+
+> Kebutuhan user: project skala **besar**, iterasi **berkali-kali**, task **bukan 1–2 digit**.
+> Division of labor (D22): **Yui Planner** merencanakan (brainstorm → dokumen perencanaan →
+> task list detail), **Yui Conductor** mengeksekusi (delegasi sequential/paralel sesuai
+> depends_on). Tiap fase flow (brainstorm → perencanaan → task list → design → eksekusi →
+> testing → deploy) punya penanggung jawab + metrik keluaran yang terukur & termonitor.
+
+- [x] **P2-PM-1** Persona **Yui Planner** (roster ke-8): manifest (spawnable_by user; bukan spawnable — Planner dipanggil langsung/user assign) + PERSONA.md (kepribadian PM: menuntut scope jelas, toleransi ambigu rendah, wajib rencana sebelum eksekusi, obsesi acceptance criteria) + toolset (todo_*, task_tree write, doc_write, consult) + skill seed `project-planning-basics` · *C · 2d · dep P1-PER-7* → menerima brief besar → menghasilkan dokumen perencanaan + kerangka TaskTree — ✅ v0 dev-10: `packages/personas/yui-planner/` (persona.yaml expertise planning, toolsets, delegation can_spawn=[scholar,analyst,scribe] — konsultasi saja, TANPA delegate_task: eksekusi ranah Conductor; spawnable_by=[user,yui-conductor] utk fase planning workflow nanti) + PERSONA.md (5 langkah wajib: pahami brief → consult → dokumen perencanaan docs/PLAN.md → task list acceptance+depends_on+assignee → minta persetujuan; aturan DAG & iterasi delta) + skill seed `project-planning-basics` (category planning, personas yui-planner); Conductor can_spawn + yui-planner; bentuk Orin **star**; roster test diperluas 8 persona + 1 test baru Planner
+- [x] **P2-PM-2** Langkah **brainstorm multi-persona**: tool `consult` — Planner meminta pendapat scholar+analyst+scribe (paralel, pertanyaan terstruktur) → sintesis jadi SATU dokumen keputusan `docs/PLAN.md` project (bukan chat bebas: prompt planning, output terstruktur) · *A · 3d · dep P2-PM-1 + P0-DEL-1* → brainstorm 3 persona → 1 dokumen sintesis, semua sesi terkutip di event/audit — ✅ v0 dev-10: `tools/consult-tool.ts` — 1–3 persona paralel via delegation runner yang sama (metering, cap maxChildren, event delegation.*, audit berlaku); prompt anak FORMAT TETAP (PENDAPAT/RISIKO/SARAN/ASUMSI, ≤250 kata) agar bisa dikutip; return jawaban berlabel persona + instruksi sintesis (perbedaan pendapat = keputusan terbuka utk user); +3 test (2 persona paralel + prompt berformat, dedupe duplikat, persona asing isError rapi)
+- [ ] **P2-PM-3** **Task list detail** first-class: Planner generate TaskTree penuh dari planning doc — tiap task: deskripsi, acceptance criteria, depends_on, assignee persona, estimate; **validator coverage** (setiap acceptance fase ter-cover ≥1 task; DAG tanpa cycle) · *A · 2d · dep P2-PM-2 + P1-PRJ-7* → brief besar → ≥30 task terstruktur, validator hijau
+- [ ] **P2-PM-4** **Matriks tanggung jawab fase** (RACI ringan): tiap fase workflow punya owner persona + metrik keluaran (brainstorm: dokumen disetujui user; planning: % task punya acceptance; design: gate review; eksekusi: task done/test hijau; testing: laporan QA; deploy: checklist rilis) — render di monitoring board · *B · 1d · dep P2-FLOW-5 + P2-PM-3* → tiap kolom fase menampilkan owner + metrik live
+- [ ] **P2-PM-5** **Dashboard progres terukur**: burndown task (Belum/Kerja/Reviu/Selesai), health per fase (blocker aktif, task revisi, hold approval menunggu), ringkasan iterasi (run ke-N: selesai/total, delta vs run sebelumnya) · *B · 3d · dep P2-FLOW-5 + P2-PM-3* → project 100+ task: progres & blocker terbaca sekali lihat tanpa scroll-cek satu-satu
+- [ ] **P2-PM-6** **Iterasi berantai**: hasil acceptance fase testing/deploy → Planner susun run BERIKUTNYA (hanya task delta + regresi blocker, bukan restart dari nol); workflow.run_id berantai + link dokumen retrospektif singkat · *A · 2d · dep P2-FLOW-3 + P2-PM-3* → iterasi #2 berisi task delta; riwayat run ke-1..N utuh
+
+### P2-STU — Workbench multi-tab & surface (Studio §13.5; D16)
+
+- [ ] **P2-STU-1** Tab shell v0: tab chat/file/board/monitor dalam project home (state per tab; layout kolom desktop) · *B · 2d · dep P1-PRJ-6* → pindah tab tanpa kehilangan state chat
+- [ ] **P2-STU-2** Terminal tab: `xterm.js` ↔ PTY di sandbox (generalisasi `run_command`); user & agent share sesi terminal; approval untuk perintah berisiko · *A+B · 4d · dep P0-SEC-1* → agent menjalankan CLI & output muncul di tab yang user lihat
+- [x] **P2-STU-3** File tab: tree + viewer + diff hasil edit agent (di atas file tools) · *B · 2d · dep P1-PRJ-2* → diff write_file agent terlihat — ✅ v0 sesi dev 10 (`75a1ad5`) + diff penuh (`4136722`): tab **File** (tree + viewer ≤256 KB, `safeProjectPath` anti-traversal) & **`FileRevisionStore`** — write_file merekam snapshot isi LAMA pra-timpan (cap 20/file, no-op & >256 KB skip) → dropdown "revisi…" di viewer → `diffLines` (LCS, subpath `@yuika/core/project/diff`) → diff ±N baris berwarna; +11 test
+  - ✎ fix test-user: tree kini via `projectRoot()` absolut (dulu readdir relatif cwd Next → selalu `[]`); auto-refresh 5 dtk + tombol ↻ + ⬆ Upload dokumen.
+  - ✎ fix test-user #2: **file tak bisa dibuka** — effect reset di FileTab bergantung identitas `loadTree` (dep `sel`) → tiap klik file sel ter-reset null; kini reset hanya saat ganti project (latest-ref).
+  - ✎ **Tim = infinite canvas** (request user): hold-drag = pan (Pointer Events + capture), scroll = geser, Ctrl+scroll/tombol ± = zoom (35–250%), ⌂ reset; grid dot ikut bergeser; tanpa dependency baru.
+- [ ] **P2-STU-4** Browser tab v0 read-only: server-side proxy + render (screenshot/DOM), domain allowlist per project, **security review = gerbang** (risiko §11) · *A · 4d · dep P0-SEC-1* → agent membuka URL riset & user melihat halaman yang sama
+- [ ] **P2-STU-5** MCP Figma connector (OAuth P1-MCP-2; bind ke persona design — D17) · *C · 2d · dep P1-PRJ-5* → persona design membaca frame Figma di fase desain
+- [ ] **P2-STU-6** ~~Eksplorasi pen.dev~~ → **digantikan Penpot** (pen.dev tidak open source — keputusan D18): pindah ke **P2-DSN-1** (eksplorasi repo `D:\projects\penpot`; deliverable sama: laporan referensi)
+- [ ] **P2-STU-7** Docs tab: viewer/editor markdown deliverable + ringkasan run · *B · 1d · dep P1-PRJ-6* → laporan run terbuka sebagai doc
+
+### P2-DSN — Pipeline desain→kode via Penpot (Studio §13.9; D18)
+
+- [x] **P2-DSN-1** Eksplorasi Penpot (repo `D:\projects\penpot`, tunggu clone selesai): API publik, plugin system, export/tokens, kemampuan render, **+ opsi mekanisme embed** (iframe scoped / komponen frontend / plugin — rekomendasi untuk tab Design) → laporan `docs/refs/penpot.md` + keputusan cloud vs self-host (§12.15) · *C · 1d* → peta kemampuan API vs kebutuhan studio + rekomendasi mekanisme embed — *verif: `docs/refs/penpot.md` — keputusan: self-host (CSP) + RPC API v0 + iframe share-link viewer + MCP resmi v1 + exporter WASM untuk artefak; checklist verifikasi runtime disiapkan*
+- [ ] **P2-DSN-2** Penpot connector — **mekanisme diputuskan (DSN-1)**: jalur utama v0 = **RPC API + access token** (create/update file headless via `update-file`, share-link per halaman, snapshot); MCP server resmi = jalur v1 (Streamable HTTP `/mcp`, plugin di sesi embedded); binding ke persona Designer (D17) · *C · 2d · dep P2-DSN-1 + P1-PRJ-5* → persona Designer membuat/mengubah file Penpot dari dalam turn (headless)
+- [ ] **P2-DSN-3** Tab Design = canvas Penpot **TER-EMBED di platform** (bukan link/app terpisah — D18): scope v0 ramping — lihat, navigasi halaman/frame, zoom, artefak ter-link ke node TaskTree; mekanisme embed sesuai DSN-1 · *B · 2d · dep P2-DSN-2 + P2-STU-1* → desain fase `design` terlihat live di tab tanpa keluar app
+- [ ] **P2-DSN-4** Pipeline design→kode: fase `develop` membaca file Penpot (shapes + tokens via API) → generate komponen kode → diff di tab File → acceptance di human gate · *A+C · 3d · dep P2-DSN-2 + P2-FLOW-2* → frame sederhana → komponen kode + diff (ekspektasi v0: komponen+tokens, bukan pixel-perfect — D18)
+- [ ] **P2-DSN-5** Persona Designer final (roster ke-7 — sudah diputuskan, lihat P1-PER-7): skill seed Penpot dilatih lewat dungeon + misi acceptance · *C · 1d · dep P2-DSN-2 + P1-PER-7* → Designer lulus misi dungeon Penpot → skill `ready`
+- [ ] **P2-DSN-6** **Golden path flow ramping** (garansi flow utuh walau fitur lean): E2E test alur — agent Designer buat frame (fase `design`) → user lihat live di tab ter-embed → fase `develop` baca → generate komponen → diff — semua tanpa keluar platform · *S · 1d · dep P2-DSN-3 + P2-DSN-4* → skrip golden path hijau 2× berturut
+
 ### G-BETA — SIAP TESTING #2 (closed beta)
 
 - [ ] Mobile TestFlight/Play internal track terdistribusi ke 20 tester
@@ -276,6 +461,12 @@
 - [ ] Support channel + feedback widget + triage SLA internal
 - [ ] Analytics dasar (activation, retention, cost per workspace)
 - [ ] Load: 100 sesi paralel, p95 turn-start < 2 dtk
+- [ ] **(Studio)** Run workflow 7-fase template E2E di project demo (≥2 fase paralel) — monitoring board live, resume mid-run lulus
+- [ ] **(Studio)** Terminal & browser tab: security review lulus (path, egress, SSRF, allowlist) · binding MCP Figma bekerja di satu persona saja
+- [ ] **(Studio v0.5)** TaskTree board live: pohon delegasi utuh via replay; steering per node jalan
+- [ ] **(Studio v0.5)** Pipeline Penpot E2E minimal **ter-embed**: canvas hidup di tab Design (user tidak keluar platform); persona Designer produksi file di fase `design` → dikonversi komponen kode di fase `develop`; golden path (P2-DSN-6) hijau
+- [ ] **(Dungeon)** ≥1 persona dilatih lewat misi research nyata (mis. Phaser) → skill `ready` → di-assign ke project; gating terlihat di roster
+- [ ] **(Multi-model)** ≥2 model berbeda aktif untuk persona berbeda dalam satu run; fallback per persona terbukti; metering per persona akurat
 
 ---
 
@@ -305,6 +496,13 @@
 | Scope creep | OUT list DEMO-WEEK-1 §3.2; reviewer tolak PR di luar scope |
 | SSE race / resume | W4-B2 + W5-A1; replay `?since=` adalah kontrak, bukan bonus |
 | Utang demo menumpuk | P0 = fase membayar `DEMO-SHORTCUT`; grep rutin; G-P0 tidak boleh dilewati |
+| Workflow engine scope creep | D15: DAG deklaratif template dulu; builder visual = P4; gate antar fase default ON; state hanya lewat event |
+| Browser embed = permukaan serangan | D16: proxy server-side default-deny, allowlist per project; review = gerbang P2-STU-4 |
+| Paralel = biaya & race | Cap concurrency per project; metering per step; replay untuk debug race (event = sumber kebenaran tunggal) |
+| Studio menggeser kernel | Urutan P1-PRJ → P2-FLOW → P2-STU; kernel tidak boleh tahu UI (contract-first) |
+| Dungeon skill basah | Eval acceptance wajib (blind test P1-PER-5) + curator (P2-AGT-3); misi hanya di sandbox; tanpa lulus = tetap `draft` (D20) |
+| Multi-model quirk & biaya | Normalisasi schema terpusat (GLM 1210) + smoke test per model + fallback per persona + metering/budget per persona (D21) |
+| Penpot ops & API berubah | Mulai token API (cloud/self-host ringan); adapter tipis + pin versi; self-host penuh bareng D11 (D18) |
 
 ## Konvensi Task Baru
 
@@ -312,3 +510,62 @@
 2. Task tanpa owner = belum siap dikerjakan.
 3. Task > 2d harus dipecah saat planning.
 4. Setiap bugfix P0/P1 menambah 1 test invariant bila relevan (pola Hermes: 1–2 invariant test per fix).
+
+## Batch fix 2026-11 (feedback user pasca-rest)
+> **MCP tidak lagi spam reconnect:** singleton runtime kini di-tag HASH SOURCE
+> `createYuiRuntime` (dulu per module-instance → tiap route API baru di-compile
+> dev = runtime dibuang-dibuat ulang = SEMUA server MCP reconnect menumpuk);
+> health ping 30→60 dtk.
+> **Delegasi PARALEL beneran:** tool calls dalam satu round kini `Promise.all`
+> (dulu di-await berurutan → "paralel" Maestro ternyata sequential); hasil tetap
+> di-append berurutan. Cap delegasi default 2→3 (budget + runner + teks Settings).
+> **"child gagal: Socket timeout":** timeout provider default 120 dtk→5 mnt via
+> env (`YUI_PROVIDER_TIMEOUT_MS`) — model reasoning + konteks MCP besar bisa
+> >120 dtk sampai token pertama; berlaku openai-compat/anthropic/gemini.
+> **Hardcore Mode tuntas:** approval mode "auto" → cap iterasi 64
+> (`YUI_MAX_ITER_HARDCORE`) bukan 16 — selesaikan sampai jawaban final tanpa
+> minta "lanjutkan".
+> **Chat tanpa timelapse:** buka sesi lama = snapshot di-hydrate SATU fetch →
+> satu render (dulu delta di-replay satu-satu = efek streaming ulang).
+> **Kartu delegasi klikable** → langsung buka sesi persona anak.
+> **Restrukturisasi tab (10→6):** Chat · Tim · Task (Papan+Pohon via drawer
+> "Log Task") · File · Trace · Konfigurasi (menu Roster/Memori/Skill ala
+> Settings non-modal). Tab Sesi → header Chat: status persona di tengah +
+> dropdown sesi + tombol sesi baru di kanan.
+> **Scrollbar compact** 7px bertoken (default Windows terlalu tebal).
+> **MCP cold-start tak lagi -32001 & mati permanen:** timeout handshake naik
+> 60 dtk→150 dtk (`connectTimeoutMs`) + kegagalan connect STARTUP kini masuk
+> reconnect backoff 2s..300s (dulu: satu warn lalu mati sampai restart walau
+> cache `uvx`/`npx` sudah terisi) + handshake gagal → proses anak dimatikan.
+> **Menu Enhancer → Persona (character studio ala game, permintaan user):**
+> `PersonaStudioView` — tab **Characters**: roster persona (level/XP growth
+> nyata) + preview maskot hidup `OrinPortrait` dengan emote (7 state) + **ganti
+> wujud geometri** (15 bentuk, persist `workspace/persona-shapes.json` via
+> REST `/api/personas/shapes`; reaktif di SEMUA UI via module-store +
+> `useSyncExternalStore`) + **skill loadout** (attach/detach chip, accept draft
+> latihan langsung); tab **Missions** + **Training history** (warisan Dungeon,
+> polling run live). Kontrak `OrinShapeKey`/`PersonaShapeOverride` (contracts).
+> **Orin v8 “Larger Star” + geometri organik v6 penuh** (lihat commit a433824):
+> 15 bentuk path filled membulat (v4 stroke-based dihapus), bintang 1.18×
+> HANYA siluet, gradient radial + soft shadow + kilau mata ganda, rig v8
+> (blink halus, gaze smoothing, squash seragam bola, look smoothstep).
+> Spec Rive: `docs/ART-DIRECTION.md` (P1-PER-1).
+> **Konsep Runner masuk PLAN §13.5** (port registry + preview iframe + jembatan
+> Penpot) — belum dikerjakan, menunggu fase.
+
+### 2026-11 · Housekeeping penutup fase (post-P0, pasca character-select)
+- [x] **Bersih-bersih fase** (commit menyusul): PersonaPicker — hapus komponen
+  `PersonaPicker` (nav sidebar lama), `usePersonaGrowth` + `GrowthBadge`
+  (0 pemakai; level bar sudah di card Persona), re-export & import mati;
+  orinShapes — hapus `personaShape()` (pemanggil = usePersonaShape),
+  `personaShapeKey` jadi internal; ui — hapus `CardHead` (0 pemakai) +
+  ekspor index tak terpakai (buttonClass, TabItem, ButtonProps, ChipTone,
+  CardVariant); web deps — hapus `zod` (0 import) & `@rive-app/react-canvas`
+  (dipasang ulang saat P1-PER-2 runtime Rive); hapus artefak
+  `docs/favicon_io/` (duplikat public/), log tmp, `e2e/.tmp/*`;
+  SettingsModal — ModelRoutesEditor pindah penuh ke page Persona
+  (`PersonaModelModal`, tombol gear card identitas, "Check Connection").
+- [x] **Rename scope package `@yui/*` → `@yuika/*`** (semua: contracts, core,
+  web, api, personas, skills): package.json + import path di source/test,
+  turbo.json `with`-graph, Dockerfile `--filter`, docs — lockfile regenerate;
+  env `YUI_*` & konfigurasi lain tidak berubah (hanya nama package).

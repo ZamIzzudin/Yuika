@@ -1,8 +1,9 @@
-// @yui/core — skills loader: format SKILL.md agentskills.io-compatible (PLAN §4.4).
+// @yuika/core — skills loader: format SKILL.md agentskills.io-compatible (PLAN §4.4).
 // Progressive disclosure: index hanya {name, description}; isi penuh via skill_view.
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
+import { moduleLogger } from "../logger.js";
 
 export interface SkillFrontmatter {
   name: string;
@@ -10,7 +11,7 @@ export interface SkillFrontmatter {
   version?: string;
   author?: string;
   platforms?: string[];
-  metadata?: { yui?: { tags?: string[]; category?: string; personas?: string[] } };
+  metadata?: { yui?: { tags?: string[]; category?: string; personas?: string[]; status?: string } };
   [k: string]: unknown;
 }
 
@@ -23,6 +24,11 @@ export interface Skill extends SkillIndexEntry {
   frontmatter: SkillFrontmatter;
   body: string;
   dir: string;
+  /** P1-DUN-2 lifecycle: draft (hasil sesi) → tested (direview) → ready (siap assign).
+   *  Skill seed tanpa status eksplisit = ready. */
+  status: "draft" | "tested" | "ready";
+  /** Persona pemilik (metadata.yui.personas) — inventory “apa yang persona bisa”. */
+  personas: string[];
 }
 
 function parseSkillMd(text: string): { frontmatter: SkillFrontmatter; body: string } {
@@ -38,12 +44,16 @@ function parseSkillMd(text: string): { frontmatter: SkillFrontmatter; body: stri
 export function loadSkill(dir: string): Skill {
   const raw = fs.readFileSync(path.join(dir, "SKILL.md"), "utf-8");
   const { frontmatter, body } = parseSkillMd(raw);
+  const rawStatus = frontmatter.metadata?.yui?.status;
+  const status = rawStatus === "draft" || rawStatus === "tested" ? rawStatus : "ready";
   return {
     name: frontmatter.name,
     description: frontmatter.description,
     frontmatter,
     body,
     dir,
+    status,
+    personas: frontmatter.metadata?.yui?.personas ?? [],
   };
 }
 
@@ -51,8 +61,19 @@ export function listSkills(skillsDir: string): Skill[] {
   if (!fs.existsSync(skillsDir)) return [];
   return fs
     .readdirSync(skillsDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !d.name.startsWith("."))
+    // "drafts" = area antrean P1-MEM-3, bukan skill aktif.
+    .filter((d) => d.isDirectory() && !d.name.startsWith(".") && d.name !== "drafts")
     .map((d) => path.join(skillsDir, d.name))
-    .map(loadSkill)
+    // Robustness: SATU draf rusak (YAML frontmatter invalid, dsb.) TIDAK boleh
+    // merobohkan seluruh loader — lewati dengan warning (kasus nyata 2026-11:
+    // draf hasil latihan berisi description dengan koma tak terkutip).
+    .flatMap((dir) => {
+      try {
+        return [loadSkill(dir)];
+      } catch (e) {
+        moduleLogger("skills").warn({ dir: path.basename(dir) }, `skill skipped: ${e instanceof Error ? e.message : e}`);
+        return [];
+      }
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 }

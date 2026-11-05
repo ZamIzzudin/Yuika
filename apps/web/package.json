@@ -1,5 +1,6 @@
 {
-  "name": "@yui/web",
+  "name": "@yuika/web",
+  "license": "UNLICENSED",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,18 +10,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@rive-app/react-canvas": "^4.14.1",
-    "@yui/contracts": "*",
-    "@yui/core": "*",
+    "@phosphor-icons/react": "^2.1.10",
+    "@yuika/contracts": "*",
+    "@yuika/core": "*",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "zod": "^3.23.8"
+    "react-hot-toast": "^2.6.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.4",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.4",
     "typescript": "^5.6.3"
   }
 }

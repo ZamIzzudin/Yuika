@@ -1,5 +1,5 @@
 {
-  "name": "@yui/personas",
+  "name": "@yuika/personas",
   "version": "0.1.0",
   "private": true,
   "description": "Persona packages (data): manifest, prompt layer, toolsets, skills, delegation rules"

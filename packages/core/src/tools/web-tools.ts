@@ -1,4 +1,4 @@
-// @yui/core — web tools (demo): web_fetch sederhana. TODO(P0): ekstraksi proper,
+// @yuika/core — web tools (demo): web_fetch sederhana. TODO(P0): ekstraksi proper,
 // redirect policy, robots, cache (pola web_tools Hermes).
 import { z } from "zod";
 import { registry } from "../registry.js";
@@ -29,7 +29,7 @@ export function registerWebTools(): void {
     handler: async (args: z.infer<typeof fetchSchema>) => {
       const res = await fetch(args.url, {
         signal: AbortSignal.timeout(15_000),
-        headers: { "user-agent": "YourYui/0.1 (demo)" },
+        headers: { "user-agent": "Yuika/0.1 (demo)" },
       });
       const contentType = res.headers.get("content-type") ?? "";
       const raw = await res.text();

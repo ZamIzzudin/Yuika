@@ -1,5 +1,6 @@
-// @yui/core — OpenAI-compatible streaming adapter (D12)
+// @yuika/core — OpenAI-compatible streaming adapter (D12)
 import OpenAI from "openai";
+import { env } from "../env.js";
 import type {
   ChatRequest,
   InternalMessage,
@@ -55,16 +56,27 @@ export class OpenAICompatProvider implements ProviderAdapter {
   private client: OpenAI;
 
   constructor(cfg: OpenAICompatConfig) {
-    this.client = new OpenAI({ baseURL: cfg.baseUrl, apiKey: cfg.apiKey });
+    this.client = new OpenAI({
+      baseURL: cfg.baseUrl,
+      apiKey: cfg.apiKey,
+      // P0-CORE-2 (parsial): panggilan provider bisa menggantung menit-lamanya
+      // (di test: 139 dtk dan 35 dtk) — timeout per request + retry transien.
+      timeout: Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? env.providerTimeoutMs),
+      maxRetries: 2,
+    });
   }
 
   async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
-    const stream = await this.client.chat.completions.create({
-      model: req.model,
-      messages: toApiMessages(req.messages),
-      tools: req.tools.length ? toApiTools(req.tools) : undefined,
-      stream: true,
-    });
+    const stream = await this.client.chat.completions.create(
+      {
+        model: req.model,
+        messages: toApiMessages(req.messages),
+        tools: req.tools.length ? toApiTools(req.tools) : undefined,
+        stream: true,
+      },
+      // P0-CORE-1: abort HTTP in-flight saat user menekan Stop (tanpa menunggu timeout).
+      { signal: req.signal },
+    );
 
     let text = "";
     let finishReason: ProviderDone["finishReason"] = "stop";
@@ -77,6 +89,13 @@ export class OpenAICompatProvider implements ProviderAdapter {
       const choice = part.choices?.[0];
       if (!choice) continue;
       const delta = choice.delta;
+      // GLM/Anthropic-compat mengirim pikiran model di reasoning_content.
+      // Fix dev-10: JANGAN dibuang — streaming "thinking" inilah yang membuat
+      // panggilan menit-lamanya terasa hidup di UI (42k token reasoning pernah
+      // hilang diam-diam → UI seolah hang).
+      if ((delta as { reasoning_content?: string } | undefined)?.reasoning_content) {
+        onChunk({ type: "reasoning_delta", delta: (delta as unknown as { reasoning_content: string }).reasoning_content });
+      }
       if (delta?.content) {
         text += delta.content;
         onChunk({ type: "text_delta", delta: delta.content });

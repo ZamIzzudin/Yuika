@@ -12,7 +12,7 @@ import { registerFileTools } from "../tools/file-tools.js";
 import { runChildPersona, type DelegationDeps } from "../delegation/runner.js";
 import { resolvePendingApproval } from "../approval/engine.js";
 import { resolveRepoRoot } from "../paths.js";
-import type { EventDraft, YuiEvent } from "@yui/contracts";
+import type { EventDraft, YuiEvent } from "@yuika/contracts";
 
 class FakeProvider implements ProviderAdapter {
   readonly id = "fake";
@@ -181,5 +181,80 @@ describe("delegation runner", () => {
       runChildPersona(makeDeps(child), { sessionId: parentSession, turnId: "t4" }, "persona-ngaco", "g", null, makeEmit()),
     ).toThrow(/tidak ditemukan/);
     store.close();
+  });
+
+  it("P1-DEL-1: cap per plan — delegation.max_concurrent pendelegasi lebih ketat dari budget", async () => {
+    const deps = { ...makeDeps(new FakeProvider([])), maxChildren: () => 5 };
+    // parent = yui-planner (delegation.yaml: max_concurrent: 2 — consult 2 arah
+    // paralel tetap jalan) walau budget cap 5: anak ke-3 ditolak.
+    store.createSession("s_plan", "yui-planner", "SYS", ["delegate_task"]);
+    const emitPlan = (d: EventDraft) => store.appendEvent("s_plan", d);
+    const hp = ["riset A", "riset B"].map((g) =>
+      runChildPersona(deps, { sessionId: "s_plan", turnId: "tp1" }, "yui-scholar", g, null, emitPlan));
+    expect(() =>
+      runChildPersona(deps, { sessionId: "s_plan", turnId: "tp1" }, "yui-analyst", "analisis", null, emitPlan),
+    ).toThrow(/plan yui-planner: max_concurrent=2/);
+    await Promise.allSettled(hp.map((h) => h.summary)); // cleanup: activeChildren kembali 0
+
+    // parent = yui-conductor (max_concurrent: 3), budget cap 5 → 3 jalan, ke-4 ditolak
+    const emit2 = makeEmit();
+    const hs = ["a", "b", "c"].map((g) =>
+      runChildPersona(deps, { sessionId: parentSession, turnId: "tp2" }, "yui-scribe", g, null, emit2));
+    expect(() =>
+      runChildPersona(deps, { sessionId: parentSession, turnId: "tp2" }, "yui-scribe", "d", null, emit2),
+    ).toThrow(/batas delegation paralel \(3\) tercapai — plan yui-conductor: max_concurrent=3/);
+    for (const h of hs) void h.summary.catch(() => undefined);
+    await Promise.allSettled([...hp, ...hs].map((h) => h.summary)); // cleanup: activeChildren kembali 0
+  });
+
+  it("P1-CRED-3: cap delegasi paralel dinamis (maxChildren) — spawn di atas cap ditolak", async () => {
+    const slow = new FakeProvider([]); // tak beres dalam test — anak 1 tetap "aktif"
+    const deps = { ...makeDeps(slow), maxChildren: () => 1 };
+    const h1 = runChildPersona(deps, { sessionId: parentSession, turnId: "t5" }, "yui-scribe", "ringkas", null, makeEmit());
+    expect(() =>
+      runChildPersona(deps, { sessionId: parentSession, turnId: "t5" }, "yui-analyst", "analisis", null, makeEmit()),
+    ).toThrow(/batas delegation paralel \(1\) tercapai/);
+    void h1.summary.catch(() => undefined);
+    await new Promise((r) => setTimeout(r, 50));
+    store.close();
+  });
+});
+
+// Fix dev-10 ("kartu delegasi statis menit-lamanya"): delta teks/pikiran/aktivitas
+// tool anak diteruskan LIVE ke parent sebagai delegation.delta — bukan hanya
+// persona.state + done. Ini yang membuat provider call anak 2–9 menit terasa hidup.
+describe("delegation.delta — live feed anak → parent", () => {
+  it("text/reasoning/tool anak muncul sebagai delegation.delta di sesi parent", async () => {
+    class DeltaProvider implements ProviderAdapter {
+      readonly id = "delta-fake";
+      private step = 0;
+      async chatStream(_req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
+        if (this.step++ === 0) {
+          onChunk({ type: "reasoning_delta", delta: "memikirkan struktur…" });
+          onChunk({ type: "text_delta", delta: "Aku mulai menulis." });
+          return { type: "done", finishReason: "tool_calls", text: "", toolCalls: [{ id: "cd1", name: "write_file", args: { path: "code/a.txt", content: "isi" } }] };
+        }
+        return { type: "done", finishReason: "stop", text: "selesai menulis a.txt", toolCalls: [] };
+      }
+    }
+    const deps = makeDeps(new DeltaProvider());
+    const handle = runChildPersona(
+      deps,
+      { sessionId: parentSession, turnId: "t1" },
+      "yui-coder",
+      "tulis code/a.txt",
+      null,
+      makeEmit(),
+    );
+    const done = await handle.summary;
+    expect(done).toContain("selesai");
+
+    const feed = parentEvents.filter((e) => e.type === "delegation.delta") as unknown as { kind: string; delta: string }[];
+    const kinds = feed.map((f) => f.kind);
+    expect(kinds).toContain("reasoning"); // pikiran anak streaming ke parent
+    expect(kinds).toContain("text"); // narasi anak streaming ke parent
+    expect(kinds).toContain("tool"); // aktivitas tool anak (write_file)
+    const toolFeed = feed.find((f) => f.kind === "tool");
+    expect(toolFeed?.delta).toContain("write_file");
   });
 });

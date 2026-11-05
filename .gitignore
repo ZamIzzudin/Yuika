@@ -7,3 +7,19 @@ dist/
 *.db-journal
 workspace/
 next-env.d.ts
+demo.db*
+
+# Artefak runtime lokal (data user/jam kerja — bukan kode)
+model-overrides.json
+packages/skills/*/.usage.json
+.tmp-*.txt
+.tmp-*.log
+approval-mode.json
+skill-bindings.json
+*.tsbuildinfo
+
+# P0-QA-1 e2e
+playwright-report/
+test-results/
+e2e/.tmp/
+apps/web/.next-e2e/
