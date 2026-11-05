@@ -905,7 +905,7 @@ export default function Home() {
                       {
                         id: "chat",
                         label: (
-                          <>
+                          <div className="flex gap-2">
                             <PersonaFace personaId={active.id} size={16} /> Chat
                             {items.some(
                               (it) => it.kind === "approval" && !it.resolved,
@@ -913,7 +913,7 @@ export default function Home() {
                             {busy && (
                               <Dot tone="accent" pulse className="ml-1" />
                             )}
-                          </>
+                          </div>
                         ),
                       },
                       ...(activeProject
@@ -1153,13 +1153,15 @@ export default function Home() {
                           parentState: personaState,
                           delegations: items
                             .filter((it) => it.kind === "delegation")
-                            .map((it): LiveDelegation => ({
-                              personaId: it.personaId ?? "yui-scholar",
-                              childSessionId: it.childSessionId ?? "",
-                              goal: it.goal ?? "",
-                              childState: it.childState,
-                              summary: it.text,
-                            })),
+                            .map(
+                              (it): LiveDelegation => ({
+                                personaId: it.personaId ?? "yui-scholar",
+                                childSessionId: it.childSessionId ?? "",
+                                goal: it.goal ?? "",
+                                childState: it.childState,
+                                summary: it.text,
+                              }),
+                            ),
                         }}
                       />
                     )}
