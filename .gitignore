@@ -23,3 +23,8 @@ playwright-report/
 test-results/
 e2e/.tmp/
 apps/web/.next-e2e/
+
+# P1-INF-1 runtime auth db (SQLite) — jangan di-commit
+auth.db
+auth.db-shm
+auth.db-wal

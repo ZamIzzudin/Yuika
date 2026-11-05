@@ -101,7 +101,7 @@ Squash-stretch: `sy` dari mood + audio; **bola (shape 0) wajib skala SERAGAM** (
 1. **Artist batch-1** (P1-PER-2): Conductor (orb) + Scholar (cloud) + Scribe (blob) — bangun rig dari spec ini; referensi interaktif `docs/orin_v8_larger_star.html` (semua nilai tinggal disalin).
 2. **Review silang**: jalankan `orin.riv` vs SVG berdampingan — checklist §8.
 3. **Batch-2**: sisa persona terpakai (coder/designer/analyst/operator/planner) — hanya tambah geometri Body + swatch.
-4. **Runtime** (P1-PER-3): `@rive-app/react-canvas`, `useRive({ src: "/rive/orin.riv", stateMachines: "Mascot" })`; **fallback tetap OrinPortrait SVG** (load gagal / prefers-reduced-motion / low-power) — SVG tidak dihapus.
+4. **Runtime** (P1-PER-3 ✅ 2026-11): `components/rive/RiveStage.tsx` (`useRive({ src: "/rive/orin.riv", stateMachine: "Mascot" })`); **fallback tetap OrinPortrait SVG** (aset belum ada / load gagal / prefers-reduced-motion) — SVG tidak dihapus. Halaman QA `/dev/rive` = checklist kontrak input + trigger untuk review aset; drop `orin.riv` ke `apps/web/public/rive/` dan semua portrait otomatis pindah ke Rive.
 5. **QA**: blind test persona (P1-PER-5) — ≥80% penguji menebak persona dari output.
 
 ## 8. Acceptance criteria (definition of done P1-PER-2/3)
