@@ -1,4 +1,4 @@
-// @yui/core — Memory manager (P1-MEM-1): dokumen editable —
+// @yuika/core — Memory manager (P1-MEM-1): dokumen editable —
 //   USER.md                      (workspace, lintas project): preferensi & fakta user.
 //   MEMORY.md                    (per project): keputusan, pelajaran, konteks proyek.
 //   memory/domains/<domain>.md   (P1-MEM-6, per persona-domain): keahlian yang

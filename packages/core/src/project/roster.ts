@@ -1,10 +1,10 @@
-// @yui/core — roster project (P1-PRJ-3, PLAN §13.4): siapa mengerjakan apa di project.
+// @yuika/core — roster project (P1-PRJ-3, PLAN §13.4): siapa mengerjakan apa di project.
 // Sumber kebenaran = `project.yaml` di root project (deklaratif, ter-replay via file —
 // bukan state DB kedua). Binding MCP di file yang sama dipakai P1-PRJ-5 (D17).
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
-import { ProjectManifest, type RosterEntry } from "@yui/contracts";
+import { ProjectManifest, type RosterEntry } from "@yuika/contracts";
 
 export function projectManifestPath(projectRoot: string): string {
   return path.join(projectRoot, "project.yaml");

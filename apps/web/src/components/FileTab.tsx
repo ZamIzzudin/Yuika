@@ -4,7 +4,7 @@ import { apiUrl } from "@/lib/api";
 // code/, MEMORY.md) bisa diperiksa tanpa keluar app. File teks/kode ≤256 KB
 // dibaca; selain itu tampil info ukuran. DS-1: ui/* + Tailwind + Phosphor.
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FileNode } from "@yui/contracts";
+import type { FileNode } from "@yuika/contracts";
 import type { Icon } from "@phosphor-icons/react";
 import {
   ArrowsClockwise,
@@ -18,7 +18,7 @@ import {
 import { SkeletonRows } from "./Skeleton";
 import { Button, Select, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
-import { diffLines, diffStat } from "@yui/core/project/diff";
+import { diffLines, diffStat } from "@yuika/core/project/diff";
 
 interface Content {
   content: string;

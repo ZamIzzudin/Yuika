@@ -1,7 +1,7 @@
-// @yui/core — TaskTree projector (P1-PRJ-7, PLAN §13.7/D19): hierarki pemantauan
+// @yuika/core — TaskTree projector (P1-PRJ-7, PLAN §13.7/D19): hierarki pemantauan
 // delegasi DIPROYEKSIKAN dari event stream project (append-only) — bukan state kedua.
 // Replay = fold ulang seluruh event → pohon utuh; refresh/reconnect gratis.
-import type { ProjectEvent, TaskNode } from "@yui/contracts";
+import type { ProjectEvent, TaskNode } from "@yuika/contracts";
 
 /** Fold event → pohon (children nested, urut penciptaan). Node dengan parent tak dikenal naik ke root. */
 export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {

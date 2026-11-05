@@ -11,7 +11,7 @@ import { registerConsultTool } from "../tools/consult-tool.js";
 import { SessionStore } from "../session/store.js";
 import { EventBus } from "../bus.js";
 import type { ProviderAdapter, ProviderChunk, ChatRequest, ProviderDone } from "../provider/adapter.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 import { resolveRepoRoot } from "../paths.js";
 
 class FakeProvider implements ProviderAdapter {

@@ -1,4 +1,4 @@
-// @yui/contracts — event catalog (DEMO-WEEK-1.md §5)
+// @yuika/contracts — event catalog (DEMO-WEEK-1.md §5)
 // SATU-SATUNYA sumber tipe lintas core & klien. Dilarang menulis tipe tangan di apps/web.
 import { z } from "zod";
 

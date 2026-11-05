@@ -1,4 +1,4 @@
-// @yui/core — OpenAI-compatible streaming adapter (D12)
+// @yuika/core — OpenAI-compatible streaming adapter (D12)
 import OpenAI from "openai";
 import { env } from "../env.js";
 import type {

@@ -1,4 +1,4 @@
-// @yui/core — boot heal (P0 reliabilitas): turn yang mati bersama proses lama
+// @yuika/core — boot heal (P0 reliabilitas): turn yang mati bersama proses lama
 // ditutup JUJUR saat server start — session.error (penjelasan) + persona.state
 // idle + delegation.done sintetis untuk anak yang menggantung. Tanpa ini,
 // replay UI menampilkan "berjalan"/chip thinking ZOMBIE selamanya (feedback

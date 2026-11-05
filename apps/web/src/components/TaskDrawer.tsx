@@ -11,7 +11,7 @@ import type {
   TaskItem,
   TaskNode,
   TaskStatus,
-} from "@yui/contracts";
+} from "@yuika/contracts";
 import {
   ArrowBendDownRight,
   Check,

@@ -1,4 +1,4 @@
-// @yui/core — system prompt builder: layer stack [core][persona][skills index] (PLAN §7.3).
+// @yuika/core — system prompt builder: layer stack [core][persona][skills index] (PLAN §7.3).
 // Dibangun SEKALI saat createSession lalu dibekukan di sessions.system_prompt
 // (prompt-cache discipline — PLAN §3.2).
 import type { Persona } from "../personas/loader.js";

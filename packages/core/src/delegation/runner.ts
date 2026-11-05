@@ -1,8 +1,8 @@
-// @yui/core — delegation-lite (DEMO): child = turn loop in-process dengan persona anak.
+// @yuika/core — delegation-lite (DEMO): child = turn loop in-process dengan persona anak.
 // DEMO-SHORTCUT: tanpa job queue persist, tanpa steering — dibayar di P0/P1 (TASKS.md).
 // Parent hanya menerima ringkasan, bukan tool calls anak (context economy — Hermes §4.6).
 import { randomUUID } from "node:crypto";
-import type { PersonaState } from "@yui/contracts";
+import type { PersonaState } from "@yuika/contracts";
 import type { ISessionStore } from "../session/store.js";
 import type { Emit } from "../session/emit.js";
 import type { EventBus } from "../bus.js";

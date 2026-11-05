@@ -1,10 +1,10 @@
-// @yui/core — tool registry (pola registry Hermes §4.2)
+// @yuika/core — tool registry (pola registry Hermes §4.2)
 // register() → dispatch() dengan validasi zod + gerbang approval. Semua tool return JSON.
 // P0-MCP-2: parameters boleh zod schema ATAU JSON Schema mentah (dari server MCP
 // `t.inputSchema`) — validasi JSON Schema via ajv (compile sekali, di-cache).
 import { z } from "zod";
 import Ajv, { type ValidateFunction } from "ajv";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 
 export interface ToolContext {
   sessionId: string;

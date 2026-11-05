@@ -1,4 +1,4 @@
-// @yui/core — mapping skill → persona manual (feedback user dev-10: "di menu
+// @yuika/core — mapping skill → persona manual (feedback user dev-10: "di menu
 // dungeon, pilih persona lalu attach skill yang sudah ada secara mandiri").
 // Sumber binding TIGA lapis: (1) bawaan persona `skills.yaml` (bundled),
 // (2) lampiran manual user di `skill-bindings.json` (attached), (3) lepas

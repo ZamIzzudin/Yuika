@@ -1,4 +1,4 @@
-// @yui/core — admission control (P1-CRED-2) + rate limit (P1-CRED-3).
+// @yuika/core — admission control (P1-CRED-2) + rate limit (P1-CRED-3).
 // Gas-station pattern: sebelum turn → cek saldo (cache, TTL 10 dtk, di-invalidate
 // tiap usage event) + HOLD perkiraan kasar; saat turn selesai → SETTLE (hold
 // dilepas; biaya actual sudah tercatat di ledger oleh hook recordUsage).
@@ -6,7 +6,7 @@
 // 0.02–2.0) — HANYA untuk pre-auth, tidak pernah masuk angka pelaporan.
 import fs from "node:fs";
 import path from "node:path";
-import { BudgetConfig, type BudgetStatus, type UpdateBudgetRequest, type UsageFilter, type UsageMatrixRow } from "@yui/contracts";
+import { BudgetConfig, type BudgetStatus, type UpdateBudgetRequest, type UsageFilter, type UsageMatrixRow } from "@yuika/contracts";
 import { costOf, loadPriceBook } from "./model-prices.js";
 import type { UsageLedger } from "./usage/ledger.js";
 

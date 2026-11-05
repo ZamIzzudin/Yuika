@@ -13,7 +13,7 @@ import { runChildPersona, type DelegationDeps } from "../delegation/runner.js";
 import { registerTodoTools } from "../tools/todo-tools.js";
 import { resetRegistryForTests } from "../registry.js";
 import { resolveRepoRoot } from "../paths.js";
-import type { EventDraft, YuiEvent } from "@yui/contracts";
+import type { EventDraft, YuiEvent } from "@yuika/contracts";
 
 const REPO_ROOT = resolveRepoRoot(path.join(import.meta.dirname, "..", "..", "..", ".."));
 

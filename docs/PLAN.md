@@ -730,7 +730,7 @@ khusus pipeline itu, bukan pindah core.
 > harian untuk 3 dev: [`DEMO-WEEK-1.md`](./DEMO-WEEK-1.md). Setelah demo: lanjutkan Fase 0
 > penuh (sandbox container, resume robust, split api↔core jadi service terpisah, auth)
 > sebelum masuk Fase 1.
-- [x] Monorepo TS + `contracts/` (zod) + CI — ✅ v0: npm workspaces + @yui/contracts (zod, single source) + CI GitHub Actions (typecheck+test+lint, turbo cache). *Codegen SDK/OpenAPI menyusul bersama P0-INF-1 split api.*
+- [x] Monorepo TS + `contracts/` (zod) + CI — ✅ v0: npm workspaces + @yuika/contracts (zod, single source) + CI GitHub Actions (typecheck+test+lint, turbo cache). *Codegen SDK/OpenAPI menyusul bersama P0-INF-1 split api.*
 - [x] Agent core v1: turn loop streaming, 1 provider, interrupt, event sourcing + replay — ✅ v0: loop.ts (iterasi + budget + repetition guard + fallback model + abort graceful), provider openai-compat/anthropic/gemini, SessionStore SQLite append-only + SSE replay; compression v0 (P0-CORE-4) tinggal aux-model summarize
 - [x] Registry + ±8 tool inti — ✅ v0: file RW/search/patch + run_command (scope project) + skills_list/skill_view + doc_read + todo_* + memory_append + session_search + skill_propose + consult + delegate_task + MCP tools dinamis; *sandbox container menyusul P0-SEC-1*
 - [x] Skills loader (agentskills.io format) + skill seed + usage tracking dasar — ✅ v0: loader SKILL.md frontmatter + status draft/tested/ready + binding 3 lapis (bundled∪attached∪global)\detached + eval dungeon; 6 skill seed; *10 skill seed & tracking per-skill menyusul*
@@ -923,7 +923,7 @@ run                 # satu eksekusi workflow
 └── agent_jobs[]    # delegation job yang sudah ada + referensi (run, phase, step)
 ```
 
-Aturan: `workflow.yaml` deklaratif & tervalidasi zod di `@yui/contracts`; engine tidak
+Aturan: `workflow.yaml` deklaratif & tervalidasi zod di `@yuika/contracts`; engine tidak
 pernah menulis state bebas — semua transisi lewat event (append-only). Resume run =
 replay event + lanjut dari fase terakhir yang belum selesai.
 

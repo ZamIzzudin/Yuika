@@ -1,4 +1,4 @@
-// @yui/core — Learn nudge (P1-MEM-2): panggilan aux RINGAN pasca-turn — sarankan
+// @yuika/core — Learn nudge (P1-MEM-2): panggilan aux RINGAN pasca-turn — sarankan
 // SATU catatan bila turn mengungkap preferensi user / pelajaran project yang
 // reusable, atau "none". Hasil masuk lewat tool memory_append (dedupe, kurasi
 // sama seperti agent). Non-blocking: fire-and-forget dari finalizer loop.
@@ -6,7 +6,7 @@
 // YUI_LEARN_MODEL; default: model utama) — P1-INF-3: tugas ringan → model murah.
 import type { ProviderAdapter, InternalMessage } from "../provider/adapter.js";
 import type { Emit } from "../session/emit.js";
-import type { UsageEvent } from "@yui/contracts";
+import type { UsageEvent } from "@yuika/contracts";
 import { registry } from "../registry.js";
 
 export interface LearnNudgeArgs {

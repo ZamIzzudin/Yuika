@@ -1,8 +1,8 @@
-// @yui/api — MCP: katalog, install, trust, audit, runtime uvx.
+// @yuika/api — MCP: katalog, install, trust, audit, runtime uvx.
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { YuiRuntime } from "@yui/core";
-import { InstallMcpRequest, SetMcpTrustRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { InstallMcpRequest, SetMcpTrustRequest } from "@yuika/contracts";
 
 export function registerMcpRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   /** GET /api/mcp/audit?limit=50 — audit panggilan tool MCP (terbaru dulu). */

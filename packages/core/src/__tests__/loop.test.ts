@@ -9,7 +9,7 @@ import { AgentLoop } from "../loop.js";
 import { SessionStore } from "../session/store.js";
 import { ApprovalEngine } from "../approval/engine.js";
 import { registry, resetRegistryForTests } from "../registry.js";
-import type { EventDraft, YuiEvent } from "@yui/contracts";
+import type { EventDraft, YuiEvent } from "@yuika/contracts";
 
 /** Provider skrip: tiap chatStream mengonsumsi satu langkah (deltas → done). */
 class FakeProvider implements ProviderAdapter {

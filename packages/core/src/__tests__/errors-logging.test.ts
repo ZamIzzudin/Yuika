@@ -14,7 +14,7 @@ import { getLogger } from "../logger.js";
 import { SessionStore } from "../session/store.js";
 import { AgentLoop } from "../loop.js";
 import type { ProviderAdapter, ProviderChunk, ChatRequest, ProviderDone } from "../provider/adapter.js";
-import type { EventDraft, YuiEvent } from "@yui/contracts";
+import type { EventDraft, YuiEvent } from "@yuika/contracts";
 
 /** Bentuk minimal error openai SDK (punya status) — tanpa import SDK. */
 class FakeApiError extends Error {

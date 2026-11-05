@@ -1,7 +1,7 @@
-// @yui/api — daftar persona + growth (P1-PER-4) + bentuk maskot (menu Persona).
+// @yuika/api — daftar persona + growth (P1-PER-4) + bentuk maskot (menu Persona).
 import type { FastifyInstance } from "fastify";
-import type { YuiRuntime } from "@yui/core";
-import { PersonaGrowth, PersonaShapesResponse, SetPersonaShapeRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { PersonaGrowth, PersonaShapesResponse, SetPersonaShapeRequest } from "@yuika/contracts";
 
 export function registerPersonaRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.get("/api/personas", async () => ({ personas: getRt().listPersonas() }));

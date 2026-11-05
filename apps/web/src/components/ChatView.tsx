@@ -1,15 +1,14 @@
-
 "use client";
 import { apiUrl } from "@/lib/api";
 /**
  * ChatView — pola visual OpenBot (D:\projects\openbot):
  * pesan agent = teks polos + gutter wajah + nama muted; user = bubble terang rata kanan;
  * tool = langkah senyap yang bisa dilipat; delegasi = baris subagent; approval = kartu tenang.
- * Logika event tetap dari page.tsx (semua tipe @yui/contracts).
+ * Logika event tetap dari page.tsx (semua tipe @yuika/contracts).
  * DS-1: Tailwind semantik + komponen ui/* — tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { PersonaState } from "@yui/contracts";
+import type { PersonaState } from "@yuika/contracts";
 import {
   Brain,
   CaretDown,
@@ -165,7 +164,9 @@ export function ChatView({
       });
       if (!r.ok) {
         const body = (await r.json().catch(() => ({}))) as { error?: string };
-        toastErr(body.error ?? (pause ? "could not pause" : "could not resume"));
+        toastErr(
+          body.error ?? (pause ? "could not pause" : "could not resume"),
+        );
       }
     } catch {
       toastErr("could not reach the server");
@@ -273,9 +274,7 @@ export function ChatView({
                     }`}
                     onClick={openChild}
                     title={
-                      openChild
-                        ? "Open this persona's session"
-                        : undefined
+                      openChild ? "Open this persona's session" : undefined
                     }
                   >
                     <div className="flex flex-wrap items-center gap-2">
@@ -287,7 +286,7 @@ export function ChatView({
                       ) : null}
                       {it.paused ? (
                         <span className="rounded-pill border border-line bg-hover px-2 py-px text-caption text-dim">
-                          paused — waiting for resume
+                          Paused
                         </span>
                       ) : null}
                       {/* P0-DEL-2: kontrol anak saat masih bekerja (belum ada ringkasan). */}
@@ -301,7 +300,8 @@ export function ChatView({
                                 onChange={(e) => setSteerText(e.target.value)}
                                 onKeyDown={(e) => {
                                   e.stopPropagation();
-                                  if (e.key === "Enter" && steerText.trim()) void sendSteer(it.childSessionId!);
+                                  if (e.key === "Enter" && steerText.trim())
+                                    void sendSteer(it.childSessionId!);
                                   if (e.key === "Escape") {
                                     setSteerOpenFor(null);
                                     setSteerText("");
@@ -319,7 +319,8 @@ export function ChatView({
                                 className="flex size-7 cursor-pointer items-center justify-center rounded-md2 border border-line bg-control text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary disabled:cursor-default disabled:opacity-40"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (steerText.trim()) void sendSteer(it.childSessionId!);
+                                  if (steerText.trim())
+                                    void sendSteer(it.childSessionId!);
                                 }}
                               >
                                 <PaperPlaneTilt size={12} aria-hidden />
@@ -342,15 +343,30 @@ export function ChatView({
                           )}
                           <button
                             type="button"
-                            title={it.paused ? "Resume delegation" : "Pause delegation (stops at next iteration boundary)"}
-                            aria-label={it.paused ? "Resume delegation" : "Pause delegation"}
+                            title={
+                              it.paused
+                                ? "Resume delegation"
+                                : "Pause delegation (stops at next iteration boundary)"
+                            }
+                            aria-label={
+                              it.paused
+                                ? "Resume delegation"
+                                : "Pause delegation"
+                            }
                             className="flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
                             onClick={(e) => {
                               e.stopPropagation();
-                              void pauseDelegation(it.childSessionId!, !it.paused);
+                              void pauseDelegation(
+                                it.childSessionId!,
+                                !it.paused,
+                              );
                             }}
                           >
-                            {it.paused ? <PlayCircle size={14} aria-hidden /> : <PauseCircle size={14} aria-hidden />}
+                            {it.paused ? (
+                              <PlayCircle size={14} aria-hidden />
+                            ) : (
+                              <PauseCircle size={14} aria-hidden />
+                            )}
                           </button>
                           <button
                             type="button"
@@ -503,9 +519,7 @@ export function ChatView({
                   <span>
                     {it.kind === "noted" && (
                       <>
-                        <b className="font-semibold text-primary">
-                          Yui noted
-                        </b>{" "}
+                        <b className="font-semibold text-primary">Yui noted</b>{" "}
                         (
                         {it.scope === "project"
                           ? "project memory"
@@ -519,7 +533,8 @@ export function ChatView({
                           Context compressed
                         </b>{" "}
                         — {it.n} old messages summarized (~{it.before} → ~
-                        {it.after} tokens); the original history stays fully stored.
+                        {it.after} tokens); the original history stays fully
+                        stored.
                       </>
                     )}
                     {it.kind === "skill" && (

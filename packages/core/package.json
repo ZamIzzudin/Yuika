@@ -1,5 +1,5 @@
 {
-  "name": "@yui/core",
+  "name": "@yuika/core",
   "license": "UNLICENSED",
   "version": "0.1.0",
   "private": true,
@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.8",
-    "@yui/contracts": "*",
+    "@yuika/contracts": "*",
     "ajv": "^8.20.0",
     "better-sqlite3": "^12.2.0",
     "openai": "^7.51.0",

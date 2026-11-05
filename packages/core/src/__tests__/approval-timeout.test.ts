@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { ApprovalEngine } from "../approval/engine.js";
 import { SessionStore } from "../session/store.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 
 let dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-apprx-"));
 let store: SessionStore;

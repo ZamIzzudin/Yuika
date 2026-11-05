@@ -1,10 +1,10 @@
-// @yui/core — usage ledger (P1-CRED-1): tabel `usage_events` append-only.
+// @yuika/core — usage ledger (P1-CRED-1): tabel `usage_events` append-only.
 // Sumber data: `usage` dari chunk done provider (loop & delegasi anak) —
 // TIDAK ada estimasi; provider tanpa usage = tidak tercatat (jujur > penuh).
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import { type UsageEvent, type UsageFilter, type UsageMatrixRow, type UsageRollup, type UsageSummary } from "@yui/contracts";
+import { type UsageEvent, type UsageFilter, type UsageMatrixRow, type UsageRollup, type UsageSummary } from "@yuika/contracts";
 
 export class UsageLedger {
   private db: Database.Database;

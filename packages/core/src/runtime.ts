@@ -1,9 +1,9 @@
-// @yui/core — runtime wiring: satu factory untuk seluruh kernel (dipakai apps/web).
+// @yuika/core — runtime wiring: satu factory untuk seluruh kernel (dipakai apps/web).
 // DEMO-SHORTCUT: core berjalan in-process di Next.js; P0 memisah jadi service + worker.
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type PersonaShapeOverride, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
+import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type PersonaShapeOverride, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yuika/contracts";
 import { createSessionStore, type ISessionStore } from "./session/store.js";
 import { moduleLogger } from "./logger.js";
 import { makeEmitter } from "./session/emit.js";
@@ -35,7 +35,7 @@ import { UsageLedger } from "./usage/ledger.js";
 import { loadPriceBook, saveModelPrice } from "./model-prices.js";
 import { AdmissionControl, usageMatrixWithCost } from "./budget.js";
 import { buildTrace } from "./session/trace.js";
-import type { ModelPrice } from "@yui/contracts";
+import type { ModelPrice } from "@yuika/contracts";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
 import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js";
@@ -48,7 +48,7 @@ import { env } from "./env.js";
 import { findUvx, installUv } from "./mcp/uv.js";
 import { buildModelRouter, loadModelOverrides, saveModelOverride } from "./model-router.js";
 import { smokeModel } from "./provider/smoke.js";
-import type { ModelSmokeResult } from "@yui/contracts";
+import type { ModelSmokeResult } from "@yuika/contracts";
 import { acceptDraft, listDrafts, readUsage, rejectDraft, updateDraft } from "./skills/manager.js";
 import { buildFileTree, readProjectFile, safeProjectPath } from "./project/files.js";
 import { FileRevisionStore } from "./project/revisions.js";
@@ -815,7 +815,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
       const sessions = store.listProjectSessions(id);
-      const edges = new Map<string, import("@yui/contracts").DelegationEdge>();
+      const edges = new Map<string, import("@yuika/contracts").DelegationEdge>();
       for (const s of sessions) {
         for (const e of store.getEvents(s.id)) {
           if (e.type === "delegation.started") {

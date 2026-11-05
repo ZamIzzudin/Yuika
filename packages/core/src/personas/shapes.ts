@@ -1,11 +1,11 @@
-// @yui/core — override bentuk geometri maskot persona (menu Persona).
+// @yuika/core — override bentuk geometri maskot persona (menu Persona).
 // Persist: `workspace/persona-shapes.json` — peta personaId → OrinShapeKey.
 // Tanpa entri = default (PERSONA_SHAPE web / manifest). Fail-closed: persona
 // tak dikenal atau bentuk di luar 15 → error (jangan diam-diam fallback —
 // UI harus tahu pilihan tidak valid).
 import fs from "node:fs";
 import path from "node:path";
-import { ORIN_SHAPE_KEYS, OrinShapeKey, PersonaShapesResponse, PersonaShapeOverride } from "@yui/contracts";
+import { ORIN_SHAPE_KEYS, OrinShapeKey, PersonaShapesResponse, PersonaShapeOverride } from "@yuika/contracts";
 
 export function personaShapesPath(workspacePath: string): string {
   return path.join(workspacePath, "persona-shapes.json");

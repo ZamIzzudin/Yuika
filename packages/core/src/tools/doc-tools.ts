@@ -1,4 +1,4 @@
-// @yui/core — doc_read (dev-10, scribe = persona dokumen): baca & terjemahkan
+// @yuika/core — doc_read (dev-10, scribe = persona dokumen): baca & terjemahkan
 // file yang di-upload user ke teks yang bisa dipahami agent.
 // Dukungan: teks (md/txt/csv/json/html/xml), PDF (unpdf), Excel (xlsx/xls → CSV
 // per sheet). File lain (mis. docx) → pesan jelas, bukan error mentah.

@@ -1,5 +1,5 @@
 "use client";
-import type { PersonaState } from "@yui/contracts";
+import type { PersonaState } from "@yuika/contracts";
 import { OrinPortrait } from "./OrinPortrait";
 
 /**

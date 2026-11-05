@@ -1,4 +1,4 @@
-// @yui/contracts — MCP (P1-MCP-3, PLAN D17/MCP): trust gate per-workspace,
+// @yuika/contracts — MCP (P1-MCP-3, PLAN D17/MCP): trust gate per-workspace,
 // izin granular per tool, audit log panggilan. Default = UNTRUSTED (fail-closed).
 import { z } from "zod";
 

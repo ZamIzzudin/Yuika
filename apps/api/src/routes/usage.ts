@@ -1,7 +1,7 @@
-// @yui/api — usage metering (P1-CRED-1) + attribution matrix (CRED-4).
+// @yuika/api — usage metering (P1-CRED-1) + attribution matrix (CRED-4).
 import type { FastifyInstance } from "fastify";
-import type { YuiRuntime } from "@yui/core";
-import { UsageFilter } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { UsageFilter } from "@yuika/contracts";
 
 export function registerUsageRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   /** GET /api/usage?projectId=&sessionId=&personaId=&since=&recent=N&matrix=1

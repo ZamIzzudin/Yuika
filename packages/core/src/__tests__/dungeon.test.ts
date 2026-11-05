@@ -4,7 +4,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { Mission, type DungeonRun } from "@yui/contracts";
+import { Mission, type DungeonRun } from "@yuika/contracts";
 import { loadMissions, dungeonsDir } from "../dungeon/mission.js";
 import { buildMissionPrompt, createDungeonRunner, sweepStaleRuns } from "../dungeon/runner.js";
 import { ProjectStore } from "../project/store.js";

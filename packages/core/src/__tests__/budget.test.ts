@@ -9,7 +9,7 @@ import path from "node:path";
 import { UsageLedger } from "../usage/ledger.js";
 import { AdmissionControl, loadBudgetConfig, saveBudgetConfig, usageMatrixWithCost } from "../budget.js";
 import { saveModelPrice } from "../model-prices.js";
-import type { UsageEvent } from "@yui/contracts";
+import type { UsageEvent } from "@yuika/contracts";
 
 let dir: string;
 let ledger: UsageLedger;

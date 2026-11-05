@@ -2,7 +2,7 @@
 // (cast) → fastify.inject. Menguji kontrak HTTP (path/status/body), BUKAN
 // logika runtime (sudut itu milik suite core).
 import { describe, expect, it } from "vitest";
-import type { YuiRuntime } from "@yui/core";
+import type { YuiRuntime } from "@yuika/core";
 import { buildApp } from "../app.js";
 
 const calls: string[] = [];

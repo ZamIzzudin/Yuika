@@ -1,4 +1,4 @@
-// @yui/core — run_command: `ls`/`echo` dieksekusi INTERNAL (readdir/print —
+// @yuika/core — run_command: `ls`/`echo` dieksekusi INTERNAL (readdir/print —
 // aman & lintas-OS, bebas approval), `node` dieksekusi di SANDBOX container
 // sekali-pakai (P0-SEC-1: network default-deny, resource cap, timeout, rootfs
 // ro — detail tools/sandbox.ts). Fallback `off`/`auto-tanpa-docker` = execFile

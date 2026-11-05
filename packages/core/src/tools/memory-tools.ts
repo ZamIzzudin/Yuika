@@ -1,4 +1,4 @@
-// @yui/core — memory tools (P1-MEM-1 + P1-MEM-6): agent menyimpan catatan reusable.
+// @yuika/core — memory tools (P1-MEM-1 + P1-MEM-6): agent menyimpan catatan reusable.
 // USER.md (scope user) / MEMORY.md (scope project) / memory/domains/<domain>.md
 // (scope domain — keahlian persona lintas project, milik persona).
 // Append terkurasi + dedupe (memory/manager). Tanpa approval: catatan

@@ -1,4 +1,4 @@
-// @yui/core — skill tools: progressive disclosure (skills_list → skill_view)
+// @yuika/core — skill tools: progressive disclosure (skills_list → skill_view)
 // + skill_propose (P1-MEM-3: pengalaman → draf skill → validasi user).
 // Index hanya nama+deskripsi; isi penuh dimuat on-demand (PLAN §4.4).
 // Tanpa offset/limit: model harus membaca skill sepenuhnya (standar Hermes).

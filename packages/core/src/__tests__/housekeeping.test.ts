@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import type Database from "better-sqlite3";
 import { SessionStore } from "../session/store.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 
 let n = 0;
 function mkStore(): SessionStore {

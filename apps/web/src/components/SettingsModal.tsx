@@ -6,7 +6,7 @@ import { apiUrl } from "@/lib/api";
 // MCP (katalog + trust + audit — dulunya sesak di dasar sidebar), + metering.
 // DS-1: ui/* + Tailwind semantik + ikon Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
-import type { ProviderSettings } from "@yui/contracts";
+import type { ProviderSettings } from "@yuika/contracts";
 import { Check, Prohibit, Warning, X } from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
 import { Skeleton } from "./Skeleton";

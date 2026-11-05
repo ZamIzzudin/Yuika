@@ -4,7 +4,7 @@ import { apiUrl } from "@/lib/api";
 /**
  * Yuika demo shell — orchestrator UI (DEMO-WEEK-1 §2):
  * persona picker → sesi → SSE event stream → render msg/activity/delegation/approval.
- * SEMUA tipe dari @yui/contracts (dilarang tipe tangan — PLAN §6.3).
+ * SEMUA tipe dari @yuika/contracts (dilarang tipe tangan — PLAN §6.3).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
@@ -36,7 +36,7 @@ import type {
   ProjectInfo,
   ProjectSessionSummary,
   YuiEvent,
-} from "@yui/contracts";
+} from "@yuika/contracts";
 
 /** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
 const SUGGESTIONS: Record<string, string[]> = {
@@ -958,7 +958,7 @@ export default function Home() {
                               <b className="text-body font-semibold text-primary">
                                 {active.name}
                               </b>
-                              <span className="text-caption text-dim">
+                              <span className="text-caption text-dim capitalize">
                                 {active.expertise}
                               </span>
                             </span>

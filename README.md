@@ -55,7 +55,7 @@ docker compose up -d --build   # build image web+api, hidup di :3000 / :3211
 ```
 
 Arsitektur (P0-INF-1): `apps/web` (Next.js, pure frontend) memanggil `apps/api`
-(Fastify, pemilik runtime @yui/core) via HTTP — `NEXT_PUBLIC_API_BASE`
+(Fastify, pemilik runtime @yuika/core) via HTTP — `NEXT_PUBLIC_API_BASE`
 (default `http://127.0.0.1:3211`).
 
 Penyimpanan sesi **swappable** (P0-DATA-1): default SQLite embedded; untuk
@@ -74,7 +74,7 @@ Scholar (riset + MCP) → Scribe (menulis + approval) → celebrating → refres
 
 ## Aturan Repo (dari PLAN.md — dihafal semua dev)
 
-1. **Kontrak dulu.** Semua tipe lintas core↔klien dari `@yui/contracts`. Tipe tangan = PR ditolak.
+1. **Kontrak dulu.** Semua tipe lintas core↔klien dari `@yuika/contracts`. Tipe tangan = PR ditolak.
 2. **History append-only.** Sistem prompt + toolset frozen saat sesi dibuat (prompt-cache discipline).
 3. **Narrow waist.** Kapabilitas baru: skill → MCP → plugin; core tool = jalan terakhir.
 4. **Shortcut demo ditandai** `// DEMO-SHORTCUT:` — dibayar di fase P0 (lihat TASKS.md).

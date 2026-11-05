@@ -1,4 +1,4 @@
-// @yui/contracts — public entry
+// @yuika/contracts — public entry
 export * from "./events.js";
 export * from "./rest.js";
 export * from "./persona.js";

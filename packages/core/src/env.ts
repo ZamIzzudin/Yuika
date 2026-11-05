@@ -1,4 +1,4 @@
-// @yui/core — konfigurasi terpusat & tervalidasi (P0-INF-2).
+// @yuika/core — konfigurasi terpusat & tervalidasi (P0-INF-2).
 // SEMUA env numerik/boolean YUI_* diparse DI SATU TEMPAT dengan zod:
 // nilai rusak (mis. YUI_MAX_ITER="abc") → FAIL-FAST saat modul ini pertama
 // diakses, bukan jadi NaN yang bocor ke runtime (dulu: Number(env) diam-diam

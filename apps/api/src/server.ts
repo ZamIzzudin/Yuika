@@ -1,8 +1,8 @@
-// @yui/api — entry (P0-INF-1): service API terpisah dari proses Next.js.
+// @yuika/api — entry (P0-INF-1): service API terpisah dari proses Next.js.
 // Boot: load .env root (env-boot) → Fastify + runtime singleton → listen.
 import { buildApp } from "./app.js";
 import { getRuntime } from "./runtime.js";
-import { moduleLogger } from "@yui/core";
+import { moduleLogger } from "@yuika/core";
 
 const log = moduleLogger("api");
 const port = Number(process.env.YUI_API_PORT ?? 3211);

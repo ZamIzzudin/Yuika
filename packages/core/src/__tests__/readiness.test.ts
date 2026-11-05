@@ -1,6 +1,6 @@
 // P1-DUN-5: assign gating — readiness = inventory skill persona per fase.
 import { describe, expect, it } from "vitest";
-import { RosterEntry } from "@yui/contracts";
+import { RosterEntry } from "@yuika/contracts";
 import { computeReadiness, PHASE_CATEGORIES } from "../project/readiness.js";
 
 const entry = (personaId: string, phases: RosterEntry["phases"]): RosterEntry => ({ personaId, role: "peran", phases, mcp: [] });

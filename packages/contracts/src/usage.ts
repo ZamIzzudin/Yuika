@@ -1,4 +1,4 @@
-// @yui/contracts — metering (P1-CRED-1): ledger pemakaian per panggilan LLM.
+// @yuika/contracts — metering (P1-CRED-1): ledger pemakaian per panggilan LLM.
 // Satu UsageEvent = SATU panggilan model sukses (iterasi loop / langkah delegasi
 // anak) — rollup per turn/persona/model dihitung dari sini (P1-CRED-4 burn-rate).
 // Invariant: angka HANYA dari `usage` yang dilaporkan provider — tidak ada

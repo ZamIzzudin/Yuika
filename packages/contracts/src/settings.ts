@@ -1,4 +1,4 @@
-// @yui/contracts — Settings (UI Pengaturan): provider & model (swap panas),
+// @yuika/contracts — Settings (UI Pengaturan): provider & model (swap panas),
 // fondasi seksi setelan lain (API key, fallback model, dst).
 import { z } from "zod";
 

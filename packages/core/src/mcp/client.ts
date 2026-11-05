@@ -1,11 +1,11 @@
-// @yui/core — MCP client (DEMO): stdio via SDK resmi, register tools ke registry.
+// @yuika/core — MCP client (DEMO): stdio via SDK resmi, register tools ke registry.
 // DEMO-SHORTCUT: tanpa health check / reconnect / park / sandbox per-tenant / trust gate —
 // semuanya P1 (TASKS.md §MCP). Jangan pernah resolve tool MCP di import-time.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import type { McpTrustConfig } from "@yui/contracts";
+import type { McpTrustConfig } from "@yuika/contracts";
 import { registry } from "../registry.js";import { findUvx } from "./uv.js";
 
 export interface McpServerConfig {

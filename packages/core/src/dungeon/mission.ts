@@ -1,11 +1,11 @@
-// @yui/core — dungeon missions (P1-DUN-1, PLAN §13.8): arena latihan persona.
+// @yuika/core — dungeon missions (P1-DUN-1, PLAN §13.8): arena latihan persona.
 // Format `mission.yaml` di workspace/dungeons/<slug>/ — goal, sumber belajar,
 // acceptance, skill target. Sesi latihan jalan di ruangan sandbox (project
 // kind="dungeon") sehingga file tools terisolasi dari workspace produksi.
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
-import { Mission, type Mission as MissionType } from "@yui/contracts";
+import { Mission, type Mission as MissionType } from "@yuika/contracts";
 import { slugify } from "../skills/manager.js";
 
 export const DUNGEONS_DIRNAME = "dungeons";

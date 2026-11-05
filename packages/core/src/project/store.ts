@@ -1,10 +1,10 @@
-// @yui/core — project store (P1-PRJ-1, PLAN §13.1: project = entitas first-class).
+// @yuika/core — project store (P1-PRJ-1, PLAN §13.1: project = entitas first-class).
 // DB yang sama dengan sessions (demo.db); project BISA di-update (beda invariant
 // append-only events). Tabel project_tasks dibuat sekaligus — dipakai P1-PRJ-4.
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import { ProjectEvent, ProjectInfo, type TaskItem } from "@yui/contracts";
+import { ProjectEvent, ProjectInfo, type TaskItem } from "@yuika/contracts";
 
 type ProjectEventType = ProjectEvent["type"];
 

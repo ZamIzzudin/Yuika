@@ -6,7 +6,7 @@ import { apiUrl } from "@/lib/api";
  * prop `live` (SSE) — debounce 400ms. DS-1: ui/* + Tailwind + Phosphor.
  */
 import { useCallback, useEffect, useState } from "react";
-import type { SessionTrace } from "@yui/contracts";
+import type { SessionTrace } from "@yuika/contracts";
 import type { Icon } from "@phosphor-icons/react";
 import {
   ArrowLeft,

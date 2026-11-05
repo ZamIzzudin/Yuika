@@ -4,7 +4,7 @@
 // tak pernah sampai UI walau tersimpan di DB.
 import { describe, expect, it, vi } from "vitest";
 import { EventBus } from "../bus.js";
-import type { YuiEvent } from "@yui/contracts";
+import type { YuiEvent } from "@yuika/contracts";
 
 const ev = (id: number): YuiEvent =>
   ({ type: "turn.started", turnId: `t${id}`, id, ts: id, sessionId: "s-hmr" }) as YuiEvent;

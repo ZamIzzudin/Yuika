@@ -1,6 +1,6 @@
-// @yui/core — emitter: append ke store (durable, id monotonic) LALU publish ke bus.
+// @yuika/core — emitter: append ke store (durable, id monotonic) LALU publish ke bus.
 // Urutan ini penting: subscriber SSE yang datang belakangan tetap dapat replay dari store.
-import type { YuiEvent, EventDraft } from "@yui/contracts";
+import type { YuiEvent, EventDraft } from "@yuika/contracts";
 import type { ISessionStore } from "./store.js";
 import type { EventBus } from "../bus.js";
 

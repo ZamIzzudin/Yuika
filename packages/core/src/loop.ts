@@ -1,4 +1,4 @@
-// @yui/core — agent turn loop (pola fase Hermes §4.1, versi demo linear):
+// @yuika/core — agent turn loop (pola fase Hermes §4.1, versi demo linear):
 // assembly → api_call → tool_round → (iterate) → finalizer.
 // TODO(P0) lihat TASKS.md: interrupt/AbortSignal end-to-end (P0-CORE-1),
 // compression v0 (P0-CORE-4), celebrating detection. Fallback model // repetition guard, iteration budget proper, compression, celebrating detection. guard repetisi: DONE dev 9.
@@ -14,7 +14,7 @@ import { getLogger } from "./logger.js";
 import { classifyError, ErrorCodes, YuiError } from "./errors.js";
 import type { Emit } from "./session/emit.js";
 import type { ApprovalEngine } from "./approval/engine.js";
-import type { UsageEvent } from "@yui/contracts";
+import type { UsageEvent } from "@yuika/contracts";
 
 // Budget iterasi per turn: env override untuk use case panjang (multi-delegasi).
 import { getApprovalMode } from "./approval/engine.js";

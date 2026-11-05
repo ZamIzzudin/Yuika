@@ -9,7 +9,7 @@ import { apiUrl } from "@/lib/api";
 // DS-1: Tailwind semantik — garis penghubung via varian before:/after:.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
-import type { DelegationEdge } from "@yui/contracts";
+import type { DelegationEdge } from "@yuika/contracts";
 import {
   Check,
   Circle,
@@ -360,8 +360,8 @@ export function TeamTree({
             )}
             {edges !== null && edges.length === 0 && (
               <p className="mt-2.5 text-center text-caption text-dim">
-                No delegations yet — the lead works alone, or ask it to
-                delegate.
+                No delegations yet,
+                <br /> The lead works alone, or ask it to delegate.
               </p>
             )}
           </div>

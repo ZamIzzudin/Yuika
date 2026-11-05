@@ -1,5 +1,5 @@
 {
-  "name": "@yui/web",
+  "name": "@yuika/web",
   "license": "UNLICENSED",
   "version": "0.1.0",
   "private": true,
@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
-    "@yui/contracts": "*",
-    "@yui/core": "*",
+    "@yuika/contracts": "*",
+    "@yuika/core": "*",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

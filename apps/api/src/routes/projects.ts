@@ -1,8 +1,8 @@
-// @yui/api — routes project (P1-PRJ-*) + files/tasks/tree/roster/delegations/uploads.
+// @yuika/api — routes project (P1-PRJ-*) + files/tasks/tree/roster/delegations/uploads.
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
-import type { YuiRuntime } from "@yui/core";
-import { CreateProjectRequest, CreateTaskRequest, DelegationJob, SaveRosterRequest, UpdateProjectRequest, UpdateTaskRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { CreateProjectRequest, CreateTaskRequest, DelegationJob, SaveRosterRequest, UpdateProjectRequest, UpdateTaskRequest } from "@yuika/contracts";
 
 const MAX_UPLOAD = 10 * 1024 * 1024;
 const OK_EXT = new Set([".pdf", ".xlsx", ".xls", ".csv", ".md", ".txt", ".json", ".html", ".htm", ".xml", ".yaml", ".yml"]);

@@ -1,4 +1,4 @@
-// @yui/core — skill lifecycle manager (P1-MEM-3): pengalaman terbukti → skill.
+// @yuika/core — skill lifecycle manager (P1-MEM-3): pengalaman terbukti → skill.
 // Alur: agent `skill_propose` → DRAFT di <skillsDir>/drafts/<slug>/SKILL.md
 // (metadata.yui.status: draft) → user validasi di tab Skill (edit bebas) →
 // Terima = lint (parse ulang frontmatter) + pindah ke <skillsDir>/<slug>/ =

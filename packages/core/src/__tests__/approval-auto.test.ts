@@ -4,7 +4,7 @@
 // traceable); tool lain tetap minta kartu persetujuan.
 import { describe, expect, it, afterEach } from "vitest";
 import { ApprovalEngine, getApprovalMode, setApprovalMode, resolvePendingApproval } from "../approval/engine.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 
 afterEach(() => setApprovalMode("ask")); // jangan bocor ke test lain
 

@@ -12,7 +12,7 @@ import { registerFileTools } from "../tools/file-tools.js";
 import { runChildPersona, type DelegationDeps } from "../delegation/runner.js";
 import { resolvePendingApproval } from "../approval/engine.js";
 import { resolveRepoRoot } from "../paths.js";
-import type { EventDraft, YuiEvent } from "@yui/contracts";
+import type { EventDraft, YuiEvent } from "@yuika/contracts";
 
 class FakeProvider implements ProviderAdapter {
   readonly id = "fake";

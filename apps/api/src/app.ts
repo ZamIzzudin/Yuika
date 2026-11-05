@@ -1,11 +1,11 @@
-// @yui/api — Fastify app factory (P0-INF-1): semua REST/SSE yang dulu Next
+// @yuika/api — Fastify app factory (P0-INF-1): semua REST/SSE yang dulu Next
 // route handlers di apps/web/src/app/api/**. Path DIPERTAHANKAN persis
 // (prefix /api/…) sehingga frontend hanya ganti base URL (lib/api.ts).
 // buildApp(rt?) — runtime bisa di-inject (test); default: singleton proses api.
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { ZodError } from "zod";
-import type { YuiRuntime } from "@yui/core";
+import type { YuiRuntime } from "@yuika/core";
 import { registerSessionRoutes } from "./routes/sessions.js";
 import { registerDelegationRoutes } from "./routes/delegations.js";
 import { registerApprovalRoutes } from "./routes/approvals.js";

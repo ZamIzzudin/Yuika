@@ -1,11 +1,11 @@
-// @yui/core — dungeon eval buta (P1-DUN-3, PLAN §13.8): gerbang tested→ready.
+// @yuika/core — dungeon eval buta (P1-DUN-3, PLAN §13.8): gerbang tested→ready.
 // "Buta" = sesi hakim FRESH (tanpa riwayat sesi latihan) di folder misi yang
 // sama; hanya melihat kriteria acceptance + bukti di folder + isi skill
 // (skill_view). Lulus semua kriteria → VERDICT: LULUS → status `ready`;
 // selain itu tetap `tested` + alasan tersimpan (.eval.json).
 import fs from "node:fs";
 import path from "node:path";
-import { SkillEval, type Mission } from "@yui/contracts";
+import { SkillEval, type Mission } from "@yuika/contracts";
 import { slugify } from "../skills/manager.js";
 
 export function evalFile(skillDir: string): string {

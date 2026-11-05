@@ -1,4 +1,4 @@
-// @yui/core — consult (P2-PM-2, D22): brainstorm multi-persona TERSTRUKTUR.
+// @yuika/core — consult (P2-PM-2, D22): brainstorm multi-persona TERSTRUKTUR.
 // Planner mengajukan SATU pertanyaan tajam ke 2–3 persona spesialis secara
 // PARALEL (via delegation runner yang sudah ada — metering, cap, event, audit
 // ikut jalan), lalu menerima jawaban berlabel per persona untuk disintesis.

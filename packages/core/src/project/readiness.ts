@@ -1,9 +1,9 @@
-// @yui/core — assign gating (P1-DUN-5, PLAN §13.8): roster menampilkan skill
+// @yuika/core — assign gating (P1-DUN-5, PLAN §13.8): roster menampilkan skill
 // readiness persona per fase — persona tanpa skill fase ditandai "belum siap"
 // (hint: latih di Dungeon). Pure function — gampang dites, runtime tinggal
 // memanggil dengan skills inventory.
-import type { PhaseReadiness, RosterEntry, WorkflowPhase } from "@yui/contracts";
-import { WORKFLOW_PHASES } from "@yui/contracts";
+import type { PhaseReadiness, RosterEntry, WorkflowPhase } from "@yuika/contracts";
+import { WORKFLOW_PHASES } from "@yuika/contracts";
 
 /** Kategori skill yang relevan per fase workflow (v0 heuristik — skill seed
  *  memakai category: research / design / software-development / productivity).

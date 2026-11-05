@@ -6,7 +6,7 @@ import { apiUrl } from "@/lib/api";
 // install TIDAK menghubungkan — user harus Trust dulu (toggle di atas).
 // DS-1: ui/* + Tailwind + Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
-import type { McpAuditEntry, McpCatalogEntry, McpServerStatus } from "@yui/contracts";
+import type { McpAuditEntry, McpCatalogEntry, McpServerStatus } from "@yuika/contracts";
 import { ArrowsClockwise, ArrowClockwise, Check, Warning, X } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
 import { Button, Chip, Dot, SectionTitle, TextInput } from "./ui";

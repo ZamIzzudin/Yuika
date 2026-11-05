@@ -1,8 +1,8 @@
-// @yui/api — settings: approval mode, budget/admission, model routes & prices,
+// @yuika/api — settings: approval mode, budget/admission, model routes & prices,
 // provider (swap panas + persist .env), model smoke.
 import type { FastifyInstance } from "fastify";
-import type { YuiRuntime } from "@yui/core";
-import { ApprovalModeSetting, UpdateBudgetRequest, UpdateModelPriceRequest, UpdateModelRouteRequest, UpdateProviderSettingsRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { ApprovalModeSetting, UpdateBudgetRequest, UpdateModelPriceRequest, UpdateModelRouteRequest, UpdateProviderSettingsRequest } from "@yuika/contracts";
 
 export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   /** GET/PUT mode approval (fix dev-10): "auto" = write_file & run_command

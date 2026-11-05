@@ -6,7 +6,7 @@ import { apiUrl } from "@/lib/api";
 // Tab Missions (melatih skill baru) + Training history = warisan Dungeon (P1-DUN).
 // DS-1: hanya komponen ui/* + utility Tailwind semantik (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PersonaInfo } from "@yui/contracts";
+import type { PersonaInfo } from "@yuika/contracts";
 import {
   ArrowLeft,
   Books,

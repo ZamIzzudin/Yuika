@@ -1,4 +1,4 @@
-// @yui/core — skills loader: format SKILL.md agentskills.io-compatible (PLAN §4.4).
+// @yuika/core — skills loader: format SKILL.md agentskills.io-compatible (PLAN §4.4).
 // Progressive disclosure: index hanya {name, description}; isi penuh via skill_view.
 import fs from "node:fs";
 import path from "node:path";

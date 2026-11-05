@@ -1,4 +1,4 @@
-// @yui/core — Install/uninstall server MCP (P1-MCP-1): tulis deklarasi ke
+// @yuika/core — Install/uninstall server MCP (P1-MCP-1): tulis deklarasi ke
 // `mcp.json` (root repo). Tidak ada auto-connect — fail-closed tetap berlaku:
 // setelah install, user harus Trust server di panel MCP (P1-MCP-3) sebelum
 // runtime menghubungkannya. Placeholder `{workspace}` disimpan apa adanya;
@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { catalogById } from "./catalog.js";
 import type { McpRegistry, McpServerConfig } from "./client.js";
-import type { McpServerStatus } from "@yui/contracts";
+import type { McpServerStatus } from "@yuika/contracts";
 
 export function readMcpConfig(mcpConfigPath: string): McpRegistry {
   if (!fs.existsSync(mcpConfigPath)) return { mcpServers: {} };

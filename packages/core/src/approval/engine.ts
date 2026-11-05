@@ -1,4 +1,4 @@
-// @yui/core — approval engine: pause turn → approval.requested → tunggu keputusan user
+// @yuika/core — approval engine: pause turn → approval.requested → tunggu keputusan user
 // (pola server_requests Hermes; di SaaS nanti bisa via push notification — PLAN §4.11).
 // P0-DATA-3: pending approval & "Setujui & ingat" PERSIST di SQLite — permintaan
 // yang menggantung saat server restart ditandai expired (event approval.expired),
@@ -16,7 +16,7 @@ import type { ISessionStore } from "../session/store.js";
  * yang permanen ada di tabel `approvals` (P0-DATA-3).
  *
  * QUIRK dev (dipelajari dev-10, fix bug user "approval 404 saat disetujui"):
- * Next.js dev membundel @yui/core TERPISAH per route — route approvals mendapat
+ * Next.js dev membundel @yuika/core TERPISAH per route — route approvals mendapat
  * copy modul sendiri. Map module-local → map KOSONG di copy route → resolve 404
  * "sudah selesai" padahal approval hidup. Sama seperti bus emitter: map WAJIB
  * di-cache di globalThis agar semua module-instance berbagi.

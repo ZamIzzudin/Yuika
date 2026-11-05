@@ -1,7 +1,7 @@
 "use client";
 import { apiUrl } from "@/lib/api";
 import { useState } from "react";
-import { DeleteProjectResult, type ProjectInfo } from "@yui/contracts";
+import { DeleteProjectResult, type ProjectInfo } from "@yuika/contracts";
 import { Plus, Trash } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
 import { Button, Card, Field, TextInput } from "./ui";

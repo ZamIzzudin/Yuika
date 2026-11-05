@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import YAML from "yaml";
-import { Mission } from "@yui/contracts";
+import { Mission } from "@yuika/contracts";
 import { buildEvalPrompt, createSkillEvaluator, missionForSkill, parseVerdict, readEval, writeEval } from "../dungeon/eval.js";
 import { proposeSkill, acceptDraft } from "../skills/manager.js";
 import { listSkills } from "../skills/loader.js";

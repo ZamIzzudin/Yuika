@@ -1,4 +1,4 @@
-// @yui/core — P0-SEC-1: sandbox container untuk run_command.
+// @yuika/core — P0-SEC-1: sandbox container untuk run_command.
 // Eksekusi `node` berjalan di container Docker SEKALI-PAKAI dengan:
 //   - network default-deny (`--network none` — egress diblokir total)
 //   - resource cap (memory / cpus / pids-limit)

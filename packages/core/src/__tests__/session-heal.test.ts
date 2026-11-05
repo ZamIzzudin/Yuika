@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { SessionStore } from "../session/store.js";
 import { healInterruptedTurns } from "../session/heal.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 
 let dir: string;
 let store: SessionStore;

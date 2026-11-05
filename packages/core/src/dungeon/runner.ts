@@ -1,11 +1,11 @@
-// @yui/core — dungeon runner (P1-DUN-1): jalankan MISI sebagai sesi sandbox.
+// @yuika/core — dungeon runner (P1-DUN-1): jalankan MISI sebagai sesi sandbox.
 // Ruangan = project kind="dungeon" (root workspace/dungeons/<id>) → semua file
 // tools persona terisolasi di sana. Run bersifat async: status dipolling UI
 // (running/done/failed) & dipersist di <dungeon>/runs.json (restart → failed).
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { DungeonRun, Mission } from "@yui/contracts";
+import type { DungeonRun, Mission } from "@yuika/contracts";
 import { missionDir } from "./mission.js";
 
 /** Prompt misi: agent tahu goal, sumber, acceptance, dan WAJIB menutup dengan

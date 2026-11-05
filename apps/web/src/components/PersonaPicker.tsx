@@ -1,7 +1,7 @@
 
 "use client";
 import { useState } from "react";
-import type { PersonaInfo } from "@yui/contracts";
+import type { PersonaInfo } from "@yuika/contracts";
 import { usePersonaShape } from "./orinShapes";
 import { OrinPortrait } from "./OrinPortrait";
 

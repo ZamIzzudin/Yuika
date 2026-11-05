@@ -25,7 +25,7 @@
  * hirarki identik (Root›Body›Face›EyeL/EyeR›ArcShape + Root›FX).
  */
 import { useEffect, useId, useRef } from "react";
-import type { PersonaState } from "@yui/contracts";
+import type { PersonaState } from "@yuika/contracts";
 import { mixHex, usePersonaShape } from "./orinShapes";
 
 type MoodName =

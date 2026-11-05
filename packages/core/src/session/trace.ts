@@ -1,9 +1,9 @@
-// @yui/core — trace view per turn (P1-INF-4). Sumber: event store append-only
+// @yuika/core — trace view per turn (P1-INF-4). Sumber: event store append-only
 // (sudah ada) + usage ledger (latensi/token per panggilan model) — TANPA tabel
 // baru; join berdasarkan window waktu turn per sesi. (pino + tabel log terpisah
 // menyusul bersama deploy INF-5.)
-import type { SessionTrace, TraceStep, TraceTurn } from "@yui/contracts";
-import type { YuiEvent } from "@yui/contracts";
+import type { SessionTrace, TraceStep, TraceTurn } from "@yuika/contracts";
+import type { YuiEvent } from "@yuika/contracts";
 import type { ISessionStore } from "./store.js";
 import type { UsageLedger } from "../usage/ledger.js";
 

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { McpTrustEntry } from "@yui/contracts";
+import { McpTrustEntry } from "@yuika/contracts";
 import { isToolAllowed, loadTrust, saveTrust, trustOf, upsertTrust } from "../mcp/trust.js";
 import { McpAuditStore } from "../mcp/audit.js";
 import { applyMcpBinding } from "../loop.js";

@@ -1,4 +1,4 @@
-// @yui/contracts — Memory (P1-MEM-1): dua dokumen editable milik user —
+// @yuika/contracts — Memory (P1-MEM-1): dua dokumen editable milik user —
 // USER.md (workspace, lintas project) & MEMORY.md (per project).
 // Agent hanya append terkurasi via tool memory_append; user bisa menimpa utuh.
 import { z } from "zod";

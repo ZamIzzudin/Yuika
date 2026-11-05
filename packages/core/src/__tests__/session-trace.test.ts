@@ -7,7 +7,7 @@ import path from "node:path";
 import { SessionStore } from "../session/store.js";
 import { UsageLedger } from "../usage/ledger.js";
 import { buildTrace } from "../session/trace.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 
 let dir: string;
 let store: SessionStore;

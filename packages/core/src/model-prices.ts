@@ -1,10 +1,10 @@
-// @yui/core — price book (P1-MDL-3): harga per model untuk indikator biaya.
+// @yuika/core — price book (P1-MDL-3): harga per model untuk indikator biaya.
 // File JSON di data/ (mirror model-overrides) — user isi lewat Settings.
 // Estimasi biaya = metering (P1-CRED-1, tanpa estimasi token) × harga DI-SET
 // user; model tanpa harga = biaya tidak dihitung (bukan 0 — jujur).
 import fs from "node:fs";
 import path from "node:path";
-import { PriceBook, type ModelPrice } from "@yui/contracts";
+import { PriceBook, type ModelPrice } from "@yuika/contracts";
 
 export function loadPriceBook(file: string): PriceBook {
   try {

@@ -1,4 +1,4 @@
-// @yui/core — file revision store (P2-STU-3): snapshot isi LAMA sebelum write_file
+// @yuika/core — file revision store (P2-STU-3): snapshot isi LAMA sebelum write_file
 // menimpa. Satu DB dengan sesi (tabel sendiri); cap 20 revisi per file, konten
 // ≤256 KB per revisi (di luar itu revisi tidak direkam — file terlalu besar untuk diff).
 import Database from "better-sqlite3";

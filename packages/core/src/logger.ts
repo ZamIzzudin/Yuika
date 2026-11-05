@@ -1,4 +1,4 @@
-// @yui/core — logging terstruktur (P0-INF-3): SATU logger pino untuk seluruh
+// @yuika/core — logging terstruktur (P0-INF-3): SATU logger pino untuk seluruh
 // core, di-cache di globalThis (aturan repo: state module-level wajib
 // globalThis — Next dev HMR & vitest sering memuat ulang modul; tanpa ini
 // akan lahir banyak instance pino yang menulis duplikat).

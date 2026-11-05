@@ -1,10 +1,10 @@
-// @yui/core — model smoke test (P1-MDL-2): verifikasi kecil per model sebelum
+// @yuika/core — model smoke test (P1-MDL-2): verifikasi kecil per model sebelum
 // dipercaya router. Tes = tool-call 2 langkah minimal: model HARUS memanggil
 // tool `ping_check`. Quirk schema GLM (draft 2020-12 vs openapi) dinetralkan
 // lewat normalizeToolSchema — pelajaran insiden GLM 1210 (PLAN §12).
 import type { ProviderAdapter, ToolSchema } from "./adapter.js";
 import { normalizeToolSchema } from "../registry.js";
-import type { ModelSmokeResult } from "@yui/contracts";
+import type { ModelSmokeResult } from "@yuika/contracts";
 
 /** Tool dummy smoke — schema sengaja minimal & sudah ternormalisasi. */
 const PING_TOOL: ToolSchema = {

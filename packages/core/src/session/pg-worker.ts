@@ -1,4 +1,4 @@
-// @yui/core — P0-DATA-1: WORKER driver PostgreSQL. Dimuat lewat worker_threads
+// @yuika/core — P0-DATA-1: WORKER driver PostgreSQL. Dimuat lewat worker_threads
 // dari pg-bridge.ts (proses utama TIDAK mengimpor paket `postgres`).
 // Protokol: hasil dikirim lewat SharedArrayBuffer (growable) + Atomics —
 // main thread memblokir dengan Atomics.wait (paritas semantik better-sqlite3).

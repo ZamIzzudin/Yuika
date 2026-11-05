@@ -5,7 +5,7 @@
 // "Check connection" (smoke test P1-MDL-2: tool-call 2 langkah per model aktif).
 // Data: GET/PUT /api/settings/models · POST/GET /api/settings/provider/smoke.
 import { useCallback, useEffect, useState } from "react";
-import type { ModelRoutes } from "@yui/contracts";
+import type { ModelRoutes } from "@yuika/contracts";
 import { Check, X } from "@phosphor-icons/react";
 import { Skeleton } from "./Skeleton";
 import { Button, Field, Modal, TextInput } from "./ui";

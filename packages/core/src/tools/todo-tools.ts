@@ -1,10 +1,10 @@
-// @yui/core — todo tools (P1-PRJ-4): tasklist per project dilihat/dikelola agent.
+// @yuika/core — todo tools (P1-PRJ-4): tasklist per project dilihat/dikelola agent.
 // Hanya jalan untuk sesi yang melekat ke project (P1-PRJ-2) — sesi workspace global
 // mendapat error informatif. Status machine: todo → doing → review → done.
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { registry } from "../registry.js";
-import { TaskStatus } from "@yui/contracts";
+import { TaskStatus } from "@yuika/contracts";
 import type { ProjectStore } from "../project/store.js";
 import type { ISessionStore } from "../session/store.js";
 

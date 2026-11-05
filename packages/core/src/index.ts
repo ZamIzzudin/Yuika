@@ -1,4 +1,4 @@
-// @yui/core — public entry
+// @yuika/core — public entry
 import { createYuiRuntime } from "./runtime.js";
 
 export type YuiRuntime = ReturnType<typeof createYuiRuntime>;

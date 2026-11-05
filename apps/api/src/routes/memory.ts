@@ -1,7 +1,7 @@
-// @yui/api — USER.md / MEMORY.md editor (P1-MEM-1).
+// @yuika/api — USER.md / MEMORY.md editor (P1-MEM-1).
 import type { FastifyInstance } from "fastify";
-import type { YuiRuntime } from "@yui/core";
-import { MemoryScope, SaveMemoryRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { MemoryScope, SaveMemoryRequest } from "@yuika/contracts";
 
 export function registerMemoryRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   /** GET /api/memory?scope=user|project&projectId=… — baca USER.md / MEMORY.md. */

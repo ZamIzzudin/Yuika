@@ -12,7 +12,7 @@ import { SessionStore } from "../session/store.js";
 import { FileRevisionStore } from "../project/revisions.js";
 import { McpAuditStore } from "../mcp/audit.js";
 import { UsageLedger } from "../usage/ledger.js";
-import { DeleteProjectResult } from "@yui/contracts";
+import { DeleteProjectResult } from "@yuika/contracts";
 
 let tmp = "";
 

@@ -1,4 +1,4 @@
-// @yui/core — delegate_task: delegasi ke persona spesialis (prioritas #3, PLAN §4.6).
+// @yuika/core — delegate_task: delegasi ke persona spesialis (prioritas #3, PLAN §4.6).
 import { z } from "zod";
 import { registry } from "../registry.js";
 import type { DelegationDeps, ChildRunHandle } from "../delegation/runner.js";

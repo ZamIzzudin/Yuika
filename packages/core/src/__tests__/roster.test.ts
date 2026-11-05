@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ProjectManifest } from "@yui/contracts";
+import { ProjectManifest } from "@yuika/contracts";
 import { loadRoster, saveRoster } from "../project/roster.js";
 
 function tmpRoot(): string {

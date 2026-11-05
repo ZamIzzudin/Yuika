@@ -1,7 +1,7 @@
-// @yui/api — approval decision (kartu persetujuan tool).
+// @yuika/api — approval decision (kartu persetujuan tool).
 import type { FastifyInstance } from "fastify";
-import type { YuiRuntime } from "@yui/core";
-import { ApprovalDecisionRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { ApprovalDecisionRequest } from "@yuika/contracts";
 
 export function registerApprovalRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.post("/api/approvals/:id", async (req, reply) => {

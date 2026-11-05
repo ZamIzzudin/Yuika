@@ -10,7 +10,7 @@ import { EventBus } from "../bus.js";
 import { healInterruptedTurns } from "../session/heal.js";
 import { runChildPersona } from "../delegation/runner.js";
 import type { ProviderAdapter, ProviderChunk, ChatRequest, ProviderDone } from "../provider/adapter.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 import { resolveRepoRoot } from "../paths.js";
 
 class OkProvider implements ProviderAdapter {

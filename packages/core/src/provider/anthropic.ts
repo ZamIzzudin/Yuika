@@ -1,4 +1,4 @@
-// @yui/core — Anthropic adapter (P1-INF-2): Messages API streaming via fetch SSE.
+// @yuika/core — Anthropic adapter (P1-INF-2): Messages API streaming via fetch SSE.
 // Konversi format internal (adapter.ts) → Anthropic: system terpisah, tool_use
 // blocks, tool_result sebagai user message. Tanpa SDK — fetch + SSE manual.
 import { randomUUID } from "node:crypto";

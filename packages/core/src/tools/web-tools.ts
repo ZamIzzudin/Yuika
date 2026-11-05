@@ -1,4 +1,4 @@
-// @yui/core — web tools (demo): web_fetch sederhana. TODO(P0): ekstraksi proper,
+// @yuika/core — web tools (demo): web_fetch sederhana. TODO(P0): ekstraksi proper,
 // redirect policy, robots, cache (pola web_tools Hermes).
 import { z } from "zod";
 import { registry } from "../registry.js";

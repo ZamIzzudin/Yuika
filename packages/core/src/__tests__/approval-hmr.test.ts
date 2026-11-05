@@ -1,5 +1,5 @@
 // Dev quirk (bug user dev-10: klik "Setujui" → 404 "sudah selesai" padahal
-// kartu baru muncul): Next.js dev membundel @yui/core per route — route
+// kartu baru muncul): Next.js dev membundel @yuika/core per route — route
 // POST /api/approvals/:id memegang copy modul SENDIRI. pendingEngines yang
 // module-local berarti map kosong di copy route → resolve gagal 404.
 // Map HARUS di-cache di globalThis (pola yang sama dengan bus emitter).

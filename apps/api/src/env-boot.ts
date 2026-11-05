@@ -1,6 +1,6 @@
-// @yui/api — .env boot loader (P0-INF-1).
+// @yuika/api — .env boot loader (P0-INF-1).
 // Next.js dulu memuat .env root via next.config.ts loadRootEnv(); proses api
-// adalah Node biasa → muat DI SINI, sebelum modul @yui/core dievaluasi (env.ts
+// adalah Node biasa → muat DI SINI, sebelum modul @yuika/core dievaluasi (env.ts
 // divalidasi zod saat import — fail-fast). Set hanya jika belum ada di proses.
 import fs from "node:fs";
 import path from "node:path";

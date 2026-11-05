@@ -1,7 +1,7 @@
-// @yui/api — skills: draf/accept/reject + bindings (Dungeon) + eval buta.
+// @yuika/api — skills: draf/accept/reject + bindings (Dungeon) + eval buta.
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { YuiRuntime } from "@yui/core";
+import type { YuiRuntime } from "@yuika/core";
 
 const DraftUpdate = z.object({ slug: z.string().min(1), name: z.string().min(3), description: z.string().min(10), body: z.string().min(20) });
 const BindingUpdate = z.object({

@@ -11,7 +11,7 @@ import { SessionStore } from "../session/store.js";
 import { ApprovalEngine } from "../approval/engine.js";
 import { registry, resetRegistryForTests } from "../registry.js";
 import { UsageLedger } from "../usage/ledger.js";
-import { UsageEvent, type YuiEvent, type EventDraft } from "@yui/contracts";
+import { UsageEvent, type YuiEvent, type EventDraft } from "@yuika/contracts";
 import { z } from "zod";
 
 let dir: string;

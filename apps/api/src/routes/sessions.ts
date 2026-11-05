@@ -1,8 +1,8 @@
-// @yui/api — routes sesi (P0-INF-1, port 1:1 dari Next route handlers).
+// @yuika/api — routes sesi (P0-INF-1, port 1:1 dari Next route handlers).
 import type { FastifyInstance } from "fastify";
-import type { YuiRuntime } from "@yui/core";
-import type { YuiEvent } from "@yui/contracts";
-import { CreateSessionRequest, SendMessageRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import type { YuiEvent } from "@yuika/contracts";
+import { CreateSessionRequest, SendMessageRequest } from "@yuika/contracts";
 
 export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.post("/api/sessions", async (req, reply) => {

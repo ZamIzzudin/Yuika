@@ -1,4 +1,4 @@
-// @yui/core — USER.md stub (W5-C2): preview learning-loop. JANGAN klaim lebih:
+// @yuika/core — USER.md stub (W5-C2): preview learning-loop. JANGAN klaim lebih:
 // ini hanya menempelkan 1 catatan preferensi statis per sesi baru. Loop belajar
 // sungguhan (nudge → skill-from-experience → curasi) = P1-MEM (TASKS.md).
 import fs from "node:fs";

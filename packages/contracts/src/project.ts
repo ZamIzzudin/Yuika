@@ -1,4 +1,4 @@
-// @yui/contracts — project schema (PLAN §13.1–13.3, D14: project = entitas first-class).
+// @yuika/contracts — project schema (PLAN §13.1–13.3, D14: project = entitas first-class).
 // Project duduk DI ATAS workspace: sesi/persona/tool mengikat ke project, tasklist
 // milik project. Roster & binding dideklarasikan di `project.yaml` (P1-PRJ-3/5) —
 // kontrak di sini menjadi bentuk tervalidasi yang sama untuk loader maupun REST.

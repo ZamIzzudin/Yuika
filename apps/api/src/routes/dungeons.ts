@@ -1,9 +1,9 @@
-// @yui/api — dungeon (latihan skill persona) + materials upload.
+// @yuika/api — dungeon (latihan skill persona) + materials upload.
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { YuiRuntime } from "@yui/core";
-import { CreateMissionRequest } from "@yui/contracts";
+import type { YuiRuntime } from "@yuika/core";
+import { CreateMissionRequest } from "@yuika/contracts";
 
 const MAX_UPLOAD = 10 * 1024 * 1024;
 const OK_EXT = new Set([".pdf", ".xlsx", ".xls", ".csv", ".md", ".txt", ".json", ".html", ".htm", ".xml", ".yaml", ".yml"]);

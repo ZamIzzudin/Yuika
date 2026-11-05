@@ -1,4 +1,4 @@
-// @yui/core — P0-DATA-1: SessionStore driver PostgreSQL (postgres.js).
+// @yuika/core — P0-DATA-1: SessionStore driver PostgreSQL (postgres.js).
 // Hanya dimuat oleh WORKER (session/pg-worker.ts) — paket `postgres` tak pernah
 // masuk proses utama/bundle web. Interface-nya ASYNC (pg memang begitu); proses
 // utama memakainya lewat sync-bridge (pg-bridge.ts) sehingga ISessionStore
@@ -9,7 +9,7 @@
 // < 2^53 (epoch ms / counter), exact. COUNT() di-cast ::int.
 // Mono­tonisitas id events dipertahankan via sequence bersama (nextval).
 import postgres from "postgres";
-import { YuiEvent, type EventDraft, type YuiEvent as YuiEventType, type DelegationJob } from "@yui/contracts";
+import { YuiEvent, type EventDraft, type YuiEvent as YuiEventType, type DelegationJob } from "@yuika/contracts";
 import type { InternalMessage } from "../provider/adapter.js";
 import type { ISessionStore, SessionRow } from "./store.js";
 

@@ -1,4 +1,4 @@
-// @yui/core — .env updater (Settings): ganti/tambah KEY=VALUE dengan
+// @yuika/core — .env updater (Settings): ganti/tambah KEY=VALUE dengan
 // mempertahankan baris & komentar lain. Fail-safe: file hilang → buat baru.
 import fs from "node:fs";
 

@@ -1,5 +1,5 @@
-// @yui/contracts — persona manifest schema (PLAN §7.2)
-// Loader (@yui/core) menggabungkan persona.yaml + PERSONA.md + toolsets.yaml + skills.yaml
+// @yuika/contracts — persona manifest schema (PLAN §7.2)
+// Loader (@yuika/core) menggabungkan persona.yaml + PERSONA.md + toolsets.yaml + skills.yaml
 // + delegation.yaml menjadi bentuk tervalidasi ini.
 import { z } from "zod";
 import { PersonaState } from "./events.js";

@@ -1,4 +1,4 @@
-// @yui/core — error taxonomy konsisten (P0-INF-4): SEMUA error yang melintasi
+// @yuika/core — error taxonomy konsisten (P0-INF-4): SEMUA error yang melintasi
 // batas (provider → loop, tool → loop, internal) diklasifikasi ke SATU bentuk:
 //   kind  : kategori penanganan (provider | tool | mcp | budget | abort | internal)
 //   code  : string stabil untuk grep/alert (mis. PROVIDER_TIMEOUT, TOOL_EXEC)
@@ -7,7 +7,7 @@
 // `SessionErrorEvent` (contracts) membawa kind+code → UI/log/alert satu bahasa.
 // Enam kind dipilih minimal & eksklusif: cukup untuk memutuskan tindakan
 // (retry / fallback / tampilkan / matikan) tanpa kategori tumpang-tindih.
-import { ERROR_KINDS } from "@yui/contracts";
+import { ERROR_KINDS } from "@yuika/contracts";
 
 export type ErrorKind = (typeof ERROR_KINDS)[number];
 export { ERROR_KINDS };

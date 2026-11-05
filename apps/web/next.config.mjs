@@ -29,7 +29,7 @@ const nextConfig = {
   // TIDAK menghapus cache dev server yang sedang berjalan (kejadian 2026-11:
   // rm -rf .next saat server hidup -> _document.js ENOENT, semua route 500).
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
-  transpilePackages: ["@yui/contracts", "@yui/core"],
+  transpilePackages: ["@yuika/contracts", "@yuika/core"],
   serverExternalPackages: ["better-sqlite3"],
   // Workspace packages pakai specifier ESM TS ("./foo.js" → foo.ts); webpack butuh
   // extensionAlias agar bisa resolve ke sumber .ts — standar untuk monorepo Next.js.

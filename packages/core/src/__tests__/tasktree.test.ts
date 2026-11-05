@@ -1,7 +1,7 @@
 // P1-PRJ-7 (TASKS.md, PLAN §13.7/D19): TaskTree = proyeksi event, bukan state kedua.
 // Replay seluruh event project → pohon utuh; TaskList = flat view dari tree.
 import { describe, expect, it } from "vitest";
-import { ProjectEvent, type ProjectEvent as PE } from "@yui/contracts";
+import { ProjectEvent, type ProjectEvent as PE } from "@yuika/contracts";
 import { flattenTree, taskTreeFromEvents } from "../project/tasktree.js";
 
 let seq = 0;

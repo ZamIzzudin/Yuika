@@ -3,7 +3,7 @@
 #
 # Multi-stage, DUA target runtime dari satu file:
 #   web : Next.js standalone (output:standalone — bundle minimal, tanpa devDeps)
-#   api : Fastify + @yui/core via tsx (core exports menunjuk src/*.ts — tsx
+#   api : Fastify + @yuika/core via tsx (core exports menunjuk src/*.ts — tsx
 #         adalah runtime loader resmi sampai core punya build dist sendiri).
 #
 # Data user (sqlite + workspace) TIDAK di dalam image — volume /data
@@ -36,7 +36,7 @@ ARG NEXT_PUBLIC_API_BASE=http://127.0.0.1:3211
 ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE \
     NEXT_OUTPUT_STANDALONE=1 \
     NEXT_TELEMETRY_DISABLED=1
-RUN npx turbo run build --filter=@yui/web --cache-dir=.turbo
+RUN npx turbo run build --filter=@yuika/web --cache-dir=.turbo
 
 # ---------- target: web (standalone) ----------
 FROM node:24-bookworm-slim AS web
@@ -55,7 +55,7 @@ COPY --from=build /app/apps/web/public ./apps/web/public
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]
 
-# ---------- target: api (fastify + runtime @yui/core) ----------
+# ---------- target: api (fastify + runtime @yuika/core) ----------
 FROM node:24-bookworm-slim AS api
 WORKDIR /app
 

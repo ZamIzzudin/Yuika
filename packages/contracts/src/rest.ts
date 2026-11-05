@@ -1,4 +1,4 @@
-// @yui/contracts — REST payloads (DEMO-WEEK-1.md §5)
+// @yuika/contracts — REST payloads (DEMO-WEEK-1.md §5)
 import { z } from "zod";
 import { PersonaState } from "./events.js";
 import { ProjectStatus, RosterEntry, TaskStatus } from "./project.js";

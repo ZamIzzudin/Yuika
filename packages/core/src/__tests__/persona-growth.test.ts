@@ -8,7 +8,7 @@ import path from "node:path";
 import { buildPersonaGrowth, GROWTH_LEVELS } from "../personas/growth.js";
 import { SessionStore } from "../session/store.js";
 import { ProjectStore } from "../project/store.js";
-import type { EventDraft } from "@yui/contracts";
+import type { EventDraft } from "@yuika/contracts";
 
 let dir: string;
 let store: SessionStore;

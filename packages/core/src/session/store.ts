@@ -1,10 +1,10 @@
-// @yui/core — session store: SQLite append-only (DEMO-WEEK-1 §3.1).
+// @yuika/core — session store: SQLite append-only (DEMO-WEEK-1 §3.1).
 // INVARIANT (PLAN §3.2): messages & events hanya INSERT — tidak ada UPDATE/DELETE.
 // System prompt & toolset DIBEKUKAN saat createSession (prompt-cache discipline).
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import { YuiEvent, type EventDraft, type YuiEvent as YuiEventType } from "@yui/contracts";
+import { YuiEvent, type EventDraft, type YuiEvent as YuiEventType } from "@yuika/contracts";
 import type { InternalMessage } from "../provider/adapter.js";
 import { createPgStore } from "./pg-bridge.js";
 
@@ -38,7 +38,7 @@ export interface ISessionStore {
   startDelegationJob(input: { parentSessionId: string; parentTurnId: string; childSessionId: string; personaId: string; goal: string }): number;
   finishDelegationJob(id: number, patch: { status: "done" | "error" | "interrupted"; summary?: string; error?: string }): void;
   findRunningDelegationJobs(): Array<{ id: number; parentSessionId: string; childSessionId: string; personaId: string; goal: string }>;
-  listDelegationJobs(projectId?: string | null): Array<import("@yui/contracts").DelegationJob>;
+  listDelegationJobs(projectId?: string | null): Array<import("@yuika/contracts").DelegationJob>;
   archiveOldEvents(retentionDays: number, nowMs?: number): { archived: number; sessions: number };
   appendEvent(sessionId: string, draft: EventDraft): YuiEventType;
   getEvents(sessionId: string, sinceId?: number): YuiEventType[];
@@ -348,7 +348,7 @@ export class SessionStore implements ISessionStore {
   }
 
   /** Riwayat job (terbaru dulu); filter projectId = project sesi PARENT. */
-  listDelegationJobs(projectId?: string | null): Array<import("@yui/contracts").DelegationJob> {
+  listDelegationJobs(projectId?: string | null): Array<import("@yuika/contracts").DelegationJob> {
     const rows = (
       projectId
         ? this.db.prepare(

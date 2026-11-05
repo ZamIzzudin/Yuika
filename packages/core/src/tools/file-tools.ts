@@ -1,4 +1,4 @@
-// @yui/core — file tools (contoh pola: zod schema → registry.register).
+// @yuika/core — file tools (contoh pola: zod schema → registry.register).
 // Path safety: semua path di-resolve di dalam workspace (PLAN §4.11).
 import fs from "node:fs/promises";
 import path from "node:path";
