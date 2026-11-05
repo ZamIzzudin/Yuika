@@ -164,14 +164,21 @@ export function ProjectPanel({
         </button>
         {!booted && <SkeletonRows rows={3} />}
         {projects.map((p) => (
-          <div key={p.id} className="relative flex flex-col gap-0.5">
-            <div className="group flex items-center gap-0.5">
+          <div key={p.id} className="flex flex-col gap-0.5">
+            {/* SATU kartu: border/bg/hover di wadah — tombol select & trash di
+                dalamnya transparan (fix 2026-11: dulu tombol trash punya kotaknya
+                sendiri → saat selected/hover terlihat seperti dua karta berbeda). */}
+            <div
+              className={`group flex items-stretch rounded-md2 border transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                p.id === activeId
+                  ? "border-line bg-hover"
+                  : "border-transparent hover:border-line hover:bg-hover"
+              } ${p.status === "archived" ? "opacity-60" : ""}`}
+            >
               <button
-                className={`${rowBase} min-w-0 flex-1 ${
-                  p.id === activeId
-                    ? "border-line bg-hover text-primary"
-                    : "border-transparent text-secondary hover:bg-hover hover:text-primary"
-                } ${p.status === "archived" ? "opacity-60" : ""}`}
+                className={`flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-md2 px-2.5 py-2 text-left ${
+                  p.id === activeId ? "text-primary" : "text-secondary hover:text-primary"
+                }`}
                 onClick={() => onPick(p.id)}
               >
                 <i
@@ -188,7 +195,7 @@ export function ProjectPanel({
                 </span>
               </button>
               <button
-                className="flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1.5 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
+                className="my-auto mr-1 flex shrink-0 cursor-pointer items-center justify-center rounded-md2 p-1.5 text-dim opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 hover:text-danger focus-visible:text-danger"
                 aria-label={`Delete project ${p.name}`}
                 title={`Delete project ${p.name} and all its artifacts`}
                 disabled={deleting === p.id}

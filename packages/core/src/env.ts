@@ -44,6 +44,17 @@ const schema = z.object({
    *  events_archive (tabel aktif tetap ramping; bacaan UNION agar replay
    *  tetap utuh). 0 = housekeeping mati. */
   eventsRetentionDays: int(30, 0, 3650),
+  /** P0-SEC-1: mode eksekusi `node` via run_command — auto (docker bila ada,
+   * fallback lokal), docker (fail-closed), off (selalu lokal). Dibaca ulang
+   * per pemanggilan tool (hot-reload test) — validasi di sini = fail-fast boot. */
+  sandbox: z.enum(["auto", "docker", "off"]).default("auto"),
+  /** Image container sandbox (default node:24-bookworm-slim — basis sama dengan
+   *  Dockerfile repo, biasanya sudah ter-pull). */
+  sandboxImage: z.string().min(1).optional(),
+  /** Log manusia-vs-mesin: 1 (default) = baris pretty `YUI HH:MM:SS [mod] msg k=v`
+   *  di stdout — struktur stabil untuk find/tracing manual; 0 = JSON-lines asli
+   *  pino (dipakai docker-compose: agregator log grep per field). */
+  logPretty: z.preprocess((v) => v !== "0" && v !== "false", z.boolean()),
 });
 
 export type CoreEnv = z.infer<typeof schema>;
@@ -61,6 +72,9 @@ const raw = {
   logLevel: process.env.YUI_LOG_LEVEL || undefined,
   learn: process.env.YUI_LEARN,
   eventsRetentionDays: process.env.YUI_EVENTS_RETENTION_DAYS,
+  sandbox: process.env.YUI_SANDBOX as "auto" | "docker" | "off" | undefined,
+  sandboxImage: process.env.YUI_SANDBOX_IMAGE || undefined,
+  logPretty: process.env.YUI_LOG_PRETTY,
 };
 
 const parsed = schema.safeParse(raw);

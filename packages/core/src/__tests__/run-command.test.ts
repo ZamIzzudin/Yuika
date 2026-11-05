@@ -1,6 +1,6 @@
 // W3-A2 (TASKS.md): run_command — ls/echo internal bebas-approval; node = execFile
 // dengan cwd = workspace proyek + approval.
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -8,13 +8,21 @@ import { registry, resetRegistryForTests } from "../registry.js";
 import { registerRunCommandTool } from "../tools/run-command.js";
 
 let dir: string;
+const SAVED_SB = process.env.YUI_SANDBOX;
 
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-run-"));
   fs.writeFileSync(path.join(dir, "a.md"), "x");
   fs.mkdirSync(path.join(dir, "sub"));
+  // eksekusi lokal deterministik (jalur sandbox diuji sandbox.test.ts dengan mock)
+  process.env.YUI_SANDBOX = "off";
   resetRegistryForTests();
   registerRunCommandTool();
+});
+
+afterEach(() => {
+  if (SAVED_SB === undefined) delete process.env.YUI_SANDBOX;
+  else process.env.YUI_SANDBOX = SAVED_SB;
 });
 
 const ctx = () => ({ sessionId: "s1", turnId: "t1", workspacePath: dir, emit: () => {} });

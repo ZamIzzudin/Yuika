@@ -29,6 +29,8 @@ services:
       YUI_API_PORT: "3211"
       YUI_DB_PATH: /data/demo.db
       YUI_WORKSPACE_DIR: /data/workspace
+      # container = "production": JSON-lines (grep per field, agregator log)
+      YUI_LOG_PRETTY: "0"
     ports:
       - "3211:3211"
     volumes:
