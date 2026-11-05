@@ -187,6 +187,12 @@ export function createSpecRelay(opts: SpecRelayOpts) {
         if (!dev || dev.accountId !== conn.account) {
           return bye(conn, ByeCode.BAD_SIGNATURE, "host belongs to another account");
         }
+        // SPEC §4.3 + CP-2: join.dhPub wajib string PEM PUBLIC KEY — invalid
+        // → bye 4102 ("field wajib hilang/tidak valid"), sama dengan relay
+        // produksi T1 (errata yang diusulkan).
+        if (typeof msg.dhPub !== "string" || !msg.dhPub.includes("BEGIN PUBLIC KEY")) {
+          return bye(conn, ByeCode.PAYLOAD_REQUIRED, "payload required");
+        }
         // satu host per remote (v1): pindah host = lepas lampiran lama.
         if (conn.joinedHost && conn.joinedHost !== hostId) {
           attached.get(conn.joinedHost)?.delete(conn.deviceId!);

@@ -2,7 +2,7 @@
 // action, terima event, antrian saat host offline / reconnect).
 import { RemoteEvent, type RemoteAction } from "@yuika/contracts";
 import type { RelayClient, RelayHandlers } from "./core.js";
-import type { HostEntry, JoinedMsg } from "./wire.js";
+import { ByeCode, type HostEntry, type JoinedMsg } from "./wire.js";
 
 export type RemoteHostState = "idle" | "joining" | "joined" | "host-offline" | "host-gone";
 
@@ -32,7 +32,7 @@ export class RelayRemote {
   private hostDhPub = "";
   private hostState: RemoteHostState = "idle";
   private queue: RemoteAction[] = [];
-  private joinWaiter: ((info: JoinedMsg | { error: string }) => void) | null = null;
+  private joinWaiter: ((res: JoinedMsg | { error: string; code?: number }) => void) | null = null;
   private readonly log: (...args: unknown[]) => void;
 
   constructor(readonly opts: RelayRemoteOpts) {
@@ -81,6 +81,12 @@ export class RelayRemote {
       }
       // 4104 host-not-online → bye menutup koneksi; RelayClient reconnect +
       // flush outbox saat auth_ok — tunggu, lalu coba join ulang (backoff).
+      // Bye join LAIN (4003 lintas akun, 4102 field invalid, 4200…) permanen:
+      // retry tidak mengubah hasil — terminal segera (SPEC §10, CP-1/CP-2).
+      if ("code" in res && res.code !== undefined && res.code !== ByeCode.HOST_NOT_ONLINE) {
+        this.setState("host-gone");
+        throw new Error(res.error);
+      }
       if (Date.now() > deadline) {
         this.setState("host-gone");
         throw new Error("error" in res ? res.error : "join failed");
@@ -89,7 +95,7 @@ export class RelayRemote {
     }
   }
 
-  private waitJoined(): Promise<JoinedMsg | { error: string }> {
+  private waitJoined(): Promise<JoinedMsg | { error: string; code?: number }> {
     return new Promise((resolve) => {
       const t = setTimeout(() => resolve({ error: "join timeout" }), 8_000);
       this.joinWaiter = (res) => {
@@ -118,10 +124,11 @@ export class RelayRemote {
       },
       onBye: (code, error) => {
         prev.onBye?.(code, error);
-        // join gagal fatal (mis. 4003 lintas akun / 4104) → penuhi waiter
+        // join gagal fatal (mis. 4003 lintas akun / 4102 dhPub invalid) →
+        // penuhi waiter DENGAN code — layer join memutuskan retry vs terminal.
         const w = this.joinWaiter;
         this.joinWaiter = null;
-        w?.({ error: `bye ${code}: ${error}` });
+        w?.({ error: `bye ${code}: ${error}`, code });
       },
       onServerMsg: (msg) => {
         prev.onServerMsg?.(msg);

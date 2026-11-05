@@ -117,14 +117,29 @@ describe("SPEC §11.2/3/4 — host, join, E2E, broadcast", () => {
   });
   afterAll(() => hc.close());
 
-  it("join lintas akun → bye 4003 (host belongs to another account)", async () => {
+  it("join lintas akun → bye 4003, TERMINAL segera (tanpa retry 30 dtk)", async () => {
     const c = makeClient(other);
     await c.connect();
     const remote = new RelayRemote({
       client: c, deviceId: other.deviceId, dhPriv: other.dhPriv, dhPub: other.dhPub,
       onEvent: () => undefined,
     });
-    await expect(remote.join(host.deviceId, 500)).rejects.toThrow(/another account/);
+    const t0 = Date.now();
+    await expect(remote.join(host.deviceId, 30_000)).rejects.toThrow(/another account/);
+    expect(Date.now() - t0).toBeLessThan(3_000); // CP-1: kode permanen tak diulang
+    expect(remote.state).toBe("host-gone");
+    c.close();
+  });
+
+  it("join dhPub invalid (bukan PEM) → bye 4102, terminal — CP-2", async () => {
+    const c = makeClient(r1);
+    await c.connect();
+    const remote = new RelayRemote({
+      client: c, deviceId: r1.deviceId, dhPriv: r1.dhPriv, dhPub: "bukan-pem",
+      onEvent: () => undefined,
+    });
+    await expect(remote.join(host.deviceId, 30_000)).rejects.toThrow(`bye ${ByeCode.PAYLOAD_REQUIRED}`);
+    expect(remote.state).toBe("host-gone");
     c.close();
   });
 
