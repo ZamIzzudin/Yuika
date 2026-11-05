@@ -86,8 +86,8 @@ export function PersonaStudioView({
   onBack: () => void;
   onOpenProject?: (projectId: string) => void;
 }) {
-  const [view, setView] = useState<"characters" | "missions" | "history">(
-    "characters",
+  const [view, setView] = useState<"personas" | "missions" | "history">(
+    "personas",
   );
   const [dungeons, setDungeons] = useState<DungeonRow[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -118,7 +118,7 @@ export function PersonaStudioView({
   }, []);
 
   useEffect(() => {
-    if (view === "characters") return; // poll hanya saat tab latihan terbuka
+    if (view === "personas") return; // poll hanya saat tab latihan terbuka
     void refresh();
     const t = setInterval(() => void refresh(), 5_000); // progress run live
     return () => clearInterval(t);
@@ -375,7 +375,7 @@ export function PersonaStudioView({
             <ArrowLeft size={13} aria-hidden />
           </Button>
           <h1 className="flex items-center gap-2 text-lg font-semibold text-primary">
-            <Users size={18} aria-hidden /> Persona
+            Personas
           </h1>
         </div>
         <nav
@@ -385,7 +385,7 @@ export function PersonaStudioView({
         >
           {(
             [
-              { id: "characters", label: "Characters" },
+              { id: "personas", label: "Persona" },
               { id: "missions", label: "Missions" },
               { id: "history", label: `Training history (${allRuns.length})` },
             ] as const
@@ -413,7 +413,7 @@ export function PersonaStudioView({
         <div className="shrink-0 basis-[150px]" aria-hidden />
       </header>
 
-      {view === "characters" ? (
+      {view === "personas" ? (
         <div className="min-h-0 w-full flex-1 overflow-y-auto">
           <CharacterStage personas={personas} />
         </div>
@@ -421,238 +421,243 @@ export function PersonaStudioView({
         <div className="min-h-0 flex-1 overflow-y-auto pb-6">
           {view === "history" ? (
             allRuns.length === 0 ? (
-          <EmptyState
-            icon={<Clock size={20} />}
-            title="No training runs yet"
-            hint="Run a mission first — every training run is recorded here."
-          />
-        ) : (
-          <div className="flex flex-col gap-2">
-            {allRuns.map((r) => (
-              <Card key={r.id} className="flex items-center gap-3 px-3 py-2">
-                <PersonaFace personaId={r.persona} size={24} />
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <b className="truncate text-body text-primary">{r.title}</b>
-                  <MetaRow>
-                    {new Date(r.startedAt).toLocaleString("en-GB")}
-                    <span aria-hidden>·</span>
-                    {r.status === "running" ? (
-                      <>
-                        <CircleNotch
-                          size={11}
-                          aria-hidden
-                          className="animate-pulse"
-                        />{" "}
-                        running
-                      </>
-                    ) : r.status === "done" ? (
-                      <>
-                        <Check size={11} weight="bold" aria-hidden /> done
-                      </>
-                    ) : (
-                      <>
-                        <X size={11} weight="bold" aria-hidden /> failed
-                      </>
-                    )}
-                    {r.summary ? (
-                      <span className="truncate">
-                        — {r.summary.slice(0, 140)}
-                      </span>
-                    ) : null}
-                  </MetaRow>
-                </div>
-                <Button
-                  size="sm"
-                  disabled={!onOpenProject}
-                  onClick={() => onOpenProject?.(r.projectId ?? "")}
-                  title="Open the training room (chat + artifacts)"
-                >
-                  Open session →
-                </Button>
-              </Card>
-            ))}
-          </div>
-        )
-      ) : (
-        <>
-          <div className="flex items-center gap-3">
-            <Button variant="primary" onClick={() => setFormOpen(true)}>
-              + New mission
-            </Button>
-            <small className="text-caption text-dim">
-              The full form (mode, persona, skill, pass criteria) opens as a
-              modal.
-            </small>
-          </div>
-
-          {userMissions.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <SectionTitle>Your missions</SectionTitle>
-              <div className="grid gap-2 md:grid-cols-2">
-                {userMissions.map(card)}
-              </div>
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <SectionTitle>Built-in missions</SectionTitle>
-            {dungeons === null ? (
-              <Skeleton lines={3} />
+              <EmptyState
+                icon={<Clock size={20} />}
+                title="No training runs yet"
+                hint="Run a mission first — every training run is recorded here."
+              />
             ) : (
-              <div className="grid gap-2 md:grid-cols-2">
-                {seedMissions.map(card)}
-              </div>
-            )}
-          </div>
-
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            hidden
-            onChange={(e) => {
-              const slug = dungeons?.find(
-                (d) => d.mission.id === uploadFor.current,
-              )?.mission.slug;
-              if (slug && e.target.files?.length)
-                void upload(slug, e.target.files);
-            }}
-          />
-
-          <Modal
-            open={formOpen}
-            onClose={() => setFormOpen(false)}
-            title={
-              <span className="flex items-center gap-2">
-                <Sword size={16} aria-hidden /> New training mission
-              </span>
-            }
-            wide
-          >
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap gap-2">
-                <ChipToggle2
-                  active={mode === "research"}
-                  onClick={() => switchMode("research")}
-                >
-                  <MagnifyingGlass size={12} aria-hidden /> Self research
-                </ChipToggle2>
-                <ChipToggle2
-                  active={mode === "documents"}
-                  onClick={() => switchMode("documents")}
-                >
-                  <Books size={12} aria-hidden /> Study materials (files)
-                </ChipToggle2>
-              </div>
-              <small className="text-caption leading-5 text-muted">
-                {mode === "research"
-                  ? "The persona researches the topic on its own (you may seed it with URLs)."
-                  : "You upload files (pdf/xlsx/csv/md/…) → the persona studies them and distills a skill. Upload after the mission is created."}
-              </small>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Persona to train" className="col-span-2">
-                  <div className="flex items-center gap-2">
-                    {persona && (
-                      <PersonaFace personaId={persona.id} size={32} />
-                    )}
-                    <Select
-                      value={personaId}
-                      onChange={(e) => setPersonaId(e.target.value)}
-                      aria-label="Persona"
-                    >
-                      <option value="">Pick a persona…</option>
-                      {personas.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                </Field>
-                <Field label="Target skill name">
-                  <TextInput
-                    value={skillName}
-                    placeholder="e.g. phaser-basics"
-                    spellCheck={false}
-                    onChange={(e) => setSkillName(e.target.value)}
-                  />
-                </Field>
-                <Field label="When this skill applies (description)">
-                  <TextInput
-                    value={skillDesc}
-                    placeholder="e.g. Phaser 3 basics to start a 2D game"
-                    onChange={(e) => setSkillDesc(e.target.value)}
-                  />
-                </Field>
-                <Field
-                  label="Training title (optional)"
-                  hint={`auto: Train ${skillName || "…"}`}
-                  className="col-span-2"
-                >
-                  <TextInput
-                    value={title}
-                    placeholder={`auto: Train ${skillName || "…"}`}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </Field>
-                <Field
-                  label="Goal / custom instructions (optional)"
-                  className="col-span-2"
-                >
-                  <TextArea
-                    value={goal}
-                    rows={2}
-                    placeholder="empty = mode default"
-                    onChange={(e) => setGoal(e.target.value)}
-                  />
-                </Field>
-                {mode === "research" && (
-                  <Field
-                    label="Starting sources — one URL per line (optional)"
-                    className="col-span-2"
+              <div className="flex flex-col gap-2">
+                {allRuns.map((r) => (
+                  <Card
+                    key={r.id}
+                    className="flex items-center gap-3 px-3 py-2"
                   >
-                    <TextArea
-                      value={resourcesText}
-                      rows={2}
-                      spellCheck={false}
-                      placeholder="https://…"
-                      onChange={(e) => setResourcesText(e.target.value)}
-                    />
-                  </Field>
-                )}
-                <Field
-                  label="Pass criteria — one per line"
-                  hint="used by the blind eval later"
-                  className="col-span-2"
-                >
-                  <TextArea
-                    value={accText}
-                    rows={3}
-                    spellCheck={false}
-                    onChange={(e) => {
-                      setAccText(e.target.value);
-                      setAccDirty(true);
-                    }}
-                  />
-                </Field>
+                    <PersonaFace personaId={r.persona} size={24} />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <b className="truncate text-body text-primary">
+                        {r.title}
+                      </b>
+                      <MetaRow>
+                        {new Date(r.startedAt).toLocaleString("en-GB")}
+                        <span aria-hidden>·</span>
+                        {r.status === "running" ? (
+                          <>
+                            <CircleNotch
+                              size={11}
+                              aria-hidden
+                              className="animate-pulse"
+                            />{" "}
+                            running
+                          </>
+                        ) : r.status === "done" ? (
+                          <>
+                            <Check size={11} weight="bold" aria-hidden /> done
+                          </>
+                        ) : (
+                          <>
+                            <X size={11} weight="bold" aria-hidden /> failed
+                          </>
+                        )}
+                        {r.summary ? (
+                          <span className="truncate">
+                            — {r.summary.slice(0, 140)}
+                          </span>
+                        ) : null}
+                      </MetaRow>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={!onOpenProject}
+                      onClick={() => onOpenProject?.(r.projectId ?? "")}
+                      title="Open the training room (chat + artifacts)"
+                    >
+                      Open session →
+                    </Button>
+                  </Card>
+                ))}
               </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="primary"
-                  disabled={!canCreate}
-                  onClick={() => void create()}
-                >
-                  {busy
-                    ? "creating…"
-                    : mode === "research"
-                      ? "Create & train"
-                      : "Create mission (then upload)"}
+            )
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <Button variant="primary" onClick={() => setFormOpen(true)}>
+                  + New mission
                 </Button>
+                <small className="text-caption text-dim">
+                  The full form (mode, persona, skill, pass criteria) opens as a
+                  modal.
+                </small>
               </div>
-            </div>
-          </Modal>
-        </>
-      )}
+
+              {userMissions.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <SectionTitle>Your missions</SectionTitle>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {userMissions.map(card)}
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <SectionTitle>Built-in missions</SectionTitle>
+                {dungeons === null ? (
+                  <Skeleton lines={3} />
+                ) : (
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {seedMissions.map(card)}
+                  </div>
+                )}
+              </div>
+
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                hidden
+                onChange={(e) => {
+                  const slug = dungeons?.find(
+                    (d) => d.mission.id === uploadFor.current,
+                  )?.mission.slug;
+                  if (slug && e.target.files?.length)
+                    void upload(slug, e.target.files);
+                }}
+              />
+
+              <Modal
+                open={formOpen}
+                onClose={() => setFormOpen(false)}
+                title={
+                  <span className="flex items-center gap-2">
+                    <Sword size={16} aria-hidden /> New training mission
+                  </span>
+                }
+                wide
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-wrap gap-2">
+                    <ChipToggle2
+                      active={mode === "research"}
+                      onClick={() => switchMode("research")}
+                    >
+                      <MagnifyingGlass size={12} aria-hidden /> Self research
+                    </ChipToggle2>
+                    <ChipToggle2
+                      active={mode === "documents"}
+                      onClick={() => switchMode("documents")}
+                    >
+                      <Books size={12} aria-hidden /> Study materials (files)
+                    </ChipToggle2>
+                  </div>
+                  <small className="text-caption leading-5 text-muted">
+                    {mode === "research"
+                      ? "The persona researches the topic on its own (you may seed it with URLs)."
+                      : "You upload files (pdf/xlsx/csv/md/…) → the persona studies them and distills a skill. Upload after the mission is created."}
+                  </small>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Persona to train" className="col-span-2">
+                      <div className="flex items-center gap-2">
+                        {persona && (
+                          <PersonaFace personaId={persona.id} size={32} />
+                        )}
+                        <Select
+                          value={personaId}
+                          onChange={(e) => setPersonaId(e.target.value)}
+                          aria-label="Persona"
+                        >
+                          <option value="">Pick a persona…</option>
+                          {personas.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                    </Field>
+                    <Field label="Target skill name">
+                      <TextInput
+                        value={skillName}
+                        placeholder="e.g. phaser-basics"
+                        spellCheck={false}
+                        onChange={(e) => setSkillName(e.target.value)}
+                      />
+                    </Field>
+                    <Field label="When this skill applies (description)">
+                      <TextInput
+                        value={skillDesc}
+                        placeholder="e.g. Phaser 3 basics to start a 2D game"
+                        onChange={(e) => setSkillDesc(e.target.value)}
+                      />
+                    </Field>
+                    <Field
+                      label="Training title (optional)"
+                      hint={`auto: Train ${skillName || "…"}`}
+                      className="col-span-2"
+                    >
+                      <TextInput
+                        value={title}
+                        placeholder={`auto: Train ${skillName || "…"}`}
+                        onChange={(e) => setTitle(e.target.value)}
+                      />
+                    </Field>
+                    <Field
+                      label="Goal / custom instructions (optional)"
+                      className="col-span-2"
+                    >
+                      <TextArea
+                        value={goal}
+                        rows={2}
+                        placeholder="empty = mode default"
+                        onChange={(e) => setGoal(e.target.value)}
+                      />
+                    </Field>
+                    {mode === "research" && (
+                      <Field
+                        label="Starting sources — one URL per line (optional)"
+                        className="col-span-2"
+                      >
+                        <TextArea
+                          value={resourcesText}
+                          rows={2}
+                          spellCheck={false}
+                          placeholder="https://…"
+                          onChange={(e) => setResourcesText(e.target.value)}
+                        />
+                      </Field>
+                    )}
+                    <Field
+                      label="Pass criteria — one per line"
+                      hint="used by the blind eval later"
+                      className="col-span-2"
+                    >
+                      <TextArea
+                        value={accText}
+                        rows={3}
+                        spellCheck={false}
+                        onChange={(e) => {
+                          setAccText(e.target.value);
+                          setAccDirty(true);
+                        }}
+                      />
+                    </Field>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="primary"
+                      disabled={!canCreate}
+                      onClick={() => void create()}
+                    >
+                      {busy
+                        ? "creating…"
+                        : mode === "research"
+                          ? "Create & train"
+                          : "Create mission (then upload)"}
+                    </Button>
+                  </div>
+                </div>
+              </Modal>
+            </>
+          )}
         </div>
       )}
     </section>

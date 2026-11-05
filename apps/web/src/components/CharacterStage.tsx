@@ -325,27 +325,31 @@ function Constellation({
   // simetris (≥1100px).
   const ring = useMemo(() => {
     if (w < 1100 || h < 2) return null;
-    const rnd = mulberry32(0xa5c0);
+    const rnd = mulberry32(0x6b57);
     const cx = w / 2;
     const cy = h * 0.44;
     const base = Math.min(w, h) * 0.3;
-    const N = 9;
+    const N = 6; // sedikit titik → lapang, bukan kurungan
     const angs = Array.from(
       { length: N },
-      (_, i) => (i / N) * Math.PI * 2 - Math.PI / 2 + (rnd() - 0.5) * 0.7,
+      (_, i) => (i / N) * Math.PI * 2 - Math.PI / 2 + (rnd() - 0.5) * 1.1,
     ).sort((a, b) => a - b);
     const nodes = angs.map((a) => {
-      const k = 0.82 + rnd() * 0.36; // jarak 0.82–1.18× → bukan elips mulus
+      const k = 0.8 + rnd() * 0.5; // 0.8–1.3× → sebar lebar, banyak ruang kosong
       return {
         x: cx + base * 1.14 * k * Math.cos(a),
         y: cy + base * 0.95 * k * Math.sin(a),
-        r: 2.2 + rnd() * 2.3,
+        r: 1.8 + rnd() * 1.4,
       };
     });
-    // rantai tetangga dengan satu celah + silang tak simetris
-    const edges: Array<[number, number]> = [];
-    for (let i = 0; i < N - 1; i++) if (i !== 5) edges.push([i, i + 1]);
-    edges.push([1, 6], [3, 8]);
+    // dua segmen pendek (celah besar) + satu silang — hanya 5 garis
+    const edges: Array<[number, number]> = [
+      [0, 1],
+      [1, 2],
+      [3, 4],
+      [4, 5],
+      [1, 4],
+    ];
     return { nodes, edges };
   }, [w, h]);
 
@@ -718,7 +722,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           </button>
         </div>
         <div
-          className="flex flex-wrap justify-center gap-1.5"
+          className="flex flex-wrap justify-center gap-1.5 max-w-[20dvw]"
           role="group"
           aria-label="Emotes"
         >
@@ -772,10 +776,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           " min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
         }
       >
-        <h2 className="text-2xl font-bold tracking-tight text-primary">
-          {persona.name}
-        </h2>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 items-center justify-center mb-3">
           <span
             className="rounded-pill border px-2.5 py-0.5 text-[12px] font-semibold"
             style={{
@@ -790,24 +791,13 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
             {tags[1]}
           </span>
         </div>
-        <p className="text-[13px] leading-5 text-muted">
+        <h2 className="text-2xl font-bold tracking-tight text-primary text-center mb-3">
+          {persona.name}
+        </h2>
+        <p className="text-[13px] leading-5 text-muted text-center">
           {persona.description || persona.expertise}
         </p>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between text-[12px] text-muted">
-            <b className="text-secondary">{g?.level ?? "No Level Yet"}</b>
-            <span>
-              {g?.turns ?? 0}/{g?.nextLevelAt ?? "Max"} Turns
-            </span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-pill bg-line-strong">
-            <div
-              className="h-full rounded-pill bg-[var(--c)] transition-all duration-500"
-              style={{ width: `${xpPct}%` }}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5 my-3">
           {[
             { label: "Sessions", v: g?.sessions ?? 0 },
             { label: "Turns", v: g?.turns ?? 0 },
@@ -815,9 +805,10 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           ].map((r) => (
             <div
               key={r.label}
-              className="flex flex-col items-center gap-0.5 rounded-[12px] bg-inset py-2"
+              className="flex flex-col items-center gap-0.5 rounded-[12px] py-2"
+              style={{ backgroundColor: `${accent}1a` }}
             >
-              <b className="text-lg font-semibold tabular-nums text-primary">
+              <b className="text-base font-semibold tabular-nums text-primary">
                 {r.v}
               </b>
               <small className="text-dim">{r.label}</small>
@@ -826,7 +817,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </div>
         {/* Bentuk: satu-satunya bagian card yang scroll (identitas tetap terlihat). */}
         <div className="flex min-h-0 flex-1 flex-col gap-1.5">
-          <b className="text-[13px] font-semibold text-secondary">Shape</b>
+          <b className="text-[13px] font-semibold text-secondary mb-3">Shape</b>
           <div className="grid min-h-0 flex-1 grid-cols-4 content-start gap-1.5 overflow-y-auto pr-0.5">
             {SHAPE_ORDER.map((k) => {
               const s = SHAPES[k];
