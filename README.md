@@ -4,15 +4,16 @@
 
 # Yuika
 
-**A multi-project agent OS with skill-based personas you can train.**
+**Studio Persona for Agentic AI**
 
 [![CI](https://github.com/ZamIzzudin/Yuika/actions/workflows/ci.yml/badge.svg)](https://github.com/ZamIzzudin/Yuika/actions/workflows/ci.yml)
 
-Yuika is a self-hosted workspace where AI personas do real work: researching,
-writing, coding, and planning, alone or as a team. Every persona has its own
-identity, skill set, model route, and growth history. You steer them from a
-single chat-first workspace with full visibility: approvals, traces, budgets,
-and metering are all inspectable.
+Most agent tools give you one generic assistant. Yuika gives you a **studio**:
+a self-hosted workspace where you design personas, train them into capable
+specialists, direct them on real projects, and trust them with full
+visibility. Personas live as characters with their own identity, skill set,
+model route, and growth history, and they work alone or as a team under your
+supervision.
 
 > The name combines *yui* (dream) and *ka* (excellence): an excellent dream.
 
@@ -20,22 +21,25 @@ and metering are all inspectable.
 
 ---
 
-## Why Yuika
+## The studio loop
 
-- **Personas, not generic bots.** Pick a partner from the character studio:
-  Coder, Scholar, Scribe, Designer, Analyst, Operator, Planner, or the maestro
-  Conductor. Each bundles its own prompt, tools, and learned skills.
-- **Skills that grow.** When a persona does something well, it can distill the
-  experience into a reusable skill. You review, edit, accept, or reject.
-  Accepted skills are immediately usable by every persona.
-- **Team delegation.** The Conductor splits work and delegates to child
-  personas with isolated sessions, live progress, and steering mid-run.
-- **You stay in control.** Risky tool calls (running code, writing files)
-  require explicit approval with a deadline, and everything is logged per turn.
-- **Sandboxed execution.** `node` runs inside a disposable Docker container:
-  no network, capped resources, read-only filesystem, hard timeout.
-- **Honest metering.** Token usage per turn, per persona, per model, taken
-  only from provider-reported numbers. No estimates.
+Everything in Yuika follows one loop:
+
+1. **Design.** Compose a persona in the character studio: its character,
+   skills, and model route. Start from a bundled specialist (Coder, Scholar,
+   Scribe, Designer, Analyst, Operator, Planner) or the maestro Conductor.
+2. **Train.** Send the persona on training missions. It researches or studies
+   files you provide, then distills what it learned into a skill draft. You
+   review, edit, accept, or reject; accepted skills are immediately usable by
+   every persona.
+3. **Direct.** Put personas to work in your projects through a chat-first
+   workspace. The Conductor splits work and delegates to child personas with
+   isolated sessions, live progress, and steering mid-run.
+4. **Trust.** Risky tool calls (running code, writing files) require explicit
+   approval with a deadline. Execution runs in a disposable sandbox (no
+   network, capped resources, read-only filesystem, hard timeout). Every turn
+   is traced, and token usage is metered per turn, per persona, per model
+   from provider-reported numbers only.
 
 ## Getting started
 
