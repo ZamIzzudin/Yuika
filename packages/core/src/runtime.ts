@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yui/contracts";
-import { SessionStore } from "./session/store.js";
+import { createSessionStore, type ISessionStore } from "./session/store.js";
 import { moduleLogger } from "./logger.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
@@ -79,7 +79,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const paths = { ...resolvePaths(), ...cfg.paths } as YuiPaths;
   fs.mkdirSync(paths.workspacePath, { recursive: true });
 
-  const store = new SessionStore(paths.dbPath);
+  const store: ISessionStore = createSessionStore(paths.dbPath);
   // P0-DATA-3: approval pending dari proses sebelumnya → expired (turn-nya mati
   // bersama proses lama); kartu di UI ditandai lewat event approval.expired.
   store.expirePendingApprovals();

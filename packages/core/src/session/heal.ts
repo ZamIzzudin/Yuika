@@ -4,9 +4,9 @@
 // replay UI menampilkan "berjalan"/chip thinking ZOMBIE selamanya (feedback
 // user dev-10: matikan server saat iterasi → task tak kunjung selesai).
 // Idempoten secara alami: heal menutup turn → tak lagi "interrupted".
-import type { SessionStore } from "./store.js";
+import type { ISessionStore } from "./store.js";
 
-export function healInterruptedTurns(store: SessionStore): string[] {
+export function healInterruptedTurns(store: ISessionStore): string[] {
   const healed: string[] = [];
   for (const it of store.findInterruptedTurns()) {
     const evs = store.getEvents(it.sessionId, it.lastTurnEventId); // setelah turn.started terakhir

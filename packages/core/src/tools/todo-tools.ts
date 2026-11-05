@@ -6,7 +6,7 @@ import { z } from "zod";
 import { registry } from "../registry.js";
 import { TaskStatus } from "@yui/contracts";
 import type { ProjectStore } from "../project/store.js";
-import type { SessionStore } from "../session/store.js";
+import type { ISessionStore } from "../session/store.js";
 
 const listSchema = z.object({});
 const addSchema = z.object({
@@ -21,7 +21,7 @@ const updateSchema = z.object({
   addRefs: z.array(z.string()).optional().describe("referensi artefak (path/job id) untuk ditambahkan"),
 });
 
-export function registerTodoTools(deps: { sessionStore: SessionStore; projects: ProjectStore }): void {
+export function registerTodoTools(deps: { sessionStore: ISessionStore; projects: ProjectStore }): void {
   /** Resolve project sesi; throw kalau sesi tidak melekat ke project. */
   function projectIdOf(sessionId: string): string {
     const session = deps.sessionStore.getSession(sessionId);

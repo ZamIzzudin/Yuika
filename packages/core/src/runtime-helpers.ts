@@ -2,14 +2,14 @@
 import type { Persona } from "./personas/loader.js";
 import { listSkills } from "./skills/loader.js";
 import { buildSystemPrompt } from "./prompt/builder.js";
-import type { SessionStore } from "./session/store.js";
+import type { ISessionStore } from "./session/store.js";
 import { ApprovalEngine } from "./approval/engine.js";
 import type { Emit } from "./session/emit.js";
 import { effectiveSkillNames, type SkillBinding } from "./skills/bindings.js";
 
 /** Buat sesi dengan system prompt FROZEN (cache discipline) + toolset persona. */
 export function createSessionWithPrompt(
-  store: SessionStore,
+  store: ISessionStore,
   persona: Persona,
   sessionId: string,
   tools: string[],

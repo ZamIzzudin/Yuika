@@ -4,13 +4,13 @@
 // menyusul bersama deploy INF-5.)
 import type { SessionTrace, TraceStep, TraceTurn } from "@yui/contracts";
 import type { YuiEvent } from "@yui/contracts";
-import type { SessionStore } from "./store.js";
+import type { ISessionStore } from "./store.js";
 import type { UsageLedger } from "../usage/ledger.js";
 
 const TOOL_KIND = (name: string): TraceStep["kind"] =>
   name === "delegate_task" ? "delegate" : name.startsWith("mcp_") ? "tool" : "tool";
 
-export function buildTrace(store: SessionStore, ledger: UsageLedger, sessionId: string): SessionTrace {
+export function buildTrace(store: ISessionStore, ledger: UsageLedger, sessionId: string): SessionTrace {
   const events = store.getEvents(sessionId, 0);
   const turns: TraceTurn[] = [];
   let cur: TraceTurn | null = null;

@@ -7,7 +7,7 @@
 // Fail-soft by design: aux call gagal → turn jalan apa adanya (tanpa kompresi),
 // kompresi dicoba lagi di turn berikutnya. Tidak pernah memblokir pekerjaan.
 import type { ProviderAdapter, InternalMessage } from "../provider/adapter.js";
-import type { SessionStore } from "./store.js";
+import type { ISessionStore } from "./store.js";
 import { estimateTokens } from "./tokens.js";
 
 export interface CompressOptions {
@@ -98,7 +98,7 @@ export function slimHistory(view: InternalMessage[], opts: SlimOptions = DEFAULT
 
 /** Susun view konteks sesi; kompresi bila estimasi token melewati ambang. */
 export async function buildContextMessages(
-  store: SessionStore,
+  store: ISessionStore,
   provider: ProviderAdapter,
   model: string,
   sessionId: string,

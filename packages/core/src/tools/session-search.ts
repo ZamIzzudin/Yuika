@@ -3,9 +3,9 @@
 // Scope default = project sesi ini; "all" = lintas proyek (tetap satu user/workspace).
 import { z } from "zod";
 import { registry } from "../registry.js";
-import type { SessionStore } from "../session/store.js";
+import type { ISessionStore } from "../session/store.js";
 
-export function registerSessionSearchTools(store: SessionStore): void {
+export function registerSessionSearchTools(store: ISessionStore): void {
   registry.register({
     name: "session_search",
     description:

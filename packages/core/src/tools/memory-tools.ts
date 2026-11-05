@@ -7,7 +7,7 @@ import { z } from "zod";
 import { registry } from "../registry.js";
 import { appendCurated } from "../memory/manager.js";
 import { personaDisplayName } from "../personas/names.js";
-import type { SessionStore } from "../session/store.js";
+import type { ISessionStore } from "../session/store.js";
 import type { ProjectStore } from "../project/store.js";
 
 const appendSchema = z.object({
@@ -25,7 +25,7 @@ const appendSchema = z.object({
 });
 
 export function registerMemoryTools(deps: {
-  sessionStore: SessionStore;
+  sessionStore: ISessionStore;
   projects: ProjectStore;
   workspacePath: string;
   /** P1-MEM-6: domain persona pemanggil (dari manifest) — undefined bila tak tersedia. */

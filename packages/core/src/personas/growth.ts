@@ -5,7 +5,7 @@
 // Level dari jumlah `turns` (aktivitas paling jujur — sesi bisa kosong,
 // task bisa di-reassign; turn selesai = persona benar-benar bekerja).
 import type { PersonaGrowth } from "@yui/contracts";
-import type { SessionStore } from "../session/store.js";
+import type { ISessionStore } from "../session/store.js";
 import type { ProjectStore } from "../project/store.js";
 
 /** Kurva level: batas bawah `turns` → nama. Urutan naik; terakhir = maksimum. */
@@ -18,7 +18,7 @@ export const GROWTH_LEVELS: Array<{ at: number; name: string }> = [
 
 export function buildPersonaGrowth(
   personas: Array<{ id: string; name: string; domain: string }>,
-  store: SessionStore,
+  store: ISessionStore,
   projects: ProjectStore,
 ): PersonaGrowth[] {
   const sessions = store.personaSessionCounts();

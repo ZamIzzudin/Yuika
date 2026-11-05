@@ -7,7 +7,7 @@ import type { ProviderAdapter, InternalMessage, ToolCallRequest } from "./provid
 import { registry } from "./registry.js";
 import { runLearnNudge } from "./memory/nudge.js";
 import { personaDisplayName } from "./personas/names.js";
-import type { SessionStore } from "./session/store.js";
+import type { ISessionStore } from "./session/store.js";
 import { buildContextMessages } from "./session/compress.js";
 import { env } from "./env.js";
 import { getLogger } from "./logger.js";
@@ -41,7 +41,7 @@ export function applyMcpBinding<T extends { name: string }>(
 }
 
 export interface LoopDeps {
-  store: SessionStore;
+  store: ISessionStore;
   provider: ProviderAdapter;
   /** Model default sesi (env/Settings). Bisa dioverride per persona via `routeModel`. */
   model: string;

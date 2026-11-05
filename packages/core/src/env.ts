@@ -55,7 +55,18 @@ const schema = z.object({
    *  di stdout — struktur stabil untuk find/tracing manual; 0 = JSON-lines asli
    *  pino (dipakai docker-compose: agregator log grep per field). */
   logPretty: z.preprocess((v) => v !== "0" && v !== "false", z.boolean()),
-});
+  /** P0-DATA-1: driver penyimpanan sesi — sqlite (default; embedded, desktop/
+   *  dev) atau postgres (server: multi-worker, skala besar). Lain-lain store
+   *  (project/memory/skills) tetap SQLite di workspace — menyusul bertahap. */
+  dbDriver: z.enum(["sqlite", "postgres"]).default("sqlite"),
+  /** Koneksi Postgres — wajib bila dbDriver=postgres (divalidasi di bawah). */
+  databaseUrl: z.string().min(1).optional(),
+})
+  .superRefine((v, ctx) => {
+    if (v.dbDriver === "postgres" && !v.databaseUrl) {
+      ctx.addIssue({ code: "custom", path: ["databaseUrl"], message: "YUI_DB_DRIVER=postgres butuh DATABASE_URL (postgres://user:pass@host:5432/db)" });
+    }
+  });
 
 export type CoreEnv = z.infer<typeof schema>;
 
@@ -75,6 +86,8 @@ const raw = {
   sandbox: process.env.YUI_SANDBOX as "auto" | "docker" | "off" | undefined,
   sandboxImage: process.env.YUI_SANDBOX_IMAGE || undefined,
   logPretty: process.env.YUI_LOG_PRETTY,
+  dbDriver: process.env.YUI_DB_DRIVER as "sqlite" | "postgres" | undefined,
+  databaseUrl: process.env.DATABASE_URL || undefined,
 };
 
 const parsed = schema.safeParse(raw);

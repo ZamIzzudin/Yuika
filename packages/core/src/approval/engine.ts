@@ -8,7 +8,7 @@
 // test) turn dilanjutkan FAIL-CLOSED (denied), event approval.expired ke UI.
 import { randomUUID } from "node:crypto";
 import type { Emit } from "../session/emit.js";
-import type { SessionStore } from "../session/store.js";
+import type { ISessionStore } from "../session/store.js";
 
 /**
  * Registry pending lintas engine: satu engine per turn, tapi route handler
@@ -59,7 +59,7 @@ export function resolvePendingApproval(requestId: string, approved: boolean, rem
 
 export interface ApprovalPersistOptions {
   sessionId: string;
-  store: SessionStore;
+  store: ISessionStore;
 }
 
 export class ApprovalEngine {

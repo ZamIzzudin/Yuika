@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { YuiEvent, type EventDraft, type YuiEvent as YuiEventType } from "@yui/contracts";
 import type { InternalMessage } from "../provider/adapter.js";
+import { createPgStore } from "./pg-bridge.js";
 
 export interface SessionRow {
   id: string;
@@ -17,7 +18,51 @@ export interface SessionRow {
   projectId: string | null;
 }
 
-export class SessionStore {
+/** P0-DATA-1: kontrak penyimpanan sesi — SATU interface, dua driver:
+ *  SQLite (default — embedded, zero-config, desktop/dev) & Postgres (server:
+ *  multi-worker, skala events besar). Implementasi PG memakai worker-thread +
+ *  sync-bridge sehingga interface tetap SINKRON (paritas dengan better-sqlite3,
+ *  nol perubahan di call site & 250+ test). */
+export interface ISessionStore {
+  createSession(id: string, personaId: string, systemPrompt: string, toolsets: string[], projectId?: string | null): SessionRow;
+  getSession(id: string): SessionRow | undefined;
+  listProjectSessions(projectId: string): Array<{ id: string; personaId: string; createdAt: number; lastEventAt: number; lastEventId: number }>;
+  personaSessionCounts(): Map<string, number>;
+  personaDoneTurnCounts(): Map<string, number>;
+  appendMessage(sessionId: string, msg: InternalMessage): void;
+  searchMessages(q: { query: string; projectId?: string | null; limit?: number }): { sessionId: string; personaId: string; role: string; snippet: string; createdAt: number }[];
+  getMessages(sessionId: string): InternalMessage[];
+  getMessagesWithSeq(sessionId: string): Array<{ seq: number; msg: InternalMessage }>;
+  saveContextCheckpoint(sessionId: string, uptoSeq: number, summary: string, model: string): void;
+  latestContextCheckpoint(sessionId: string): { uptoSeq: number; summary: string; model: string } | null;
+  startDelegationJob(input: { parentSessionId: string; parentTurnId: string; childSessionId: string; personaId: string; goal: string }): number;
+  finishDelegationJob(id: number, patch: { status: "done" | "error" | "interrupted"; summary?: string; error?: string }): void;
+  findRunningDelegationJobs(): Array<{ id: number; parentSessionId: string; childSessionId: string; personaId: string; goal: string }>;
+  listDelegationJobs(projectId?: string | null): Array<import("@yui/contracts").DelegationJob>;
+  archiveOldEvents(retentionDays: number, nowMs?: number): { archived: number; sessions: number };
+  appendEvent(sessionId: string, draft: EventDraft): YuiEventType;
+  getEvents(sessionId: string, sinceId?: number): YuiEventType[];
+  findInterruptedTurns(): Array<{ sessionId: string; personaId: string; lastTurnEventId: number }>;
+  insertApproval(row: { requestId: string; sessionId: string; tool: string; args: Record<string, unknown>; reason: string }): void;
+  settleApproval(requestId: string, status: "approved" | "denied" | "expired", remember?: boolean): boolean;
+  listPendingApprovals(): { requestId: string; sessionId: string; tool: string; reason: string }[];
+  rememberApproval(sessionId: string, tool: string): void;
+  getRememberedTools(sessionId: string): string[];
+  expirePendingApprovals(): number;
+  deleteProjectSessions(projectId: string): { sessions: number; events: number; approvals: number };
+  close(): void;
+}
+
+/** Factory driver (P0-DATA-1): YUI_DB_DRIVER=sqlite (default) | postgres.
+ *  postgres → sync-bridge worker (session/pg-bridge.ts — hanya
+ *  node:worker_threads, worker dibuat lazy); DATABASE_URL wajib (divalidasi
+ *  fail-fast di env.ts). Sinkron: createYuiRuntime tidak berubah bentuk. */
+export function createSessionStore(dbPath: string): ISessionStore {
+  if (process.env.YUI_DB_DRIVER !== "postgres") return new SessionStore(dbPath);
+  return createPgStore();
+}
+
+export class SessionStore implements ISessionStore {
   private db: Database.Database;
 
   constructor(dbPath: string) {
@@ -484,6 +529,9 @@ export class SessionStore {
     let approvals = 0;
     const tx = this.db.transaction(() => {
       events = this.db.prepare(`DELETE FROM events WHERE session_id IN (${ph})`).run(...ids).changes;
+      // P0-DATA-2: arsip ikut dibersihkan (paritas driver PG — project terhapus
+      // tidak meninggalkan jejak events arsip); angka laporan tetap dari tabel aktif
+      this.db.prepare(`DELETE FROM events_archive WHERE session_id IN (${ph})`).run(...ids).changes;
       this.db.prepare(`DELETE FROM messages WHERE session_id IN (${ph})`).run(...ids);
       approvals = this.db.prepare(`DELETE FROM approvals WHERE session_id IN (${ph})`).run(...ids).changes;
       this.db.prepare(`DELETE FROM approval_memory WHERE session_id IN (${ph})`).run(...ids);

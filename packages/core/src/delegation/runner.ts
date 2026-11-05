@@ -3,7 +3,7 @@
 // Parent hanya menerima ringkasan, bukan tool calls anak (context economy — Hermes §4.6).
 import { randomUUID } from "node:crypto";
 import type { PersonaState } from "@yui/contracts";
-import type { SessionStore } from "../session/store.js";
+import type { ISessionStore } from "../session/store.js";
 import type { Emit } from "../session/emit.js";
 import type { EventBus } from "../bus.js";
 import type { ProviderAdapter } from "../provider/adapter.js";
@@ -15,7 +15,7 @@ import type { SkillBinding } from "../skills/bindings.js";
 import { listPersonas } from "../personas/loader.js";
 
 export interface DelegationDeps {
-  store: SessionStore;
+  store: ISessionStore;
   bus: typeof EventBus;
   provider: ProviderAdapter;
   model: string;

@@ -55,6 +55,16 @@ Arsitektur (P0-INF-1): `apps/web` (Next.js, pure frontend) memanggil `apps/api`
 (Fastify, pemilik runtime @yui/core) via HTTP — `NEXT_PUBLIC_API_BASE`
 (default `http://127.0.0.1:3211`).
 
+Penyimpanan sesi **swappable** (P0-DATA-1): default SQLite embedded; untuk
+server / multi-worker, Postgres —
+
+```bash
+docker compose --profile postgres up -d --build   # + db :5545, api-pg :3213, web :3003
+# atau tanpa docker: YUI_DB_DRIVER=postgres DATABASE_URL=postgres://… npx tsx apps/api/src/server.ts
+# migrasi data lama (idempoten — aman diulang):
+npx tsx scripts/migrate-sqlite-to-pg.mjs --from data/yui.db --to $DATABASE_URL
+```
+
 Skenario demo: pilih **Yui Conductor** → *"Riset 3 framework JS paling populer sekarang,
 bandingkan singkat, tulis laporan markdown ke reports/"* → amati dekomposisi → delegasi ke
 Scholar (riset + MCP) → Scribe (menulis + approval) → celebrating → refresh (resume).

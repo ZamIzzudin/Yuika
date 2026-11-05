@@ -1,11 +1,19 @@
-# P0-INF-5 — Your-Yui via docker compose (web :3000 + api :3211 + volume data).
+# P0-INF-5 — Yuika via docker compose (web :3000 + api :3211 + volume data).
 #
-#   docker compose up -d --build
+#   docker compose up -d --build                     # SQLite (default)
+#   docker compose --profile postgres up -d --build  # Postgres (P0-DATA-1)
 #   open http://localhost:3000
 #
 # Secrets (YUI_OPENAI_API_KEY dst.) dibaca dari .env repo root (env_file)
 # dan TIDAK ikut ter-bake ke image. Data user (sqlite + workspace proyek)
 # hidup di volume yui-data — aman saat rebuild/upgrade image.
+#
+# Profile postgres: db (postgres:17-alpine + volume yui-pgdata) + api-pg
+# (:3213, YUI_DB_DRIVER=postgres) + web-pg (:3003 → api-pg). Skema dibuat
+# otomatis saat api-pg start; untuk memindahkan data SQLite lama:
+#   docker compose exec db pg_isready -U yui   # tunggu siap
+#   npx tsx scripts/migrate-sqlite-to-pg.mjs --from data/yui.db \
+#     --to postgres://yui:yui@127.0.0.1:5545/yui
 #
 # NEXT_PUBLIC_API_BASE di-inline ke bundle web SAAT BUILD (dari sudut pandang
 # BROWSER, bukan container): default http://127.0.0.1:3211 — benar saat
@@ -55,5 +63,71 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # ── P0-DATA-1: Postgres (aktif: docker compose --profile postgres up) ──
+  db:
+    image: postgres:17-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: yui
+      POSTGRES_PASSWORD: yui
+      POSTGRES_DB: yui
+    ports:
+      - "5545:5432"
+    volumes:
+      - yui-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yui -d yui"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api-pg:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    image: your-yui/api:dev
+    profiles: ["postgres"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      YUI_API_HOST: 0.0.0.0
+      YUI_API_PORT: "3213"
+      YUI_DB_PATH: /data/demo.db # project/memory/skills masih SQLite (v1)
+      YUI_WORKSPACE_DIR: /data/workspace
+      YUI_LOG_PRETTY: "0"
+      YUI_DB_DRIVER: postgres
+      DATABASE_URL: postgres://yui:yui@db:5432/yui
+    ports:
+      - "3213:3213"
+    volumes:
+      - yui-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web-pg:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://127.0.0.1:3213}
+    image: your-yui/web:dev
+    profiles: ["postgres"]
+    environment:
+      PORT: "3003"
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "3003:3003"
+    depends_on:
+      api-pg:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   yui-data:
+  yui-pgdata:
