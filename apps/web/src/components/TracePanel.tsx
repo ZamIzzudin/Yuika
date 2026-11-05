@@ -110,7 +110,7 @@ export function TracePanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3 sm:px-6">
       <header className="mb-3 flex flex-wrap items-center gap-3">
-        <b className="text-body font-semibold text-primary">Trace sesi</b>
+        <b className="text-body font-semibold text-primary">Session trace</b>
         {sessionId && (
           <small className="font-mono text-caption text-dim">
             {sessionId.slice(0, 14)}…
@@ -119,18 +119,18 @@ export function TracePanel({
       </header>
       {sessionId === null ? (
         <p className={hint}>
-          Belum ada percakapan aktif — buka atau mulai sesi chat dulu, lalu
-          kembali ke sini untuk melihat jejak langkahnya.
+          No active conversation yet — open or start a chat session first, then
+          come back here to see its step-by-step trace.
         </p>
       ) : missing ? (
         <p className={hint}>
-          Sesi ini tidak ditemukan (mungkin terhapus bersama project-nya). Pilih
-          sesi lain dari sidebar.
+          This session was not found (perhaps deleted along with its project).
+          Pick another session from the sidebar.
         </p>
       ) : trace === null ? (
         <Skeleton lines={6} />
       ) : trace.turns.length === 0 ? (
-        <p className={hint}>Belum ada turn di sesi ini.</p>
+        <p className={hint}>No turns in this session yet.</p>
       ) : (
         <div className="flex flex-col gap-2">
           {[...trace.turns].reverse().map((t) => (
@@ -148,7 +148,7 @@ export function TracePanel({
                   {t.endedAt ? ` → ${fmtTime(t.endedAt)}` : ""}
                 </span>
                 <small className="ml-auto text-caption text-dim">
-                  {t.steps.length} langkah · {t.tokens.calls}× model ·{" "}
+                  {t.steps.length} steps · {t.tokens.calls}× model ·{" "}
                   {t.tokens.input.toLocaleString("id-ID")}+
                   {t.tokens.output.toLocaleString("id-ID")} tok
                 </small>
@@ -184,7 +184,7 @@ export function TracePanel({
                 })}
                 {t.steps.length === 0 && (
                   <li className="text-caption text-dim">
-                    (tanpa langkah tercatat)
+                    (no steps recorded)
                   </li>
                 )}
               </ol>

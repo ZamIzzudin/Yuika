@@ -786,7 +786,11 @@ expression states; burn-rate credit terukur per turn."
 - [ ] Marketplace: persona (fork/remix), skill, MCP connector — review otomatis + moderasi
 - [ ] Teams: multi-user workspace, pool credits, role & permission
 - [ ] Voice per persona (STT/TTS streaming)
-- [ ] Self-host web edition (docker-compose) — keputusan lisensi §12
+- [ ] Self-host web edition (docker-compose) — keputusan lisensi §12 · **Gerbang
+      go-public** (task PUB-1..5 di TASKS.md): repo hari ini proprietary
+      ("All rights reserved" + UNLICENSED) — sebelum push publik wajib THIRD-PARTY-NOTICES,
+      keputusan lisensi final (proprietary/BSL 1.1/PolyForm/open-core), bersih artefak
+      internal, CLA, cek trademark Orin (detail docs/LICENSE-AUDIT.md)
 
 ### Fase 4 — Skala & diferensiasi lanjut
 - [ ] Visual workflow builder (node graph) di atas engine

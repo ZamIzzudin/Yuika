@@ -142,7 +142,7 @@ function Branch({
     <ul
       // konektor: garis vertikal dari induk (before ul) + sambungan-T per anak
       // (before/after li); only-child otomatis mulus karena before ul tetap ada.
-      aria-label="cabang delegasi"
+      aria-label="delegation branch"
       className={`relative m-0 flex list-none justify-center pt-7 before:absolute before:top-0 before:left-1/2 before:h-7 before:border-l before:border-muted before:content-[''] ${
         isRootBranch ? "" : "mt-1"
       }`}
@@ -172,7 +172,7 @@ function Branch({
               subtitle={
                 delegatedBy ??
                 (ds.length > 1
-                  ? `${ds.length} tugas · ${doneCount} selesai`
+                  ? `${ds.length} tasks · ${doneCount} done`
                   : undefined)
               }
             />
@@ -283,7 +283,7 @@ export function TeamTree({
     <div
       ref={canvasRef}
       role="tree"
-      aria-label="Diagram hierarki delegasi — kanvas"
+      aria-label="Delegation hierarchy diagram — canvas"
       className={`relative h-[85vh] touch-none overflow-hidden rounded-lg2 border border-line bg-inset [background-image:radial-gradient(color-mix(in_srgb,var(--color-dim)_26%,transparent)_1px,transparent_1px)] [background-size:22px_22px] select-none ${
         dragging ? "cursor-grabbing" : "cursor-grab"
       }`}
@@ -301,8 +301,8 @@ export function TeamTree({
         <Button
           size="sm"
           onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z * 1.2))}
-          title="Perbesar"
-          aria-label="Perbesar"
+          title="Zoom in"
+          aria-label="Zoom in"
         >
           <Plus size={12} weight="bold" aria-hidden />
         </Button>
@@ -312,8 +312,8 @@ export function TeamTree({
         <Button
           size="sm"
           onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z / 1.2))}
-          title="Perkecil"
-          aria-label="Perkecil"
+          title="Zoom out"
+          aria-label="Zoom out"
         >
           <Minus size={12} weight="bold" aria-hidden />
         </Button>
@@ -323,8 +323,8 @@ export function TeamTree({
             setPan({ x: 0, y: 0 });
             setZoom(1);
           }}
-          title="Reset ke tengah"
-          aria-label="Reset ke tengah"
+          title="Reset to center"
+          aria-label="Reset to center"
         >
           <House size={12} aria-hidden />
         </Button>
@@ -346,7 +346,7 @@ export function TeamTree({
               />
             ) : (
               <p className="text-caption text-dim">
-                Buka sesi untuk melihat struktur delegasi live.
+                Open a session to see the live delegation structure.
               </p>
             )}
             {rootSessionId && edges !== null && (
@@ -359,8 +359,8 @@ export function TeamTree({
             )}
             {edges !== null && edges.length === 0 && (
               <p className="mt-2.5 text-center text-caption text-dim">
-                Belum ada delegasi — lead mengerjakan sendiri atau minta ia
-                mendelegasikan.
+                No delegations yet — the lead works alone, or ask it to
+                delegate.
               </p>
             )}
           </div>

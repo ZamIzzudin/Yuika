@@ -99,9 +99,9 @@ export function FileTab({ projectId }: { projectId: string }) {
       const r = await fetch(`/api/projects/${projectId}/files`);
       if (r.ok) setTree(((await r.json()) as { tree: FileNode[] }).tree);
       else
-        toastErr((((await r.json()) as { error?: string }).error ?? "gagal memuat file") + "");
+        toastErr((((await r.json()) as { error?: string }).error ?? "failed to load files") + "");
     } catch {
-      toastErr("gagal menghubungi server");
+      toastErr("could not reach the server");
     }
     // sinkronkan file yang sedang dibuka bila ditimpa agent di background
     if (sel) {
@@ -161,7 +161,7 @@ export function FileTab({ projectId }: { projectId: string }) {
       ]);
       const cd = (await c.json()) as Content & { error?: string };
       if (!c.ok) {
-        toastErr(cd.error ?? "gagal membaca file");
+        toastErr(cd.error ?? "failed to read file");
         return;
       }
       setContent(cd);
@@ -197,21 +197,21 @@ export function FileTab({ projectId }: { projectId: string }) {
       { method: "POST", body: await f.arrayBuffer() },
     );
     if (!r.ok) {
-      toastErr(((await r.json()) as { error?: string }).error ?? "gagal upload");
+      toastErr(((await r.json()) as { error?: string }).error ?? "upload failed");
       return;
     }
-    toastOk(`${f.name} terunggah — minta Poe Yui membacanya via doc_read.`);
+    toastOk(`${f.name} uploaded — ask Poe Yui to read it via doc_read.`);
     await loadTree();
   }
 
   const pane = "overflow-y-auto rounded-lg2 border border-line bg-inset p-2 max-h-[60vh]";
 
   return (
-    <section aria-label="File project" className="flex flex-col gap-2.5">
+    <section aria-label="Project files" className="flex flex-col gap-2.5">
       <div className="flex justify-end gap-2">
-        <label title="Upload dokumen (pdf/xlsx/csv/…) → folder uploads/, dibaca agent via doc_read">
+        <label title="Upload a document (pdf/xlsx/csv/…) → uploads/ folder, read by the agent via doc_read">
           <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line-strong px-3 py-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-hover hover:text-primary">
-            <UploadSimple size={13} aria-hidden /> Upload dokumen
+            <UploadSimple size={13} aria-hidden /> Upload document
           </span>
           <input
             type="file"
@@ -224,7 +224,7 @@ export function FileTab({ projectId }: { projectId: string }) {
             }}
           />
         </label>
-        <Button size="sm" onClick={() => void loadTree()} title="Muat ulang daftar file">
+        <Button size="sm" onClick={() => void loadTree()} title="Reload file list">
           <ArrowsClockwise size={12} aria-hidden /> Segarkan
         </Button>
       </div>

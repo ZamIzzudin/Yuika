@@ -15,8 +15,8 @@ type Section = "provider" | "mcp" | "usage";
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   { id: "provider", label: "Provider & Model", hint: "API key, base URL, model" },
-  { id: "mcp", label: "MCP & Tools", hint: "katalog, trust, audit" },
-  { id: "usage", label: "Metering", hint: "pemakaian token per persona/model" },
+  { id: "mcp", label: "MCP & Tools", hint: "catalog, trust, audit" },
+  { id: "usage", label: "Usage", hint: "token usage per persona/model" },
 ];
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
@@ -65,14 +65,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         }),
       });
       if (!res.ok) {
-        toastErr((((await res.json()) as { error?: string }).error ?? "gagal menyimpan") + "");
+        toastErr((((await res.json()) as { error?: string }).error ?? "failed to save") + "");
         return;
       }
       setApiKey("");
-      toastOk("Tersimpan — sesi & turn berikutnya memakai config baru (.env diperbarui).");
+      toastOk("Saved — new sessions & turns use the new config (.env updated).");
       await load();
     } catch {
-      toastErr("gagal menghubungi server");
+      toastErr("could not reach the server");
     }
   }
 
@@ -86,7 +86,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   );
 
   return (
-    <Modal open onClose={onClose} title="Pengaturan" wide>
+    <Modal open onClose={onClose} title="Settings" wide>
       <div className="flex h-[70vh] min-h-0">
         <nav className="flex w-[200px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line p-3">
           {SECTIONS.map((s) => (
@@ -105,16 +105,16 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         </nav>
         <div className="min-w-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
           {section === "provider" && (
-            <section aria-label="Provider dan model" className="flex flex-col gap-4">
+            <section aria-label="Provider and model" className="flex flex-col gap-4">
               {cfg === null ? (
                 <Skeleton lines={5} />
               ) : (
                 <>
                   <p className="text-caption text-dim">
-                    Key tersimpan: <code className="font-mono">{cfg.hasApiKey ? cfg.keyPreview : "belum ada"}</code> · aktif:{" "}
+                    Stored key: <code className="font-mono">{cfg.hasApiKey ? cfg.keyPreview : "none"}</code> · active:{" "}
                     <code className="font-mono">{cfg.model}</code>
                   </p>
-                  <Field label="Jenis provider (P1-INF-2)">
+                  <Field label="Provider kind (P1-INF-2)">
                     <Select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
                       <option value="openai-compat">OpenAI-compatible (GLM / OpenRouter / …)</option>
                       <option value="anthropic">Anthropic (Claude)</option>
@@ -131,24 +131,24 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                       spellCheck={false}
                     />
                   </Field>
-                  <Field label={`API key ${cfg?.hasApiKey ? "(kosongkan untuk keep)" : ""}`}>
+                  <Field label={`API key ${cfg?.hasApiKey ? "(leave empty to keep)" : ""}`}>
                     <TextInput type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={cfg?.hasApiKey ? "••••••••" : "sk-…"} spellCheck={false} />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Model utama">
+                    <Field label="Primary model">
                       <TextInput value={model} onChange={(e) => setModel(e.target.value)} placeholder="glm/glm-5.1" spellCheck={false} />
                     </Field>
-                    <Field label="Model fallback (opsional)" hint="dipakai otomatis bila model utama gagal (P0-CORE-2)">
+                    <Field label="Fallback model (optional)" hint="used automatically when the primary model fails (P0-CORE-2)">
                       <TextInput value={fallback} onChange={(e) => setFallback(e.target.value)} placeholder="glm/glm-5" spellCheck={false} />
                     </Field>
                   </div>
-                  <Field label="Model aux (opsional)" hint="tugas ringan seperti pembelajaran memori; kosong = model utama (P1-INF-3)">
+                  <Field label="Aux model (optional)" hint="lightweight tasks like memory learning; empty = primary model (P1-INF-3)">
                     <TextInput value={aux} onChange={(e) => setAux(e.target.value)} placeholder="glm/glm-5-flash" spellCheck={false} />
                   </Field>
                   <ModelRoutesEditor defaultModel={cfg.model} />
                   <div className="flex items-center gap-3">
                     <Button variant="primary" onClick={() => void save()} disabled={!dirty}>
-                      Simpan
+                      Save
                     </Button>
                   </div>
                 </>
@@ -161,7 +161,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
           {section === "usage" && (
-            <section aria-label="Metering pemakaian" className="flex flex-col gap-5">
+            <section aria-label="Usage metering" className="flex flex-col gap-5">
               <BudgetPanel />
               <UsagePanel />
             </section>
@@ -216,14 +216,14 @@ function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
       <div className="flex flex-col gap-1">
         <b className="text-body font-semibold text-primary">Model per persona (P1-MDL)</b>
         <small className="text-caption leading-5 text-muted">
-          Kosongkan untuk ikut default (<code className="font-mono">{defaultModel}</code>). Anak delegasi memakai model
-          persona-nya sendiri — jadi Conductor &amp; Coder bisa berjalan di model berbeda dalam satu run.
+          Leave empty to follow the default (<code className="font-mono">{defaultModel}</code>). Delegation children use
+          their own persona's model — so Conductor &amp; Coder can run on different models in one run.
         </small>
       </div>
       {/* P1-MDL-2: smoke test — verifikasi tool-call 2 langkah per model aktif */}
       <div className="flex flex-col gap-2">
         <Button size="sm" onClick={() => void runSmoke()} disabled={smoke?.running}>
-          {smoke?.running ? "menguji…" : "Uji semua model"}
+          {smoke?.running ? "testing…" : "Test all models"}
         </Button>
         {smoke && smoke.results.length > 0 && (
           <ul className="flex flex-col gap-0.5">
@@ -231,13 +231,13 @@ function ModelRoutesEditor({ defaultModel }: { defaultModel: string }) {
               <li key={s.model} className={`flex items-center gap-1.5 text-caption ${s.ok ? "text-secondary" : "text-danger"}`} title={s.error ?? undefined}>
                 {s.ok ? <Check size={12} weight="bold" aria-hidden /> : <X size={12} weight="bold" aria-hidden />}
                 <code className="font-mono">{s.model}</code> · {(s.latencyMs / 1000).toFixed(1)}s
-                {!s.ok && <small className="text-dim"> — fallback otomatis aktif</small>}
+                {!s.ok && <small className="text-dim"> — automatic fallback engaged</small>}
               </li>
             ))}
           </ul>
         )}
         {smoke && smoke.results.length === 0 && !smoke.running && (
-          <small className="text-caption text-dim">belum ada hasil — klik “Uji semua model”</small>
+          <small className="text-caption text-dim">no results yet — click “Test all models”</small>
         )}
       </div>
       <table className="w-full text-caption">
@@ -297,7 +297,7 @@ async function save(
     });
     if (r.ok) {
       setRoutes((await r.json()) as ModelRoutes);
-      setOk("Tersimpan — sesi berikutnya memakai route baru.");
+      setOk("Saved — the next session uses the new route.");
     }
   } finally {
     setSaving(null);
@@ -337,7 +337,7 @@ function BudgetPanel() {
     if (!limit) return null;
     const pct = Math.min(100, Math.round((spent / limit) * 100));
     return (
-      <div className="relative mt-1 h-4 w-full overflow-hidden rounded-pill bg-inset" title={`${pct}% dari limit`}>
+      <div className="relative mt-1 h-4 w-full overflow-hidden rounded-pill bg-inset" title={`${pct}% of limit`}>
         <div className={`h-full rounded-pill ${spent >= limit ? "bg-danger" : "bg-accent"}`} style={{ width: `${pct}%` }} />
         <span className="absolute inset-0 flex items-center justify-center text-[10px] text-secondary">{pct}%</span>
       </div>
@@ -369,10 +369,10 @@ function BudgetPanel() {
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <span className="text-caption font-semibold tracking-wide text-dim uppercase">Hari ini</span>
+          <span className="text-caption font-semibold tracking-wide text-dim uppercase">Today</span>
           <p className="mt-1 text-body text-primary">
             <b>{fmtC(st.spentToday)}</b>
-            {st.config.dailyLimit !== null ? <> / {fmtC(st.config.dailyLimit)}</> : <small className="text-dim"> (tanpa batas)</small>}
+            {st.config.dailyLimit !== null ? <> / {fmtC(st.config.dailyLimit)}</> : <small className="text-dim"> (no limit)</small>}
           </p>
           {bar(st.spentToday, st.config.dailyLimit)}
         </div>
@@ -380,40 +380,40 @@ function BudgetPanel() {
           <span className="text-caption font-semibold tracking-wide text-dim uppercase">Total</span>
           <p className="mt-1 text-body text-primary">
             <b>{fmtC(st.spentTotal)}</b>
-            {st.config.totalLimit !== null ? <> / {fmtC(st.config.totalLimit)}</> : <small className="text-dim"> (tanpa batas)</small>}
+            {st.config.totalLimit !== null ? <> / {fmtC(st.config.totalLimit)}</> : <small className="text-dim"> (no limit)</small>}
           </p>
           {bar(st.spentTotal, st.config.totalLimit)}
         </div>
         <div>
           <span className="text-caption font-semibold tracking-wide text-dim uppercase">Burn-rate</span>
           <p className="mt-1 text-body text-primary">
-            <b>{fmtC(st.burnRatePerHour)}</b>/j <small className="text-dim">(rata² 24 j)</small>
+            <b>{fmtC(st.burnRatePerHour)}</b>/h <small className="text-dim">(24 h average)</small>
           </p>
-          <p className="text-caption text-muted">Hold aktif: {fmtC(st.activeHolds)}</p>
+          <p className="text-caption text-muted">Active holds: {fmtC(st.activeHolds)}</p>
         </div>
       </div>
       {(st.dailyLimitHit || st.totalLimitHit) && (
         <p className={`flex items-center gap-2 rounded-md2 border px-3 py-1.5 text-caption ${st.config.mode === "block" ? "border-danger/30 bg-danger-soft text-danger" : "border-line bg-hover text-muted"}`}>
           {st.config.mode === "block" ? <Prohibit size={14} aria-hidden /> : <Warning size={14} aria-hidden />}
-          {st.config.mode === "block" ? "Limit tercapai — turn baru DITOLAK (mode block)." : "Limit tercapai (mode warn) — turn tetap berjalan."}
+          {st.config.mode === "block" ? "Limit reached — new turns are REJECTED (block mode)." : "Limit reached (warn mode) — turns keep running."}
         </p>
       )}
       {st.coverage !== "full" && (
         <p className="text-caption text-dim">
           {st.coverage === "none"
-            ? "Angka biaya butuh harga model — isi di editor Harga model di bawah."
-            : "Sebagian model belum dihargai — angka = batas bawah (jujur, bukan 0)."}
+            ? "Cost figures need model prices — fill them in the Model Prices editor below."
+            : "Some models are unpriced — figures are a lower bound (honest, not zero)."}
         </p>
       )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {numField("dailyLimit", `Limit harian (${cur})`, "— tanpa batas")}
-        {numField("totalLimit", `Limit total (${cur})`, "— tanpa batas")}
-        {numField("maxTurnsPerMinute", "Turn / menit", "— tanpa batas")}
-        {numField("maxDelegationConcurrency", "Delegasi paralel", "— default 3")}
-        <Field label="Saat limit tercapai">
+        {numField("dailyLimit", `Daily limit (${cur})`, "— no limit")}
+        {numField("totalLimit", `Total limit (${cur})`, "— no limit")}
+        {numField("maxTurnsPerMinute", "Turns / minute", "— no limit")}
+        {numField("maxDelegationConcurrency", "Parallel delegations", "— default 3")}
+        <Field label="When the limit is reached">
           <Select value={st.config.mode} onChange={(e) => save({ mode: e.target.value as "warn" | "block" })}>
-            <option value="warn">warn — peringatkan saja</option>
-            <option value="block">block — tolak turn</option>
+            <option value="warn">warn — just warn</option>
+            <option value="block">block — reject turns</option>
           </Select>
         </Field>
       </div>
@@ -483,9 +483,9 @@ function UsagePanel() {
     <div className="flex flex-col gap-3">
       <div className="flex gap-2">
         {[
-          [0, "Semua"],
-          [24, "24 jam"],
-          [1, "1 jam"],
+          [0, "All"],
+          [24, "24 h"],
+          [1, "1 h"],
         ].map(([h, label]) => (
           <Button key={h} size="sm" active={hours === h} onClick={() => setHours(h as number)}>
             {label as string}
@@ -495,20 +495,20 @@ function UsagePanel() {
       {data === null ? (
         <Skeleton lines={4} />
       ) : data.summary.calls === 0 ? (
-        <p className="text-caption text-dim">Belum ada pemakaian tercatat. Metering aktif otomatis — angka hanya dari laporan usage provider (tanpa estimasi).</p>
+        <p className="text-caption text-dim">No usage recorded yet. Metering is automatic — figures come only from provider usage reports (no estimation).</p>
       ) : (
         <>
           <p className="text-caption text-secondary">
-            <b className="text-primary">{fmt(data.summary.calls)}</b> panggilan model · <b className="text-primary">{fmt(data.summary.promptTokens)}</b> token masuk ·{" "}
-            <b className="text-primary">{fmt(data.summary.outputTokens)}</b> token keluar
+            <b className="text-primary">{fmt(data.summary.calls)}</b> model calls · <b className="text-primary">{fmt(data.summary.promptTokens)}</b> input tokens ·{" "}
+            <b className="text-primary">{fmt(data.summary.outputTokens)}</b> output tokens
             {anyPriced && (
               <>
-                {" "}· est. biaya <b className="text-primary">{fmtCost(totalCost)}</b>
+                {" "}· est. cost <b className="text-primary">{fmtCost(totalCost)}</b>
               </>
             )}
-            {data.summary.windowStart && <span className="text-dim"> (sejak {new Date(data.summary.windowStart).toLocaleString("id-ID")})</span>}
+            {data.summary.windowStart && <span className="text-dim"> (since {new Date(data.summary.windowStart).toLocaleString("id-ID")})</span>}
           </p>
-          <Table label="Pemakaian per persona" head={["Persona", "Panggilan", "Tok masuk", "Tok keluar"]}>
+          <Table label="Usage per persona" head={["Persona", "Calls", "In tokens", "Out tokens"]}>
             {data.summary.byPersona.map((r) => (
               <tr key={r.key} className="border-b border-line">
                 <td className="py-1 pr-3">{r.key.replace("yui-", "")}</td>
@@ -518,7 +518,7 @@ function UsagePanel() {
               </tr>
             ))}
           </Table>
-          <Table label="Pemakaian per model" head={["Model", "Panggilan", "Tok masuk", "Tok keluar", "Est. biaya"]}>
+          <Table label="Usage per model" head={["Model", "Calls", "In tokens", "Out tokens", "Est. cost"]}>
             {data.summary.byModel.map((r) => (
               <tr key={r.key} className="border-b border-line">
                 <td className="py-1 pr-3"><code className="font-mono">{r.key}</code></td>
@@ -531,8 +531,8 @@ function UsagePanel() {
           </Table>
           {data.matrix && data.matrix.length > 0 && (
             <div className="flex flex-col gap-2">
-              <span className="text-caption font-semibold tracking-wide text-dim uppercase">Attribution biaya (persona × model)</span>
-              <Table label="Attribution biaya persona per model" head={["Persona", "Model", "Panggilan", "Token", "Est. biaya"]}>
+              <span className="text-caption font-semibold tracking-wide text-dim uppercase">Cost attribution (persona × model)</span>
+              <Table label="Persona cost attribution per model" head={["Persona", "Model", "Calls", "Tokens", "Est. cost"]}>
                 {data.matrix.map((r) => (
                   <tr key={`${r.personaId}|${r.model}`} className="border-b border-line">
                     <td className="py-1 pr-3">{r.personaId.replace("yui-", "")}</td>
@@ -548,7 +548,7 @@ function UsagePanel() {
           <PriceBookEditor models={data.summary.byModel.map((m) => m.key)} prices={prices} onSave={savePrice} />
           {data.recent && data.recent.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-caption font-semibold tracking-wide text-dim uppercase">Terbaru</span>
+              <span className="text-caption font-semibold tracking-wide text-dim uppercase">Recent</span>
               <ul className="flex flex-col gap-0.5 text-caption text-muted">
                 {data.recent.map((e, i) => (
                   <li key={i} className="flex flex-wrap gap-x-2">
@@ -587,25 +587,25 @@ function PriceBookEditor({
   return (
     <details className="rounded-md2 border border-line bg-inset px-3 py-2">
       <summary className="cursor-pointer list-none text-caption text-secondary select-none [&::-webkit-details-marker]:hidden">
-        Harga model (indikator biaya) — per 1 juta token
+        Model prices (cost indicator) — per 1 million tokens
       </summary>
       <p className="mt-2 text-caption leading-5 text-dim">
-        Isi sesuai tagihan provider-mu. Model tanpa harga tidak dihitung biayanya (bukan nol) — angka token metering tetap akurat apa pun.
+        Fill these in from your provider's invoice. Unpriced models contribute no cost (not zero) — token metering stays accurate regardless.
       </p>
-      <table className="mt-2 w-full text-caption" aria-label="Harga per model">
+      <table className="mt-2 w-full text-caption" aria-label="Prices per model">
         <thead>
           <tr className="border-b border-line-strong">
             <th className="py-1 pr-3 text-left font-medium text-dim">Model</th>
-            <th className="py-1 pr-3 text-left font-medium text-dim">Masuk / 1jt</th>
-            <th className="py-1 pr-3 text-left font-medium text-dim">Keluar / 1jt</th>
-            <th className="py-1 text-left font-medium text-dim">Mata uang</th>
+            <th className="py-1 pr-3 text-left font-medium text-dim">In / 1M</th>
+            <th className="py-1 pr-3 text-left font-medium text-dim">Out / 1M</th>
+            <th className="py-1 text-left font-medium text-dim">Currency</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
               <td colSpan={4} className="py-2 text-dim">
-                Belum ada model tercatat — kirim satu turn chat dulu.
+                No models recorded yet — send a chat turn first.
               </td>
             </tr>
           ) : (

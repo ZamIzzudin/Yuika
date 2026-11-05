@@ -1,5 +1,6 @@
 {
   "name": "your-yui",
+  "license": "UNLICENSED",
   "private": true,
   "workspaces": [
     "packages/*",

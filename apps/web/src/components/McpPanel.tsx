@@ -11,9 +11,9 @@ import { Button, Chip, Dot, SectionTitle, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 const RISK_LABEL: Record<string, { label: string; tone: "ok" | "warn" | "danger" }> = {
-  rendah: { label: "aman", tone: "ok" },
-  sedang: { label: "hati-hati", tone: "warn" },
-  tinggi: { label: "akses akun", tone: "danger" },
+  rendah: { label: "safe", tone: "ok" },
+  sedang: { label: "caution", tone: "warn" },
+  tinggi: { label: "account access", tone: "danger" },
 };
 
 export function McpPanel() {
@@ -63,15 +63,15 @@ export function McpPanel() {
       const j = (await res.json()) as { ok: boolean; uvxPath: string | null; log: string };
       if (j.ok) {
         setUvx(j.uvxPath ?? "uvx");
-        toastOk("uv terpasang — server Python/uvx siap dipakai.");
+        toastOk("uv installed — Python/uvx servers are ready to use.");
       }
       else {
-        toastErr("installer selesai tapi uvx belum terdeteksi — coba restart dev server");
+        toastErr("installer finished but uvx was not detected — try restarting the dev server");
         setUvLog(j.log || null);
       }
       setUvConfirm(false);
     } catch {
-      toastErr("gagal menjalankan installer");
+      toastErr("failed to run the installer");
     } finally {
       setUvInstalling(false);
     }
@@ -85,7 +85,7 @@ export function McpPanel() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ server: s.name, trusted: !s.trusted, denyTools: s.denyTools }),
       });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal");
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
       await refresh();
     } finally {
       setBusy(null);
@@ -101,7 +101,7 @@ export function McpPanel() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ server: name }),
       });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal reconnect");
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "reconnect failed");
       await refresh();
     } finally {
       setBusy(null);
@@ -116,11 +116,11 @@ export function McpPanel() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ catalogId: c.id, env: envVals }),
       });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal");
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
       else {
         setOpenForm(null);
         setEnvVals({});
-        toastOk(`${c.name} ditambahkan ke mcp.json — Trust untuk menghubungkan.`);
+        toastOk(`${c.name} added to mcp.json — Trust it to connect.`);
       }
       await refresh();
     } finally {
@@ -132,8 +132,8 @@ export function McpPanel() {
     setBusy(c.id);
     try {
       const res = await fetch(`/api/mcp/install?name=${encodeURIComponent(c.id)}`, { method: "DELETE" });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "gagal");
-      else toastOk(`${c.name} dilepas dari mcp.json.`);
+      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
+      else toastOk(`${c.name} removed from mcp.json.`);
       await refresh();
     } finally {
       setBusy(null);
@@ -150,10 +150,10 @@ export function McpPanel() {
   const rowBtn = "h-7 shrink-0 whitespace-nowrap px-2.5 text-caption";
 
   return (
-    <section aria-label="Server MCP" className="flex flex-col gap-4">
+    <section aria-label="MCP servers" className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <SectionTitle>MCP</SectionTitle>
-        <Button size="sm" onClick={() => void refresh()} aria-label="Refresh MCP" title="Muat ulang status MCP">
+        <Button size="sm" onClick={() => void refresh()} aria-label="Refresh MCP" title="Reload MCP status">
           <ArrowsClockwise size={12} aria-hidden />
         </Button>
       </div>
@@ -162,7 +162,7 @@ export function McpPanel() {
       ) : (
         <>
           {servers.length === 0 && (
-            <p className="text-caption leading-5 text-dim">Tidak ada server MCP dideklarasikan — pasang dari katalog di bawah.</p>
+            <p className="text-caption leading-5 text-dim">No MCP servers declared — install one from the catalog below.</p>
           )}
           <ul className="flex flex-col gap-1.5">
             {servers.map((s) => (
@@ -175,16 +175,16 @@ export function McpPanel() {
                   <b className="text-body font-semibold text-primary">{s.name}</b>
                   <small className="text-caption text-muted">
                     {s.state === "reconnecting"
-                      ? `sambung ulang… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}d)` : ""}`
+                      ? `reconnecting… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}s)` : ""}`
                       : s.state === "parked"
-                        ? "parkir — 5× gagal"
+                        ? "parked — 5× failed"
                         : s.connected
                           ? `${s.toolCount} tools`
                           : s.trusted
-                            ? "menghubungkan…"
+                            ? "connecting…"
                             : s.declared
                               ? "untrusted"
-                              : "tak terpasang"}
+                              : "not installed"}
                   </small>
                   {s.lastError && s.state !== "connected" && (
                     <small className="flex items-center gap-1 text-caption leading-4 text-danger">
@@ -193,7 +193,7 @@ export function McpPanel() {
                   )}
                 </span>
                 {(s.state === "parked" || s.state === "reconnecting") && (
-                  <Button size="sm" className={rowBtn} disabled={busy === s.name} onClick={() => void retry(s.name)} title="Coba hubungkan ulang sekarang">
+                  <Button size="sm" className={rowBtn} disabled={busy === s.name} onClick={() => void retry(s.name)} title="Try reconnecting now">
                     <ArrowClockwise size={12} aria-hidden />
                   </Button>
                 )}
@@ -203,7 +203,7 @@ export function McpPanel() {
                   variant={s.trusted ? "secondary" : "primary"}
                   onClick={() => void toggle(s)}
                   disabled={busy === s.name || (s.trusted && !s.declared)}
-                  title={s.trusted ? "Putuskan & matikan trust (fail-closed)" : "Trust server ini di workspace"}
+                  title={s.trusted ? "Disconnect & revoke trust (fail-closed)" : "Trust this server in the workspace"}
                 >
                   {busy === s.name ? "…" : s.trusted ? "Untrust" : "Trust"}
                 </Button>
@@ -226,34 +226,34 @@ export function McpPanel() {
           )}
 
           <div className="flex flex-col gap-2.5 border-t border-line pt-3">
-            <SectionTitle>Katalog {booting ? "" : `(${catalog.length})`}</SectionTitle>
+            <SectionTitle>Catalog {booting ? "" : `(${catalog.length})`}</SectionTitle>
             <div className="flex flex-wrap items-center gap-2 rounded-md2 border border-line bg-inset px-3 py-2">
               {uvx === "loading" ? (
-                <small className="text-caption text-dim">cek runtime Python (uvx)…</small>
+                <small className="text-caption text-dim">checking Python runtime (uvx)…</small>
               ) : uvx ? (
                 <small className="flex items-center gap-1.5 text-caption text-secondary">
-                  <Check size={12} weight="bold" aria-hidden className="text-success" /> Python/uvx siap —{" "}
-                  <code className="font-mono text-dim">{uvx === "uvx" ? "di PATH" : uvx}</code>
+                  <Check size={12} weight="bold" aria-hidden className="text-success" /> Python/uvx ready —{" "}
+                  <code className="font-mono text-dim">{uvx === "uvx" ? "on PATH" : uvx}</code>
                 </small>
               ) : uvInstalling ? (
-                <small className="text-caption text-muted">menjalankan installer resmi astral.sh… (±30–120 dtk)</small>
+                <small className="text-caption text-muted">running the official astral.sh installer… (±30–120s)</small>
               ) : uvConfirm ? (
                 <>
                   <small className="flex-1 text-caption leading-5 text-secondary">
-                    <b>Install uv?</b> Menjalankan installer resmi <code className="font-mono">astral.sh/uv</code> di mesin ini
-                    (~30 MB, profil user). Lanjut?
+                    <b>Install uv?</b> This runs the official <code className="font-mono">astral.sh/uv</code> installer on
+                    this machine (~30 MB, user profile). Continue?
                   </small>
                   <Button size="sm" variant="primary" onClick={() => void installUv()}>
-                    Ya, install
+                    Yes, install
                   </Button>
                   <Button size="sm" onClick={() => setUvConfirm(false)}>
-                    Batal
+                    Cancel
                   </Button>
                 </>
               ) : (
                 <>
                   <small className="flex-1 text-caption leading-5 text-dim">
-                    Python/uvx: belum terpasang — server Git/Time butuh ini (18 server lain tak butuh)
+                    Python/uvx: not installed — the Git/Time servers need it (the other 18 don't)
                   </small>
                   <Button size="sm" onClick={() => setUvConfirm(true)}>
                     Install uv
@@ -261,9 +261,9 @@ export function McpPanel() {
                 </>
               )}
             </div>
-            {uvLog && <small className="text-caption text-dim">log installer: {uvLog}</small>}
+            {uvLog && <small className="text-caption text-dim">installer log: {uvLog}</small>}
             <TextInput
-              placeholder="Cari server… (web, data, github…)"
+              placeholder="Search servers… (web, data, github…)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -283,7 +283,7 @@ export function McpPanel() {
                         <b className="flex flex-wrap items-center gap-1.5 text-body font-semibold text-primary">
                           {c.name} <Chip tone={risk.tone}>{risk.label}</Chip>
                           {c.runtime === "python" && (
-                            <span title={c.setupNote ?? "Server ini berbasis Python (uvx)"}>
+                            <span title={c.setupNote ?? "This server is Python-based (uvx)"}>
                               <Chip tone="muted">Python/uvx</Chip>
                             </span>
                           )}
@@ -296,12 +296,12 @@ export function McpPanel() {
                         )}
                       </span>
                       {isInstalled ? (
-                        <Button size="sm" className={rowBtn} onClick={() => void uninstall(c)} disabled={busy === c.id} title="Lepas dari mcp.json (putuskan koneksi)">
-                          {busy === c.id ? "…" : "Lepas"}
+                        <Button size="sm" className={rowBtn} onClick={() => void uninstall(c)} disabled={busy === c.id} title="Remove from mcp.json (disconnects)">
+                          {busy === c.id ? "…" : "Remove"}
                         </Button>
                       ) : c.runtime === "python" && uvx === null ? (
-                        <Button size="sm" className={rowBtn} disabled title={c.setupNote ?? "Butuh uv (Python) — klik Install uv di atas"}>
-                          Butuh uv
+                        <Button size="sm" className={rowBtn} disabled title={c.setupNote ?? "Requires uv (Python) — click Install uv above"}>
+                          Needs uv
                         </Button>
                       ) : openForm === c.id ? (
                         <div className="flex w-full flex-wrap items-center gap-2 border-t border-line pt-2">
@@ -321,10 +321,10 @@ export function McpPanel() {
                             onClick={() => void install(c)}
                             disabled={busy === c.id || c.envKeys.some((k) => k.required && !envVals[k.key]?.trim())}
                           >
-                            Pasang
+                            Install
                           </Button>
                           <Button size="sm" onClick={() => setOpenForm(null)}>
-                            Batal
+                            Cancel
                           </Button>
                         </div>
                       ) : (
@@ -336,9 +336,9 @@ export function McpPanel() {
                             setEnvVals({});
                           }}
                           disabled={busy === c.id}
-                          title={c.envKeys.length > 0 ? "Perlu API key" : "Pasang sekarang"}
+                          title={c.envKeys.length > 0 ? "Requires API key" : "Install now"}
                         >
-                          {c.envKeys.length > 0 ? "Atur…" : "Pasang"}
+                          {c.envKeys.length > 0 ? "Set up…" : "Install"}
                         </Button>
                       )}
                     </li>

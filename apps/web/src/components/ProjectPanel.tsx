@@ -75,7 +75,7 @@ export function ProjectPanel({
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
       setConfirmId(null);
       toastOk(
-        `“${p.name}” dihapus — ${body.deleted.sessions} sesi, ${body.deleted.tasks} task dibersihkan. Skill persona & metering tetap tersimpan.`,
+        `“${p.name}” deleted — ${body.deleted.sessions} sessions, ${body.deleted.tasks} tasks cleaned up. Persona skills & metering are kept.`,
       );
       onDeleted(p.id, DeleteProjectResult.parse(body));
     } catch (e) {
@@ -135,7 +135,7 @@ export function ProjectPanel({
               onClick={create}
               disabled={!name.trim() || busy}
             >
-              {busy ? "Savings…" : "Create"}
+              {busy ? "Creating…" : "Create"}
             </Button>
           </div>
         </Card>
@@ -179,15 +179,15 @@ export function ProjectPanel({
                   <b className="truncate text-body font-semibold">{p.name}</b>
                   <small className="truncate text-caption text-dim">
                     {p.status === "archived"
-                      ? "arsip"
-                      : p.description || "proyek"}
+                      ? "archived"
+                      : p.description || "project"}
                   </small>
                 </span>
               </button>
               <button
                 className="flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1.5 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
-                aria-label={`Hapus proyek ${p.name}`}
-                title={`Hapus proyek ${p.name} + semua artefaknya`}
+                aria-label={`Delete project ${p.name}`}
+                title={`Delete project ${p.name} and all its artifacts`}
                 disabled={deleting === p.id}
                 onClick={() => setConfirmId(confirmId === p.id ? null : p.id)}
               >
@@ -197,17 +197,16 @@ export function ProjectPanel({
             {confirmId === p.id && (
               <div className="flex flex-col gap-2 rounded-md2 border border-danger/30 bg-danger-soft px-3 py-2.5">
                 <p className="text-caption leading-5 text-danger">
-                  Hapus <b>“{p.name}”</b> permanen? Sesi, task, file, memory
-                  project &amp; audit ikut dibersihkan.
+                  Permanently delete <b>“{p.name}”</b>? Sessions, tasks, files,
+                  project memory &amp; its audit trail will be removed.
                   <br />
                   <small className="text-danger/70">
-                    Skill yang dipelajari persona &amp; metering tetap
-                    tersimpan.
+                    Skills learned by personas &amp; metering are kept.
                   </small>
                 </p>
                 <div className="flex justify-end gap-2">
                   <Button size="sm" onClick={() => setConfirmId(null)}>
-                    Batal
+                    Cancel
                   </Button>
                   <Button
                     size="sm"
@@ -215,7 +214,7 @@ export function ProjectPanel({
                     onClick={() => void remove(p)}
                     disabled={deleting === p.id}
                   >
-                    {deleting === p.id ? "Menghapus…" : "Hapus permanen"}
+                    {deleting === p.id ? "Deleting…" : "Delete permanently"}
                   </Button>
                 </div>
               </div>

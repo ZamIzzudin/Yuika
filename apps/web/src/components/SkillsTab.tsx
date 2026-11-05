@@ -29,9 +29,9 @@ interface SkillRow {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  tested: "diuji manusia",
-  ready: "siap",
-  draft: "draf",
+  tested: "human-tested",
+  ready: "ready",
+  draft: "draft",
 };
 
 export function SkillsTab() {
@@ -77,10 +77,10 @@ export function SkillsTab() {
         body: JSON.stringify({ slug: name }),
       });
       if (!r.ok)
-        toastErr(((await r.json()) as { error?: string }).error ?? "gagal memulai eval");
+        toastErr(((await r.json()) as { error?: string }).error ?? "failed to start the eval");
       await refresh();
     } catch {
-      toastErr("gagal menghubungi server");
+      toastErr("could not reach the server");
     }
   }
 
@@ -94,7 +94,7 @@ export function SkillsTab() {
         body: JSON.stringify({ slug: d.slug, ...edit }),
       });
       if (!r.ok)
-        toastErr(((await r.json()) as { error?: string }).error ?? "gagal menyimpan");
+        toastErr(((await r.json()) as { error?: string }).error ?? "failed to save");
       else setOpen(null);
       await refresh();
     } finally {
@@ -111,8 +111,8 @@ export function SkillsTab() {
         body: JSON.stringify({ slug }),
       });
       if (!r.ok)
-        toastErr(((await r.json()) as { error?: string }).error ?? "gagal menerima");
-      else toastOk(`Draf ${slug} diterima & dipasang ke persona terkait.`);
+        toastErr(((await r.json()) as { error?: string }).error ?? "failed to accept");
+      else toastOk(`Draft ${slug} accepted & attached to the related persona.`);
       await refresh();
     } finally {
       setBusy(false);
@@ -126,7 +126,7 @@ export function SkillsTab() {
         method: "DELETE",
       });
       if (!r.ok)
-        toastErr(((await r.json()) as { error?: string }).error ?? "gagal menghapus");
+        toastErr(((await r.json()) as { error?: string }).error ?? "failed to delete");
       setOpen(null);
       await refresh();
     } finally {
@@ -135,20 +135,20 @@ export function SkillsTab() {
   }
 
   return (
-    <section aria-label="Skill — draf dan siap pakai" className="flex flex-col gap-4">
+    <section aria-label="Skills — drafts and active" className="flex flex-col gap-4">
       <p className="flex items-start gap-2 rounded-md2 border border-line bg-inset px-3 py-2 text-caption leading-5 text-muted">
         <Info size={14} aria-hidden className="mt-0.5 shrink-0 text-accent" />
         <span>
-          Skill baru <b className="text-secondary">langsung tersimpan &amp; bisa dijalankan agent</b> via
-          <code className="font-mono"> skills_list</code>/<code className="font-mono">skill_view</code> — tapi baru{" "}
-          <b className="text-secondary">diperkenalkan otomatis di prompt pada SESI BARU</b> (prompt sesi berjalan beku by
+          New skills are <b className="text-secondary">saved immediately &amp; usable by the agent</b> via
+          <code className="font-mono"> skills_list</code>/<code className="font-mono">skill_view</code> — but they're only{" "}
+          <b className="text-secondary">introduced into the prompt of NEW sessions</b> (the running session's prompt is frozen by
           design).
         </span>
       </p>
       {drafts.length === 0 ? (
         <p className="text-caption leading-5 text-dim">
-          Belum ada draf. Sebut di chat — mis. &quot;jadikan skill cara kerja barusan&quot; — atau agent mengusulkan
-          sendiri setelah alur terbukti berhasil.
+          No drafts yet. Mention it in chat — e.g. &quot;make the way you just worked into a skill&quot; — or the agent
+          proposes one itself after a flow proves successful.
         </p>
       ) : (
         drafts.map((d) => (
@@ -160,7 +160,7 @@ export function SkillsTab() {
               <span className="flex gap-1.5">
                 {open === d.slug ? (
                   <Button size="sm" onClick={() => void saveDraft(d)} disabled={busy}>
-                    Simpan
+                    Save
                   </Button>
                 ) : (
                   <Button
@@ -177,27 +177,27 @@ export function SkillsTab() {
                     Edit
                   </Button>
                 )}
-                <Button size="sm" variant="primary" onClick={() => void accept(d.slug)} disabled={busy} title="Validasi & aktifkan skill ini">
-                  Terima
+                <Button size="sm" variant="primary" onClick={() => void accept(d.slug)} disabled={busy} title="Validate & activate this skill">
+                  Accept
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => void reject(d.slug)} disabled={busy} title="Hapus draf">
-                  Tolak
+                <Button size="sm" variant="danger" onClick={() => void reject(d.slug)} disabled={busy} title="Delete draft">
+                  Reject
                 </Button>
               </span>
             </header>
             {open === d.slug && edit ? (
               <div className="flex flex-col gap-2.5">
-                <Field label="Nama skill">
-                  <TextInput value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} placeholder="Nama skill" />
+                <Field label="Skill name">
+                  <TextInput value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} placeholder="Skill name" />
                 </Field>
-                <Field label="Kapan dipakai">
+                <Field label="When to use">
                   <TextInput
                     value={edit.description}
                     onChange={(e) => setEdit({ ...edit, description: e.target.value })}
-                    placeholder="Kapan skill ini dipakai"
+                    placeholder="When this skill should be used"
                   />
                 </Field>
-                <Field label="Isi (markdown)">
+                <Field label="Body (markdown)">
                   <TextArea value={edit.body} onChange={(e) => setEdit({ ...edit, body: e.target.value })} rows={10} spellCheck={false} />
                 </Field>
               </div>
@@ -212,9 +212,9 @@ export function SkillsTab() {
       )}
 
       <div className="flex flex-col gap-2">
-        <b className="text-body font-semibold text-primary">Siap pakai ({skills.length})</b>
+        <b className="text-body font-semibold text-primary">Ready to use ({skills.length})</b>
         {skills.length === 0 ? (
-          <p className="text-caption text-dim">Belum ada skill aktif.</p>
+          <p className="text-caption text-dim">No active skills yet.</p>
         ) : (
           <ul className="flex flex-col gap-2.5">
             {skills.map((s) => (
@@ -222,7 +222,7 @@ export function SkillsTab() {
                 <b className="flex flex-wrap items-baseline gap-x-2 text-body font-semibold text-primary">
                   {s.name}
                   {s.usage && (
-                    <small className="flex items-center gap-2 text-caption font-normal text-dim" title="dilihat · diedit · dipakai">
+                    <small className="flex items-center gap-2 text-caption font-normal text-dim" title="views · edits · uses">
                       <span className="flex items-center gap-0.5">
                         <Eye size={11} aria-hidden /> {s.usage.views}
                       </span>
@@ -238,7 +238,7 @@ export function SkillsTab() {
                 <small className="text-caption leading-5 text-muted">
                   {s.description}
                   {s.status && s.status !== "ready" && (
-                    <span className="ml-1 inline-flex items-center gap-0.5 align-baseline text-warn" title="Lifecycle P1-DUN-2: draft → tested (direview) → ready (siap assign)">
+                    <span className="ml-1 inline-flex items-center gap-0.5 align-baseline text-warn" title="Lifecycle P1-DUN-2: draft → tested (reviewed) → ready (assignable)">
                       ·{" "}
                       {s.status === "tested" && <CircleNotch size={11} aria-hidden />} {STATUS_LABEL[s.status]}
                     </span>

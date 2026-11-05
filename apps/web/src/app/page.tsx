@@ -404,7 +404,7 @@ export default function Home() {
           ...prev,
           {
             kind: "noted",
-            text: "turn dibatalkan — progres & parsial tersimpan",
+            text: "turn cancelled — progress & partial output saved",
             scope: "project",
           },
         ]);
@@ -672,7 +672,7 @@ export default function Home() {
           ...prev,
           {
             kind: "error",
-            text: `Keputusan approval gagal terkirim (${res.status}): ${body.error ?? "tidak diketahui"}`,
+            text: `Failed to send the approval decision (${res.status}): ${body.error ?? "unknown"}`,
           },
         ]);
       }
@@ -715,8 +715,8 @@ export default function Home() {
               <button
                 type="button"
                 onClick={toggleSidebar}
-                title="Lipat sidebar (Ctrl+B)"
-                aria-label="Lipat sidebar"
+                title="Collapse sidebar (Ctrl+B)"
+                aria-label="Collapse sidebar"
                 className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
               >
                 <SidebarSimple size={16} aria-hidden />
@@ -755,7 +755,7 @@ export default function Home() {
                 className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
                 onClick={() => setSettingsOpen(true)}
               >
-                <Gear size={20} /> Pengaturan
+                <Gear size={20} /> Settings
               </button>
             </div>
           </>
@@ -770,8 +770,8 @@ export default function Home() {
               <button
                 type="button"
                 onClick={toggleSidebar}
-                title="Buka sidebar (Ctrl+B)"
-                aria-label="Buka sidebar"
+                title="Expand sidebar (Ctrl+B)"
+                aria-label="Expand sidebar"
                 className="flex size-9 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
               >
                 <SidebarSimple size={16} aria-hidden />
@@ -794,8 +794,8 @@ export default function Home() {
               </button>
               <button
                 type="button"
-                title="Pengaturan"
-                aria-label="Pengaturan"
+                title="Settings"
+                aria-label="Settings"
                 onClick={() => setSettingsOpen(true)}
                 className="flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
               >
@@ -823,16 +823,16 @@ export default function Home() {
                 {activeProject ? (
                   <>
                     <h1 className="mt-4 text-display font-semibold text-primary">
-                      Menyiapkan {activeProject.name}…
+                      Setting up {activeProject.name}…
                     </h1>
                     <p className="max-w-[420px] text-body text-muted">
-                      Conductor sebagai project lead sedang dibuka.
+                      Opening Conductor as the project lead.
                     </p>
                   </>
                 ) : (
                   <>
                     <h1 className="sr-only">
-                      Pilih partner untuk sesi Workspace
+                      Choose a partner for the Workspace session
                     </h1>
                     {personas.length === 0 ? (
                       <div className="mt-4 grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
@@ -874,16 +874,16 @@ export default function Home() {
                             id: "team",
                             label: (
                               <span>
-                                Tim
+                                Team
                                 {items.some(
                                   (it) => it.kind === "delegation" && !it.text,
                                 ) && <Dot pulse className="ml-1" />}
                               </span>
                             ),
                           },
-                          { id: "files", label: "File" },
+                          { id: "files", label: "Files" },
                           { id: "board", label: "Task" },
-                          { id: "config", label: "Konfigurasi" },
+                          { id: "config", label: "Config" },
                         ] as const)
                       : []),
                     {
@@ -895,8 +895,8 @@ export default function Home() {
                         </span>
                       ),
                       title: sessionId
-                        ? "Jejak langkah per turn sesi aktif"
-                        : "Mulai sesi dulu untuk melihat trace",
+                        ? "Step-by-step trace per turn of this session"
+                        : "Start a session to see the trace",
                     },
                   ]}
                 />
@@ -939,7 +939,7 @@ export default function Home() {
                                 <span className="flex-1">{p.name}</span>
                                 {activeProjectId && (
                                   <small className="text-caption text-dim">
-                                    sesi baru
+                                    new session
                                   </small>
                                 )}
                               </button>
@@ -954,7 +954,7 @@ export default function Home() {
                         {activeProject && (
                           <details className="group relative ml-auto">
                             <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary select-none transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary [&::-webkit-details-marker]:hidden">
-                              <CaretDown size={12} aria-hidden /> Sesi
+                              <CaretDown size={12} aria-hidden /> Sessions
                             </summary>
                             <div className="glass-panel absolute top-full right-0 z-30 mt-1 flex w-[300px] flex-col gap-px rounded-lg2 p-1 shadow-pop">
                               <button
@@ -972,11 +972,11 @@ export default function Home() {
                                   aria-hidden
                                   className="text-accent"
                                 />
-                                Sesi baru (Conductor)
+                                New session (Conductor)
                               </button>
                               {projSessions.length === 0 ? (
                                 <small className="px-2 py-1.5 text-caption text-dim">
-                                  Belum ada sesi lain.
+                                  No other sessions yet.
                                 </small>
                               ) : (
                                 projSessions.map((ps) => (
@@ -1041,12 +1041,12 @@ export default function Home() {
                               </div>
                               <h1 className="text-display font-semibold text-primary">
                                 {activeProject
-                                  ? `${active.name} memimpin ${activeProject.name}`
-                                  : `${active.name} siap`}
+                                  ? `${active.name} leads ${activeProject.name}`
+                                  : `${active.name} is ready`}
                               </h1>
                               <p className="max-w-[420px] text-body leading-6 text-muted">
                                 {activeProject
-                                  ? `Sebutkan tugasnya — ${active.name} akan mengerjakan atau mendelegasikan ke spesialis sesuai keahlian. Semua file & task terikat ke project ini.`
+                                  ? `Describe the task — ${active.name} will work on it or delegate to the right specialists. All files & tasks stay bound to this project.`
                                   : active.description}
                               </p>
                               <div className="mt-2 flex max-w-[560px] flex-wrap justify-center gap-2">

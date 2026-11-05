@@ -126,13 +126,13 @@ export function ChatView({
       });
       if (!r.ok) {
         const body = (await r.json().catch(() => ({}))) as { error?: string };
-        toastErr(body.error ?? "gagal mengirim arahan");
+        toastErr(body.error ?? "could not send the steering note");
         return;
       }
       setSteerOpenFor(null);
       setSteerText("");
     } catch {
-      toastErr("gagal menghubungi server");
+      toastErr("could not reach the server");
     }
   }
   async function cancelDelegation(childSessionId: string) {
@@ -144,10 +144,10 @@ export function ChatView({
       });
       if (!r.ok) {
         const body = (await r.json().catch(() => ({}))) as { error?: string };
-        toastErr(body.error ?? "gagal membatalkan");
+        toastErr(body.error ?? "could not cancel");
       }
     } catch {
-      toastErr("gagal menghubungi server");
+      toastErr("could not reach the server");
     }
   }
   const [stepsOpen, setStepsOpen] = useState(true);
@@ -253,13 +253,13 @@ export function ChatView({
                     onClick={openChild}
                     title={
                       openChild
-                        ? "Buka sesi persona ini"
+                        ? "Open this persona's session"
                         : undefined
                     }
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <b className="text-body font-semibold text-primary">
-                        Delegasi · {it.personaId?.replace("yui-", "")}
+                        Delegation · {it.personaId?.replace("yui-", "")}
                       </b>
                       {it.childState ? (
                         <StateChip state={it.childState} />
@@ -281,14 +281,14 @@ export function ChatView({
                                     setSteerText("");
                                   }
                                 }}
-                                placeholder="Arahan mid-turn…"
-                                aria-label="Arahan mid-turn untuk anak"
+                                placeholder="Mid-turn steer…"
+                                aria-label="Mid-turn steer for the child"
                                 className="h-7 w-56 rounded-md2 border border-line bg-surface px-2.5 text-caption text-primary outline-none placeholder:text-dim focus:border-accent"
                               />
                               <button
                                 type="button"
-                                title="Kirim arahan"
-                                aria-label="Kirim arahan"
+                                title="Send steering note"
+                                aria-label="Send steering note"
                                 disabled={!steerText.trim()}
                                 className="flex size-7 cursor-pointer items-center justify-center rounded-md2 border border-line bg-control text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary disabled:cursor-default disabled:opacity-40"
                                 onClick={(e) => {
@@ -302,8 +302,8 @@ export function ChatView({
                           ) : (
                             <button
                               type="button"
-                              title="Arahkan (mid-turn)"
-                              aria-label="Arahkan anak"
+                              title="Steer (mid-turn)"
+                              aria-label="Steer child"
                               className="flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -316,8 +316,8 @@ export function ChatView({
                           )}
                           <button
                             type="button"
-                            title="Batalkan delegasi"
-                            aria-label="Batalkan delegasi"
+                            title="Cancel delegation"
+                            aria-label="Cancel delegation"
                             className="flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-danger-soft hover:text-danger"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -400,10 +400,10 @@ export function ChatView({
                     {it.resolved ? (
                       <p className="mt-2 text-caption text-muted">
                         {it.resolved === "approved"
-                          ? "Disetujui"
+                          ? "Approved"
                           : it.resolved === "expired"
-                            ? "Kedaluwarsa — server direstart saat menunggu"
-                            : "Ditolak"}
+                            ? "Expired — the server restarted while waiting"
+                            : "Rejected"}
                       </p>
                     ) : (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -411,21 +411,21 @@ export function ChatView({
                           size="sm"
                           variant="primary"
                           onClick={() => onApprove(it.requestId!, true, true)}
-                          title="Setujui + tool ini bebas-approval untuk sisa sesi (dianjurkan)"
+                          title="Approve and allow this tool for the rest of the session (recommended)"
                         >
-                          Setujui &amp; ingat
+                          Approve &amp; remember
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => onApprove(it.requestId!, true)}
                         >
-                          Setujui sekali
+                          Approve once
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => onApprove(it.requestId!, false)}
                         >
-                          Tolak
+                          Reject
                         </Button>
                       </div>
                     )}
@@ -447,10 +447,10 @@ export function ChatView({
                     : Wrench;
               const title =
                 it.kind === "noted"
-                  ? "Learn nudge pasca-task — bisa diedit/dihapus di tab Memori"
+                  ? "Learn nudge after a task — editable/removable on the Memory tab"
                   : it.kind === "compressed"
-                    ? "P0-CORE-4: history lama diringkas jadi checkpoint agar sesi panjang tetap muat di jendela model — riwayat asli tetap tersimpan utuh"
-                    : "Usulan skill dari pengalaman — validasi di tab Skill";
+                    ? "P0-CORE-4: old history is summarized into a checkpoint so long sessions still fit the model window — the original history stays fully stored"
+                    : "Skill proposed from experience — validate it on the Skill tab";
               return (
                 <div
                   key={`r${i}`}
@@ -466,31 +466,31 @@ export function ChatView({
                     {it.kind === "noted" && (
                       <>
                         <b className="font-semibold text-primary">
-                          Yui mencatat
+                          Yui noted
                         </b>{" "}
                         (
                         {it.scope === "project"
-                          ? "memori proyek"
-                          : "tentang Anda"}
+                          ? "project memory"
+                          : "about you"}
                         ): {it.text}
                       </>
                     )}
                     {it.kind === "compressed" && (
                       <>
                         <b className="font-semibold text-primary">
-                          Konteks dikompresi
+                          Context compressed
                         </b>{" "}
-                        — {it.n} pesan lama diringkas (~{it.before} → ~
-                        {it.after} token); semua riwayat asli tetap tersimpan.
+                        — {it.n} old messages summarized (~{it.before} → ~
+                        {it.after} tokens); the original history stays fully stored.
                       </>
                     )}
                     {it.kind === "skill" && (
                       <>
                         <b className="font-semibold text-primary">
-                          Yui mengusulkan skill
+                          Yui proposed a skill
                         </b>
-                        : {it.text} — validasi di tab{" "}
-                        <b className="font-semibold text-primary">Skill</b>
+                        : {it.text} — validate it on the{" "}
+                        <b className="font-semibold text-primary">Skill</b> tab
                       </>
                     )}
                   </span>
@@ -555,7 +555,7 @@ export function ChatView({
                       <span
                         className={`shrink-0 ${it.isError ? "text-danger" : it.done ? "text-success" : "text-dim"}`}
                       >
-                        {it.isError ? "gagal" : it.done ? "✓" : "…"}
+                        {it.isError ? "failed" : it.done ? "✓" : "…"}
                       </span>
                     </div>
                   ))}
@@ -577,7 +577,7 @@ export function ChatView({
                   : "border-line-strong text-muted hover:text-secondary"
               }`}
               onClick={onToggleApprovalMode}
-              title="Mode cepat: write_file & run_command disetujui otomatis (tanpa kartu approval). Klik untuk berganti."
+              title="Fast mode: write_file & run_command are auto-approved (no approval cards). Click to switch."
             >
               <Lightning
                 size={12}
@@ -599,8 +599,8 @@ export function ChatView({
               value={input}
               placeholder={
                 busy
-                  ? `${personaName} sedang bekerja…`
-                  : `Tulis tugas untuk ${personaName}…`
+                  ? `${personaName} is working…`
+                  : `Describe a task for ${personaName}…`
               }
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -612,7 +612,7 @@ export function ChatView({
               className="flex size-[34px] shrink-0 cursor-pointer items-center justify-center rounded-md2 bg-accent text-white transition-colors ease-out duration-[var(--yui-dur-fast)] hover:bg-accent-hover disabled:cursor-default disabled:bg-control-active disabled:text-dim"
               type="submit"
               disabled={busy || !input.trim()}
-              aria-label="Kirim"
+              aria-label="Send"
             >
               <PaperPlaneTilt size={15} weight="bold" aria-hidden />
             </button>
@@ -621,8 +621,8 @@ export function ChatView({
                 className="flex size-[34px] shrink-0 cursor-pointer items-center justify-center rounded-md2 bg-danger text-white transition-colors hover:opacity-90"
                 type="button"
                 onClick={onCancel}
-                aria-label="Hentikan turn"
-                title="Hentikan turn (progres tersimpan)"
+                aria-label="Stop turn"
+                title="Stop turn (progress is saved)"
               >
                 <Stop size={13} weight="fill" aria-hidden />
               </button>

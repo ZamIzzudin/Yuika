@@ -183,11 +183,11 @@ export function PersonaOrbit({
  *  persona ada di PERSONA_SHAPE; pemilihan bebas user menyusul. */
 function ShapeGalleryModal({ onClose }: { onClose: () => void }) {
   return (
-    <Modal open onClose={onClose} title="15 Bentuk Orin" wide>
+    <Modal open onClose={onClose} title="15 Orin Shapes" wide>
       <p className="mb-3 max-w-[560px] text-caption leading-5 text-muted">
-        Satu rig mata dipakai semua bentuk — urutan = indeks{" "}
-        <code className="font-mono">shape</code> 0–14 di Rive. Bertanda = sudah
-        dipakai persona; sisanya bebas untuk persona mendatang.
+        One eye rig drives every shape — order = <code className="font-mono">shape</code>{" "}
+        index 0–14 in Rive. Marked = already used by a persona; the rest are free
+        for future personas.
       </p>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
         {SHAPE_ORDER.map((k, i) => {

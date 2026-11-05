@@ -304,10 +304,10 @@ export function ProjectTabs({
     if (res.ok)
       toastOk(
         scope === "user"
-          ? "USER.md tersimpan — berlaku di sesi baru berikutnya."
-          : "MEMORY.md proyek tersimpan.",
+          ? "USER.md saved — applies from the next new session."
+          : "Project MEMORY.md saved.",
       );
-    else toastErr("gagal menyimpan memori");
+    else toastErr("failed to save the memory doc");
   }
 
   function assign() {
@@ -368,13 +368,13 @@ export function ProjectTabs({
       {loaded && activeTab === "config" && (
         <div className="flex min-h-0 flex-1 items-start gap-5">
           <nav
-            aria-label="Menu konfigurasi"
+            aria-label="Configuration menu"
             className="sticky top-0 flex w-[150px] shrink-0 flex-col gap-0.5 rounded-lg2 border border-line bg-surface p-1.5"
           >
             {(
               [
                 ["roster", "Roster"],
-                ["memory", "Memori"],
+                ["memory", "Memory"],
                 ["skills", "Skill"],
               ] as const
             ).map(([id, label]) => (
@@ -393,15 +393,15 @@ export function ProjectTabs({
           </nav>
           <div className="flex min-h-0 flex-1 flex-col">
 {loaded && cfgMenu === "roster" && (
-        <section aria-label="Roster proyek" className="flex flex-col gap-3">
+        <section aria-label="Project roster" className="flex flex-col gap-3">
           <p className="text-caption text-dim">
-            {done}/{tasks.length} task selesai · roster tersimpan deklaratif di{" "}
+            {done}/{tasks.length} tasks done · roster stored declaratively in{" "}
             <code className="font-mono">project.yaml</code>
           </p>
           {roster.length === 0 ? (
             <p className="text-caption leading-5 text-dim">
-              Belum ada persona di roster — assign di bawah untuk membentuk tim
-              proyek.
+              No personas in the roster yet — assign below to form the project
+              team.
             </p>
           ) : (
             <ul className="flex flex-col gap-1.5">
@@ -442,8 +442,8 @@ export function ProjectTabs({
                             className={`flex items-center gap-0.5 text-caption ${ph.ready ? "text-success" : "text-danger"}`}
                             title={
                               ph.ready
-                                ? `skill siap: ${ph.skills.join(", ")}`
-                                : "belum ada skill siap untuk fase ini — latih persona di Dungeon (tab Skill)"
+                                ? `skills ready: ${ph.skills.join(", ")}`
+                                : "no ready skills for this phase — train the persona in the Dungeon (Skill tab)"
                             }
                           >
                             {ph.ready ? (
@@ -472,7 +472,7 @@ export function ProjectTabs({
                           roster.filter((x) => x.personaId !== r.personaId),
                         )
                       }
-                      aria-label={`Keluarkan ${p?.name ?? r.personaId}`}
+                      aria-label={`Remove ${p?.name ?? r.personaId} from roster`}
                       disabled={busy}
                     >
                       <X size={12} aria-hidden />
@@ -498,7 +498,7 @@ export function ProjectTabs({
                 ))}
               </Select>
               <TextInput
-                placeholder="Peran di proyek ini…"
+                placeholder="Role in this project…"
                 value={role}
                 maxLength={60}
                 className="w-56"
@@ -509,10 +509,10 @@ export function ProjectTabs({
                 <Select
                   value={mcpServer}
                   onChange={(e) => setMcpServer(e.target.value)}
-                  aria-label="Binding MCP (opsional)"
+                  aria-label="MCP binding (optional)"
                   className="w-44"
                 >
-                  <option value="">Tanpa binding MCP…</option>
+                  <option value="">No MCP binding…</option>
                   {mcpServers.map((s) => (
                     <option key={s.name} value={s.name}>
                       Bind MCP: {s.name}
@@ -533,19 +533,19 @@ export function ProjectTabs({
       )}
 {loaded && cfgMenu === "memory" && (
         <section
-          aria-label="Memori — apa yang Yui ketahui"
+          aria-label="Memory — what Yui knows"
           className="flex max-w-[760px] flex-col gap-3"
         >
           {[
             {
               scope: "user" as const,
-              title: "Tentang Anda — USER.md",
-              hint: "Lintas proyek: preferensi gaya, bahasa, batasan.",
+              title: "About You — USER.md",
+              hint: "Cross-project: style, language, and constraint preferences.",
             },
             {
               scope: "project" as const,
-              title: `Proyek ini — MEMORY.md`,
-              hint: `Keputusan, pelajaran, konteks yang berlaku di ${project.name}.`,
+              title: `This Project — MEMORY.md`,
+              hint: `Decisions, lessons, and context that apply to ${project.name}.`,
             },
           ].map((d) => (
             <Card key={d.scope} className="flex flex-col gap-2.5">
@@ -554,7 +554,7 @@ export function ProjectTabs({
                   {d.title}
                 </b>
                 <Button size="sm" onClick={() => void saveMemoryDoc(d.scope)}>
-                  Simpan
+                  Save
                 </Button>
               </header>
               <TextArea
@@ -578,7 +578,7 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "board" && (
-        <section aria-label="Papan kanban task">
+        <section aria-label="Task kanban board">
           <header className="mb-3 flex items-center justify-between">
             <b className="text-body font-semibold text-primary">Task</b>
             <Button size="sm" onClick={() => setTreeOpen(true)}>
@@ -673,16 +673,16 @@ export function ProjectTabs({
           >
             <header className="flex items-center justify-between">
               <b className="text-body font-semibold text-primary">Log Task</b>
-              <Button size="sm" variant="ghost" aria-label="Tutup" onClick={() => setTreeOpen(false)}>
+              <Button size="sm" variant="ghost" aria-label="Close" onClick={() => setTreeOpen(false)}>
                 <X size={14} weight="bold" aria-hidden />
               </Button>
             </header>
-            <section aria-label="Pohon task (TaskTree)">
+            <section aria-label="Task tree (TaskTree)">
           {tree.length === 0 ? (
             <p className="text-caption leading-5 text-dim">
-              Pohon task masih kosong — simpul terbentuk dari event task (REST /
-              tools <code className="font-mono">todo_*</code>) sejak TaskTree
-              aktif. Task pra-migrasi hanya tampil di tab Tasklist.
+              The task tree is still empty — nodes grow from task events (REST /
+              tools <code className="font-mono">todo_*</code>) since TaskTree
+              went live. Pre-migration tasks only show on the Task board.
             </p>
           ) : (
             <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
@@ -698,7 +698,7 @@ export function ProjectTabs({
 
       {loaded && activeTab === "team" && (
         <section
-          aria-label="Tim — diagram hierarki delegasi"
+          aria-label="Team — delegation hierarchy diagram"
           className="flex flex-col gap-4"
         >
           <TeamTree
@@ -710,7 +710,7 @@ export function ProjectTabs({
           {bench.length > 0 && (
             <div className="w-full max-w-[460px]">
               <small className="mb-2 block text-caption text-dim">
-                Siaga (di roster, belum didelegasi):
+                On bench (in roster, not yet delegated):
               </small>
               <div className="flex flex-wrap gap-2">
                 {bench.map((r) => (

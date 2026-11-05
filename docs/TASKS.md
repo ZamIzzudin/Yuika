@@ -301,6 +301,25 @@
 - [x] **P1-INF-4** Observability: trace view per turn (pino + tabel DB) · *B · 2d* — ✅ v0 dev-10: **tanpa tabel baru** — agregasi dari sumber yang sudah jujur: event store append-only (tool call/result dengan nama via callId-map, delegasi, approval, error, memory/skill) + usage ledger (latensi & token per panggilan model, join via window waktu turn); `core/session/trace.ts` `buildTrace` → kontrak `SessionTrace`/`TraceTurn`/`TraceStep` (status done/running/cancelled/error); runtime `getTrace(sessionId)`; REST `GET /api/sessions/[id]/trace`; UI **panel Trace** (tombol sidebar, poll 3 dtk, turn terbaru di atas & auto-expand saat running, ikon per jenis langkah, durasi model call, rollup token per turn); +3 test (grup turn + join ledger, turn error terisolasi, sesi kosong). pino + tabel log terpisah menyusul bersama deploy (INF-5)
 - [ ] **P1-INF-5** Deploy staging (VPS/Fly) + domain + TLS · *B · 1d*
 
+### PUB — Gerbang Go-Public (repo privat → publik; sumber: docs/LICENSE-AUDIT.md §6–7)
+
+> Kondisi hari ini: repo **proprietary** (LICENSE "All rights reserved" + `license: UNLICENSED"
+> di 4 package.json — keputusan D11/2026-11, jalur komersial). Semua item di bawah
+> **wajib sebelum push publik pertama** — jangan MIT/Apache-kan repo utama tanpa
+> putuskan ulang model bisnis (one-way door).
+- [ ] **PUB-1** THIRD-PARTY-NOTICES.md — regenerasi dari skrip audit (sharp/libvips LGPL,
+  caniuse-lite CC-BY-4.0, lightningcss MPL-2.0, expand-template MIT, dsb) · *B · 0.5d*
+- [ ] **PUB-2** Keputusan lisensi publik final: tetap proprietary / BSL 1.1 (Additional
+  Use Grant + Change Date) / PolyForm (Noncommercial/Small Business) / open-core
+  (core engine permissive + apps proprietary) · *A · keputusan* — bikin teks LICENSE
+  edisi publik + `LicenseRef-*` SPDX bila non-OSI
+- [ ] **PUB-3** Bersih-bersih pra-publik: hapus artefak internal (docs/Orin*.html berisi
+  prompt kerja), audit secrets/history git, .gitignore data workspace · *B · 0.5d*
+- [ ] **PUB-4** CONTRIBUTING.md + CLA/DCO (syarat agar bisa relicense/dual-license
+  di masa depan) + cek trademark "Your-Yui"/"Orin" (PDKI kelas 9 & 42) · *B · 1d*
+- [ ] **PUB-5** CI: gerbang `npm audit --omit=dev --audit-level=high` (saat ini 2 high =
+  zod; hilang setelah upgrade zod v4) + regenerasi laporan lisensi berkala · *C · 0.5d*
+
 ### P1-PRJ — Project entity v0 (Studio §13.2; D14)
 
 - [x] **P1-PRJ-1** Kontrak `Project*` di `@yui/contracts` (ProjectInfo, TaskItem, roster, binding) + tabel DB + CRUD REST `/api/projects` · *A+B · 2d* → create/list/get project; semua tipe dari contracts — ✅ sesi dev 7: `contracts/project.ts` (ProjectInfo/TaskItem/RosterEntry/McpToolBinding + WORKFLOW_PHASES), `core/project/store.ts` (tabel projects+project_tasks), runtime `createProject` (mkdir `workspace/projects/<id>/{code,docs,reports}`), REST GET/POST `/api/projects` + GET/PATCH `/api/projects/[id]`; +5 test contracts, +3 test core; smoke live: create→201, list, patch archive, 404
