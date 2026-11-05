@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Yui | Studio Persona",
+  title: "Yuika | Studio Persona",
   description:
     "Platform agent multi-persona: proyek, delegasi, skill, dan MCP dalam satu studio.",
   manifest: "/site.webmanifest",

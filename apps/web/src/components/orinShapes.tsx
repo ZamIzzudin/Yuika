@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 
 /**
- * Orin v4 — definisi bentuk maskot (docs/Orin v4 – Pilih Maskot (1).html).
- * Satu rig mata dipakai semua bentuk; identitas persona = BENTUK (bukan tint lagi).
- * 15 bentuk (perluasan dev 10) — urutan SHAPE_ORDER = indeks input Rive `shape` 0–14.
- * Parameter per bentuk: fy (offset wajah Y), gs (skala jarak mata), es (skala mata),
- * gr (rentang tatapan) — dipakai OrinPortrait & PersonaFace agar konsisten.
- * Bentuk stroke-based (star/hex/trap): geom memakai stroke="currentColor" —
- * parent WAJIB set style={{ color }} selain fill.
+ * Orin v8 — definisi bentuk maskot (docs/orin_v8_larger_star.html).
+ * Satu rig mata dipakai semua bentuk; identitas persona = BENTUK (bukan tint).
+ * 15 bentuk (urutan SHAPE_ORDER = indeks input Rive `shape` 0–14) — geometri
+ * v6 "Round Orb & Soft Star": kontur membulat organik, SEMUA bentuk path filled
+ * (tidak ada lagi stroke-based v4).
+ * Parameter per bentuk: fy (offset wajah Y), gs (skala jarak mata), es (skala
+ * mata), gr (rentang tatapan), bodyScale (skala siluet — v8: bintang 1.18×,
+ * WAJAH TIDAK ikut diskalakan) — dipakai OrinPortrait & PersonaFace.
  */
 export type OrinShapeKey =
   | "orb"
@@ -35,6 +36,8 @@ export interface OrinShape {
   gs: number;
   es: number;
   gr: number;
+  /** v8: skala grup siluet badan (1 = normal). Wajah/rig TIDAK ikut diskalakan. */
+  bodyScale?: number;
   /** Geometri badan (fill ditentukan parent) — koordinat pusat 0,0, radius ±130 */
   geom: ReactNode;
 }
@@ -54,15 +57,10 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     color: "#F5A00A",
     fy: 8,
     gs: 0.92,
-    es: 0.88,
+    es: 0.9,
     gr: 0.8,
     geom: (
-      <>
-        <circle cx={-62} cy={22} r={64} />
-        <circle cx={8} cy={-26} r={76} />
-        <circle cx={76} cy={14} r={58} />
-        <rect x={-112} y={10} width={228} height={88} rx={44} />
-      </>
+      <path d="M-105,74C-130,62 -139,37 -128,12C-119,-10 -98,-23 -72,-21C-67,-65 -31,-99 13,-99C57,-99 88,-70 94,-31C126,-27 143,-4 139,27C136,56 115,77 84,80L-82,80C-91,80 -99,78 -105,74Z" />
     ),
   },
   blob: {
@@ -81,31 +79,33 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     color: "#12D1A0",
     fy: 0,
     gs: 1.05,
-    es: 0.95,
+    es: 1,
     gr: 0.9,
-    geom: <rect x={-118} y={-118} width={236} height={236} rx={80} />,
+    geom: (
+      <path d="M-58,-119C-29,-123 28,-123 58,-119C98,-114 119,-91 121,-53C124,-20 124,22 121,55C118,96 96,117 57,120C23,123 -25,123 -58,120C-98,117 -118,95 -121,56C-124,22 -124,-21 -121,-55C-118,-94 -97,-114 -58,-119Z" />
+    ),
   },
   tri: {
     name: "Segitiga",
     color: "#F0278E",
     fy: 36,
-    gs: 0.72,
-    es: 0.76,
+    gs: 0.78,
+    es: 0.82,
     gr: 0.6,
     geom: (
-      <path d="M0,-128C22,-128 40,-98 70,-42L116,48C132,82 118,112 86,112L-86,112C-118,112 -132,82 -116,48L-70,-42C-40,-98 -22,-128 0,-128Z" />
+      <path d="M-7,-120C-1,-130 8,-130 15,-119C34,-91 50,-57 72,-17L115,62C132,93 116,116 83,116L-83,116C-116,116 -132,93 -115,62L-72,-17C-50,-57 -28,-93 -7,-120Z" />
     ),
   },
   pill: {
     name: "Kapsul",
     color: "#2BC4D8",
     fy: 0,
-    gs: 1.25,
-    es: 0.95,
-    gr: 1.2,
+    gs: 1.22,
+    es: 1,
+    gr: 1.1,
     geom: (
       <g transform="rotate(-6)">
-        <rect x={-135} y={-80} width={270} height={160} rx={80} />
+        <path d="M-132,-8C-132,-52 -99,-80 -55,-80L57,-80C102,-80 134,-51 134,-8L134,8C134,52 102,80 57,80L-55,80C-99,80 -132,52 -132,8Z" />
       </g>
     ),
   },
@@ -135,16 +135,14 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     name: "Bintang",
     color: "#8FDB6F",
     fy: 6,
-    gs: 0.72,
-    es: 0.75,
+    gs: 0.78,
+    es: 0.8,
     gr: 0.5,
+    // v8: body bintang diperbesar 1.18× agar seimbang dgn bentuk lain —
+    // HANYA siluet; wajah/rig mata tidak diskalakan (rig bersama konsisten).
+    bodyScale: 1.18,
     geom: (
-      <polygon
-        points="0,-108 30.6,-42.1 102.7,-33.4 49.5,16.1 63.5,87.4 0,52 -63.5,87.4 -49.5,16.1 -102.7,-33.4 -30.6,-42.1"
-        stroke="currentColor"
-        strokeWidth={26}
-        strokeLinejoin="round"
-      />
+      <path d="M9.3,-94.1L26.4,-53.9Q31.2,-42.9 43.1,-41.8L86.6,-38Q110.3,-35.8 92.3,-20.2L59.5,8.5Q50.4,16.4 53.1,28.1L62.8,70.6Q68.2,93.8 47.7,81.6L10.3,59.2Q0,53 -10.3,59.2L-47.7,81.6Q-68.2,93.8 -62.8,70.6L-53.1,28.1Q-50.4,16.4 -59.5,8.5L-92.3,-20.2Q-110.3,-35.8 -86.6,-38L-43.1,-41.8Q-31.2,-42.9 -26.4,-53.9L-9.3,-94.1Q0,-116 9.3,-94.1Z" />
     ),
   },
   flower: {
@@ -152,20 +150,10 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     color: "#C48DEB",
     fy: 0,
     gs: 1,
-    es: 0.95,
+    es: 1,
     gr: 0.9,
     geom: (
-      <>
-        <circle r={82} />
-        <circle cx={78} cy={0} r={48} />
-        <circle cx={55} cy={55} r={48} />
-        <circle cx={0} cy={78} r={48} />
-        <circle cx={-55} cy={55} r={48} />
-        <circle cx={-78} cy={0} r={48} />
-        <circle cx={-55} cy={-55} r={48} />
-        <circle cx={0} cy={-78} r={48} />
-        <circle cx={55} cy={-55} r={48} />
-      </>
+      <path d="M0,-126C28,-126 34,-91 50,-76C67,-94 88,-112 108,-94C128,-76 105,-52 94,-32C119,-24 139,-8 132,18C125,43 94,42 73,53C84,78 95,104 72,119C50,134 32,105 12,88C-2,111 -17,136 -42,127C-67,118 -58,87 -60,63C-85,73 -114,84 -127,59C-140,34 -109,17 -90,0C-111,-16 -134,-36 -121,-59C-108,-82 -78,-66 -55,-61C-53,-87 -50,-117 -24,-125C-13,-129 -7,-127 0,-126Z" />
     ),
   },
   hex: {
@@ -173,15 +161,10 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     color: "#A8D83E",
     fy: 0,
     gs: 1,
-    es: 0.95,
+    es: 1,
     gr: 0.85,
     geom: (
-      <polygon
-        points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50"
-        stroke="currentColor"
-        strokeWidth={30}
-        strokeLinejoin="round"
-      />
+      <path d="M-11,-111C-4,-115 5,-115 12,-111L89,-65C99,-59 105,-48 105,-36L105,36C105,48 99,59 89,65L12,111C5,115 -4,115 -12,111L-89,65C-99,59 -105,48 -105,36L-105,-36C-105,-48 -99,-59 -89,-65Z" />
     ),
   },
   trap: {
@@ -189,28 +172,21 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     color: "#E8503A",
     fy: 8,
     gs: 0.95,
-    es: 0.9,
+    es: 0.95,
     gr: 0.8,
     geom: (
-      <polygon
-        points="-52,-96 52,-96 100,98 -100,98"
-        stroke="currentColor"
-        strokeWidth={30}
-        strokeLinejoin="round"
-      />
+      <path d="M-42,-111C-36,-116 -29,-118 -20,-118L20,-118C29,-118 36,-116 42,-111L112,77C122,103 107,119 80,119L-80,119C-107,119 -122,103 -112,77Z" />
     ),
   },
   diamond: {
     name: "Berlian",
     color: "#3A4FB0",
     fy: 0,
-    gs: 0.8,
-    es: 0.85,
-    gr: 0.6,
+    gs: 0.86,
+    es: 0.9,
+    gr: 0.65,
     geom: (
-      <g transform="rotate(45)">
-        <rect x={-88} y={-88} width={176} height={176} rx={40} />
-      </g>
+      <path d="M0,-124C9,-124 17,-118 26,-109L109,-26C129,-6 129,6 109,26L26,109C8,127 -8,127 -26,109L-109,26C-129,6 -129,-6 -109,-26L-26,-109C-17,-118 -9,-124 0,-124Z" />
     ),
   },
   dome: {
@@ -228,10 +204,12 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     name: "Tabung",
     color: "#1F9A9A",
     fy: -18,
-    gs: 0.75,
-    es: 0.95,
-    gr: 0.6,
-    geom: <rect x={-75} y={-125} width={150} height={250} rx={75} />,
+    gs: 0.82,
+    es: 1,
+    gr: 0.65,
+    geom: (
+      <path d="M-73,-73C-73,-112 -49,-132 -12,-132L12,-132C49,-132 73,-112 73,-73L73,74C73,112 49,132 12,132L-12,132C-49,132 -73,112 -73,74Z" />
+    ),
   },
 };
 
@@ -254,7 +232,7 @@ export const SHAPE_ORDER: OrinShapeKey[] = [
   "tube",
 ];
 
-/** Bentuk per persona — identitas visual maskot (Orin v4).
+/** Bentuk per persona — identitas visual maskot (Orin v4→v8).
  *  Bentuk bebas untuk persona mendatang (Analyst/Operator — P1-PER-6, dst.):
  *  pill, bean, drop, star, flower, hex, trap, diamond, dome, tube. */
 export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
@@ -270,8 +248,36 @@ export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
 
 const FALLBACK: OrinShape = { ...SHAPES.orb, color: "#9A9A9A" };
 
+/** Kunci bentuk persona (fallback: orb) — dipakai aturan khusus per bentuk
+ *  (v8: bola diskalakan seragam saat squash-stretch agar tetap bulat). */
+export function personaShapeKey(personaId?: string): OrinShapeKey {
+  if (!personaId) return "orb";
+  return PERSONA_SHAPE[personaId] ?? "orb";
+}
+
 export function personaShape(personaId?: string): OrinShape {
-  if (!personaId) return SHAPES.orb;
-  const key = PERSONA_SHAPE[personaId];
-  return key ? SHAPES[key] : FALLBACK;
+  const key = personaShapeKey(personaId);
+  return key in SHAPES ? SHAPES[key] : FALLBACK;
+}
+
+/** Campur dua warna hex (v8 paintBody) — untuk stop gradient badan:
+ *  terang (→ putih 48%) & bayangan (→ tinta gelap 34%). */
+export function mixHex(hex: string, other: string, amount: number): string {
+  const p = (h: string) => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ];
+  const a = p(hex),
+    b = p(other);
+  return (
+    "#" +
+    a
+      .map((v, i) =>
+        Math.round(v + (b[i]! - v) * amount)
+          .toString(16)
+          .padStart(2, "0"),
+      )
+      .join("")
+  );
 }

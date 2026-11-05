@@ -59,8 +59,9 @@ export function GrowthBadge({ g }: { g?: PersonaGrowth }) {
 }
 
 /**
- * Wajah kecil persona (list/header) — mini-maskot Orin v4: bentuk + mata kapsul statis,
- * identik dengan portrait besar (orinShapes). Bentuk = identitas persona.
+ * Wajah kecil persona (list/header) — mini-maskot Orin v8: bentuk + mata kapsul statis,
+ * identik dengan portrait besar (orinShapes). bodyScale (bintang 1.18×) diterapkan
+ * pada siluet saja; viewBox dilebarkan agar bintang muat penuh.
  */
 export function PersonaFace({
   personaId,
@@ -70,22 +71,25 @@ export function PersonaFace({
   size?: number;
 }) {
   const s = personaShape(personaId);
-  const w = 24 * s.es,
-    h = 46 * s.es,
-    gap = 36 * s.gs;
+  const w = 30 * s.es,
+    h = 56 * s.es,
+    gap = 34 * s.gs;
   return (
     <svg
       width={size}
       height={size}
-      viewBox="-150 -150 300 300"
+      viewBox="-165 -165 330 330"
       aria-hidden
       focusable="false"
       style={{ display: "block", flex: "none" }}
     >
-      <g fill={s.color} style={{ color: s.color }}>
+      <g
+        fill={s.color}
+        transform={s.bodyScale && s.bodyScale !== 1 ? `scale(${s.bodyScale})` : undefined}
+      >
         {s.geom}
       </g>
-      <g transform={`translate(0 ${s.fy})`} fill="#0B0B0E">
+      <g transform={`translate(0 ${s.fy})`} fill="#11121A">
         <rect x={-gap - w / 2} y={-h / 2} width={w} height={h} rx={w / 2} />
         <rect x={gap - w / 2} y={-h / 2} width={w} height={h} rx={w / 2} />
       </g>
@@ -207,11 +211,14 @@ function ShapeGalleryModal({ onClose }: { onClose: () => void }) {
               <svg
                 width={64}
                 height={64}
-                viewBox="-150 -150 300 300"
+                viewBox="-165 -165 330 330"
                 aria-hidden
                 focusable="false"
               >
-                <g fill={s.color} style={{ color: s.color }}>
+                <g
+                  fill={s.color}
+                  transform={s.bodyScale && s.bodyScale !== 1 ? `scale(${s.bodyScale})` : undefined}
+                >
                   {s.geom}
                 </g>
               </svg>
