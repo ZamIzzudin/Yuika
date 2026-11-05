@@ -569,3 +569,10 @@
   web, api, personas, skills): package.json + import path di source/test,
   turbo.json `with`-graph, Dockerfile `--filter`, docs — lockfile regenerate;
   env `YUI_*` & konfigurasi lain tidak berubah (hanya nama package).
+- [x] **Push pertama ke GitHub** (`ZamIzzudin/Yuika`): audit sensitif bersih
+  (`.env`/DB/workspace tak pernah masuk history — dua string `sk-…` hanyalah
+  fixture dummy test; `demo.db-shm/-wal` dikeluarkan dari tracking), merge
+  `dev/p0-kernel` → `main` (epic P0 25/25 + housekeeping + rebrand @yuika/*),
+  seluruh 138 commit ditulis-ulang author atas nama pemilik repo, branch
+  `main` + `dev/p0-kernel` ter-push → CI (.github/workflows/ci.yml) kini
+  dapat berjalan.
