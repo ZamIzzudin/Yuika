@@ -95,6 +95,14 @@ export const DelegationDoneEvent = EventMeta.extend({
   summary: z.string(),
 });
 
+/** P0-DEL-2: arahan mid-flight user → anak (kartu delegasi di UI parent). */
+export const DelegationSteeredEvent = EventMeta.extend({
+  type: z.literal("delegation.steered"),
+  turnId: z.string(),
+  childSessionId: z.string(),
+  text: z.string(),
+});
+
 export const PersonaStateEvent = EventMeta.extend({
   type: z.literal("persona.state"),
   personaId: z.string(),
@@ -175,6 +183,7 @@ export const YuiEvent = z.discriminatedUnion("type", [
   DelegationProgressEvent,
   DelegationDeltaEvent,
   DelegationDoneEvent,
+  DelegationSteeredEvent,
   PersonaStateEvent,
   ApprovalRequestedEvent,
   MemoryNotedEvent,

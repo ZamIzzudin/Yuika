@@ -11,14 +11,17 @@ import type { PersonaState } from "@yui/contracts";
 import {
   Brain,
   CaretDown,
+  ChatTeardropText,
   Lightning,
   PaperPlaneTilt,
   PencilSimple,
+  Prohibit,
   Stop,
   ArrowsInLineVertical,
   Wrench,
 } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
+import { toastErr } from "./ui/toast";
 import { Markdown } from "./Markdown";
 import { Button, StateChip, STATE_LABEL } from "./ui";
 
@@ -109,6 +112,44 @@ export function ChatView({
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
+  // P0-DEL-2: kontrol delegasi aktif — steer input per kartu + cancel.
+  const [steerOpenFor, setSteerOpenFor] = useState<string | null>(null);
+  const [steerText, setSteerText] = useState("");
+  async function sendSteer(childSessionId: string) {
+    const text = steerText.trim();
+    if (!text) return;
+    try {
+      const r = await fetch(`/api/delegations/${childSessionId}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "steer", text }),
+      });
+      if (!r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { error?: string };
+        toastErr(body.error ?? "gagal mengirim arahan");
+        return;
+      }
+      setSteerOpenFor(null);
+      setSteerText("");
+    } catch {
+      toastErr("gagal menghubungi server");
+    }
+  }
+  async function cancelDelegation(childSessionId: string) {
+    try {
+      const r = await fetch(`/api/delegations/${childSessionId}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      });
+      if (!r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { error?: string };
+        toastErr(body.error ?? "gagal membatalkan");
+      }
+    } catch {
+      toastErr("gagal menghubungi server");
+    }
+  }
   const [stepsOpen, setStepsOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -223,6 +264,70 @@ export function ChatView({
                       {it.childState ? (
                         <StateChip state={it.childState} />
                       ) : null}
+                      {/* P0-DEL-2: kontrol anak saat masih bekerja (belum ada ringkasan). */}
+                      {!it.text && (
+                        <span className="ml-auto flex items-center gap-1">
+                          {steerOpenFor === it.childSessionId ? (
+                            <span className="flex items-center gap-1">
+                              <input
+                                autoFocus
+                                value={steerText}
+                                onChange={(e) => setSteerText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  e.stopPropagation();
+                                  if (e.key === "Enter" && steerText.trim()) void sendSteer(it.childSessionId!);
+                                  if (e.key === "Escape") {
+                                    setSteerOpenFor(null);
+                                    setSteerText("");
+                                  }
+                                }}
+                                placeholder="Arahan mid-turn…"
+                                aria-label="Arahan mid-turn untuk anak"
+                                className="h-7 w-56 rounded-md2 border border-line bg-surface px-2.5 text-caption text-primary outline-none placeholder:text-dim focus:border-accent"
+                              />
+                              <button
+                                type="button"
+                                title="Kirim arahan"
+                                aria-label="Kirim arahan"
+                                disabled={!steerText.trim()}
+                                className="flex size-7 cursor-pointer items-center justify-center rounded-md2 border border-line bg-control text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary disabled:cursor-default disabled:opacity-40"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (steerText.trim()) void sendSteer(it.childSessionId!);
+                                }}
+                              >
+                                <PaperPlaneTilt size={12} aria-hidden />
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              title="Arahkan (mid-turn)"
+                              aria-label="Arahkan anak"
+                              className="flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSteerOpenFor(it.childSessionId ?? null);
+                                setSteerText("");
+                              }}
+                            >
+                              <ChatTeardropText size={14} aria-hidden />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            title="Batalkan delegasi"
+                            aria-label="Batalkan delegasi"
+                            className="flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-danger-soft hover:text-danger"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void cancelDelegation(it.childSessionId!);
+                            }}
+                          >
+                            <Prohibit size={14} aria-hidden />
+                          </button>
+                        </span>
+                      )}
                     </div>
                     {it.goal ? (
                       <p className="mt-0.5 text-body text-muted">{it.goal}</p>

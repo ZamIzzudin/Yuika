@@ -33,6 +33,13 @@ export interface DelegationDeps {
   recordUsage?: LoopDeps["recordUsage"];
   /** P1-CRED-3: cap delegasi paralel dinamis (budget workspace); default 2. */
   maxChildren?: () => number;
+  /** P0-DEL-2: kontrol anak aktif — runtime mendaftarkan agar UI parent bisa
+   *  cancel (abort turn anak) / steer (arahan mid-turn) tanpa menunggu selesai.
+   *  unregister dipanggil saat anak selesai (done/error/abort). */
+  controls?: {
+    register: (childSessionId: string, parentSessionId: string, ctl: { abort: AbortController; steer: (text: string) => void }) => void;
+    unregister: (childSessionId: string) => void;
+  };
 }
 
 const MAX_PARALLEL_CHILDREN = 3; // fix 2026-11: Maestro kerap 3 arah sekaligus (riset+susun+develop)
@@ -90,6 +97,17 @@ export function runChildPersona(
 
   parentEmit({ type: "delegation.started", turnId: parent.turnId, childSessionId, personaId, goal });
   activeChildren++;
+  // P0-DEL-2: kontrol anak — abort untuk cancel, steerQueue untuk arahan
+  // mid-turn (di-drain loop anak tiap awal iterasi).
+  const ac = new AbortController();
+  const steerQueue: string[] = [];
+  deps.controls?.register(childSessionId, parent.sessionId, {
+    abort: ac,
+    steer: (text) => {
+      steerQueue.push(text);
+      parentEmit({ type: "delegation.steered", turnId: parent.turnId, childSessionId, text });
+    },
+  });
   // P0-DEL-1: job persist — baris di DB sebelum loop anak jalan (audit & heal
   // lintas restart); ditutup done/error saat selesai. Gagal tulis job TIDAK
   // membatalkan delegasi (persist = best-effort, eksekusi tetap jalan).
@@ -147,8 +165,25 @@ export function runChildPersona(
         emit: childEmit,
         mcpAllowlistFor: deps.mcpAllowlistFor,
         recordUsage: deps.recordUsage, // P1-CRED-1: anak ikut ter-meter
+        steerFor: () => {
+          const q = [...steerQueue];
+          steerQueue.length = 0;
+          return q;
+        }, // P0-DEL-2
       });
-      await loop.runTurn(childSessionId, context ? `${goal}\n\nContext:\n${context}` : goal);
+      await loop.runTurn(childSessionId, context ? `${goal}\n\nContext:\n${context}` : goal, { signal: ac.signal });
+      // P0-DEL-2: turn anak dibatalkan GRACEFUL (loop keluar rapi, bukan throw)
+      // → job interrupted + kartu ditutup dengan penanda pembatalan.
+      if (ac.signal.aborted) {
+        if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: "interrupted", error: "dibatalkan user/parent (P0-DEL-2)" });
+        parentEmit({
+          type: "delegation.done",
+          turnId: parent.turnId,
+          childSessionId,
+          summary: "_(anak dibatalkan — progres tersimpan di sesi anak, lanjutkan dari sana)_",
+        });
+        return "_(dibatalkan)_";
+      }
       const msgs = deps.store.getMessages(childSessionId);
       const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant" && m.content.trim());
       const summaryText = lastAssistant?.content ?? "(child selesai tanpa output)";
@@ -162,16 +197,24 @@ export function runChildPersona(
       console.log(`[yui:trace] delegasi ${personaId} SELESAI total=${Date.now() - t0}ms (goal: ${goal.slice(0, 60)}…)`);
       return summaryText;
     } catch (err) {
-      // P0-DEL-1: error anak tercatat di job row (bukan hanya event) — auditable
-      // lintas restart, dasar notifikasi/retry menyusul.
+      // P0-DEL-2: dibatalkan (user/parent) BUKAN kegagalan — job interrupted +
+      // kartu delegasi ditutup dengan penanda pembatalan, bukan "gagal".
+      const cancelled = ac.signal.aborted;
       const msg = err instanceof Error ? err.message : String(err);
-      if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: "error", error: msg });
+      if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: cancelled ? "interrupted" : "error", error: cancelled ? "dibatalkan user/parent (P0-DEL-2)" : msg });
       // Tutup kartu delegasi di parent dengan ringkasan gagal — tanpa ini UI
       // menampilkan persona anak "working" selamanya.
-      parentEmit({ type: "delegation.done", turnId: parent.turnId, childSessionId, summary: `_(anak gagal: ${msg})_` });
+      parentEmit({
+        type: "delegation.done",
+        turnId: parent.turnId,
+        childSessionId,
+        summary: cancelled ? "_(anak dibatalkan — progres tersimpan di sesi anak, lanjutkan dari sana)_" : `_(anak gagal: ${msg})_`,
+      });
+      if (cancelled) return "_(dibatalkan)_";
       throw err;
     } finally {
       activeChildren--;
+      deps.controls?.unregister(childSessionId);
     }
   })();
 

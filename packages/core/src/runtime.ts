@@ -205,6 +205,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     skillBindingsFor: (personaId) => skillBindingsFile()[personaId], // mapping manual Dungeon
     recordUsage: (u) => { usageLedger.record(u); admission.noteUsage(); }, // CRED-1 meter + CRED-2 saldo cache invalidate
     maxChildren: () => admission.maxChildren(), // CRED-3: cap delegasi dinamis
+    controls: {
+      register: (childSessionId, parentSessionId, ctl) => childControls.set(childSessionId, { parentSessionId, ctl }),
+      unregister: (childSessionId) => childControls.delete(childSessionId),
+    }, // P0-DEL-2
   };
   registerDelegateTool(delegateDeps);
   // P2-PM-2 (D22): consult — brainstorm terstruktur Planner ke persona spesialis
@@ -460,6 +464,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const loopCache = new Map<string, AgentLoop>();
   /** P0-CORE-1: satu turn aktif per sesi — AbortController untuk Stop (HTTP + loop checks). */
   const turnAborts = new Map<string, AbortController>();
+  /** P0-DEL-2: kontrol anak delegasi aktif (cancel/steer dari UI parent).
+   *  Key = childSessionId; unregister otomatis oleh runner (finally). */
+  const childControls = new Map<string, { parentSessionId: string; ctl: { abort: AbortController; steer: (text: string) => void } }>();
 
   /** Dipakai REST runTurn & dungeon runner (async — resolve saat turn selesai). */
   function runTurnInternal(sessionId: string, text: string): Promise<void> {
@@ -565,12 +572,34 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     createSession,
     listProjectSessions,
     runTurn: (sessionId: string, text: string) => runTurnInternal(sessionId, text),
-    /** Batalkan turn sesi (tombol Stop). true bila ada turn aktif yang dibatalkan. */
+    /** Batalkan turn sesi (tombol Stop). true bila ada turn aktif yang dibatalkan.
+     *  P0-DEL-2: CASCADE — membatalkan turn parent sekaligus membatalkan semua
+     *  anak delegasi turn itu (dulu anak lanjut sendiri di background). */
     cancelTurn: (sessionId: string) => {
       const ac = turnAborts.get(sessionId);
       if (!ac) return false;
       ac.abort();
       turnAborts.delete(sessionId);
+      for (const [childId, c] of childControls) {
+        if (c.parentSessionId === sessionId) {
+          c.ctl.abort.abort();
+          childControls.delete(childId);
+        }
+      }
+      return true;
+    },
+    // ---- P0-DEL-2: cancel/steer anak delegasi dari UI parent ----
+    cancelDelegation: (childSessionId: string) => {
+      const c = childControls.get(childSessionId);
+      if (!c) return false;
+      c.ctl.abort.abort(); // unregister ditangani finally runner
+      return true;
+    },
+    steerDelegation: (childSessionId: string, text: string) => {
+      const c = childControls.get(childSessionId);
+      const t = text.trim();
+      if (!c || !t) return false;
+      c.ctl.steer(t);
       return true;
     },
     resolveApproval: (requestId: string, approved: boolean, remember = false) =>

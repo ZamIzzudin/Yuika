@@ -6,7 +6,14 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
-import { CaretDown, CommandIcon, Gear, Plus, SidebarSimple, Sword } from "@phosphor-icons/react";
+import {
+  CaretDown,
+  CommandIcon,
+  Gear,
+  Plus,
+  SidebarSimple,
+  Sword,
+} from "@phosphor-icons/react";
 import { DungeonView } from "@/components/DungeonView";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
@@ -700,7 +707,9 @@ export default function Home() {
                 className="size-7 shrink-0 rounded-full"
               />
               <span className="flex min-w-0 flex-col leading-tight">
-                <b className="text-body font-semibold tracking-tight text-primary">Your-Yui</b>
+                <b className="text-body font-semibold tracking-tight text-primary">
+                  Your-Yui
+                </b>
                 <span className="text-caption text-dim">demo</span>
               </span>
               <button
@@ -776,7 +785,9 @@ export default function Home() {
                 aria-current={dungeonOpen ? "page" : undefined}
                 onClick={() => setDungeonOpen((v) => !v)}
                 className={`flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-                  dungeonOpen ? "bg-hover text-primary" : "text-dim hover:bg-hover hover:text-primary"
+                  dungeonOpen
+                    ? "bg-hover text-primary"
+                    : "text-dim hover:bg-hover hover:text-primary"
                 }`}
               >
                 <CommandIcon size={20} aria-hidden />
@@ -879,7 +890,7 @@ export default function Home() {
                       id: "trace",
                       label: (
                         <span>
-                          Trace
+                          Logs
                           {sessionId && busy && <Dot pulse className="ml-1" />}
                         </span>
                       ),
@@ -950,10 +961,17 @@ export default function Home() {
                                 className="flex cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2 py-1.5 text-left text-body text-secondary transition-colors hover:bg-hover hover:text-primary"
                                 onClick={() => {
                                   void newProjectSession();
-                                  (document.activeElement as HTMLElement | null)?.blur();
+                                  (
+                                    document.activeElement as HTMLElement | null
+                                  )?.blur();
                                 }}
                               >
-                                <Plus size={13} weight="bold" aria-hidden className="text-accent" />
+                                <Plus
+                                  size={13}
+                                  weight="bold"
+                                  aria-hidden
+                                  className="text-accent"
+                                />
                                 Sesi baru (Conductor)
                               </button>
                               {projSessions.length === 0 ? (
@@ -965,7 +983,9 @@ export default function Home() {
                                   <button
                                     key={ps.sessionId}
                                     aria-current={
-                                      ps.sessionId === sessionId ? "true" : undefined
+                                      ps.sessionId === sessionId
+                                        ? "true"
+                                        : undefined
                                     }
                                     className={`flex cursor-pointer items-center gap-2.5 rounded-md2 border px-2 py-1.5 text-left transition-colors ${
                                       ps.sessionId === sessionId
@@ -974,10 +994,15 @@ export default function Home() {
                                     }`}
                                     onClick={() => {
                                       openSession(ps);
-                                      (document.activeElement as HTMLElement | null)?.blur();
+                                      (
+                                        document.activeElement as HTMLElement | null
+                                      )?.blur();
                                     }}
                                   >
-                                    <PersonaFace personaId={ps.personaId} size={18} />
+                                    <PersonaFace
+                                      personaId={ps.personaId}
+                                      size={18}
+                                    />
                                     <span className="flex-1 truncate text-body text-secondary">
                                       {ps.personaName}
                                     </span>

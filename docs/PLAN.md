@@ -730,33 +730,32 @@ khusus pipeline itu, bukan pindah core.
 > harian untuk 3 dev: [`DEMO-WEEK-1.md`](./DEMO-WEEK-1.md). Setelah demo: lanjutkan Fase 0
 > penuh (sandbox container, resume robust, split api↔core jadi service terpisah, auth)
 > sebelum masuk Fase 1.
-- [ ] Monorepo TS + `contracts/` (zod) + codegen (SDK web; OpenAPI) + CI
-- [ ] Agent core v1: turn loop streaming, 1 provider, interrupt, event sourcing + replay
-- [ ] Registry + ±8 tool inti (file RW/patch/search, terminal→sandbox sederhana, web_fetch,
-      skills_list/skill_view, ask_user, request_approval)
-- [ ] Skills loader (agentskills.io format) + 10 skill seed + usage tracking dasar
-- [ ] Session store append-only + `session.attach` resume
-- [ ] Web chat v1: attach sesi, stream, approval inline, persona slot statis (placeholder art)
+- [x] Monorepo TS + `contracts/` (zod) + CI — ✅ v0: npm workspaces + @yui/contracts (zod, single source) + CI GitHub Actions (typecheck+test+lint, turbo cache). *Codegen SDK/OpenAPI menyusul bersama P0-INF-1 split api.*
+- [x] Agent core v1: turn loop streaming, 1 provider, interrupt, event sourcing + replay — ✅ v0: loop.ts (iterasi + budget + repetition guard + fallback model + abort graceful), provider openai-compat/anthropic/gemini, SessionStore SQLite append-only + SSE replay; compression v0 (P0-CORE-4) tinggal aux-model summarize
+- [x] Registry + ±8 tool inti — ✅ v0: file RW/search/patch + run_command (scope project) + skills_list/skill_view + doc_read + todo_* + memory_append + session_search + skill_propose + consult + delegate_task + MCP tools dinamis; *sandbox container menyusul P0-SEC-1*
+- [x] Skills loader (agentskills.io format) + skill seed + usage tracking dasar — ✅ v0: loader SKILL.md frontmatter + status draft/tested/ready + binding 3 lapis (bundled∪attached∪global)\detached + eval dungeon; 6 skill seed; *10 skill seed & tracking per-skill menyusul*
+- [x] Session store append-only + `session.attach` resume — ✅ v0: attach via SSE `?since=` + snapshot hydrate satu-render (fix timelapse 2026-11); approval pending & delegation job survive restart (boot-heal)
+- [x] Web chat v1: attach sesi, stream, approval inline, persona slot — ✅ v0+: chat streaming + reasoning kolaps-able + kartu approval/delegasi (klik → sesi anak; steer/cancel mid-turn) + persona picker orbit + tab Chat/Tim/Task/File/Trace/Konfigurasi + toast global; *persona art Rive menyusul P1-PER-1..3*
 
 **Demo keluar:** chat di web, Yui membaca skill, eksekusi kode di sandbox, minta approval,
 resume setelah refresh.
 
 ### Fase 1 — Tiga prioritas + persona v1 + credits v1 + project entity (± 8–10 minggu)
 - [ ] **P1-PRJ (v0.4): project entity** — CRUD + isolasi workspace per project + roster agent
-      per project + tasklist + binding MCP per persona (detail §13.2; task di TASKS.md)
+      per project + tasklist + binding MCP per persona (detail §13.2; task di TASKS.md) — ✅ v0 parsial 2026-11: CRUD + isolasi path + roster + tasklist/TaskTree + binding MCP granular + papan kanban + Log Task drawer; *sisa: arsip/eksport project*
 - [ ] **P1-DUN (v0.5): dungeon v0** — misi latihan persona → skill lifecycle
-      draft→tested→ready → assign gating (§13.8)
+      draft→tested→ready → assign gating (§13.8) — ✅ v0: arena latihan 3 mode (materials/research/hybrid), fase gating roster, eval buta P1-DUN-3, draf diterima → dipasang ke persona
 - [ ] **P1-MDL (v0.5): model per persona** — `model`+`fallback` di persona.yaml,
-      router + smoke test per model (§13.10)
+      router + smoke test per model (§13.10) — ✅ v0: router + override Settings + fallback/cooldown + smoke test 2-langkah di panel Settings
 - [ ] **MCP**: client multi-transport + katalog kurasi ±20 + OAuth web + MCP worker tersandbox
 - [ ] **Memory learning-loop**: USER.md/MEMORY.md + nudge persist + skill-create-from-experience
-      + per-domain persona memory (dasar §7.5) + `session_search`
+      + per-domain persona memory (dasar §7.5) + `session_search` — ✅ v0: USER.md/MEMORY.md editor + nudge learn per domain + skill_propose dari pengalaman + memori domain persona di-inject ke prompt (juga ke anak delegasi) + session_search tool
 - [ ] **Delegation**: job-based background subagent, batch paralel, progress event, steering,
-      `delegate_task(persona=…)` — persona sebagai preset child
+      `delegate_task(persona=…)` — persona sebagai preset child — ✅ v0 parsial: job persist (P0-DEL-1) + **paralel dalam satu round (Promise.all, 2026-11)** + delta live feed + **steer/cancel/cascade (P0-DEL-2, 2026-11)**; *sisa: steering per node TaskTree (P1-DEL-3) + queue/retry background*
 - [ ] **Persona v1**: manifest + PERSONA.md prompt layer + toolset/model binding + expression
       state mapping (asset pipeline siap; ilustrasi bisa menyusul masuk)
 - [ ] Multi-provider + failover + aux routing (compression/title pakai model murah)
-- [ ] **Credits v1**: usage events + ledger + admission (hold→settle) + saldo UI + plan sederhana
+- [ ] **Credits v1**: usage events + ledger + admission (hold→settle) + saldo UI + plan sederhana — ✅ v0: ledger jujur per panggilan (juga anak delegasi) + admission warn/block + saldo/budget UI + price book + smoke test; *sisa: Stripe & tagihan nyata (P1-CRED-5/6, butuh resource eksternal)*
 - [ ] Compression (ContextEngine default) + prompt-cache discipline tests
 
 **Demo keluar:** "Maestro Yui memecah tugas riset → mendelegasikan ke Einstein Yui (dengan

@@ -191,9 +191,10 @@
 > nyata) · P1-INF-5 (VPS/domain) · P1-DEL-2 (web push) · P1-PER-1/2/3 (aset Rive
 > artist) · P1-PER-5 (penguji manusia — bisa Anda) · P0-INF-5/6 (infra docker/CI).
 > **(b) menunggu fondasi** — P0-SEC-1 sandbox container → membuka P1-MCP-4 + sisa
-> P0-SEC-3 · P0-DEL-2/P1-DEL-3 steering · P0-DATA-1 Postgres
+> P0-SEC-3 · P0-DATA-1 Postgres
 > (dep P0-INF-5) → P0-DATA-2 retention · P1-MCP-2 OAuth (menyusul server OAuth-capable:
 > Penpot/Figma di P2-DSN) · P1-INF-1 auth (desain tenant, pasca-demo).
+> P0-DEL-2 steering ✅ SELESAI 2026-11 (cancel/steer/cascade + UI kartu delegasi).
 > **(c) di antrean, bisa dikerjakan kapan saja** — P0-INF-3/4 ·
 > P0-QA-1/2 · P1-MCP-5 · P1-DEL-1 (parsial: cap paralel
 > dinamis via budget CRED-3 + consult paralel sudah jalan; sisa config per-plan).
@@ -203,7 +204,7 @@
 ### P0-INF (infra & arsitektur)
 
 - [ ] **P0-INF-1** Split `apps/api` (service terpisah Fastify) — core keluar dari proses Next.js · *A · 2d* → web bicara HTTP ke api, bukan import in-process
-- [ ] **P0-INF-2** Konfigurasi terpusat (env module + validasi zod + fail-fast) · *A · 0.5d*
+- [x] **P0-INF-2** Konfigurasi terpusat (env module + validasi zod + fail-fast) · *A · 0.5d* — ✅ v0 dev-10: `core/env.ts` — satu modul env tervalidasi zod (fail-fast saat modul dimuat: nilai rusak → error jelas, bukan NaN diam-diam); dipakai loop/provider/approval/compress; +`YUI_MAX_ITER_HARDCORE` (hardcore cap 64) & `YUI_PROVIDER_TIMEOUT_MS` default 5 mnt (fix 2026-11)
 - [ ] **P0-INF-3** Logging terstruktur (pino) + `traceId` per turn ter-propagasi ke semua event/log · *B · 1d*
 - [ ] **P0-INF-4** Error taxonomy konsisten (provider/tool/internal + kode) · *A · 1d*
 - [ ] **P0-INF-5** Docker compose dev (web+api+db) + README update · *B · 1d*
@@ -224,7 +225,7 @@
 
 ### P0-CORE (loop robustness)
 
-- [x] **P0-CORE-1** AbortSignal end-to-end: cancel turn dari UI (interrupt & redirect) · *A · 2d* → tombol stop bekerja < 500ms — ✅ v0 sesi dev 10 (`f429e8d`): AbortController per sesi di runtime → signal ke provider (OpenAI SDK abort HTTP in-flight, tak menunggu timeout 120 dtk) + loop checks (awal iterasi / catch provider = abort bukan error / antar tool round); keluar **graceful** — parsial tersimpan + catatan "turn dibatalkan user" + event `turn.cancelled` + persona idle; REST `/api/sessions/:id/cancel`; tombol ■ di composer. Sisa: propagasi ke sesi anak delegasi (anak lanjut di background) & redirect mid-delegation
+- [x] **P0-CORE-1** AbortSignal end-to-end: cancel turn dari UI (interrupt & redirect) · *A · 2d* → tombol stop bekerja < 500ms — ✅ v0 sesi dev 10 (`f429e8d`): AbortController per sesi di runtime → signal ke provider (OpenAI SDK abort HTTP in-flight, tak menunggu timeout 120 dtk) + loop checks (awal iterasi / catch provider = abort bukan error / antar tool round); keluar **graceful** — parsial tersimpan + catatan "turn dibatalkan user" + event `turn.cancelled` + persona idle; REST `/api/sessions/:id/cancel`; tombol ■ di composer. ~~Sisa: propagasi ke sesi anak delegasi~~ ✅ LUNAS via P0-DEL-2 (2026-11): cancelTurn parent kini CASCADE ke semua anak delegasi turn itu
 - [x] **P0-CORE-2** Provider retry + fallback model (`YUI_MODEL_FALLBACK`) + cooldown · *A · 1.5d* → provider mati → fallback jalan otomatis — ✦ parsial sesi dev 9 (timeout 120 dtk + retry transien ×2); ✅ **penuh sesi dev 10** (`43387b5`): loop attempt-chain primary → fallback SEKALI (fallback sukses → iterasi lanjut di fallback, jangan bolak-balik), `markUnhealthy` → cooldown 5 mnt (resolve berikutnya langsung fallback, tak buang 2 retry lagi ke model sekarat); fallback bisa dari `YUI_MODEL_FALLBACK`, persona.yaml, atau override Settings; +2 test loop (fallback aktif, both-fail tetap session.error bersih)
 - [x] **P0-CORE-3** Repetition guard + iteration budget proper (pola Hermes) · *A · 1d* — ✅ sesi dev 9 + audit dev 10: guard tool-round identik 3× berturut → injek nudge sistem (agent keluar loop verifikasi tanpa progres, teramati nyata); budget iterasi 16 default + override `YUI_MAX_ITER` + **budget-habis graceful** (pesan "ketik lanjutkan" + state done, bukan error mentah)
 - [ ] **P0-CORE-4** Compression v0: summarize aux model saat context > 70% (checkpoint + arsip, satu-satunya mutasi history yang sah) · *A · 3d* → sesi 100+ turn tetap sehat; test invariant append-only kecuali checkpoint
@@ -233,7 +234,7 @@
 ### P0-DEL & P0-MCP
 
 - [x] **P0-DEL-1** Delegation job persist (queue di DB, survive restart, status) · *A · 2d* — ✅ v0 dev-10 (branch dev/p0-kernel): tabel `delegation_jobs` (running→done/error/interrupted) — job row dibuat SEBELUM loop anak jalan, best-effort (gagal tulis ≠ batal delegasi); loop menelan error provider → runner kini deteksi `session.error` non-recoverable anak → job error + kartu delegasi parent ditutup jujur (tak zombie); boot-heal menutup job running pasca-restart → interrupted + alasan; REST `/api/projects/[id]/delegations` + `jobs`; +6 test. (queue/retry background menyusul P1-DEL-2)
-- [ ] **P0-DEL-2** Cancel/steer anak dasar dari parent · *A · 1d · dep P0-DEL-1*
+- [x] **P0-DEL-2** Cancel/steer anak dasar dari parent · *A · 1d · dep P0-DEL-1* — ✅ v0 2026-11: **steer** — `delegation.steered` (contracts) + antrean steer per anak di-drain loop tiap awal iterasi sebagai pesan user berlabel `[arahan user — mid-turn]` (tercatat di history anak, terlihat provider); **cancel** — AbortController per anak (`cancelDelegation`) → job **interrupted** (bukan error) + kartu delegasi ditutup "_(anak dibatalkan — progres tersimpan, lanjutkan dari sana)_"; **cascade** — `cancelTurn(parent)` kini ikut membatalkan semua anak turn itu (utang P0-CORE-1 "anak lanjut di background" LUNAS); REST `POST /api/delegations/:childId {action:cancel|steer}`; UI: tombol 🚫/💬 di kartu delegasi saat anak bekerja (input inline steer, Esc batal). +3 test (`delegation-steer.test.ts`)
 - [x] **P0-MCP-1** MCP lifecycle: health check + reconnect backoff + park · *C · 2d* → server mati → reconnect otomatis tanpa crash turn — ✅ dev-10: `transport.onclose/onerror → onDown` (penutupan disengaja difilter flag) → lepas tools + **reconnect backoff 2s/5s/15s/60s/5mnt**; gagal 5× → **PARKED** (badge + tombol ↻ `POST /api/mcp/servers` bypass backoff); **health check ping 30 dtk** (deteksi hang tanpa crash); status `state/lastError/nextRetryAt` di panel MCP
 - [x] **P0-MCP-2** Schema nyata MCP (`t.inputSchema`) menggantikan passthrough · *C · 1d* — ✅ v0 dev-10: registry terima zod ATAU JSON Schema mentah; validasi dispatch via ajv (compile-cache, reset ikut tests); `toolSchemas` meneruskan schema asli ke provider (provider tahu parameter tool MCP → tool-call lebih akurat); fallback passthrough bila server tak menyertakan inputSchema; +3 test
 

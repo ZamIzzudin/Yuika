@@ -54,6 +54,10 @@ export interface LoopDeps {
   /** P1-CRED-1: catat pemakaian per panggilan model sukses (token dari provider,
    *  tanpa estimasi). Diisi runtime → ledger SQLite. */
   recordUsage?: (u: UsageEvent) => void;
+  /** P0-DEL-2: antrean steering — arahan user mid-turn di-drain (dipop) di awal
+   *  tiap iterasi loop, di-inject sebagai pesan user berlabel. Dipakai runner
+   *  delegasi untuk arahkan anak tanpa membatalkannya. */
+  steerFor?: (sessionId: string) => string[];
 }
 
 export class AgentLoop {
@@ -149,6 +153,16 @@ export class AgentLoop {
     const iterCap = getApprovalMode() === "auto" ? env.maxIterHardcore : MAX_ITERATIONS;
     for (let i = 0; i < iterCap; i++) {
       if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop ditekan sebelum iterasi dimulai
+      // P0-DEL-2: steering — arahan user mid-turn di-drain tiap awal iterasi.
+      // Pesan user berlabel (bukan system — kompatibel semua provider OpenAI-compat)
+      // agar model memperlakukannya sebagai prioritas tertinggi berikutnya.
+      const steers = this.deps.steerFor?.(sessionId) ?? [];
+      for (const st of steers) {
+        const steerMsg: InternalMessage = { role: "user", content: `[arahan user — mid-turn] ${st}` };
+        messages.push(steerMsg);
+        store.appendMessage(sessionId, steerMsg);
+        trace(`  steer: ${st.slice(0, 80)}`);
+      }
       // 3) api phase — rantai attempt: primary → fallback (P0-CORE-2). Provider
       // sudah retry transien ×2 di dalam (maxRetries); sampai sini = model itu
       // benar-benar gagal → tandai unhealthy (cooldown) & coba fallback SEKALI.
