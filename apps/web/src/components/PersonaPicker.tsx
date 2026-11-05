@@ -170,7 +170,7 @@ export function PersonaOrbit({
       {/* katalog bentuk — aksi sekunder di pojok kanan atas orbit */}
       <div className="absolute top-0 right-0">
         <Button variant="primary" size="sm" onClick={() => setShowShapes(true)}>
-          Lihat Lainnya
+          Lainnya
         </Button>
       </div>
       {showShapes && <ShapeGalleryModal onClose={() => setShowShapes(false)} />}

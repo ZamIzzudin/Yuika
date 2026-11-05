@@ -49,7 +49,8 @@ describe("doc_read (dev-10)", () => {
     const XLSX = await import("xlsx");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Bulan", "Omzet"], ["Jan", 150]]), "Ringkasan");
-    XLSX.writeFile(wb, path.join(dir, "laporan.xlsx"));
+    // xlsx ≥0.19 ESM tidak lagi auto-bind fs — tulis via buffer (API yang dipakai prod: read(buffer)).
+    fs.writeFileSync(path.join(dir, "laporan.xlsx"), XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
 
     const x = await registry.dispatch("doc_read", { path: "laporan.xlsx" }, ctx());
     expect(x.isError).toBeFalsy();

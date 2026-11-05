@@ -6,6 +6,9 @@
     "apps/*"
   ],
   "packageManager": "npm@11.6.2",
+  "overrides": {
+    "postcss": "8.5.32"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

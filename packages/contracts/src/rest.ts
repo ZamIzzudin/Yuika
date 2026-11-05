@@ -49,7 +49,11 @@ export const CreateSessionResponse = z.object({
 });
 
 // POST /api/sessions/:id/message
-export const SendMessageRequest = z.object({ text: z.string().min(1) });
+export const SendMessageRequest = z.object({
+  // Cap payload (mitigasi GHSA-mrhx-c7xc-m3w5 — memory exhaustion zod <4.6.6):
+  // 200k char cukup utk paste dokumen panjang, masih jauh dari DoS.
+  text: z.string().min(1).max(200_000),
+});
 export const SendMessageResponse = z.object({ accepted: z.literal(true) });
 
 // POST /api/approvals/:id
@@ -93,12 +97,12 @@ export const UpdateTaskRequest = z.object({
   title: z.string().min(1).max(140).optional(),
   status: TaskStatus.optional(),
   assignee: z.string().nullable().optional(),
-  addRefs: z.array(z.string()).optional(),
+  addRefs: z.array(z.string().max(400)).max(100).optional(),
   /** Artefak node (masuk event TaskTree; P1-PRJ-7). */
-  addArtefak: z.array(z.string()).optional(),
+  addArtefak: z.array(z.string().max(400)).max(100).optional(),
 });
 
 // GET/PUT /api/projects/:id/roster (P1-PRJ-3) — sumber: project.yaml di root project
 export const SaveRosterRequest = z.object({
-  roster: z.array(RosterEntry).min(0),
+  roster: z.array(RosterEntry).min(0).max(64),
 });

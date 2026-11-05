@@ -89,13 +89,15 @@ export function ProjectPanel({
     "flex w-full cursor-pointer items-center gap-2.5 rounded-md2 border px-2.5 py-2 text-left transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)]";
 
   return (
-    <section aria-label="Proyek" className="flex flex-col gap-1.5">
+    <section aria-label="project" className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between px-2.5">
-        <span className="text-caption font-semibold tracking-wide text-dim uppercase">Proyek</span>
+        <span className="text-caption font-semibold tracking-wide text-dim uppercase">
+          Project
+        </span>
         <button
           className="flex cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1 text-dim transition-colors hover:bg-hover hover:text-primary disabled:cursor-default disabled:opacity-40"
           onClick={() => setOpen((v) => !v)}
-          aria-label="Proyek baru"
+          aria-label="New project"
           disabled={open}
         >
           <Plus size={13} weight="bold" aria-hidden />
@@ -104,19 +106,19 @@ export function ProjectPanel({
 
       {open && (
         <Card variant="inset" className="flex flex-col gap-2.5 p-3">
-          <Field label="Nama">
+          <Field label="Name">
             <TextInput
               autoFocus
-              placeholder="Nama proyek"
+              placeholder="Project Name"
               value={name}
               maxLength={80}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && create()}
             />
           </Field>
-          <Field label="Deskripsi (opsional)">
+          <Field label="Description">
             <TextInput
-              placeholder="Deskripsi"
+              placeholder="Description (optional)"
               value={desc}
               maxLength={280}
               onChange={(e) => setDesc(e.target.value)}
@@ -125,10 +127,15 @@ export function ProjectPanel({
           </Field>
           <div className="flex justify-end gap-2">
             <Button size="sm" onClick={() => setOpen(false)}>
-              Batal
+              Cancel
             </Button>
-            <Button size="sm" variant="primary" onClick={create} disabled={!name.trim() || busy}>
-              {busy ? "Menyimpan…" : "Buat"}
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={create}
+              disabled={!name.trim() || busy}
+            >
+              {busy ? "Savings…" : "Create"}
             </Button>
           </div>
         </Card>
@@ -143,7 +150,10 @@ export function ProjectPanel({
           }`}
           onClick={() => onPick(null)}
         >
-          <i className="h-[7px] w-[7px] shrink-0 rounded-pill bg-accent" aria-hidden />
+          <i
+            className="h-[7px] w-[7px] shrink-0 rounded-pill bg-accent"
+            aria-hidden
+          />
           <span className="flex min-w-0 flex-col">
             <b className="text-body font-semibold">Workspace</b>
             <small className="text-caption text-dim">Freespace</small>
@@ -168,7 +178,9 @@ export function ProjectPanel({
                 <span className="flex min-w-0 flex-col">
                   <b className="truncate text-body font-semibold">{p.name}</b>
                   <small className="truncate text-caption text-dim">
-                    {p.status === "archived" ? "arsip" : p.description || "proyek"}
+                    {p.status === "archived"
+                      ? "arsip"
+                      : p.description || "proyek"}
                   </small>
                 </span>
               </button>
@@ -185,15 +197,24 @@ export function ProjectPanel({
             {confirmId === p.id && (
               <div className="flex flex-col gap-2 rounded-md2 border border-danger/30 bg-danger-soft px-3 py-2.5">
                 <p className="text-caption leading-5 text-danger">
-                  Hapus <b>“{p.name}”</b> permanen? Sesi, task, file, memory project &amp; audit ikut dibersihkan.
+                  Hapus <b>“{p.name}”</b> permanen? Sesi, task, file, memory
+                  project &amp; audit ikut dibersihkan.
                   <br />
-                  <small className="text-danger/70">Skill yang dipelajari persona &amp; metering tetap tersimpan.</small>
+                  <small className="text-danger/70">
+                    Skill yang dipelajari persona &amp; metering tetap
+                    tersimpan.
+                  </small>
                 </p>
                 <div className="flex justify-end gap-2">
                   <Button size="sm" onClick={() => setConfirmId(null)}>
                     Batal
                   </Button>
-                  <Button size="sm" variant="danger" onClick={() => void remove(p)} disabled={deleting === p.id}>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => void remove(p)}
+                    disabled={deleting === p.id}
+                  >
                     {deleting === p.id ? "Menghapus…" : "Hapus permanen"}
                   </Button>
                 </div>

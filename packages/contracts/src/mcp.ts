@@ -47,9 +47,9 @@ export type McpAuditEntry = z.infer<typeof McpAuditEntry>;
 
 // PUT /api/mcp/trust
 export const SetMcpTrustRequest = z.object({
-  server: z.string().min(1),
+  server: z.string().min(1).max(200),
   trusted: z.boolean(),
-  denyTools: z.array(z.string()).default([]),
+  denyTools: z.array(z.string().max(200)).max(500).default([]),
 });
 
 // ── Katalog MCP (P1-MCP-1) ─────────────────────────────────────────
@@ -82,8 +82,8 @@ export type McpCatalogEntry = z.infer<typeof McpCatalogEntry>;
 
 // POST /api/mcp/install
 export const InstallMcpRequest = z.object({
-  catalogId: z.string().min(1),
+  catalogId: z.string().min(1).max(200),
   /** Nilai env dari form UI — hanya value non-kosong yang ditulis ke mcp.json. */
-  env: z.record(z.string()).default({}),
+  env: z.record(z.string().max(2_000)).refine((o) => Object.keys(o).length <= 50, "maks 50 env key").default({}),
 });
 export type InstallMcpRequest = z.infer<typeof InstallMcpRequest>;

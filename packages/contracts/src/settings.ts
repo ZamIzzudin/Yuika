@@ -21,13 +21,13 @@ export type ProviderSettings = z.infer<typeof ProviderSettings>;
 /** PUT /api/settings/provider — field kosong/undefined = tidak diubah. */
 export const UpdateProviderSettingsRequest = z.object({
   kind: ProviderKindSchema.optional(),
-  baseUrl: z.string().url().optional(),
-  apiKey: z.string().min(8).optional(),
-  model: z.string().min(1).optional(),
+  baseUrl: z.string().url().max(500).optional(),
+  apiKey: z.string().min(8).max(400).optional(),
+  model: z.string().min(1).max(200).optional(),
   /** String kosong = hapus fallback. */
-  fallbackModel: z.string().nullable().optional(),
+  fallbackModel: z.string().max(200).nullable().optional(),
   /** P1-INF-3: model aux — null/kosong = pakai model utama. */
-  auxModel: z.string().nullable().optional(),
+  auxModel: z.string().max(200).nullable().optional(),
 });
 export type UpdateProviderSettingsRequest = z.infer<typeof UpdateProviderSettingsRequest>;
 

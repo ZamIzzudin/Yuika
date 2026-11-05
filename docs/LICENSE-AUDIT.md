@@ -47,7 +47,10 @@ LGPL-3.0 2 · MPL-2.0 2 · CC-BY-4.0 1 · dual (MIT OR WTFPL) 1.
    sendiri** (`doc_read`) → rendah selama single-user dev, **tinggi saat multi-user**.
    Opsi: (a) pin tarball `https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`
    (masih Apache-2.0, drop-in, zero-code-change); (b) migrasi `exceljs` (MIT,
-   rewrite kecil). → **Rekomendasi (a) sebelum P1-INF-5 deploy.**
+   rewrite kecil). → ✅ **SELESAI 2026-11**: core deps pin ke tarball 0.20.3
+   (prod code `XLSX.read(buffer)` tak berubah; fixture test dialih dari
+   `writeFile` → `write(type:buffer)` karena ESM ≥0.19 tak lagi auto-bind fs).
+   CVE terpakai: `npm audit` xlsx hilang.
 2. **`postcss ≤8.5.22` via `next@15.5.28` — 4 advisories** (XSS stringify, arbitrary
    file read via sourceMappingURL — semua build-time, bukan runtime serving input
    user). Fix resmi = next@16 (breaking). Mitigasi non-breaking: npm `overrides`
@@ -59,6 +62,11 @@ LGPL-3.0 2 · MPL-2.0 2 · CC-BY-4.0 1 · dual (MIT OR WTFPL) 1.
    Mitigasi murah tanpa upgrade: cap ukuran body di route (sudah sebagian) +
    `z.string().max()` konsisten di kontrak upload. Upgrade zod v4 = tugas sendiri
    (pecah kontrak) — jadwalkan, jangan buru-buru.
+   → ✅ **MITIGASI DIPASANG 2026-11**: cap `.max()` di SEMUA skema request
+   (SendMessage 200k, memory 1MB, roster ≤64, addRefs/addArtefak ≤100×400,
+   MCP trust ≤500 tools ×200, install env ≤50 key ×2k, provider settings);
+   upload route sudah cap 10MB pra-parse. Sisa 2 high di `npm audit` = zod
+   (root cause tunggal) — hilang saat upgrade zod v4.
 4. Moderate: vitest/vite/esbuild — **devDependency saja**, tidak ter-ship. Abaikan.
 
 ## 5. Aset & kode non-npm
@@ -95,11 +103,13 @@ LGPL-3.0 2 · MPL-2.0 2 · CC-BY-4.0 1 · dual (MIT OR WTFPL) 1.
       (root, contracts, core, web). *Keputusan user — blok publish repo publik.*
 2. [ ] Buat `THIRD-PARTY-NOTICES.md` (sharp/libvips LGPL, caniuse-lite CC-BY,
       expand-template MIT, dsb) — regenerasi via skrip audit.
-3. [ ] Swap `xlsx` → tarball cdn.sheetjs.com 0.20.3 (Apache-2.0, zero-code-change)
-      + jalur test doc-tools. *Sebelum deploy P1-INF-5.*
-4. [ ] npm `overrides`: postcss ^8.5.23 (menutup 4 advisories tanpa next@16).
-5. [ ] zod: tambah cap `.max()` di kontrak upload/array besar (mitigasi DoS murah);
-      jadwalkan upgrade zod v4 sebagai task sendiri.
+3. [x] ~~Swap `xlsx`~~ ✅ 2026-11 — pin tarball cdn.sheetjs.com 0.20.3
+      (Apache-2.0); fixture test via `write(type:buffer)`. 232 test hijau.
+4. [x] ~~npm `overrides` postcss~~ ✅ 2026-11 — root override `"postcss":
+      "8.5.32"` (perlu hapus entri lock nested milik next agar ter-resolve).
+      4 advisories postcss hilang dari audit.
+5. [x] ~~zod cap `.max()`~~ ✅ 2026-11 — semua skema request dibatasi (lihat §4.3);
+      upgrade zod v4 tetap terjadwal terpisah (2 high tersisa di audit = zod).
 6. [ ] Konfirmasi provenans & nama "Orin" (trademark ringan) sebelum branding publik.
 7. [ ] CI: tambah step `npm audit --omit=dev --audit-level=high` (fail >
       threshold) + regenerasi laporan lisensi berkala.

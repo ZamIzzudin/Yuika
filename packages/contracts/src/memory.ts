@@ -15,6 +15,6 @@ export const MemoryDoc = z.object({
 });
 export type MemoryDoc = z.infer<typeof MemoryDoc>;
 
-/** PUT /api/memory */
-export const SaveMemoryRequest = MemoryDoc;
+/** PUT /api/memory — cap 1MB utk payload input (mitigasi GHSA zod <4.6.6). */
+export const SaveMemoryRequest = MemoryDoc.extend({ content: z.string().max(1_000_000) });
 export type SaveMemoryRequest = z.infer<typeof SaveMemoryRequest>;
