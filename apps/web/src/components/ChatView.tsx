@@ -410,9 +410,9 @@ export function ChatView({
                   <summary className="flex cursor-pointer list-none items-center gap-1 text-secondary select-none [&::-webkit-details-marker]:hidden">
                     <Chevron size={10} />
                     <Brain size={12} aria-hidden />
-                    Berpikir{it.streaming ? "…" : ""}{" "}
+                    Thinking{it.streaming ? "…" : ""}{" "}
                     <span className="text-muted">
-                      ({full.length.toLocaleString("id-ID")} chars)
+                      ({full.length.toLocaleString("en-GB")} chars)
                     </span>
                   </summary>
                   <pre className="mt-1 max-h-[300px] overflow-auto font-mono text-xs break-words whitespace-pre-wrap">

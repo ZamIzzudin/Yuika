@@ -88,6 +88,10 @@
 @utility float-yui {
   animation: yui-float 5.5s ease-in-out infinite alternate;
 }
+/* Persona Studio: maskot muncul saat ganti karakter (feel character-select). */
+@utility pop-yui {
+  animation: pop-in 380ms var(--ease-out-yui) both;
+}
 @utility caret-blink {
   display: inline-block;
   width: 8px;
@@ -205,6 +209,12 @@ html, body {
 
 /* ── Workspace: satu area konten + tab bar (Chat juga tab) ────── */
 .workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* Persona Studio: maskot pop-in (character-select switch). */
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 @keyframes yui-float {
   from {
     transform: translateY(-5px);

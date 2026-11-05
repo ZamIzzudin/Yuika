@@ -45,7 +45,7 @@ export interface OrinShape {
 
 export const SHAPES: Record<OrinShapeKey, OrinShape> = {
   orb: {
-    name: "Bola",
+    name: "Ball",
     color: "#F2620F",
     fy: 0,
     gs: 1,
@@ -54,7 +54,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     geom: <circle r={130} />,
   },
   cloud: {
-    name: "Awan",
+    name: "Cloud",
     color: "#F5A00A",
     fy: 8,
     gs: 0.92,
@@ -65,7 +65,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   blob: {
-    name: "Telur",
+    name: "Egg",
     color: "#2B8CF0",
     fy: 0,
     gs: 1,
@@ -76,7 +76,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   square: {
-    name: "Kotak",
+    name: "Box",
     color: "#12D1A0",
     fy: 0,
     gs: 1.05,
@@ -87,7 +87,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   tri: {
-    name: "Segitiga",
+    name: "Triangle",
     color: "#F0278E",
     fy: 36,
     gs: 0.78,
@@ -98,7 +98,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   pill: {
-    name: "Kapsul",
+    name: "Capsule",
     color: "#2BC4D8",
     fy: 0,
     gs: 1.22,
@@ -111,7 +111,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   bean: {
-    name: "Kacang",
+    name: "Bean",
     color: "#A653C8",
     fy: -20,
     gs: 0.95,
@@ -122,7 +122,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   drop: {
-    name: "Tetes",
+    name: "Drop",
     color: "#FF7662",
     fy: 30,
     gs: 0.8,
@@ -133,7 +133,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   star: {
-    name: "Bintang",
+    name: "Star",
     color: "#8FDB6F",
     fy: 6,
     gs: 0.78,
@@ -147,7 +147,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   flower: {
-    name: "Bunga",
+    name: "Flower",
     color: "#C48DEB",
     fy: 0,
     gs: 1,
@@ -158,7 +158,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   hex: {
-    name: "Segi enam",
+    name: "Hexagon",
     color: "#A8D83E",
     fy: 0,
     gs: 1,
@@ -169,7 +169,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   trap: {
-    name: "Trapesium",
+    name: "Trapezoid",
     color: "#E8503A",
     fy: 8,
     gs: 0.95,
@@ -180,7 +180,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   diamond: {
-    name: "Berlian",
+    name: "Diamond",
     color: "#3A4FB0",
     fy: 0,
     gs: 0.86,
@@ -191,7 +191,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   dome: {
-    name: "Kubah",
+    name: "Dome",
     color: "#E6DC3A",
     fy: 6,
     gs: 1.05,
@@ -202,7 +202,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     ),
   },
   tube: {
-    name: "Tabung",
+    name: "Tube",
     color: "#1F9A9A",
     fy: -18,
     gs: 0.82,

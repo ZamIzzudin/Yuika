@@ -100,7 +100,7 @@ export function TracePanel({
   }, [live, load]);
 
   const fmtTime = (ts: number) =>
-    new Date(ts).toLocaleTimeString("id-ID", { hour12: false });
+    new Date(ts).toLocaleTimeString("en-US", { hour12: false });
   const fmtDur = (ms: number | null) =>
     ms === null
       ? ""
@@ -153,8 +153,8 @@ export function TracePanel({
                 </span>
                 <small className="ml-auto text-caption text-dim">
                   {t.steps.length} steps · {t.tokens.calls}× model ·{" "}
-                  {t.tokens.input.toLocaleString("id-ID")}+
-                  {t.tokens.output.toLocaleString("id-ID")} tok
+                  {t.tokens.input.toLocaleString("en-US")}+
+                  {t.tokens.output.toLocaleString("en-US")} tok
                 </small>
               </summary>
               <ol className="mt-2 flex flex-col gap-1 border-t border-line pt-2">

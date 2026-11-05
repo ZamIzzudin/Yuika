@@ -334,7 +334,7 @@ function BudgetPanel() {
 
   if (!st) return <Skeleton lines={3} />;
   const cur = st.currency ?? "USD";
-  const fmtC = (n: number) => `${n.toLocaleString("id-ID", { maximumFractionDigits: n < 100 ? 3 : 0 })} ${cur}`;
+  const fmtC = (n: number) => `${n.toLocaleString("en-US", { maximumFractionDigits: n < 100 ? 3 : 0 })} ${cur}`;
   const bar = (spent: number, limit: number | null) => {
     if (!limit) return null;
     const pct = Math.min(100, Math.round((spent / limit) * 100));
@@ -447,7 +447,7 @@ function UsagePanel() {
     return () => clearInterval(t);
   }, [load]);
 
-  const fmt = (n: number) => n.toLocaleString("id-ID");
+  const fmt = (n: number) => n.toLocaleString("en-US");
   /** Estimasi biaya baris model — null bila model tak berharga (jujur, bukan 0). */
   const cost = (m: { key: string; promptTokens: number; outputTokens: number }): number | null => {
     const p = prices?.[m.key];
@@ -455,7 +455,7 @@ function UsagePanel() {
     return (m.promptTokens / 1_000_000) * p.inputPerMillion + (m.outputTokens / 1_000_000) * p.outputPerMillion;
   };
   const pricedCurrency = Object.entries(prices ?? {}).find(([, p]) => p.inputPerMillion || p.outputPerMillion)?.[1].currency ?? "USD";
-  const fmtCost = (c: number | null) => (c === null ? "—" : `${c.toLocaleString("id-ID", { maximumFractionDigits: c < 100 ? 2 : 0 })} ${pricedCurrency}`);
+  const fmtCost = (c: number | null) => (c === null ? "—" : `${c.toLocaleString("en-US", { maximumFractionDigits: c < 100 ? 2 : 0 })} ${pricedCurrency}`);
   const totalCost = data ? data.summary.byModel.reduce((acc, m) => acc + (cost(m) ?? 0), 0) : 0;
   const anyPriced = data?.summary.byModel.some((m) => cost(m) !== null) ?? false;
 
@@ -508,7 +508,7 @@ function UsagePanel() {
                 {" "}· est. cost <b className="text-primary">{fmtCost(totalCost)}</b>
               </>
             )}
-            {data.summary.windowStart && <span className="text-dim"> (since {new Date(data.summary.windowStart).toLocaleString("id-ID")})</span>}
+            {data.summary.windowStart && <span className="text-dim"> (since {new Date(data.summary.windowStart).toLocaleString("en-US")})</span>}
           </p>
           <Table label="Usage per persona" head={["Persona", "Calls", "In tokens", "Out tokens"]}>
             {data.summary.byPersona.map((r) => (
@@ -541,7 +541,7 @@ function UsagePanel() {
                     <td className="py-1 pr-3"><code className="font-mono">{r.model}</code></td>
                     <td className="py-1 pr-3">{fmt(r.calls)}</td>
                     <td className="py-1 pr-3">{fmt(r.promptTokens + r.outputTokens)}</td>
-                    <td className="py-1 pr-3">{r.cost === null ? "—" : `${r.cost.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${r.currency}`}</td>
+                    <td className="py-1 pr-3">{r.cost === null ? "—" : `${r.cost.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${r.currency}`}</td>
                   </tr>
                 ))}
               </Table>
