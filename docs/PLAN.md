@@ -754,7 +754,7 @@ resume setelah refresh.
       `delegate_task(persona=…)` — persona sebagai preset child — ✅ v0 parsial: job persist (P0-DEL-1) + **paralel dalam satu round (Promise.all, 2026-11)** + delta live feed + **steer/cancel/cascade (P0-DEL-2, 2026-11)**; *sisa: steering per node TaskTree (P1-DEL-3) + queue/retry background*
 - [ ] **Persona v1**: manifest + PERSONA.md prompt layer + toolset/model binding + expression
       state mapping (asset pipeline siap; ilustrasi bisa menyusul masuk)
-- [ ] Multi-provider + failover + aux routing (compression/title pakai model murah)
+- [ ] Multi-provider + failover + aux routing (compression/title pakai model murah) — ✅ v0 parsial: failover primary→fallback + cooldown 5 mnt (P0-CORE-2) + aux routing kompresi & learn-nudge via `YUI_AUX_MODEL` (P0-CORE-4, 2026-11); *sisa: multi-provider simultan (≥2 base URL) + aux routing untuk title sesi*
 - [ ] **Credits v1**: usage events + ledger + admission (hold→settle) + saldo UI + plan sederhana — ✅ v0: ledger jujur per panggilan (juga anak delegasi) + admission warn/block + saldo/budget UI + price book + smoke test; *sisa: Stripe & tagihan nyata (P1-CRED-5/6, butuh resource eksternal)*
 - [ ] Compression (ContextEngine default) + prompt-cache discipline tests
 

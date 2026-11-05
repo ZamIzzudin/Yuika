@@ -506,6 +506,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       approvals,
       emit,
       mcpAllowlistFor, // P1-PRJ-5: binding MCP granular per project×persona
+      auxModel: () => process.env.YUI_AUX_MODEL || process.env.YUI_LEARN_MODEL || model, // P0-CORE-4: kompresi pakai model murah (swap panas)
       recordUsage: (u) => { usageLedger.record(u); admission.noteUsage(); }, // CRED-1 meter + CRED-2 saldo cache
     });
     loopCache.set(sessionId, loop);

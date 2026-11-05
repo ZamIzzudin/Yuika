@@ -256,3 +256,69 @@ describe("AgentLoop (fake provider)", () => {
     expect(states[states.length - 1]).toBe("idle");
     store.close();
   });
+
+describe("P0-CORE-4 aux routing: kompresi pakai model murah", () => {
+  it("summary call pergi ke auxModel (bukan model utama) + checkpoint merekam model aux", async () => {
+    resetRegistryForTests();
+    // ~50 pesan × 10k chars ≈ 125k token — melampaui ambang default 70%×128k.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-aux-"));
+    const store = new SessionStore(path.join(dir, "t.db"));
+    const sid = "s_aux1";
+    store.createSession(sid, "yui-conductor", "SYS", []);
+    for (let i = 0; i < 50; i++) {
+      store.appendMessage(sid, { role: i % 2 === 0 ? "user" : "assistant", content: "x".repeat(10_000) });
+    }
+    const events: YuiEvent[] = [];
+    const emit = (draft: EventDraft) => {
+      events.push(store.appendEvent(sid, draft));
+    };
+    const provider = new FakeProvider([
+      { done: { type: "done", finishReason: "stop", text: "RINGKASAN SESI", toolCalls: [] } }, // aux summary
+      { done: { type: "done", finishReason: "stop", text: "lanjut bekerja", toolCalls: [] } }, // jawaban utama
+    ]);
+    const loop = new AgentLoop({
+      store,
+      provider,
+      model: "fake-model",
+      auxModel: () => "aux-cheap",
+      workspacePath: dir,
+      approvals: new ApprovalEngine(emit),
+      emit,
+    });
+    await loop.runTurn(sid, "lanjutkan");
+    // panggilan PERTAMA = ringkasan kompresi → wajib model aux murah
+    expect(provider.calls[0]!.model).toBe("aux-cheap");
+    expect(provider.calls[1]!.model).toBe("fake-model");
+    // checkpoint audit: model yang dipakai tercatat
+    const cp = store.latestContextCheckpoint(sid);
+    expect(cp?.model).toBe("aux-cheap");
+    expect(cp?.summary).toBe("RINGKASAN SESI");
+    store.close();
+  });
+
+  it("tanpa auxModel → summary jatuh ke model utama sesi (aman default)", async () => {
+    resetRegistryForTests();
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-aux2-"));
+    const store = new SessionStore(path.join(dir, "t.db"));
+    const sid = "s_aux2";
+    store.createSession(sid, "yui-conductor", "SYS", []);
+    for (let i = 0; i < 50; i++) {
+      store.appendMessage(sid, { role: i % 2 === 0 ? "user" : "assistant", content: "y".repeat(10_000) });
+    }
+    const provider = new FakeProvider([
+      { done: { type: "done", finishReason: "stop", text: "R", toolCalls: [] } },
+      { done: { type: "done", finishReason: "stop", text: "ok", toolCalls: [] } },
+    ]);
+    const loop = new AgentLoop({
+      store,
+      provider,
+      model: "fake-model",
+      workspacePath: dir,
+      approvals: new ApprovalEngine(() => {}),
+      emit: () => {},
+    });
+    await loop.runTurn(sid, "lanjutkan");
+    expect(provider.calls[0]!.model).toBe("fake-model");
+    store.close();
+  });
+});

@@ -7,6 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import type { ProviderAdapter, ChatRequest, ProviderChunk, ProviderDone } from "../provider/adapter.js";
 import { SessionStore } from "../session/store.js";
+import { ProjectStore } from "../project/store.js";
 import { runChildPersona, type DelegationDeps } from "../delegation/runner.js";
 import { registerTodoTools } from "../tools/todo-tools.js";
 import { registry, resetRegistryForTests } from "../registry.js";
@@ -22,9 +23,9 @@ const parentSession = "s_parent2";
 
 beforeEach(() => {
   resetRegistryForTests();
-  registerTodoTools();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-steer-"));
   store = new SessionStore(path.join(dir, "test.db"));
+  registerTodoTools({ sessionStore: store, projects: new ProjectStore(path.join(dir, "p.db")) });
   ws = path.join(dir, "workspace");
   fs.mkdirSync(ws, { recursive: true });
   parentEvents = [];

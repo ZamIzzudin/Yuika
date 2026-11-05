@@ -54,6 +54,9 @@ export interface LoopDeps {
   /** P1-CRED-1: catat pemakaian per panggilan model sukses (token dari provider,
    *  tanpa estimasi). Diisi runtime → ledger SQLite. */
   recordUsage?: (u: UsageEvent) => void;
+  /** P0-CORE-4: model aux murah untuk kompresi konteks (getter — swap panas via
+   *  Settings). Kosong/null → fallback ke model utama sesi. */
+  auxModel?: () => string;
   /** P0-DEL-2: antrean steering — arahan user mid-turn di-drain (dipop) di awal
    *  tiap iterasi loop, di-inject sebagai pesan user berlabel. Dipakai runner
    *  delegasi untuk arahkan anak tanpa membatalkannya. */
@@ -87,7 +90,7 @@ export class AgentLoop {
     const ctx = await buildContextMessages(
       store,
       provider,
-      model,
+      this.deps.auxModel?.() || model, // P0-CORE-4: ringkasan pakai model aux MURAH bila dikonfigurasi
       sessionId,
       {
         contextTokens: env.contextTokens,
