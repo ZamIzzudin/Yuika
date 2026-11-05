@@ -20,9 +20,8 @@
  *
  * FX layer: "..." (thinking) · "?" (confused) · ♪ (hum) · z (sleep) — fade + melayang.
  *
- * Siap Rive (P1-PER-2): state machine "Mascot" — mood 0–5, shape 0–14, lookX/lookY,
- * audioLevel 0–100, trigger blink/nod/giggle/hum/look/tilt/yawn/hiccup, boolean sleep;
- * hirarki identik (Root›Body›Face›EyeL/EyeR›ArcShape + Root›FX).
+ * Rig ini FINAL (Rive dibatalkan 2026-11 — jalur .riv dicabut; dokumen arsip
+ * docs/ART-DIRECTION.md). Urutan bentuk resmi: SHAPE_ORDER di orinShapes.tsx.
  */
 import { useEffect, useId, useRef } from "react";
 import type { PersonaState } from "@yuika/contracts";

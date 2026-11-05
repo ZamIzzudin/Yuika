@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 /**
  * Orin v8 — definisi bentuk maskot (docs/orin_v8_larger_star.html).
  * Satu rig mata dipakai semua bentuk; identitas persona = BENTUK (bukan tint).
- * 15 bentuk (urutan SHAPE_ORDER = indeks input Rive `shape` 0–14) — geometri
+ * 15 bentuk (urutan SHAPE_ORDER = urutan resmi pemakaian di UI) — geometri
  * v6 "Round Orb & Soft Star": kontur membulat organik, SEMUA bentuk path filled
  * (tidak ada lagi stroke-based v4).
  * Parameter per bentuk: fy (offset wajah Y), gs (skala jarak mata), es (skala
@@ -214,7 +214,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
   },
 };
 
-/** Urutan resmi = indeks input Rive `shape` 0–14 (docs: state machine "Mascot"). */
+/** Urutan resmi bentuk (dipakai CharacterStage & pemilih bentuk; JANGAN diubah — tersimpan di override user). */
 export const SHAPE_ORDER: OrinShapeKey[] = [
   "orb",
   "cloud",
