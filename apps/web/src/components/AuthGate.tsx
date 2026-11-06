@@ -3,7 +3,7 @@
 // punya user terdaftar (mode lokal) children langsung dirender; setelah itu
 // wajib login/register. Token disimpan di localStorage (authFetch memakai).
 import { useEffect, useState } from "react";
-import { Key, SignIn, UserPlus } from "@phosphor-icons/react";
+import { Globe, Key, SignIn, UserPlus } from "@phosphor-icons/react";
 import type { AuthStatusT } from "@yuika/contracts";
 import { apiUrl, authFetch, clearAuthToken, setAuthToken } from "@/lib/api";
 import { Button, Field, TextInput } from "./ui";
@@ -62,6 +62,26 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     clearAuthToken();
     await authFetch(apiUrl("/api/auth/logout"), { method: "POST" }).catch(() => undefined);
     setStatus({ user: null, authRequired: true });
+  }
+
+  /** CP-3 SSO: minta URL authorize lalu arahkan browser ke portal
+   *  (user tinggal Accept di portal — tanpa salin token). */
+  async function startPortal() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await authFetch(apiUrl("/api/auth/portal/start"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ redirectUri: `${window.location.origin}/auth/callback` }),
+      });
+      const body = (await r.json().catch(() => ({}))) as { authorizeUrl?: string; error?: string };
+      if (!r.ok || !body.authorizeUrl) throw new Error(body.error ?? "portal sign-in unavailable");
+      window.location.href = body.authorizeUrl;
+    } catch (err) {
+      toastErr(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
   }
 
   // Server belum menjawab → jangan kedip-kedip (render kosong dulu).
@@ -126,6 +146,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           <OrinPortrait state="idle" size={72} />
           <h1 className="text-title font-semibold text-primary">Yuika</h1>
           <p className="text-caption text-muted">Sign in to your agent studio</p>
+        </div>
+
+        {/* CP-3: jalur utama = portal (satu klik Accept bila sesi portal hidup).
+         *  Form lokal di bawah tetap tersedia sebagai fallback offline/dev. */}
+        <Button type="button" variant="primary" disabled={busy} onClick={() => void startPortal()}>
+          <Globe size={13} aria-hidden /> Sign in with Yuika Portal
+        </Button>
+        <div className="flex items-center gap-3 text-caption text-faint" aria-hidden>
+          <span className="h-px flex-1 bg-line" /> or local account <span className="h-px flex-1 bg-line" />
         </div>
 
         <Field label="Email">

@@ -111,7 +111,11 @@ deps, jalankan dev server": npm install lulus egress, perintah tampak di
 tab Terminal, approval muncul untuk perintah berisiko, dev server jalan.
 
 **HASIL (2026-11-07): DONE.** e2e `terminal.spec.ts` T1-T3 hijau (user mengetik
-di tab; agent `node -v` muncul di SESI SAMA tanpa approval; `npm publish` →
+
+**Tindak lanjut CP-3 (2026-11-07): SSO login via portal** — P1-PRT-7 sisi Yuika
+SELESAI (tombol "Sign in with Yuika Portal" + callback + sesi Yuika; api unit 6/6,
+e2e penuh 8/8 via portal-double) — endpoint portal nyata menunggu sesi portal
+(lihat TASKS P1-PRT-7 + portal docs/CHANGE-PROPOSALS.md CP-3 accepted).di tab; agent `node -v` muncul di SESI SAMA tanpa approval; `npm publish` →
 approval card → Approve once → jalan) + suite penuh 7/7. Unit: egress proxy 5,
 terminal 7, mcp-worker 3, api terminal-routes 3; typecheck 6/6. CATATAN jujur:
 (a) e2e jalan di fallback shell lokal (env dev tanpa Docker) — jalur

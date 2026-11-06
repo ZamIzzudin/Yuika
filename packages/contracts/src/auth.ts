@@ -27,3 +27,32 @@ export type AuthCredentialsT = z.infer<typeof AuthCredentials>;
 export type AuthUserT = z.infer<typeof AuthUser>;
 export type AuthSessionT = z.infer<typeof AuthSession>;
 export type AuthStatusT = z.infer<typeof AuthStatus>;
+
+// ── CP-3 — SSO login via portal (OAuth2-style + PKCE) ───────────────────────
+// Portal = satu-satunya identity provider; Yuika mint sesinya SENDIRI.
+// Alur: start → redirect portal /authorize → Accept → callback ?code&state
+// → complete (tukar code+verifier di portal /api/oauth/token) → sesi Yuika.
+
+/** Mulai SSO: browser minta URL authorize (redirect_uri = origin web app). */
+export const PortalSsoStartRequest = z.object({
+  redirectUri: z.string().url().max(500),
+});
+
+export const PortalSsoStartResponse = z.object({
+  /** URL lengkap portal /authorize (browser diarahkan ke sini). */
+  authorizeUrl: z.string().url(),
+});
+
+/** Selesaikan SSO dari halaman callback (?code&state di URL). */
+export const PortalSsoCompleteRequest = z.object({
+  code: z.string().min(8).max(256),
+  state: z.string().min(8).max(256),
+});
+
+/** Sukses = sesi Yuika (bentuk sama dengan login lokal). */
+export const PortalSsoCompleteResponse = AuthSession;
+
+export type PortalSsoStartRequestT = z.infer<typeof PortalSsoStartRequest>;
+export type PortalSsoStartResponseT = z.infer<typeof PortalSsoStartResponse>;
+export type PortalSsoCompleteRequestT = z.infer<typeof PortalSsoCompleteRequest>;
+export type PortalSsoCompleteResponseT = z.infer<typeof PortalSsoCompleteResponse>;

@@ -21,6 +21,7 @@ import { registerPortalRoutes } from "./routes/portal.js";
 import { registerTerminalRoutes } from "./routes/terminal.js";
 import { getRuntime } from "./runtime.js";
 import { registerAuthRoutes, bearerToken } from "./routes/auth.js";
+import { registerAuthSsoRoutes } from "./routes/auth-sso.js"; // CP-3 SSO portal
 import { authUserCount, validateToken } from "./auth/store.js";
 
 export function buildApp(rt?: YuiRuntime): FastifyInstance {
@@ -60,6 +61,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   });
 
   registerAuthRoutes(app);
+  registerAuthSsoRoutes(app); // CP-3: sign-in via portal (start+complete)
   registerSessionRoutes(app, getRt);
   registerDelegationRoutes(app, getRt);
   registerApprovalRoutes(app, getRt);

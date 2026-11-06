@@ -53,6 +53,8 @@ export default defineConfig({
         YUI_TRACE: "0",
         YUI_LOG_LEVEL: "warn",
         YUI_PORTAL_DEVICE_DB: "e2e/.tmp/portal-device.db",
+        // CP-3 SSO: portal base utk start/complete → portal-double :3110
+        YUI_PORTAL_URL: "http://127.0.0.1:3110",
         // Batch 2: shell terminal deterministik (fixture echo-shell — ECHO:<line>).
         YUI_TERMINAL_MODE: "local",
         YUI_TERMINAL_CMD: `node ${path.resolve("packages/core/src/terminal/__fixture__/echo-shell.mjs")}`,

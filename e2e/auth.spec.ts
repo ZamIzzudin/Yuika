@@ -34,11 +34,11 @@ test("auth: local mode open → gate after register → login → sign out", asy
   // 3) Login salah → toast error; benar → workspace muncul + badge email.
   await gate.getByPlaceholder("you@example.com").fill(EMAIL);
   await gate.getByPlaceholder("At least 8 characters").fill("wrong-password");
-  await gate.getByRole("button", { name: "Sign in" }).click();
+  await gate.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByText("invalid email or password")).toBeVisible();
 
   await gate.getByPlaceholder("At least 8 characters").fill(PASSWORD);
-  await gate.getByRole("button", { name: "Sign in" }).click();
+  await gate.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("button", { name: "New project" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: /^Sign out/ })).toContainText(EMAIL);
 
