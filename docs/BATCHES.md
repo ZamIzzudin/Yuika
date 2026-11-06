@@ -63,7 +63,9 @@ mobile ada. Ini jalur kritis menuju Batch 8 (mobile) & 9 (desktop).
    SESSION-GUIDE portal); sesi Yuika cukup pantau `yuika-portal/docs/TASKS.md`.
 6. [ ] **P1-PRT-6** Gerbang e2e (2d) — host + 2 remote live sesi sama, approval
    dari remote, drop → resume snapshot; playwright (relay in-process).
-   **Prasyarat: portal menandai "PORTAL READY FOR INTEGRATION".**
+   **Prasyarat: portal menandai "PORTAL READY FOR INTEGRATION".** — ✅ TERBIT
+   (2026-11-07, portal `70f84ed` + `docs/INTEGRATION.md`); lanjutan uji portal
+   nyata IN-PROGRESS (lihat TASKS P1-PRT-6).
 
 **Acceptance batch:** skenario SPEC-PROTOCOL §11 butir 1–9 hijau via /dev/remote
 + gerbang e2e; badge remote connected tampil; host tetap diremotable tanpa tab
@@ -75,7 +77,8 @@ portal). Gerbang e2e G1–G6 hijau (2 test/37 dtk, SpecRelay double) + **live
 smoke lintas repo 8/8** vs relay PRODUKSI yuika-portal (T1 done sesi paralel,
 commit portal `0d0752d`). Commit: `4e58968` `ff50d39` `09b5d1d` `bfd4a72`
 `a8a31d3` + gerbang. Sisa non-blokir: uji ulang penuh via portal web +
-staging setelah portal T2+T4 (gerbang PORTAL READY).
+staging setelah portal T2+T4 (gerbang PORTAL READY — ✅ terbit 2026-11-07;
+integrasi portal nyata IN-PROGRESS, hasil dicatat di TASKS P1-PRT-6).
 
 **Paralelisme:** PRT-1..4 tidak butuh portal T1 selesai (spec sudah beku;
 relay mock in-process). Hanya PRT-6 menunggu portal READY.
