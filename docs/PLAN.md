@@ -774,17 +774,17 @@ koneksi MCP Notion) → skill baru tercatat di domain persona → semua terlihat
 expression states; burn-rate credit terukur per turn."
 
 ### Fase 2 — Multi-platform UX penuh + Studio v0 (± 10–12 minggu)
-- [ ] **P2-FLOW (v0.4): workflow engine** — DAG fase deklaratif (template 7 fase),
-           sequential/paralel per fase, human gate, monitoring board live (§13.3)
-- [ ] **P2-FLOW (v0.5): TaskTree board** — pohon pemantauan delegasi + steering per node (§13.7)
+- [x] **P2-FLOW (v0.4): workflow engine** — DAG fase deklaratif (template 7 fase),
+           sequential/paralel per fase, human gate, monitoring board live (§13.3) — ✅ Batch 5 2026-11-08: workflow.yaml (zod + lint + template 7 fase 12 step), engine sequential/parallel topo-wave di atas delegation runner, gate approve/reject + resume boot, event workflow.* + replay SSE, board UI live + steering mid-run (steer/pause/resume/reassign)
+- [x] **P2-FLOW (v0.5): TaskTree board** — pohon pemantauan delegasi + steering per node (§13.7) — ✅ parsial Batch 5: board fase live di tab Flow (kolom fase, kartu step, gate banner, pause/resume/stop, steer, reassign step); pohon TaskTree penuh + RACI menyusul P2-PM-4/5
 - [ ] **P2-PM (v0.6): persona Project Manager & planning flow skala besar** — Liebert Yui:
       brainstorm `consult` multi-persona → dokumen perencanaan → task list detail (acceptance/
       depends_on/assignee, validator coverage) → RACI + metrik keluaran per fase → dashboard
-      progres terukur → iterasi run berantai (§13.3.1, D22)
+      progres terukur → iterasi run berantai (§13.3.1, D22) — ✅ parsial: Planner+consult+task detail+validator coverage ✅ (Batch 5 PM-1..3); RACI/dashboard/iterasi berantai menyusul P2-PM-4..6
 - [ ] **P2-DSN (v0.5): pipeline desain→kode via Penpot** — persona desain produksi file,
            tab Design, generate komponen di fase develop (§13.9)
-- [ ] **P2-STU (v0.4): workbench multi-tab** — tab shell, terminal (PTY sandbox),
-      file explorer, browser embed read-only, board, docs; Figma MCP (§13.5)
+- [x] **P2-STU (v0.4): workbench multi-tab** — tab shell, terminal (PTY sandbox),
+      file explorer, browser embed read-only, board, docs; Figma MCP (§13.5) — ✅ Batch 6 2026-11-08: tab shell kolom desktop (chat tak pernah unmount), tab Terminal (Batch 2), File, Browser read-only (proxy allowlist+SSRF guard+sanitizer, security review lulus), Docs (run report + deliverable md); Figma MCP menyusul P2-STU-5
 - [ ] Mobile (Expo): chat, push approval, mission control, persona picker
 - [ ] Desktop (Tauri) + device relay worker
 - [ ] Persona UX penuh: expression per state, growth timeline, varian ilustrasi unlock
