@@ -54,6 +54,7 @@ import { smokeModel } from "./provider/smoke.js";
 import type { ModelSmokeResult } from "@yuika/contracts";
 import { acceptDraft, listDrafts, readUsage, rejectDraft, updateDraft } from "./skills/manager.js";
 import { buildFileTree, readProjectFile, safeProjectPath } from "./project/files.js";
+import { readBrowserAllow, readBrowserPage } from "./browser/reader.js";
 import { FileRevisionStore } from "./project/revisions.js";
 import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
@@ -171,7 +172,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // tools core (sekali per proses)
   const fileRevisions = new FileRevisionStore(paths.dbPath);
   registerFileTools(fileRevisions);
-  registerWebTools();
+  registerWebTools({ sessionStore: store, projects: projectStore }); // P2-STU-4: fetch agent tercatat di tab Browser
   registerSkillTools(paths.skillsDir);
   registerSessionSearchTools(store); // P1-MEM-5: riwayat sesi bisa ditelusuri agent
   registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)
@@ -1194,5 +1195,19 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     workflowEngine,
     listWorkflowRuns: (projectId: string) => projectStore.listWorkflowRuns(projectId),
     getWorkflowRun: (runId: string) => projectStore.getWorkflowRun(runId),
+    // ---- P2-STU-4: browser read-only (tab Browser) ----
+    /** Baca halaman via allowlist proxy (sanitized). byRole utk riwayat kunjungan. */
+    getBrowserPage: async (projectId: string, rawUrl: string, byRole: "agent" | "user") => {
+      const p = projectStore.getProject(projectId);
+      if (!p) throw new Error("project tidak ditemukan");
+      const allow = readBrowserAllow(projectRoot(projectId));
+      const page = await readBrowserPage(rawUrl, {
+        allow,
+        allowPrivate: process.env.YUI_BROWSER_ALLOW_PRIVATE === "1",
+      });
+      projectStore.addBrowserVisit({ projectId, url: page.url, title: page.title, byRole });
+      return page;
+    },
+    listBrowserVisits: (projectId: string, limit?: number) => projectStore.listBrowserVisits(projectId, limit),
   };
 }

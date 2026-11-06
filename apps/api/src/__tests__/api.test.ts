@@ -38,6 +38,14 @@ const fake = {
     { id: "t_a", projectId: "p_ok", title: "A", status: "todo", assignee: "yui-coder", refs: [], description: null, acceptance: ["done a"], dependsOn: ["t_hantu"], estimate: "1d", phase: "planning", createdAt: 0, updatedAt: 0 },
     { id: "t_b", projectId: "p_ok", title: "B", status: "todo", assignee: null, refs: [], description: null, acceptance: [], dependsOn: [], estimate: null, phase: "research", createdAt: 0, updatedAt: 0 },
   ],
+  getBrowserPage: async (_id: string, url: string) => {
+    if (url.includes("evil")) {
+      const { BrowserReadError } = await import("@yuika/core");
+      throw new BrowserReadError("host_denied", `domain tidak di allowlist project: evil.com`);
+    }
+    return { url, title: "Doc", contentType: "text/html", html: "<h1>Hi</h1>" };
+  },
+  listBrowserVisits: () => [{ id: 1, url: "https://example.com", title: "E", byRole: "agent", createdAt: 1 }],
 } as unknown as YuiRuntime;
 
 const app = buildApp(fake);
@@ -94,6 +102,20 @@ describe("apps/api REST contract", () => {
     expect(body.errors.some((e: string) => e.includes("t_hantu"))).toBe(true);
     expect(body.errors.some((e: string) => e.includes("ter-cover"))).toBe(true);
     expect(body.stats.phaseCoverage.length).toBe(7);
+  });
+
+  it("P2-STU-4: GET /browser/fetch — proxy read-only + 403 host_denied; GET /browser/visits", async () => {
+    const ok = await app.inject({ method: "GET", url: "/api/projects/p_ok/browser/fetch?url=https%3A%2F%2Fexample.com" });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toMatchObject({ title: "Doc", html: "<h1>Hi</h1>" });
+
+    const denied = await app.inject({ method: "GET", url: "/api/projects/p_ok/browser/fetch?url=https%3A%2F%2Fevil.com" });
+    expect(denied.statusCode).toBe(403);
+    expect(denied.json()).toMatchObject({ code: "host_denied" });
+
+    const visits = await app.inject({ method: "GET", url: "/api/projects/p_ok/browser/visits" });
+    expect(visits.statusCode).toBe(200);
+    expect(visits.json().visits[0]).toMatchObject({ url: "https://example.com", byRole: "agent" });
   });
 
   it("CORS: origin direfleksikan (web:3000 ↔ api:3211)", async () => {

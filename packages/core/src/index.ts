@@ -26,6 +26,8 @@ export { resolvePaths, resolveRepoRoot } from "./paths.js";
 export { appendUserPreferenceNote, userMdPath } from "./memory/usermd.js";
 export { runChildPersona, type DelegationDeps } from "./delegation/runner.js";
 export { registerTodoTools } from "./tools/todo-tools.js";
+// P2-STU-4: browser reader read-only (allowlist + SSRF guard + sanitizer).
+export { BrowserReadError, readBrowserAllow, readBrowserPage, hostAllowedBrowser, isPrivateIp, sanitizeBrowserHtml } from "./browser/reader.js";
 // P2-STU-2: terminal manager — sesi shared user (SSE api) & agent (tool).
 export {
   ensureSession as ensureTerminalSession,

@@ -950,6 +950,8 @@ export default function Home() {
                             { id: "terminal", label: "Terminal" },
                             { id: "board", label: "Task" },
                             { id: "flow", label: "Flow" },
+                            { id: "docs", label: "Docs" },
+                            { id: "browser", label: "Browser" },
                             { id: "config", label: "Config" },
                           ] as const)
                         : []),
@@ -970,9 +972,18 @@ export default function Home() {
                     ]}
                   />
                 </div>
-                <div className="flex min-h-0 flex-1 flex-col">
-                  {mainTab === "chat" && (
-                    <>
+                {/* P2-STU-1: layout kolom desktop — kolom chat tetap ter-mount
+                    (state draft/scroll + streaming aman saat pindah tab; mobile:
+                    disembunyikan CSS, bukan unmount), panel tab lain jadi kolom
+                    kanan (mobile: layar penuh). */}
+                <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+                  <div
+                    className={
+                      mainTab === "chat"
+                        ? "flex min-h-0 min-w-0 flex-1 flex-col"
+                        : "hidden min-h-0 min-w-0 flex-1 flex-col lg:flex"
+                    }
+                  >
                       <header className="relative flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
                         <details className="group relative">
                           <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill pl-3 pr-6 py-3 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
@@ -1148,40 +1159,43 @@ export default function Home() {
                           busy={busy}
                         />
                       )}
-                    </>
-                  )}
+                  </div>
                   {mainTab === "trace" && (
-                    <TracePanel
-                      sessionId={sessionId}
-                      live={traceTick}
-                      onBack={() => setMainTab("chat")}
-                    />
+                    <div className="flex min-h-0 flex-1 flex-col lg:max-w-[46%] lg:flex-none lg:border-l lg:border-line">
+                      <TracePanel
+                        sessionId={sessionId}
+                        live={traceTick}
+                        onBack={() => setMainTab("chat")}
+                      />
+                    </div>
                   )}
                   {activeProject &&
                     mainTab !== "chat" &&
                     mainTab !== "trace" && (
-                      <ProjectTabs
-                        project={activeProject}
-                        activeSessionId={sessionId}
-                        personas={personas}
-                        activeTab={mainTab}
-                        rev={taskRev}
-                        live={{
-                          parentPersonaId: active.id,
-                          parentState: personaState,
-                          delegations: items
-                            .filter((it) => it.kind === "delegation")
-                            .map(
-                              (it): LiveDelegation => ({
-                                personaId: it.personaId ?? "yui-scholar",
-                                childSessionId: it.childSessionId ?? "",
-                                goal: it.goal ?? "",
-                                childState: it.childState,
-                                summary: it.text,
-                              }),
-                            ),
-                        }}
-                      />
+                      <div className="flex min-h-0 flex-1 flex-col lg:max-w-[46%] lg:flex-none lg:border-l lg:border-line">
+                        <ProjectTabs
+                          project={activeProject}
+                          activeSessionId={sessionId}
+                          personas={personas}
+                          activeTab={mainTab}
+                          rev={taskRev}
+                          live={{
+                            parentPersonaId: active.id,
+                            parentState: personaState,
+                            delegations: items
+                              .filter((it) => it.kind === "delegation")
+                              .map(
+                                (it): LiveDelegation => ({
+                                  personaId: it.personaId ?? "yui-scholar",
+                                  childSessionId: it.childSessionId ?? "",
+                                  goal: it.goal ?? "",
+                                  childState: it.childState,
+                                  summary: it.text,
+                                }),
+                              ),
+                          }}
+                        />
+                      </div>
                     )}
                 </div>
               </div>

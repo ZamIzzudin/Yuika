@@ -19,7 +19,7 @@
 | 3 | Agent 24/7 | ~8d | TERSEDIA | ✅ sekarang |
 | 4 | Otak Yuika | ~8d | TERSEDIA | ✅ sekarang |
 | 5 | Workflow Engine | ~14d | **DONE (2026-11-08)** | ✅ sekarang |
-| 6 | Workbench Studio | ~7d | TERSEDIA | ✅ sekarang |
+| 6 | Workbench Studio | ~7d | **DONE (2026-11-08)** — STU-1 + STU-7 + STU-4 ✅ (security review lulus) | ✅ sekarang |
 | 7 | Design→Code (Penpot) | ~9d | TERSEDIA | ⚠️ setelah Batch 6 (STU-1) |
 | 8 | Mobile Remote MVP | ~13d | TERSEDIA | ⛔ butuh Batch 1 + portal READY |
 | 9 | Desktop App | ~8d | TERSEDIA | ⛔ butuh Batch 1 |
@@ -238,6 +238,15 @@ run), tab Browser read-only (agent riset URL → Anda melihat halamannya).
 
 **Acceptance batch:** pindah-pindah tab tanpa kehilangan state; laporan run
 terbaca sebagai doc; agent membuka URL riset dan user melihat halaman sama;
+**HASIL (2026-11-08):** STU-1 ✅ layout kolom desktop — kolom chat tak pernah
+unmount (draft/streaming aman; CSS hidden di mobile), panel tab lain kolom
+kanan. STU-7 ✅ tab Docs (Run reports disintesis markdown per fase/step/gate +
+Documents file .md project). STU-4 ✅ tab Browser read-only via proxy core
+(allowlist per project, SSRF guard IP+DNS, redirect re-validated, content-type
+whitelist, cap 2MB, sanitizer) + iframe sandbox kosong + riwayat kunjungan
+agent/user (browser_visits) + `docs/SECURITY-REVIEW-BROWSER.md` (gerbang
+lulus). Bukti: e2e workbench 3/3, unit reader 7/7, api kontrak; total e2e
+13/13, turbo 5/5, typecheck 6/6.
 security review lulus (SSRF checklist).
 
 ---

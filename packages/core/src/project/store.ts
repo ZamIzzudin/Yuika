@@ -73,6 +73,19 @@ export class ProjectStore {
     for (const [col, decl] of detailCols) {
       if (!tcols.some((c) => c.name === col)) this.db.exec(`ALTER TABLE project_tasks ADD COLUMN ${col} ${decl}`);
     }
+    // P2-STU-4: riwayat kunjungan tab Browser (agent riset & user) — audit +
+    // "user melihat halaman yang sama dgn agent".
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS browser_visits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id TEXT NOT NULL,
+        url TEXT NOT NULL,
+        title TEXT,
+        by_role TEXT NOT NULL DEFAULT 'user',
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_browser_visits_project ON browser_visits(project_id, id DESC);
+    `);
     // P2-FLOW-2: run workflow — satu eksekusi workflow.yaml per project.
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS workflow_runs (
@@ -177,6 +190,21 @@ export class ProjectStore {
     return (this.db
       .prepare("SELECT * FROM workflow_runs WHERE status IN ('queued','running','awaiting_gate') ORDER BY created_at ASC")
       .all() as WorkflowRunDbRow[]).map(toWorkflowRun);
+  }
+
+  // ---- browser visits (P2-STU-4) ----
+
+  addBrowserVisit(input: { projectId: string; url: string; title?: string | null; byRole: "agent" | "user" }): void {
+    this.db
+      .prepare("INSERT INTO browser_visits (project_id, url, title, by_role, created_at) VALUES (?, ?, ?, ?, ?)")
+      .run(input.projectId, input.url, input.title ?? null, input.byRole, Date.now());
+  }
+
+  listBrowserVisits(projectId: string, limit = 30): Array<{ id: number; url: string; title: string | null; byRole: string; createdAt: number }> {
+    const rows = this.db
+      .prepare("SELECT id, url, title, by_role, created_at FROM browser_visits WHERE project_id = ? ORDER BY id DESC LIMIT ?")
+      .all(projectId, limit) as Array<{ id: number; url: string; title: string | null; by_role: string; created_at: number }>;
+    return rows.map((r) => ({ id: r.id, url: r.url, title: r.title, byRole: r.by_role, createdAt: r.created_at }));
   }
 
   // ---- tasks (P1-PRJ-4) + event task.node.* (P1-PRJ-7, PLAN §13.7) ----

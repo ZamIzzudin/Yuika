@@ -58,6 +58,9 @@ export default defineConfig({
         // Batch 2: shell terminal deterministik (fixture echo-shell — ECHO:<line>).
         YUI_TERMINAL_MODE: "local",
         YUI_TERMINAL_CMD: `node ${path.resolve("packages/core/src/terminal/__fixture__/echo-shell.mjs")}`,
+        // P2-STU-4 e2e: server halaman lokal (loopback) di-allow eksplisit
+        YUI_BROWSER_ALLOW: "127.0.0.1",
+        YUI_BROWSER_ALLOW_PRIVATE: "1",
       },
     },
     {

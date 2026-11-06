@@ -34,6 +34,8 @@ const TerminalTabLazy = dynamic(() => import("./TerminalTab"), {
 });
 import { FileTab } from "./FileTab";
 import { WorkflowTab } from "./WorkflowTab";
+import { DocsTab } from "./DocsTab";
+import { BrowserTab } from "./BrowserTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
@@ -59,6 +61,8 @@ export type WorkspaceTab =
   | "terminal"
   | "board"
   | "flow"
+  | "docs"
+  | "browser"
   | "config";
 
 /** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
@@ -670,6 +674,8 @@ export function ProjectTabs({
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
       {loaded && activeTab === "flow" && <WorkflowTab projectId={project.id} />}
+      {loaded && activeTab === "docs" && <DocsTab projectId={project.id} />}
+      {loaded && activeTab === "browser" && <BrowserTab projectId={project.id} />}
       {loaded && activeTab === "terminal" && (
         <TerminalTabLazy project={{ id: project.id, name: project.name }} />
       )}
