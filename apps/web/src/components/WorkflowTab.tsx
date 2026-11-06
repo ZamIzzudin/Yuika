@@ -233,7 +233,11 @@ export function WorkflowTab({ projectId }: { projectId: string }) {
   return (
     <section aria-label="Workflow board" className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
       <header className="flex flex-none flex-wrap items-center gap-2">
+        <PersonaFace personaId="yui-conductor" size={20} />
         <b className="text-body font-semibold text-primary">Workflow</b>
+        <span className="text-caption text-dim">
+          runs led by Conductor Yui — your orchestrator persona
+        </span>
         {run && (
           <Chip tone={STATUS_TONE[run.status]}>
             {run.status === "running" && <CircleNotch size={11} className="animate-spin" aria-hidden />}

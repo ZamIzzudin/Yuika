@@ -247,6 +247,8 @@ whitelist, cap 2MB, sanitizer) + iframe sandbox kosong + riwayat kunjungan
 agent/user (browser_visits) + `docs/SECURITY-REVIEW-BROWSER.md` (gerbang
 lulus). Bukti: e2e workbench 3/3, unit reader 7/7, api kontrak; total e2e
 13/13, turbo 5/5, typecheck 6/6.
+
+**Konsolidasi tab (keputusan user, mulai 2026-11-08):** (1) satu tab = satu halaman (STU-1 diamendemen, `0e7e2d1`); (2) Docs dihapus, diserap tab Files — seksi Run reports + viewer markdown Rendered/Source + FIX 401 auth (`192795e`); (3) Workflow = alat conductor: tombol pintu di header chat conductor + CTA empty state + branding board; Team dipertahankan; assign/Task-Board dibahas menyusul.
 security review lulus (SSRF checklist).
 
 ---

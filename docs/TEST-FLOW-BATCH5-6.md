@@ -79,20 +79,20 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 
 ## C. Workbench Studio — Batch 6 (STU-1/7/4)
 
-### C1. Tab shell (STU-1)
+### C1. Tab shell (STU-1, diamendemen: satu tab satu halaman)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
 | 1 | Di tab Chat ketik draft (JANGAN kirim) `catatan penting` | — | |
-| 2 | Klik tab **Files** | Desktop: dua kolom — chat kiri (draft masih ada), panel Files kanan | |
+| 2 | Klik tab **Files** | SATU TAB = SATU HALAMAN: chat tertutup penuh, Files lebar penuh | |
 | 3 | Kembali **Chat** | Draft `catatan penting` MASIH ada, scroll position utuh | |
-| 4 | Kecilkan window < 1024px → buka Files | Mobile: panel penuh; chat disembunyikan (bukan reload) | |
 
-### C2. Docs tab (STU-7)
+### C2. Tab Files (sudah menyerap Docs — 2026-11-08)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Tab **Docs** | Panel kiri: Run reports (dari A) + Documents (.md project termasuk docs/PLAN.md planner) | |
-| 2 | Klik salah satu Run report | Ter-render markdown: heading fase, checklist step, gate approved | |
-| 3 | Klik docs/PLAN.md | Isi dokumen terbaca | |
+| 1 | Tab **Files** | Sidebar kiri: seksi **Run reports** di atas tree file | |
+| 2 | Klik file `.md` (mis. docs/PLAN.md atau deliverable) | Default ter-RENDER markdown (heading/checklist); toggle **Rendered/Source** di header | |
+| 3 | Klik salah satu Run report | Laporan run ter-render: heading fase, checklist step, gate approved | |
+| 4 | Buka file non-md (json/code) | Tampil source + dropdown revisi/diff (khusus file asli) | |
 
 ### C3. Browser tab read-only (STU-4)
 | # | Langkah | Ekspektasi | Hasil |
@@ -102,6 +102,14 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 | 3 | Tambah allowlist: buat file `.yuika/browser.json` di ROOT FOLDER PROJECT (rootPath project, cek `GET /api/projects` → field `rootPath`; default di bawah `data/workspace/`) isi `{"allow":["google.com"]}` → Open lagi | Google terbaca (jika jaringan OK) | |
 | 4 | Minta agent (chat scholar): `Fetch https://example.com and summarize` lalu kembali ke tab Browser → **History** | Entri `agent` muncul (web_fetch tercatat); klik → halaman sama terbuka | |
 | 5 | F12 console | TIDAK ada error CSP/script dari halaman pihak ketiga | |
+
+### C4. Pintu Workflow dari chat conductor (keputusan 2026-11-08: flow = alat orchestrator)
+| # | Langkah | Ekspektasi | Hasil |
+|---|---------|-----------|-------|
+| 1 | Pastikan persona aktif = **Conductor** (default) → lihat header chat | Tombol **Workflow** (ikon tangga) muncul — hanya untuk conductor | |
+| 2 | Empty state chat | Kartu aksen "Start a structured workflow run" | |
+| 3 | Klik tombol **Workflow** | Pindah ke tab Flow; header board menyebut "runs led by Conductor Yui" | |
+| 4 | Ganti persona aktif ke scholar (via picker) → lihat header | Tombol Workflow TIDAK muncul (chat = pekerjaan serabutan) | |
 
 ---
 

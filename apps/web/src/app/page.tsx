@@ -13,6 +13,7 @@ import {
   Gear,
   Plus,
   SidebarSimple,
+  Steps,
   Sword,
   Users,
 } from "@phosphor-icons/react";
@@ -1032,6 +1033,19 @@ export default function Home() {
                         <span className="pointer-events-none absolute left-1/2 -translate-x-1/2">
                           <StateChip state={personaState} />
                         </span>
+                        {/* Kanan: pintu Flow (khusus conductor — workflow adalah
+                            alat kerja orchestrator; persona lain = chat serabutan) */}
+                        {activeProject && active.id === "yui-conductor" && (
+                          <button
+                            type="button"
+                            onClick={() => setMainTab("flow")}
+                            title="Structured runs led by this persona — 7 phases, specialist personas, gates between phases"
+                            aria-label="Open workflow"
+                            className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary"
+                          >
+                            <Steps size={12} aria-hidden /> Workflow
+                          </button>
+                        )}
                         {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama) */}
                         {activeProject && (
                           <details className="group relative ml-auto">
@@ -1131,6 +1145,24 @@ export default function Home() {
                                   ? `Describe the task — ${active.name} will work on it or delegate to the right specialists. All files & tasks stay bound to this project.`
                                   : active.description}
                               </p>
+                              {active.id === "yui-conductor" && activeProject && (
+                                <button
+                                  type="button"
+                                  onClick={() => setMainTab("flow")}
+                                  className="flex w-full max-w-[560px] cursor-pointer items-center gap-3 rounded-lg2 border border-accent/40 bg-accent/5 px-4 py-3 text-left transition-colors hover:border-accent"
+                                >
+                                  <Steps size={18} weight="bold" aria-hidden className="shrink-0 text-accent" />
+                                  <span className="min-w-0">
+                                    <b className="block text-body text-primary">
+                                      Start a structured workflow run
+                                    </b>
+                                    <small className="block text-caption leading-5 text-muted">
+                                      One brief, 7 phases, specialist personas, a gate
+                                      after each phase — led by {active.name}.
+                                    </small>
+                                  </span>
+                                </button>
+                              )}
                               <div className="mt-2 flex max-w-[560px] flex-wrap justify-center gap-2">
                                 {(SUGGESTIONS[active.id] ?? []).map((s) => (
                                   <button

@@ -107,3 +107,24 @@ test("STU-4: Browser tab — halaman allowlist terbaca read-only, script distrip
     server.close();
   }
 });
+
+test("FLOW gate: pintu Workflow dari chat conductor (keputusan user: flow = alat orchestrator)", async ({ page, request }) => {
+  const name = `Gate Flow E2E ${Date.now()}`;
+  const r = await request.post(`${API}/api/projects`, { data: { name, description: "flow gate e2e" } });
+  expect(r.ok()).toBeTruthy();
+
+  await page.goto("/");
+  await page.getByRole("button", { name, exact: false }).first().click();
+
+  // persona default = conductor → tombol Workflow hadir di header chat
+  const openFlow = page.getByRole("button", { name: "Open workflow" });
+  await expect(openFlow).toBeVisible({ timeout: 15_000 });
+  // empty-state juga menawarkan run terstruktur
+  await expect(page.getByRole("button", { name: /Start a structured workflow run/ })).toBeVisible();
+
+  await openFlow.click();
+  // sampai ke board Flow yang sekarang menyebut lead-nya conductor
+  await expect(page.getByLabel("Workflow board")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/runs led by Conductor Yui/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start run" })).toBeVisible();
+});
