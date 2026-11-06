@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type PersonaShapeOverride, type RosterEntry as RosterEntryIn, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yuika/contracts";
+import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type PersonaShapeOverride, type RosterEntry as RosterEntryIn, type TaskItem, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yuika/contracts";
 import { createSessionStore, type ISessionStore } from "./session/store.js";
 import { moduleLogger } from "./logger.js";
 import { makeEmitter } from "./session/emit.js";
@@ -902,11 +902,39 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       projectStore.updateProject(id, patch),
     // ---- tasklist project (P1-PRJ-4) ----
     listProjectTasks: (projectId: string) => projectStore.listTasks(projectId),
-    createProjectTask: (projectId: string, title: string, assignee?: string | null, parentId?: string | null) =>
-      projectStore.createTask({ id: `t_${randomUUID().slice(0, 8)}`, projectId, title, assignee: assignee ?? null, parentId: parentId ?? null }),
+    createProjectTask: (
+      projectId: string,
+      title: string,
+      assignee?: string | null,
+      parentId?: string | null,
+      detail?: { description?: string | null; acceptance?: string[]; dependsOn?: string[]; estimate?: string | null; phase?: TaskItem["phase"] },
+    ) =>
+      projectStore.createTask({
+        id: `t_${randomUUID().slice(0, 8)}`,
+        projectId,
+        title,
+        assignee: assignee ?? null,
+        parentId: parentId ?? null,
+        description: detail?.description ?? null,
+        acceptance: detail?.acceptance ?? [],
+        dependsOn: detail?.dependsOn ?? [],
+        estimate: detail?.estimate ?? null,
+        phase: detail?.phase ?? null,
+      }),
     updateProjectTask: (
       taskId: string,
-      patch: { title?: string; status?: "todo" | "doing" | "review" | "done"; assignee?: string | null; addRefs?: string[]; addArtefak?: string[] },
+      patch: {
+        title?: string;
+        status?: "todo" | "doing" | "review" | "done";
+        assignee?: string | null;
+        addRefs?: string[];
+        addArtefak?: string[];
+        description?: string | null;
+        acceptance?: string[];
+        dependsOn?: string[];
+        estimate?: string | null;
+        phase?: TaskItem["phase"];
+      },
     ) => projectStore.updateTask(taskId, patch),
     /** TaskTree (P1-PRJ-7): pohon utuh dari replay event project — tanpa state kedua. */
     getTaskTree: (projectId: string) => taskTreeFromEvents(projectStore.listEvents(projectId)),

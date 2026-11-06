@@ -1,7 +1,7 @@
 // @yuika/contracts — REST payloads (DEMO-WEEK-1.md §5)
 import { z } from "zod";
 import { PersonaState } from "./events.js";
-import { ProjectStatus, RosterEntry, TaskStatus } from "./project.js";
+import { ProjectStatus, RosterEntry, TaskStatus, WORKFLOW_PHASES } from "./project.js";
 
 export const PersonaInfo = z.object({
   id: z.string(),
@@ -90,6 +90,12 @@ export const CreateTaskRequest = z.object({
   assignee: z.string().nullish(),
   /** Parent task id — null = root (P1-PRJ-7 TaskTree). */
   parentId: z.string().nullish(),
+  // P2-PM-3: detail first-class — Planner mengisi saat generate task list
+  description: z.string().max(2_000).nullish(),
+  acceptance: z.array(z.string().min(3).max(500)).max(20).optional(),
+  dependsOn: z.array(z.string()).max(50).optional(),
+  estimate: z.string().max(24).nullish(),
+  phase: z.enum(WORKFLOW_PHASES).nullish(),
 });
 
 // PATCH /api/projects/:id/tasks/:taskId
@@ -100,6 +106,12 @@ export const UpdateTaskRequest = z.object({
   addRefs: z.array(z.string().max(400)).max(100).optional(),
   /** Artefak node (masuk event TaskTree; P1-PRJ-7). */
   addArtefak: z.array(z.string().max(400)).max(100).optional(),
+  // P2-PM-3: detail — replace-semantik
+  description: z.string().max(2_000).nullable().optional(),
+  acceptance: z.array(z.string().min(3).max(500)).max(20).optional(),
+  dependsOn: z.array(z.string()).max(50).optional(),
+  estimate: z.string().max(24).nullable().optional(),
+  phase: z.enum(WORKFLOW_PHASES).nullable().optional(),
 });
 
 // GET/PUT /api/projects/:id/roster (P1-PRJ-3) — sumber: project.yaml di root project

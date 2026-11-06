@@ -26,7 +26,10 @@ Deliver a plan an executor can follow without asking questions, not a wall of pr
    (with source: user / consult / assumption), approach per phase, risk register
    (risk → impact → mitigation → decision owner).
 4. **Build the task list** — each task: description, **acceptance criteria** (how to
-   verify), **depends_on** (DAG, no cycles), assignee persona, parallel vs sequential.
+   verify), **depends_on** (DAG, no cycles), assignee persona, estimate (e.g. "1d"),
+   workflow phase, parallel vs sequential. A complete plan passes the validator
+   (`GET /api/projects/:id/tasks/validate`): DAG without cycles and every phase
+   covered by at least one task.
    Size tasks to 1–3 agent-hours of work; split anything larger.
 5. **Add verification tasks** — review and testing are real tasks with owners.
 6. **Mark iteration boundaries** — what ships in run 1, what is deferred and why.

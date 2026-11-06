@@ -84,6 +84,12 @@ export interface TaskNode {
   refs: string[];
   /** Artefak nyata yang dihasilkan node (path file, link). */
   artefak: string[];
+  /** P2-PM-3: detail task (optional — node/event lama tetap valid). */
+  description?: string | null;
+  acceptance?: string[];
+  dependsOn?: string[];
+  estimate?: string | null;
+  phase?: string | null;
   /** Waktu mulai/diakhiri (ts event transisi status) — untuk tampilan durasi. */
   startedAt?: number;
   doneAt?: number;
@@ -98,6 +104,12 @@ export const TaskNode: z.ZodType<TaskNode> = z.object({
   assignee: z.string().nullable(),
   refs: z.array(z.string()),
   artefak: z.array(z.string()),
+  // P2-PM-3: detail task ikut ter-replay di pohon
+  description: z.string().nullable().optional(),
+  acceptance: z.array(z.string()).optional(),
+  dependsOn: z.array(z.string()).optional(),
+  estimate: z.string().nullable().optional(),
+  phase: z.string().nullable().optional(),
   startedAt: z.number().optional(),
   doneAt: z.number().optional(),
   children: z.array(z.lazy(() => TaskNode)),
@@ -112,6 +124,12 @@ export const ProjectEvent = z.discriminatedUnion("type", [
     parent: z.string().nullable(),
     title: z.string(),
     assignee: z.string().nullable(),
+    // P2-PM-3: detail task — optional (event lama tetap parse)
+    description: z.string().nullable().optional(),
+    acceptance: z.array(z.string()).optional(),
+    dependsOn: z.array(z.string()).optional(),
+    estimate: z.string().nullable().optional(),
+    phase: z.string().nullable().optional(),
     ts: z.number(),
   }),
   z.object({
@@ -123,6 +141,12 @@ export const ProjectEvent = z.discriminatedUnion("type", [
     assignee: z.string().nullable().optional(),
     addRefs: z.array(z.string()).optional(),
     addArtefak: z.array(z.string()).optional(),
+    // P2-PM-3: replace-semantik (bukan append)
+    description: z.string().nullable().optional(),
+    acceptance: z.array(z.string()).optional(),
+    dependsOn: z.array(z.string()).optional(),
+    estimate: z.string().nullable().optional(),
+    phase: z.string().nullable().optional(),
     ts: z.number(),
   }),
 ]);
@@ -175,6 +199,17 @@ export const TaskItem = z.object({
   assignee: z.string().nullable().default(null),
   /** Referensi artefak (path workspace / job id / event id) — dipakai TaskTree (D19). */
   refs: z.array(z.string()).default([]),
+  // ── P2-PM-3: task list detail first-class (Planner) ──────────────────────
+  /** Deskripsi lengkap (apa & mengapa) — beda dari judul imperatif. */
+  description: z.string().max(2_000).nullable().default(null),
+  /** Acceptance criteria — list kalimat terverifikasi-able. */
+  acceptance: z.array(z.string().min(3).max(500)).max(20).default([]),
+  /** Dependensi antar-task (id task lain) — DAG, divalidasi lintTaskList. */
+  dependsOn: z.array(z.string()).max(50).default([]),
+  /** Estimasi kasar bentuk bebas (mis. "2d", "4h"). */
+  estimate: z.string().max(24).nullable().default(null),
+  /** Fase workflow yang di-cover task ini (coverage validator). */
+  phase: z.enum(WORKFLOW_PHASES).nullable().default(null),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
 });

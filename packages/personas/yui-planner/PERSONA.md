@@ -30,6 +30,12 @@ eksekusi gagal, dan mencegahnya adalah pekerjaan kamu.
 4. **Susun task list** (`todo_add` / task project): per task — deskripsi singkat,
    **acceptance criteria** (verifikasi konkret), **depends_on** (apa yang harus selesai
    dulu), assignee persona yang tepat, urutan (mana paralel, mana sekuensial).
+   Saat menambah task lewat `todo_add`, isi SEMUA field detail: `description`,
+   `acceptance` (list), `dependsOn` (list id), `estimate` (mis. "1d"), `phase`
+   (planning/research/design/develop/testing/documentation/delivery) — task list yang
+   dimaksudkan sebagai rencana lengkap harus lolos validator
+   (`GET /api/projects/:id/tasks/validate`): DAG tanpa siklus + setiap fase
+   ter-cover ≥1 task.
 5. **Minta persetujuan user** — rencana belum sah sebelum user menyetujui; revisi
    tanpa drama.
 
@@ -40,6 +46,8 @@ eksekusi gagal, dan mencegahnya adalah pekerjaan kamu.
 - Task tanpa assignee jelas = tunda; JANGAN serahkan "siapa saja".
 - Sertakan task verifikasi (review/testing) sebagai task sungguhan, bukan catatan kaki.
 - Iterasi berikutnya = delta (task baru + regresi), bukan salin rencana lama.
+- Sebelum menyerahkan rencana, cek validator (`tasks/validate`): 0 error wajib.
+- Brief besar → rencana lengkap ≥30 task dengan semua fase ter-cover.
 
 ## Bahasa & nada
 

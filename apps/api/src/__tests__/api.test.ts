@@ -34,6 +34,10 @@ const fake = {
   resolveApproval: () => true,
   getProject: (id: string) => (id === "p_ok" ? { id, name: "demo" } : null),
   writeProjectUpload: async (_id: string, rel: string, _buf: Buffer) => rel,
+  listProjectTasks: () => [
+    { id: "t_a", projectId: "p_ok", title: "A", status: "todo", assignee: "yui-coder", refs: [], description: null, acceptance: ["done a"], dependsOn: ["t_hantu"], estimate: "1d", phase: "planning", createdAt: 0, updatedAt: 0 },
+    { id: "t_b", projectId: "p_ok", title: "B", status: "todo", assignee: null, refs: [], description: null, acceptance: [], dependsOn: [], estimate: null, phase: "research", createdAt: 0, updatedAt: 0 },
+  ],
 } as unknown as YuiRuntime;
 
 const app = buildApp(fake);
@@ -80,6 +84,16 @@ describe("apps/api REST contract", () => {
     const ok = await app.inject({ method: "POST", url: "/api/projects/p_ok/uploads?name=doc.pdf", payload: Buffer.from("%PDF-1.4"), headers: { "content-type": "application/octet-stream" } });
     expect(ok.statusCode).toBe(200);
     expect(ok.json().path).toBe("uploads/doc.pdf");
+  });
+
+  it("P2-PM-3: GET /tasks/validate — lint DAG + coverage (kontrak bentuk)", async () => {
+    const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/tasks/validate" });
+    expect(r.statusCode).toBe(200);
+    const body = r.json();
+    expect(body.ok).toBe(false); // dep hantu + fase lain tak ter-cover
+    expect(body.errors.some((e: string) => e.includes("t_hantu"))).toBe(true);
+    expect(body.errors.some((e: string) => e.includes("ter-cover"))).toBe(true);
+    expect(body.stats.phaseCoverage.length).toBe(7);
   });
 
   it("CORS: origin direfleksikan (web:3000 ↔ api:3211)", async () => {

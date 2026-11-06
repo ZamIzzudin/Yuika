@@ -19,6 +19,12 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
         assignee: e.assignee,
         refs: [],
         artefak: [],
+        // P2-PM-3: detail task ikut ke pohon
+        description: e.description ?? null,
+        acceptance: e.acceptance ?? [],
+        dependsOn: e.dependsOn ?? [],
+        estimate: e.estimate ?? null,
+        phase: e.phase ?? null,
         children: [],
       });
       order.push(e.taskId);
@@ -35,6 +41,12 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
       if (e.assignee !== undefined) n.assignee = e.assignee;
       if (e.addRefs?.length) n.refs = [...new Set([...n.refs, ...e.addRefs])];
       if (e.addArtefak?.length) n.artefak = [...new Set([...n.artefak, ...e.addArtefak])];
+      // P2-PM-3: detail — replace-semantik
+      if (e.description !== undefined) n.description = e.description;
+      if (e.acceptance !== undefined) n.acceptance = e.acceptance;
+      if (e.dependsOn !== undefined) n.dependsOn = e.dependsOn;
+      if (e.estimate !== undefined) n.estimate = e.estimate;
+      if (e.phase !== undefined) n.phase = e.phase;
     }
   }
 

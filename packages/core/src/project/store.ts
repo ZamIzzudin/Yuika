@@ -61,6 +61,18 @@ export class ProjectStore {
     if (!pcols.some((c) => c.name === "kind")) {
       this.db.exec("ALTER TABLE projects ADD COLUMN kind TEXT NOT NULL DEFAULT 'project'");
     }
+    // P2-PM-3: kolom detail task (Planner) — migrasi idempotent utk DB lama
+    const tcols = this.db.prepare("PRAGMA table_info(project_tasks)").all() as { name: string }[];
+    const detailCols: Array<[string, string]> = [
+      ["description", "TEXT"],
+      ["acceptance", "TEXT NOT NULL DEFAULT '[]'"],
+      ["depends_on", "TEXT NOT NULL DEFAULT '[]'"],
+      ["estimate", "TEXT"],
+      ["phase", "TEXT"],
+    ];
+    for (const [col, decl] of detailCols) {
+      if (!tcols.some((c) => c.name === col)) this.db.exec(`ALTER TABLE project_tasks ADD COLUMN ${col} ${decl}`);
+    }
     // P2-FLOW-2: run workflow — satu eksekusi workflow.yaml per project.
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS workflow_runs (
@@ -170,19 +182,41 @@ export class ProjectStore {
   // ---- tasks (P1-PRJ-4) + event task.node.* (P1-PRJ-7, PLAN §13.7) ----
   // Setiap mutasi task menulis event DI TRANSAKSI YANG SAMA — ProjectStore adalah
   // satu-satunya penulis → TaskTree (proyeksi event) tak bisa drift dari tabel.
-  createTask(input: { id: string; projectId: string; title: string; assignee?: string | null; parentId?: string | null }): TaskItem {
+  /** P2-PM-3: input detail task (dipakai createTask & updateTask). */
+  createTask(input: {
+    id: string;
+    projectId: string;
+    title: string;
+    assignee?: string | null;
+    parentId?: string | null;
+    description?: string | null;
+    acceptance?: string[];
+    dependsOn?: string[];
+    estimate?: string | null;
+    phase?: TaskItem["phase"];
+  }): TaskItem {
     const now = Date.now();
     const parent = input.parentId ?? null;
+    const acceptance = input.acceptance ?? [];
+    const dependsOn = input.dependsOn ?? [];
     const emit = this.db.transaction(() => {
       this.db
         .prepare(
-          "INSERT INTO project_tasks (id, project_id, title, status, assignee, refs, created_at, updated_at) VALUES (?, ?, ?, 'todo', ?, '[]', ?, ?)",
+          "INSERT INTO project_tasks (id, project_id, title, status, assignee, refs, description, acceptance, depends_on, estimate, phase, created_at, updated_at) VALUES (?, ?, ?, 'todo', ?, '[]', ?, ?, ?, ?, ?, ?, ?)",
         )
-        .run(input.id, input.projectId, input.title, input.assignee ?? null, now, now);
-      this.appendEvent("task.node.created", { projectId: input.projectId, taskId: input.id, parent, title: input.title, assignee: input.assignee ?? null }, now);
+        .run(input.id, input.projectId, input.title, input.assignee ?? null, input.description ?? null, JSON.stringify(acceptance), JSON.stringify(dependsOn), input.estimate ?? null, input.phase ?? null, now, now);
+      this.appendEvent(
+        "task.node.created",
+        { projectId: input.projectId, taskId: input.id, parent, title: input.title, assignee: input.assignee ?? null, description: input.description ?? null, acceptance, dependsOn, estimate: input.estimate ?? null, phase: input.phase ?? null },
+        now,
+      );
     });
     emit();
-    return { id: input.id, projectId: input.projectId, title: input.title, status: "todo", assignee: input.assignee ?? null, refs: [], createdAt: now, updatedAt: now };
+    return {
+      id: input.id, projectId: input.projectId, title: input.title, status: "todo", assignee: input.assignee ?? null, refs: [],
+      description: input.description ?? null, acceptance, dependsOn, estimate: input.estimate ?? null, phase: input.phase ?? null,
+      createdAt: now, updatedAt: now,
+    };
   }
 
   /** P1-PER-4: jumlah task DONE per assignee persona (lintas semua project). */
@@ -195,40 +229,32 @@ export class ProjectStore {
 
   listTasks(projectId: string): TaskItem[] {    const rows = this.db
       .prepare("SELECT * FROM project_tasks WHERE project_id = ? ORDER BY created_at ASC, rowid ASC")
-      .all(projectId) as { id: string; project_id: string; title: string; status: string; assignee: string | null; refs: string; created_at: number; updated_at: number }[];
-    return rows.map((r) => ({
-      id: r.id,
-      projectId: r.project_id,
-      title: r.title,
-      status: r.status as TaskItem["status"],
-      assignee: r.assignee,
-      refs: JSON.parse(r.refs) as string[],
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
-    }));
+      .all(projectId) as TaskDbRow[];
+    return rows.map(taskFromRow);
   }
 
   getTask(id: string): TaskItem | undefined {
-    const row = this.db.prepare("SELECT * FROM project_tasks WHERE id = ?").get(id) as
-      | { id: string; project_id: string; title: string; status: string; assignee: string | null; refs: string; created_at: number; updated_at: number }
-      | undefined;
-    if (!row) return undefined;
-    return {
-      id: row.id,
-      projectId: row.project_id,
-      title: row.title,
-      status: row.status as TaskItem["status"],
-      assignee: row.assignee,
-      refs: JSON.parse(row.refs) as string[],
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
+    const row = this.db.prepare("SELECT * FROM project_tasks WHERE id = ?").get(id) as TaskDbRow | undefined;
+    return row ? taskFromRow(row) : undefined;
   }
 
-  /** Update parsial (title/status/assignee); refs di-append (bukan replace). `addArtefak` hanya masuk event (TaskTree). */
+  /** Update parsial (title/status/assignee); refs di-append (bukan replace).
+   *  P2-PM-3: detail (description/acceptance/dependsOn/estimate/phase) =
+   *  replace-semantik. `addArtefak` hanya masuk event (TaskTree). */
   updateTask(
     id: string,
-    patch: { title?: string; status?: TaskItem["status"]; assignee?: string | null; addRefs?: string[]; addArtefak?: string[] },
+    patch: {
+      title?: string;
+      status?: TaskItem["status"];
+      assignee?: string | null;
+      addRefs?: string[];
+      addArtefak?: string[];
+      description?: string | null;
+      acceptance?: string[];
+      dependsOn?: string[];
+      estimate?: string | null;
+      phase?: TaskItem["phase"];
+    },
   ): TaskItem | undefined {
     const cur = this.getTask(id);
     if (!cur) return undefined;
@@ -238,18 +264,30 @@ export class ProjectStore {
       status: patch.status ?? cur.status,
       assignee: patch.assignee === undefined ? cur.assignee : patch.assignee,
       refs: patch.addRefs?.length ? [...new Set([...cur.refs, ...patch.addRefs])] : cur.refs,
+      description: patch.description === undefined ? cur.description : patch.description,
+      acceptance: patch.acceptance ?? cur.acceptance,
+      dependsOn: patch.dependsOn ?? cur.dependsOn,
+      estimate: patch.estimate === undefined ? cur.estimate : patch.estimate,
+      phase: patch.phase === undefined ? cur.phase : patch.phase,
       updatedAt: now,
     };
     const emit = this.db.transaction(() => {
       this.db
-        .prepare("UPDATE project_tasks SET title = ?, status = ?, assignee = ?, refs = ?, updated_at = ? WHERE id = ?")
-        .run(next.title, next.status, next.assignee, JSON.stringify(next.refs), next.updatedAt, id);
+        .prepare(
+          "UPDATE project_tasks SET title = ?, status = ?, assignee = ?, refs = ?, description = ?, acceptance = ?, depends_on = ?, estimate = ?, phase = ?, updated_at = ? WHERE id = ?",
+        )
+        .run(next.title, next.status, next.assignee, JSON.stringify(next.refs), next.description, JSON.stringify(next.acceptance), JSON.stringify(next.dependsOn), next.estimate, next.phase, next.updatedAt, id);
       const ev: Record<string, unknown> = { projectId: cur.projectId, taskId: id };
       if (patch.title !== undefined) ev.title = patch.title;
       if (patch.status !== undefined) ev.status = patch.status;
       if (patch.assignee !== undefined) ev.assignee = patch.assignee;
       if (patch.addRefs?.length) ev.addRefs = patch.addRefs;
       if (patch.addArtefak?.length) ev.addArtefak = patch.addArtefak;
+      if (patch.description !== undefined) ev.description = patch.description;
+      if (patch.acceptance !== undefined) ev.acceptance = patch.acceptance;
+      if (patch.dependsOn !== undefined) ev.dependsOn = patch.dependsOn;
+      if (patch.estimate !== undefined) ev.estimate = patch.estimate;
+      if (patch.phase !== undefined) ev.phase = patch.phase;
       this.appendEvent("task.node.updated", ev, now);
     });
     emit();
@@ -355,6 +393,42 @@ function toWorkflowRun(r: WorkflowRunDbRow): WorkflowRunRow {
     workflow: WorkflowDef.parse(JSON.parse(r.workflow)),
     status: (r.status as WorkflowRunStatus) ?? "queued",
     phaseStates: JSON.parse(r.phase_states) as WorkflowPhaseState[],
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+// ── P2-PM-3: row → TaskItem (detail first-class) ────────────────────────────
+
+interface TaskDbRow {
+  id: string;
+  project_id: string;
+  title: string;
+  status: string;
+  assignee: string | null;
+  refs: string;
+  description: string | null;
+  acceptance: string | null;
+  depends_on: string | null;
+  estimate: string | null;
+  phase: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+function taskFromRow(r: TaskDbRow): TaskItem {
+  return {
+    id: r.id,
+    projectId: r.project_id,
+    title: r.title,
+    status: r.status as TaskItem["status"],
+    assignee: r.assignee,
+    refs: JSON.parse(r.refs) as string[],
+    description: r.description,
+    acceptance: r.acceptance ? (JSON.parse(r.acceptance) as string[]) : [],
+    dependsOn: r.depends_on ? (JSON.parse(r.depends_on) as string[]) : [],
+    estimate: r.estimate,
+    phase: (r.phase as TaskItem["phase"]) ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

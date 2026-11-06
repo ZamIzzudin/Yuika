@@ -2,7 +2,7 @@
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
-import { CreateProjectRequest, CreateTaskRequest, DelegationJob, SaveRosterRequest, UpdateProjectRequest, UpdateTaskRequest } from "@yuika/contracts";
+import { CreateProjectRequest, CreateTaskRequest, DelegationJob, lintTaskList, SaveRosterRequest, UpdateProjectRequest, UpdateTaskRequest } from "@yuika/contracts";
 
 const MAX_UPLOAD = 10 * 1024 * 1024;
 const OK_EXT = new Set([".pdf", ".xlsx", ".xls", ".csv", ".md", ".txt", ".json", ".html", ".htm", ".xml", ".yaml", ".yml"]);
@@ -128,8 +128,22 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
     const rt = getRt();
     if (!rt.getProject(id)) return reply.code(404).send({ error: "project tidak ditemukan" });
     const body = CreateTaskRequest.parse(req.body);
-    const task = rt.createProjectTask(id, body.title, body.assignee ?? null, body.parentId ?? null);
+    const task = rt.createProjectTask(id, body.title, body.assignee ?? null, body.parentId ?? null, {
+      description: body.description ?? null,
+      acceptance: body.acceptance,
+      dependsOn: body.dependsOn,
+      estimate: body.estimate ?? null,
+      phase: body.phase ?? null,
+    });
     return reply.code(201).send({ task });
+  });
+
+  /** P2-PM-3: validator task list — DAG + coverage fase + kelengkapan detail. */
+  app.get("/api/projects/:id/tasks/validate", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const rt = getRt();
+    if (!rt.getProject(id)) return reply.code(404).send({ error: "project tidak ditemukan" });
+    return lintTaskList(rt.listProjectTasks(id));
   });
 
   app.patch("/api/projects/:id/tasks/:taskId", async (req, reply) => {
