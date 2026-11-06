@@ -1038,8 +1038,8 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={() => setMainTab("team")}
-                            title="Structured runs led by this persona — 7 phases, specialist personas, gates between phases (Team tab)"
-                            aria-label="Open workflow"
+                            title="Watch run progress as a delegation tree in the Team tab"
+                            aria-label="Open workflow view"
                             className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary"
                           >
                             <Steps size={12} aria-hidden /> Workflow
@@ -1117,6 +1117,8 @@ export default function Home() {
                           personaState={personaState}
                           personaId={active.id}
                           personaName={active.name}
+                          projectId={activeProject?.id ?? null}
+                          sessionId={sessionId}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
@@ -1145,22 +1147,11 @@ export default function Home() {
                                   : active.description}
                               </p>
                               {active.id === "yui-conductor" && activeProject && (
-                                <button
-                                  type="button"
-                                  onClick={() => setMainTab("team")}
-                                  className="flex w-full max-w-[560px] cursor-pointer items-center gap-3 rounded-lg2 border border-accent/40 bg-accent/5 px-4 py-3 text-left transition-colors hover:border-accent"
-                                >
-                                  <Steps size={18} weight="bold" aria-hidden className="shrink-0 text-accent" />
-                                  <span className="min-w-0">
-                                    <b className="block text-body text-primary">
-                                      Start a structured workflow run
-                                    </b>
-                                    <small className="block text-caption leading-5 text-muted">
-                                      One brief, 7 phases, specialist personas, a gate
-                                      after each phase — led by {active.name}.
-                                    </small>
-                                  </span>
-                                </button>
+                                <span className="flex items-center gap-1.5 rounded-lg2 border border-accent/40 bg-accent/5 px-4 py-2.5 text-caption text-muted">
+                                  <Steps size={14} weight="bold" aria-hidden className="shrink-0 text-accent" />
+                                  Need the full team pipeline? Use the Workflow bar above the
+                                  composer — or watch progress in the Team tab.
+                                </span>
                               )}
                               <div className="mt-2 flex max-w-[560px] flex-wrap justify-center gap-2">
                                 {(SUGGESTIONS[active.id] ?? []).map((s) => (
@@ -1182,6 +1173,8 @@ export default function Home() {
                           personaState={personaState}
                           personaId={active.id}
                           personaName={active.name}
+                          projectId={activeProject?.id ?? null}
+                          sessionId={sessionId}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}

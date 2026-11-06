@@ -27,6 +27,7 @@ import { PersonaFace } from "./PersonaPicker";
 import { toastErr } from "./ui/toast";
 import { Markdown } from "./Markdown";
 import { Button, StateChip, STATE_LABEL } from "./ui";
+import { WorkflowRunBar } from "./WorkflowRunBar";
 
 export interface ChatItem {
   kind:
@@ -90,6 +91,8 @@ export function ChatView({
   personaState,
   personaId,
   personaName,
+  projectId,
+  sessionId,
   onSend,
   onCancel,
   onApprove,
@@ -103,6 +106,9 @@ export function ChatView({
   personaState: PersonaState;
   personaId: string;
   personaName: string;
+  /** Project aktif — utk WorkflowRunBar (kendali workflow di chat, 2026-11-08). */
+  projectId: string | null;
+  sessionId: string | null;
   onSend: (text: string) => void;
   /** P0-CORE-1: tombol Stop — batalkan turn aktif (progres tersimpan). */
   onCancel?: () => void;
@@ -641,6 +647,11 @@ export function ChatView({
               {approvalMode === "auto" ? "Hardcore Mode" : "Safety Mode"}
             </button>
           ) : null}
+          {/* Kendali workflow hidup di CHAT (keputusan user 2026-11-08):
+              brief/steer/gate/pause — hanya utk conductor di project. */}
+          {personaId === "yui-conductor" && projectId && (
+            <WorkflowRunBar projectId={projectId} sessionId={sessionId} />
+          )}
           <form
             className="flex items-end gap-2 rounded-lg2 border border-line bg-surface p-2 transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-normal)] focus-within:border-line-strong"
             onSubmit={submit}

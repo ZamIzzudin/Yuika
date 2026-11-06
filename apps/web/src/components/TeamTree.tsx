@@ -207,6 +207,12 @@ export function TeamTree({
 }) {
   const [edges, setEdges] = useState<DelegationEdge[] | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // run workflow aktif (merge Flow→Team 2026-11-08): tiap run = ROOT kedua di
+  // canvas — conductor lead + cabang step (fase implisit di belakang; label
+  // fase menyusul di tab Task). Kendali run ada di chat (WorkflowRunBar).
+  const [runs, setRuns] = useState<
+    Array<{ id: string; status: string; name: string; leadSessionId?: string; phaseCount: number }>
+  >([]);
 
   // --- state canvas: pan {x,y} + zoom (transform-origin = pusat viewport) ---
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -222,11 +228,30 @@ export function TeamTree({
 
   const load = useCallback(async () => {
     try {
-      const r = await authFetch(apiUrl(`/api/projects/${projectId}/delegations`));
-      if (r.ok)
+      const [dr, wr] = await Promise.all([
+        authFetch(apiUrl(`/api/projects/${projectId}/delegations`)),
+        authFetch(apiUrl(`/api/projects/${projectId}/workflows/runs`)),
+      ]);
+      if (dr.ok)
         setEdges(
-          ((await r.json()) as { delegations: DelegationEdge[] }).delegations,
+          ((await dr.json()) as { delegations: DelegationEdge[] }).delegations,
         );
+      if (wr.ok) {
+        const list = ((await wr.json()) as {
+          runs: Array<{ id: string; status: string; workflow: { name: string; phaseCount: number }; leadSessionId?: string }>;
+        }).runs;
+        setRuns(
+          list
+            .filter((r) => !["done", "failed", "stopped"].includes(r.status))
+            .map((r) => ({
+              id: r.id,
+              status: r.status,
+              name: r.workflow.name,
+              leadSessionId: r.leadSessionId,
+              phaseCount: r.workflow.phaseCount,
+            })),
+        );
+      }
     } catch {
       /* biarkan data lama */
     }
@@ -337,7 +362,24 @@ export function TeamTree({
         }}
       >
         <div className="mx-auto flex min-w-max justify-center px-6 pt-2 pb-4">
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center gap-14">
+            {/* ROOT 1..n: run workflow aktif (conductor lead) — fase implisit,
+                tampil sebagai tree of delegation biasa */}
+            {runs.map((r) => (
+              <div key={r.id} className="flex flex-col items-center">
+                <Card
+                  personaId="yui-conductor"
+                  state={r.status === "running" || r.status === "awaiting_gate" ? "working" : "idle"}
+                  subtitle={`Workflow · ${r.name} · ${r.status.replace("_", " ")}`}
+                  root
+                />
+                {r.leadSessionId && edges !== null && (
+                  <Branch parentSessionId={r.leadSessionId} edges={edges} now={now} isRootBranch />
+                )}
+              </div>
+            ))}
+            {/* ROOT chat: sesi aktif */}
+            <div className="flex flex-col items-center">
             {rootPersonaId ? (
               <Card
                 personaId={rootPersonaId}
@@ -358,12 +400,13 @@ export function TeamTree({
                 isRootBranch
               />
             )}
-            {edges !== null && edges.length === 0 && (
+            {edges !== null && edges.length === 0 && runs.length === 0 && (
               <p className="mt-2.5 text-center text-caption text-dim">
                 No delegations yet,
                 <br /> The lead works alone, or ask it to delegate.
               </p>
             )}
+          </div>
           </div>
         </div>
       </div>

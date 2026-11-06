@@ -116,16 +116,13 @@ test("FLOW gate: pintu Workflow dari chat conductor (keputusan user: flow = alat
   await page.goto("/");
   await page.getByRole("button", { name, exact: false }).first().click();
 
-  // persona default = conductor → tombol Workflow hadir di header chat
-  const openFlow = page.getByRole("button", { name: "Open workflow" });
-  await expect(openFlow).toBeVisible({ timeout: 15_000 });
-  // empty-state juga menawarkan run terstruktur
-  await expect(page.getByRole("button", { name: /Start a structured workflow run/ })).toBeVisible();
+  // persona default = conductor → bar kendali workflow di chat (di atas composer)
+  const bar = page.getByLabel("Workflow run bar");
+  await expect(bar).toBeVisible({ timeout: 15_000 });
+  await expect(bar.getByLabel("Run brief")).toBeVisible();
+  await expect(bar.getByRole("button", { name: "Start run" })).toBeVisible();
 
-  await openFlow.click();
-  // sampai ke Team tab — workflow board (merge Flow→Team) + canvas delegasi
-  await expect(page.getByLabel("Workflow board")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/runs led by Conductor Yui/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Start run" })).toBeVisible();
-  await expect(page.getByLabel("Delegation hierarchy diagram — canvas")).toBeVisible();
+  // tombol header conductor → view alur di tab Team (canvas delegasi)
+  await page.getByRole("button", { name: "Open workflow view" }).click();
+  await expect(page.getByLabel("Delegation hierarchy diagram — canvas")).toBeVisible({ timeout: 15_000 });
 });

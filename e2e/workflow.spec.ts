@@ -1,11 +1,12 @@
-// P2-FLOW-5 — board workflow E2E: start run (template 7 fase) → kolom fase &
-// kartu step live → gerbang approve (×6) → run done, fase Deliverable hijau.
-// Provider = mock lokal (fallback "ok" — tiap step selesai instan).
+// P2-FLOW-5/6 e2e — arsitektur kendali-di-chat (keputusan user 2026-11-08):
+// brief/steer/gate/pause = WorkflowRunBar di CHAT conductor; observasi alur =
+// tab TEAM (canvas delegasi, run = root conductor, fase implisit); reassign
+// step = tab TASK. Provider = mock lokal (fallback "ok" — step selesai instan).
 import { expect, test } from "@playwright/test";
 
 const API = "http://127.0.0.1:3291";
 
-test("FLOW-5: start → board live → gate approve ×6 → done", async ({ page, request }) => {
+test("FLOW-5: start via chat → gate approve ×6 → done; alur terlihat di Team", async ({ page, request }) => {
   test.setTimeout(120_000);
 
   // project segre untuk spec ini (nama unik → aman paralel/ulang)
@@ -14,34 +15,38 @@ test("FLOW-5: start → board live → gate approve ×6 → done", async ({ page
   expect(r.ok()).toBeTruthy();
   const { project } = (await r.json()) as { project: { id: string } };
 
-  // UI: buka app → pilih project → tab Team (merge Flow→Team 2026-11-08)
+  // UI: buka app → pilih project → CHAT (persona default conductor)
   await page.goto("/");
-  const board = page.getByLabel("Workflow board");
   await page.getByRole("button", { name, exact: false }).first().click();
-  await page.getByRole("tab", { name: "Team" }).click(); // TabPills role=tab
+  const bar = page.getByLabel("Workflow run bar");
+  await expect(bar).toBeVisible({ timeout: 15_000 });
 
-  // start run (template default; brief opsional diisi agar terlihat di UI)
-  await page.getByLabel("Run brief").fill("Build a small landing page from scratch.");
-  await page.getByRole("button", { name: "Start run" }).click();
+  // start run dari chat (brief opsional) — run aktif (mock cepat: chip bisa
+  // langsung "awaiting approval" melewati "running")
+  await bar.getByLabel("Run brief").fill("Build a small landing page from scratch.");
+  await bar.getByRole("button", { name: "Start run" }).click();
+  await expect(bar.getByText(/^(running|awaiting approval)$/)).toBeVisible({ timeout: 20_000 });
 
-  // kolom fase muncul + status running
-  await expect(page.locator('[data-phase="planning"]')).toBeVisible({ timeout: 20_000 });
-  await expect(board.getByText("running", { exact: true })).toBeVisible({ timeout: 20_000 });
+  // observasi: tab Team — run tampil sbg root delegasi (fase implisit)
+  await page.getByRole("tab", { name: "Team" }).click();
+  const canvas = page.getByLabel("Delegation hierarchy diagram — canvas");
+  await expect(canvas).toBeVisible();
+  await expect(canvas.getByText(/Workflow ·/, { exact: false })).toBeVisible({ timeout: 20_000 });
+  await expect(canvas.getByLabel("delegation branch").first()).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("tab", { name: "Chat" }).click();
 
-  // 6 gerbang (planning..docs; deliverable gate off) — approve satu-satu
+  // 6 gerbang (planning..docs; deliverable gate off) — approve satu-satu dari chat
   for (let i = 0; i < 6; i++) {
-    const approve = page.getByRole("button", { name: "Approve" });
+    const approve = bar.getByRole("button", { name: "Approve", exact: true });
     await expect(approve).toBeVisible({ timeout: 30_000 });
     await approve.click();
   }
 
-  // run done: chip status + semua kartu step Deliverable selesai (check icon)
-  await expect(board.getByText("done", { exact: true })).toBeVisible({ timeout: 60_000 });
-  const deliverable = page.locator('[data-phase="deliverable"]');
-  await expect(deliverable.locator('[aria-label="done"]').first()).toBeVisible({ timeout: 30_000 });
+  // run done: chip status di bar
+  await expect(bar.getByText("done", { exact: true })).toBeVisible({ timeout: 60_000 });
 });
 
-test("FLOW-6: steer + reassign + pause/resume mid-run", async ({ page, request }) => {
+test("FLOW-6: steer + reassign (Task) + pause/resume mid-run — semua via chat", async ({ page, request }) => {
   test.setTimeout(120_000);
 
   const name = `Steer E2E ${Date.now()}`;
@@ -50,42 +55,44 @@ test("FLOW-6: steer + reassign + pause/resume mid-run", async ({ page, request }
 
   await page.goto("/");
   await page.getByRole("button", { name, exact: false }).first().click();
-  await page.getByRole("tab", { name: "Team" }).click();
-  const board = page.getByLabel("Workflow board");
-  await page.getByRole("button", { name: "Start run" }).click();
-  await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 30_000 }); // gate planning
+  const bar = page.getByLabel("Workflow run bar");
+  await expect(bar).toBeVisible({ timeout: 15_000 });
+  await bar.getByRole("button", { name: "Start run" }).click();
+  await expect(bar.getByRole("button", { name: "Approve", exact: true })).toBeVisible({ timeout: 30_000 }); // gate planning
 
-  // 1) steer mid-run — instruksi masuk, input ter-clear
-  const steer = page.getByLabel("Steer instruction");
+  // 1) steer mid-run (chat) — instruksi masuk, input ter-clear
+  const steer = bar.getByLabel("Steer instruction");
   await steer.fill("Keep the scope minimal for v1.");
-  await page.getByRole("button", { name: "Steer", exact: true }).click();
+  await bar.getByRole("button", { name: "Steer", exact: true }).click();
   await expect(steer).toHaveValue("");
 
-  // 2) reassign step pending fase research → analyst (kartu tampil persona baru)
+  // 2) reassign step pending fase research → analyst — di TAB TASK (fokus assign)
+  await page.getByRole("tab", { name: "Task" }).click();
   const research = page.locator('[data-phase="research"]');
-  await expect(research).toBeVisible();
+  await expect(research).toBeVisible({ timeout: 15_000 });
   await research.getByLabel("Reassign tech-notes").selectOption("yui-analyst");
   await expect(
     research.locator('[data-step="tech-notes"] [title="yui-analyst"]'),
   ).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("tab", { name: "Chat" }).click();
 
   // 3) pause saat gate → status paused LANGSUNG (eksekusi berhenti) → approve
   //    gate sambil paused → tetap paused → resume → lanjut fase berikut
-  const pauseResp = page.waitForResponse((r) => r.url().includes("/pause"));
-  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  const pauseResp = page.waitForResponse((res) => res.url().includes("/pause"));
+  await bar.getByRole("button", { name: "Pause", exact: true }).click();
   await pauseResp;
-  await expect(board.getByText("paused", { exact: true })).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await expect(bar.getByText("paused", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await bar.getByRole("button", { name: "Approve", exact: true }).click();
   await page.waitForTimeout(800); // gerbang di-approve saat paused — harus TETAP paused
-  await expect(board.getByText("paused", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Approve", exact: true })).toHaveCount(0); // banner gate hilang (diputuskan)
-  await page.getByRole("button", { name: "Resume", exact: true }).click();
+  await expect(bar.getByText("paused", { exact: true })).toBeVisible();
+  await expect(bar.getByRole("button", { name: "Approve", exact: true })).toHaveCount(0); // banner gate hilang (diputuskan)
+  await bar.getByRole("button", { name: "Resume", exact: true }).click();
 
   // 4) gerbang sisanya (research..docs ×5) → done
   for (let i = 0; i < 5; i++) {
-    const approve = page.getByRole("button", { name: "Approve", exact: true });
+    const approve = bar.getByRole("button", { name: "Approve", exact: true });
     await expect(approve).toBeVisible({ timeout: 30_000 });
     await approve.click();
   }
-  await expect(board.getByText("done", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(bar.getByText("done", { exact: true })).toBeVisible({ timeout: 60_000 });
 });

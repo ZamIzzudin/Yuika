@@ -31,17 +31,17 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 ### A1. Start run + board live (FLOW-1/2/5)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Buka project → tab **Team** (workflow kini di sini) | Panel "Workflow" (led by Conductor Yui) + kartu Start run; template default 7 fase | |
-| 2 | Isi brief: `Build a product landing page for a coffee brand.` → **Start run** | Run baru muncul; kolom fase Planning aktif (kartu step ber-spin), chip status running | |
-| 3 | Tunggu fase planning selesai | Ringkasan step muncul di kartu (teks pendek) | |
+| 1 | Buka project → tetap di tab **Chat** (persona conductor) | **Workflow run bar** di atas composer: input brief + tombol Start run | |
+| 2 | Isi brief: `Build a product landing page for a coffee brand.` → **Start run** | Bar berubah jadi strip kontrol: chip status (running/awaiting approval), progres fase, tombol Pause/Stop | |
+| 3 | Tunggu fase planning selesai | Banner gate muncul DI BAR (di atas composer): Phase "Planning" complete + Approve/Reject | |
 | 4 | Klik kembali tab **Chat** → **Flow** | Board tetap ada (state tak hilang) | |
 
-### A2. Gate approve (FLOW-3)
+### A2. Gate approve (FLOW-3 — banner di Workflow run bar, chat)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
 | 1 | Setelah fase planning selesai | Banner gate **Approve / Reject** + ringkasan fase | |
-| 2 | Klik **Approve** | Fase berikut (research) mulai; banner hilang | |
-| 3 | Coba **Reject** di gate fase research | Run berhenti → status failed/stopped, pesan jelas | |
+| 2 | Klik **Approve** (di bar chat) | Fase berikut (research) mulai; banner hilang | |
+| 3 | Coba **Reject** di gate fase research | Run berhenti → chip stopped; bar kembali ke form start dgn chip status terakhir | |
 
 ### A3. Restart mid-run — resume (FLOW-3, acceptance batch)
 | # | Langkah | Ekspektasi | Hasil |
@@ -50,14 +50,14 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 | 2 | Nyalakan ulang `npm run dev` → buka tab Team | Run muncul dengan status running/paused; fase done TETAP done (tidak diulang); gate yang belum diputus ditanyakan lagi | |
 | 3 | Lanjutkan approve sampai selesai | Run done; semua fase hijau | |
 
-### A4. Steering mid-run (FLOW-6 — semua kontrol di panel Workflow, tab Team)
+### A4. Steering mid-run (FLOW-6 — Steer input & Pause/Resume/Stop di bar chat)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Run baru → saat gate planning tampil, isi **Steer**: `Use a warm brown palette.` → **Steer** | Input ter-reset; event muncul; instruksi dipakai fase BERIKUTNYA | |
+| 1 | Run baru → saat gate planning tampil, isi **Steer** di bar chat: `Use a warm brown palette.` → **Steer** | Input ter-reset; instruksi dipakai fase BERIKUTNYA | |
 | 2 | Klik **Pause** (saat gate) | Chip status paused LANGSUNG | |
 | 3 | Approve gate sambil paused | Tetap paused; banner gate hilang | |
 | 4 | **Resume** | Fase berikut jalan | |
-| 5 | Di baris step pending (mis. research), buka dropdown **Reassign** → pilih persona lain | Baris menampilkan persona baru | |
+| 5 | Buka tab **Task** → seksi **Workflow steps** (fase research) → dropdown **Reassign** step tech-notes → persona lain | Baris menampilkan persona baru; cek tab Team: kartu persona berubah | |
 | 6 | **Stop** run aktif | Status stopped; tidak ada proses nyasar | |
 
 ---
@@ -103,13 +103,13 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 | 4 | Minta agent (chat scholar): `Fetch https://example.com and summarize` lalu kembali ke tab Browser → **History** | Entri `agent` muncul (web_fetch tercatat); klik → halaman sama terbuka | |
 | 5 | F12 console | TIDAK ada error CSP/script dari halaman pihak ketiga | |
 
-### C4. Pintu Workflow dari chat conductor (keputusan 2026-11-08: flow = alat orchestrator)
+### C4. Kendali workflow di chat conductor (keputusan 2026-11-08 final)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Pastikan persona aktif = **Conductor** (default) → lihat header chat | Tombol **Workflow** (ikon tangga) muncul — hanya untuk conductor | |
-| 2 | Empty state chat | Kartu aksen "Start a structured workflow run" | |
-| 3 | Klik tombol **Workflow** | Pindah ke tab **Team**; panel Workflow (di atas canvas delegasi) menyebut "runs led by Conductor Yui" | |
-| 4 | Ganti persona aktif ke scholar (via picker) → lihat header | Tombol Workflow TIDAK muncul (chat = pekerjaan serabutan) | |
+| 1 | Persona aktif = **Conductor** (default) | Bar workflow di atas composer; persona lain (mis. scholar) TIDAK punya bar | |
+| 2 | Header chat | Tombol **Workflow** (ikon tangga, hanya conductor) → buka tab Team utk lihat canvas alur | |
+| 3 | Lihat atas composer chat | **Workflow run bar**: input brief + Start run (run aktif: chip status, Approve/Reject saat gate, Steer, Pause/Stop) | |
+| 4 | Ganti persona ke scholar | Bar & tombol Workflow hilang (chat = pekerjaan serabutan) | |
 
 ---
 

@@ -108,6 +108,37 @@ function autoApproveGates(engine: WorkflowEngine): void {
 }
 
 describe("P2-FLOW-2 — engine v0", () => {
+  it("lead dari chat user (2026-11-08): sesi chat conductor dipakai sbg lead — konteks run di-inject, sesi baru TIDAK dibuat, sesi lintas-project ditolak", async () => {
+    // sesi chat "user" (persona conductor) di project demo
+    store.createSession("s_chatku", "yui-conductor", "system-prompt-chat", [], "p_demo");
+    const engine = makeEngine(new EndlessProvider());
+    autoApproveGates(engine);
+
+    const { leadSessionId } = engine.startRun({
+      projectId: "p_demo",
+      workflow: template(),
+      brief: "brief dari chat",
+      leadSessionId: "s_chatku",
+    });
+    expect(leadSessionId).toBe("s_chatku");
+    // konteks run muncul di sesi chat (pola [workflow lead])
+    const msgs = store.getMessages("s_chatku");
+    expect(msgs.some((m) => m.content.includes("[workflow lead]") && m.content.includes("brief dari chat"))).toBe(true);
+
+    await waitFor(() => projects.getWorkflowRun((events.find((e) => e.type === "workflow.done") as { runId?: string } | undefined)?.runId ?? "")?.status === "done");
+
+    // sesi milik project lain → ditolak
+    projects.createProject({ id: "p_lain", name: "Lain", rootPath: ws });
+    store.createSession("s_lain", "yui-conductor", "x", [], "p_lain");
+    expect(() =>
+      engine.startRun({ projectId: "p_demo", workflow: template(), leadSessionId: "s_lain" }),
+    ).toThrow(/bukan milik project/);
+    // sesi tak dikenal → ditolak
+    expect(() =>
+      engine.startRun({ projectId: "p_demo", workflow: template(), leadSessionId: "s_hantu" }),
+    ).toThrow(/tidak ditemukan/);
+  });
+
   it("template 7 fase jalan E2E: semua fase + step selesai, run done", async () => {
     const engine = makeEngine(new EndlessProvider());
     autoApproveGates(engine);

@@ -10,6 +10,9 @@ const StartRunRequest = z.object({
   brief: z.string().max(4_000).optional(),
   /** Object WorkflowDef ATAU teks YAML workflow.yaml. Kosong = template 7 fase. */
   workflow: z.unknown().optional(),
+  /** Sesi chat conductor sebagai lead (kendali via chat — 2026-11-08).
+   *  Harus milik project ini. */
+  leadSessionId: z.string().min(1).optional(),
 });
 
 const GateRequest = z.object({
@@ -53,8 +56,17 @@ export function registerWorkflowRoutes(app: FastifyInstance, getRt: () => YuiRun
     } catch (e) {
       return reply.code(400).send({ error: e instanceof Error ? e.message : "workflow tidak valid" });
     }
-    const started = rt.workflowEngine.startRun({ projectId: id, workflow, brief: body.brief });
-    return reply.code(201).send(started);
+    try {
+      const started = rt.workflowEngine.startRun({
+        projectId: id,
+        workflow,
+        brief: body.brief,
+        leadSessionId: body.leadSessionId, // divalidasi engine (milik project?)
+      });
+      return reply.code(201).send(started);
+    } catch (e) {
+      return reply.code(400).send({ error: e instanceof Error ? e.message : "gagal memulai run" });
+    }
   });
 
   app.get("/api/projects/:id/workflows/runs", async (req, reply) => {

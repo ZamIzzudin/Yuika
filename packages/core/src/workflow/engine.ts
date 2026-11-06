@@ -31,6 +31,10 @@ export interface StartRunOptions {
   projectId: string;
   workflow: WorkflowDef;
   brief?: string;
+  /** Sesi chat conductor sebagai lead (kendali workflow via chat — keputusan
+   *  user 2026-11-08: brief/steer/gate di tab Chat). Kosong = engine membuat
+   *  sesi lead sendiri (perilaku lama). */
+  leadSessionId?: string;
 }
 
 export interface StartRunResult {
@@ -70,27 +74,48 @@ export class WorkflowEngine {
   constructor(private readonly deps: WorkflowEngineDeps) {}
 
   /** Mulai run baru (fire-and-forget drive). Lead session = Conductor —
-   *  parent semua delegation anak step (event run hidup di sesi ini). */
+   *  parent semua delegation anak step (event run hidup di sesi ini).
+   *  leadSessionId opsional: sesi chat conductor user dipakai sebagai lead
+   *  supaya kendali run (brief/steer/gate) hidup di chat-nya sendiri. */
   startRun(opts: StartRunOptions): StartRunResult {
     const def = validated(opts.workflow);
     if (!this.deps.projects.getProject(opts.projectId)) throw new Error(`project tidak ditemukan: ${opts.projectId}`);
     const runId = `wf_${randomUUID().slice(0, 8)}`;
-    const leadSessionId = `s_${randomUUID()}`;
 
     const personas = listPersonas(this.deps.personasDir);
     const conductor = personas.find((p) => p.manifest.id === "yui-conductor");
     if (!conductor) throw new Error("persona yui-conductor tidak ditemukan (roster wajib utk workflow lead)");
-    createSessionWithPrompt(
-      this.deps.store,
-      conductor,
-      leadSessionId,
-      ["delegate_task"],
-      this.deps.skillsDir,
-      opts.projectId,
-      `\n\n[workflow lead] Kamu memimpin run "${def.name}" (${runId}). ` +
-        `Step dieksekusi otomatis oleh engine; ringkasan anak muncul sebagai delegation.*. ` +
-        (opts.brief ? `Brief:\n${opts.brief}` : ""),
-    );
+
+    let leadSessionId: string;
+    const provided = opts.leadSessionId ? this.deps.store.getSession(opts.leadSessionId) : undefined;
+    if (opts.leadSessionId && !provided) throw new Error(`sesi lead tidak ditemukan: ${opts.leadSessionId}`);
+    if (provided && provided.projectId !== opts.projectId)
+      throw new Error("sesi lead bukan milik project ini");
+    if (provided) {
+      // sesi chat sudah punya system prompt conductor — injeksikan konteks run
+      // sebagai pesan berprefix (pola sama dgn [steering])
+      leadSessionId = provided.id;
+      this.deps.store.appendMessage(leadSessionId, {
+        role: "user",
+        content:
+          `[workflow lead] Kamu memimpin run "${def.name}" (${runId}). ` +
+          `Step dieksekusi otomatis oleh engine; ringkasan anak muncul sebagai delegation.*.` +
+          (opts.brief ? ` Brief:\n${opts.brief}` : ""),
+      });
+    } else {
+      leadSessionId = `s_${randomUUID()}`;
+      createSessionWithPrompt(
+        this.deps.store,
+        conductor,
+        leadSessionId,
+        ["delegate_task"],
+        this.deps.skillsDir,
+        opts.projectId,
+        `\n\n[workflow lead] Kamu memimpin run "${def.name}" (${runId}). ` +
+          `Step dieksekusi otomatis oleh engine; ringkasan anak muncul sebagai delegation.*. ` +
+          (opts.brief ? `Brief:\n${opts.brief}` : ""),
+      );
+    }
 
     this.deps.projects.createWorkflowRun({
       id: runId,

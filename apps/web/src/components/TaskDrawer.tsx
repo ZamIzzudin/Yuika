@@ -33,7 +33,7 @@ const TerminalTabLazy = dynamic(() => import("./TerminalTab"), {
   loading: () => <div className="p-4 text-caption text-dim">Loading terminal…</div>,
 });
 import { FileTab } from "./FileTab";
-import { WorkflowTree } from "./WorkflowTree";
+import { WorkflowStepsCard } from "./WorkflowStepsCard";
 import { BrowserTab } from "./BrowserTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
@@ -590,7 +590,11 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "board" && (
-        <section aria-label="Task kanban board">
+        <section aria-label="Task kanban board" className="flex flex-col gap-4">
+          {/* assign/reassign step workflow hidup di sini (keputusan user
+              2026-11-08: Task = fokus penataan siapa-kerja-apa) */}
+          <WorkflowStepsCard projectId={project.id} />
+          <div>
           <header className="mb-3 flex items-center justify-between">
             <b className="text-body font-semibold text-primary">Task</b>
             <Button size="sm" onClick={() => setTreeOpen(true)}>
@@ -666,6 +670,7 @@ export function ProjectTabs({
               );
             })}
           </div>
+          </div>
         </section>
       )}
 
@@ -717,10 +722,9 @@ export function ProjectTabs({
           aria-label="Team — delegation hierarchy diagram"
           className="flex flex-col gap-4"
         >
-          {/* merge Flow → Team (keputusan user 2026-11-08): informasi workflow
-              (run → fase → step, gate, steering) di atas canvas delegasi —
-              bahasa visual Team */}
-          <WorkflowTree projectId={project.id} />
+          {/* merge Flow→Team FINAL (user 2026-11-08): Team = CANVAS MURNI —
+              run workflow tampil sebagai tree of delegation (root conductor
+              lead, fase implisit). Kendali run = chat; assign/reassign = Task. */}
           <TeamTree
             projectId={project.id}
             rootSessionId={activeSessionId}
