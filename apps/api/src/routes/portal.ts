@@ -13,6 +13,7 @@ import { generateDeviceKeys } from "@yuika/crypto";
 import { z } from "zod";
 import { getPortalHost, defaultPortalUrl, defaultRelayUrl } from "../portal/service.js";
 import { clearHostDevice, getHostDevice, getWebDevice, saveHostDevice } from "../portal/store.js";
+import { getWebPresence } from "../portal/web-presence.js";
 
 const PairRequest = z.object({
   token: z.string().min(20),
@@ -86,12 +87,15 @@ export function registerPortalRoutes(app: FastifyInstance, getRt: () => import("
     const st = svc.status();
     // CP-4: device web auto-link (SSO) — presence di portal, terpisah dari host.
     const web = getWebDevice();
-    const webDevice = web ? { deviceId: web.deviceId, name: web.name, linkedAt: web.linkedAt } : null;
+    const pres = getWebPresence().status();
+    const webDevice = web
+      ? { deviceId: web.deviceId, name: web.name, linkedAt: web.linkedAt, online: pres.deviceId === web.deviceId && pres.state === "authed" }
+      : null;
     if (!st.linked) {
       const rec = getHostDevice();
       if (rec)
-        return { linked: true, accountId: rec.accountId, deviceId: rec.deviceId, relayUrl: rec.relayUrl, relayState: "offline", remotes: [], webDevice };
-      return { linked: false, accountId: null, deviceId: null, relayUrl: null, relayState: "offline", remotes: [], webDevice };
+        return { linked: true, accountId: rec.accountId, deviceId: rec.deviceId, relayUrl: rec.relayUrl, relayState: "offline", remotes: [], webDevice, ...(st.note ? { note: st.note } : {}) };
+      return { linked: false, accountId: null, deviceId: null, relayUrl: null, relayState: "offline", remotes: [], webDevice, ...(st.note ? { note: st.note } : {}) };
     }
     return { ...st, webDevice };
   });

@@ -3,8 +3,9 @@
 import { buildApp } from "./app.js";
 import { getRuntime } from "./runtime.js";
 import { moduleLogger } from "@yuika/core";
-import { getHostDevice } from "./portal/store.js";
+import { getHostDevice, getWebDevice } from "./portal/store.js";
 import { getPortalHost } from "./portal/service.js";
+import { getWebPresence } from "./portal/web-presence.js";
 
 const log = moduleLogger("api");
 const port = Number(process.env.YUI_API_PORT ?? 3211);
@@ -43,6 +44,14 @@ app
           .start(getRuntime(), linked)
           .then(() => log.info({ deviceId: linked.deviceId }, "portal host online"))
           .catch((e: unknown) => log.warn({ err: e }, "portal host gagal connect (relay down?) — akan terus retry"));
+      }
+      // CP-5: web presence (device hasil auto-link SSO) ikut online saat boot.
+      const web = getWebDevice();
+      if (web) {
+        getWebPresence()
+          .start(web)
+          .then(() => log.info({ deviceId: web.deviceId }, "web presence online"))
+          .catch((e: unknown) => log.warn({ err: e }, "web presence gagal connect — retry berikutnya saat login/boot"));
       }
     } catch (e) {
       log.error({ err: e }, "runtime gagal init — env belum lengkap? (lihat .env.example)");

@@ -60,7 +60,7 @@ export interface RelayHandlers {
  * - `connect()` resolve setelah auth_ok PERTAMA.
  * - Putus tak disengaja → reconnect backoff + handshake ulang; `handlers.
  *   onAuthOk` dipanggil ulang (host harus register_host lagi, remote join lagi).
- * - bye 4200 (proto) / 4000 (replaced) → TIDAK reconnect (permanen).
+ * - bye 4200/4000/4201/4001 → TIDAK reconnect (permanen).
  * - Pesan saat belum authed ditampung outbox → flush saat auth_ok.
  */
 export class RelayClient {
@@ -187,10 +187,17 @@ export class RelayClient {
         this.log("bye", msg.code, msg.error);
         this.handlers.onBye?.(msg.code, msg.error);
         // 4000 replaced / 4200 proto / 4201 account-limit = permanen (retry
-        // tak mengubah apa pun — hanya menambah beban relay); lainnya transien
-        // → reconnect backoff + handshake ulang (SPEC §10), role layer
-        // register/join ulang.
-        if (msg.code === ByeCode.REPLACED || msg.code === ByeCode.PROTO_UNSUPPORTED || msg.code === ByeCode.ACCOUNT_LIMIT) {
+        // tak mengubah apa pun — hanya menambah beban relay); 4001
+        // unknown-device permanen sejak CP-5: device di-unlink dari portal →
+        // row device hilang, retry tidak akan pernah berhasil.
+        // Lainnya transien → reconnect backoff + handshake ulang (SPEC §10),
+        // role layer register/join ulang.
+        if (
+          msg.code === ByeCode.REPLACED ||
+          msg.code === ByeCode.PROTO_UNSUPPORTED ||
+          msg.code === ByeCode.ACCOUNT_LIMIT ||
+          msg.code === ByeCode.UNKNOWN_DEVICE
+        ) {
           this.stopped = true;
           this.failAuthWaiters(msg);
         }

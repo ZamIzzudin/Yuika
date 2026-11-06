@@ -117,7 +117,11 @@ tab Terminal, approval muncul untuk perintah berisiko, dev server jalan.
 **Portal-only auth (2026-11-08): local account dihapus** — P1-PRT-8: register/login
 
 **Auto-link browser (CP-4, 2026-11-08)** — P1-PRT-9 sisi Yuika: SSO login
-otomatis meng-claim device web di portal (presence; tanpa token manual).
+
+**CP-5 unlink device (2026-11-08)** — P1-PRT-10: bye 4001 permanen
+(SDK tak reconnect); host → pairing ulang (note "unlinked"); web device →
+row dihapus + sesi dicabut (guard everAuthed utk relay asing). Hook
+unlink() di relay double + unit & e2e hijau.otomatis meng-claim device web di portal (presence; tanpa token manual).
 Token Web manual diusulkan dihapus (CP-4, portal) — web = host/presence,
 bukan remote.lokal hilang dari API (404), AuthGate tanpa form kredensial (portal-only +
 mode terbuka), identitas = portal_account_id (anti-takeover via 409).

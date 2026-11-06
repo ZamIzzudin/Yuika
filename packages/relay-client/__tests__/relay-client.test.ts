@@ -353,3 +353,41 @@ describe("SDK — outbox & rid", () => {
     expect(s.size).toBe(100);
   });
 });
+
+// CP-5 — unlink dari portal: device hilang dari registry relay → semua conn
+// aktifnya kena bye 4001 (unknown device) → SDK PERMANEN (tidak reconnect).
+describe("CP-5 — unlink device → bye 4001 permanen", () => {
+  it("bye 4001 → stopped: state closed & TIDAK reconnect setelah backoff", async () => {
+    const d = generateDeviceKeys();
+    const rl = createSpecRelay({
+      devices: [{ deviceId: d.deviceId, accountId: ACC_A, kind: "mobile", name: "Unlink target", signPub: d.signPub, dhPub: d.dhPub }],
+      stickyMs: 0,
+    });
+    await new Promise((r) => setTimeout(r, 300));
+    const client = new RelayClient({
+      url: rl.url(),
+      deviceId: d.deviceId,
+      signPriv: d.signPriv,
+      crypto: {
+        signChallenge: async (p, d, n) => (await import("@yuika/crypto")).signChallenge(p, d, n),
+        seal: async (f, t, pt) => (await import("@yuika/crypto")).seal(f, t, pt),
+        open: async (t, f, b) => (await import("@yuika/crypto")).open(t, f, b).toString("utf8"),
+      },
+      socketFactory: nodeSocket,
+      backoff: { minMs: 100, maxMs: 200 }, // backoff cepat — bila SDK salah reconnect, cepat ketahuan
+      log: () => {},
+    });
+    await client.connect();
+    expect(client.getState()).toBe("authed");
+
+    rl.unlink(d.deviceId); // CP-5 test hook: putus dgn bye 4001
+    await new Promise((r) => setTimeout(r, 300));
+    expect(client.getState()).toBe("closed"); // bye diterima, koneksi putus
+
+    // jendela reconnect: 3× backoff max — transien akan reconnect di sini.
+    await new Promise((r) => setTimeout(r, 700));
+    expect(client.getState()).toBe("closed"); // PERMANEN — tidak ada retry
+    client.close();
+    await rl.close();
+  });
+});

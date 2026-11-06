@@ -257,12 +257,29 @@ export function createSpecRelay(opts: SpecRelayOpts) {
     await new Promise<void>((resolve) => wss.close(() => resolve()));
   }
 
+  /** CP-5 test hook: device di-unlink dari portal → hapus dari registry
+   *  + putus SEMUA conn aktifnya dgn bye 4001 (unknown device), persis
+   *  perilaku portal nyata saat user klik Unlink di halaman Devices. */
+  function unlink(deviceId: string): void {
+    devices.delete(deviceId);
+    hosts.delete(deviceId);
+    for (const m of attached.values()) m.delete(deviceId);
+    for (const c of conns) {
+      if (c.deviceId === deviceId) {
+        c.alive = false;
+        bye(c, ByeCode.UNKNOWN_DEVICE, "unknown device");
+        c.ws.close();
+      }
+    }
+  }
+
   return {
     port,
     url: () => `ws://127.0.0.1:${port()}`,
     devices,
     lastSeen,
     close,
+    unlink,
     /** test helper: daftar host online (deviceId). */
     onlineHosts: () => [...hosts.keys()],
   };

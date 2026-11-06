@@ -99,6 +99,19 @@ export function deleteSession(token: string): void {
   open().prepare("DELETE FROM auth_sessions WHERE token_hash = ?").run(sha(token));
 }
 
+/** CP-5: sign-out SEMUA sesi milik satu portal account — dipakai saat
+ *  web device di-unlink dari portal (bye 4001): sesi web dicabut, login
+ *  berikutnya auto-link ulang via deviceToken (CP-4). */
+export function signOutPortalAccount(portalAccountId: string): number {
+  const r = open()
+    .prepare(
+      `DELETE FROM auth_sessions WHERE user_id IN
+        (SELECT id FROM users WHERE portal_account_id = ?)`,
+    )
+    .run(portalAccountId);
+  return r.changes;
+}
+
 // ── CP-3 SSO: find-or-create user dari identitas portal ──────────────────
 
 /** Email sudah dipakai user milik akun portal LAIN — penolakan, bukan takeover. */

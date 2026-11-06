@@ -16,7 +16,9 @@ interface PortalStatus {
   relayState: "offline" | "connecting" | "authed" | "closed";
   remotes: Array<{ deviceId: string; kind: string; name: string }>;
   /** CP-4: browser auto-link (SSO) — presence, terpisah dari host manual. */
-  webDevice: { deviceId: string; name: string; linkedAt: number } | null;
+  webDevice: { deviceId: string; name: string; linkedAt: number; online: boolean } | null;
+  /** CP-5: "unlinked" = device dihapus dari portal (bukan error jaringan). */
+  note?: "unlinked";
 }
 
 export function PortalSettings() {
@@ -98,9 +100,22 @@ export function PortalSettings() {
         encrypted through the relay.
       </p>
 
+      {st.note === "unlinked" && (
+        <p className="text-caption text-amber-400">
+          Device was unlinked from the portal. Generate a new pairing token in
+          Yuika Portal (Devices) to link it again — this is not a network error.
+        </p>
+      )}
+
       {st.webDevice && !st.linked && (
         <p className="text-caption text-dim">
-          Web session auto-linked by portal sign-in: <span className="font-mono">{st.webDevice.deviceId}</span>
+          Web session{" "}
+          {st.webDevice.online ? (
+            <span className="text-emerald-400">online</span>
+          ) : (
+            "linked"
+          )}
+          : <span className="font-mono">{st.webDevice.deviceId}</span>
         </p>
       )}
 
@@ -145,7 +160,9 @@ export function PortalSettings() {
             <dt>Web session</dt>
             <dd>
               {st.webDevice ? (
-                <span className="text-emerald-400">auto-linked · {st.webDevice.deviceId}</span>
+                <span className={st.webDevice.online ? "text-emerald-400" : "text-dim"}>
+                  {st.webDevice.online ? "online" : "linked"} · {st.webDevice.deviceId}
+                </span>
               ) : (
                 "not linked — sign in via Yuika Portal to auto-link this browser"
               )}

@@ -19,6 +19,7 @@ import {
 } from "@yuika/contracts";
 import { createSession, findOrCreatePortalUser, PortalLinkConflictError } from "../auth/store.js";
 import { getWebDevice, saveWebDevice } from "../portal/store.js";
+import { getWebPresence } from "../portal/web-presence.js";
 import { claimAtPortal } from "./portal.js";
 import { generateDeviceKeys } from "@yuika/crypto";
 import { defaultRelayUrl } from "../portal/service.js";
@@ -141,6 +142,11 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
               relayUrl: defaultRelayUrl(),
               linkedAt: Date.now(),
             });
+            // CP-5: presence online (device tampil online di portal Devices;
+            // bye 4001 saat di-unlink → row dihapus + sesi dicabut).
+            void getWebPresence()
+              .start(getWebDevice()!)
+              .catch(() => undefined);
             req.log.info({ deviceId }, "[sso] web device auto-linked");
           } catch (e) {
             req.log.warn({ err: e instanceof Error ? e.message : String(e) }, "[sso] web device auto-link gagal — login tetap lanjut");

@@ -17,7 +17,9 @@ import {
   RelayHost,
   type RemoteInfo,
 } from "@yuika/relay-client";
+import { ByeCode } from "@yuika/relay-client";
 import { nodeSocket } from "@yuika/relay-client/node";
+import { clearHostDevice } from "./store.js";
 import type { HostDeviceRecord } from "./store.js";
 
 const RING_CAP = 500; // event terakhir per sesi — resume delta subscribe{sinceSeq}
@@ -30,6 +32,9 @@ export interface PortalStatus {
   relayUrl: string | null;
   relayState: "offline" | "connecting" | "authed" | "closed";
   remotes: Array<{ deviceId: string; kind: string; name: string }>;
+  /** CP-5: alasan terakhir worker berhenti — "unlinked" = device dihapus
+   *  dari portal (bye 4001), BUKAN error jaringan; UI mengarahkan pairing ulang. */
+  note?: "unlinked";
 }
 
 interface RingEntry { seq: number; ev: RemoteEvent }
@@ -90,9 +95,22 @@ export class PortalHostService {
   private known = new Set<string>(); // session id yang pernah divalidasi/dibuat
   private unsubAll: (() => void) | null = null;
   private introSent = new Set<string>();
+  /** CP-5: bye 4001 terakhir (untuk note status — jaring ≠ unlinked). */
+  private unlinkedAt = 0;
 
   get running(): boolean {
     return !!this.host;
+  }
+
+  /** CP-5: bye 4001 (UNKNOWN_DEVICE) = device di-unlink dari portal →
+   *  permanen: hentikan loop, hapus row host_device (pairing ulang),
+   *  status menampilkan "unlinked" — bukan error jaringan generik. */
+  private onHostBye(code: number, error: string): void {
+    if (code !== ByeCode.UNKNOWN_DEVICE) return;
+    console.warn(`[portal-host] device di-unlink dari portal (bye 4001: ${error}) — berhenti, pairing ulang diperlukan`);
+    this.unlinkedAt = Date.now();
+    void this.stop();
+    clearHostDevice();
   }
 
   /** Mulai worker (idempotent). Pair route memanggil ini setelah save. */
@@ -101,19 +119,22 @@ export class PortalHostService {
     await this.stop();
     this.rt = rt;
     this.record = record;
-    const client = new RelayClient({
-      url: record.relayUrl,
-      deviceId: record.deviceId,
-      signPriv: record.signPriv,
-      crypto: {
-        signChallenge: async (p, d, n) => (await import("@yuika/crypto")).signChallenge(p, d, n),
-        seal: async (f, t, pt) => (await import("@yuika/crypto")).seal(f, t, pt),
-        open: async (t, f, b) => (await import("@yuika/crypto")).open(t, f, b).toString("utf8"),
+    const client = new RelayClient(
+      {
+        url: record.relayUrl,
+        deviceId: record.deviceId,
+        signPriv: record.signPriv,
+        crypto: {
+          signChallenge: async (p, d, n) => (await import("@yuika/crypto")).signChallenge(p, d, n),
+          seal: async (f, t, pt) => (await import("@yuika/crypto")).seal(f, t, pt),
+          open: async (t, f, b) => (await import("@yuika/crypto")).open(t, f, b).toString("utf8"),
+        },
+        socketFactory: nodeSocket,
+        backoff: { minMs: 500, maxMs: 16_000 },
+        log: (...a) => console.log("[portal-host]", ...a),
       },
-      socketFactory: nodeSocket,
-      backoff: { minMs: 500, maxMs: 16_000 },
-      log: (...a) => console.log("[portal-host]", ...a),
-    });
+      { onBye: (code, error) => this.onHostBye(code, error) },
+    );
     const host = new RelayHost({
       client,
       deviceId: record.deviceId,
@@ -160,8 +181,9 @@ export class PortalHostService {
 
   status(): PortalStatus {
     const rec = this.record;
+    const note: PortalStatus["note"] = Date.now() - this.unlinkedAt < 5 * 60_000 ? "unlinked" : undefined;
     if (!rec || !this.host) {
-      return { linked: !!rec, accountId: rec?.accountId ?? null, deviceId: rec?.deviceId ?? null, relayUrl: rec?.relayUrl ?? null, relayState: "offline", remotes: [] };
+      return { linked: !!rec, accountId: rec?.accountId ?? null, deviceId: rec?.deviceId ?? null, relayUrl: rec?.relayUrl ?? null, relayState: "offline", remotes: [], ...(note ? { note } : {}) };
     }
     const s = this.client!.getState();
     return {
@@ -171,6 +193,7 @@ export class PortalHostService {
       relayUrl: rec.relayUrl,
       relayState: (s === "idle" || s === "connecting" ? "connecting" : s === "authed" ? "authed" : "closed") as PortalStatus["relayState"],
       remotes: [...this.host.remotes.values()].map((r) => ({ deviceId: r.deviceId, kind: r.kind, name: r.name })),
+      ...(note ? { note } : {}),
     };
   }
 
