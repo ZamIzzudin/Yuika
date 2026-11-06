@@ -12,6 +12,13 @@ export interface McpServerConfig {
   command: string;
   args?: string[];
   env?: Record<string, string>;
+  /** P1-MCP-4: jalankan server DI DALAM container sandbox (worker terisolasi,
+   * bukan stdio bare). `true` = paksa; tanpa flag → stdio biasa (default).
+   * Bila Docker tak tersedia saat `true` → error jelas (fail-closed), KECUALI
+   * `"auto"` → fallback stdio + peringatan. */
+  sandbox?: boolean | "auto";
+  /** allowlist egress server ini (hanya relevan bila sandbox aktif). */
+  egress?: string[];
 }
 
 export interface McpRegistry {
@@ -44,6 +51,8 @@ export async function connectMcpServer(
      *  `uvx`/`npx` mengunduh paket pertama kali (PyPI/npm bisa lambat); timeout
      *  SDK default 60 dtk terlalu ketat → -32001 "Request timed out". */
     connectTimeoutMs?: number;
+    /** P1-MCP-4: root workspace utk mount container bila cfg.sandbox aktif. */
+    workspacePath?: string;
   } = {},
 ): Promise<{
   close: () => Promise<void>;
@@ -61,11 +70,38 @@ export async function connectMcpServer(
   if (command === "uvx") {
     command = (await findUvx()) ?? "uvx"; // biarkan ENOENT natural bila tak ada
   }
-  const transport = new StdioClientTransport({
-    command,
-    args: cfg.args ?? [],
-    env: cfg.env as Record<string, string> | undefined,
-  });
+
+  // P1-MCP-4 — MCP worker per-tenant di sandbox: server stdio dibungkus
+  // `docker run -i` (container terisolasi: caps drop, network default-deny,
+  // egress allowlist opsional) alih-alih spawn bare di host.
+  let dockerArgv: string[] | null = null;
+  if (cfg.sandbox && opts.workspacePath) {
+    const forced = cfg.sandbox === true;
+    const hasDocker = await (await import("../tools/sandbox.js")).dockerAvailable();
+    if (hasDocker) {
+      const sb = await import("../tools/sandbox.js");
+      const egress = cfg.egress ?? [];
+      let proxyPort: number | undefined;
+      if (egress.length > 0) {
+        const { getEgressProxy } = await import("../tools/egress.js");
+        proxyPort = (await getEgressProxy(egress)).port;
+      }
+      const name = `yui-mcp-${serverName}-${Date.now().toString(36)}`;
+      dockerArgv = sb.sandboxArgv(name, command, cfg.args ?? [], opts.workspacePath, { egress, mountMode: "ro", interactive: true }, proxyPort);
+    } else if (forced) {
+      throw new Error(
+        `MCP server '${serverName}' menuntut sandbox (sandbox: true) tapi Docker tidak tersedia — YUI_SANDBOX gagal fail-closed`,
+      );
+    } else {
+      opts.onDown?.("sandbox diminta tapi Docker tak tersedia — fallback stdio host (sandbox:auto)");
+    }
+  }
+
+  const transport = new StdioClientTransport(
+    dockerArgv
+      ? { command: "docker", args: dockerArgv, env: cfg.env as Record<string, string> | undefined }
+      : { command, args: cfg.args ?? [], env: cfg.env as Record<string, string> | undefined },
+  );
   // Gagal handshake (timeout/initialize) → tutup transport agar proses anak
   // `uvx`/`npx` tak jadi zombie (unduhan lanjut di cache, retry berikutnya cepat).
   try {

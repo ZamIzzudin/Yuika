@@ -11,12 +11,24 @@ import { registry } from "../registry.js";
 import { redactSecrets } from "../redact.js";
 // namespace import: test meng-ganti dockerAvailable/runInSandbox via vi.spyOn
 import * as sandbox from "./sandbox.js";
+import * as egressMod from "./egress.js";
 
 const TIMEOUT_MS = 20_000;
 
+/** Subperintah npm yang diizinkan (sisanya ditolak di validasi — `publish`,
+ * `access`, `owner` dsb. berbahaya utk agent). */
+const NPM_SUB = new Set(["install", "ci", "run", "run-script", "exec", "test", "ls", "outdated", "view", "fund", "doctor"]);
+
 const schema = z.object({
-  command: z.enum(["node", "ls", "echo"]),
+  command: z.enum(["node", "npm", "npx", "ls", "echo"]),
   args: z.array(z.string()).default([]),
+}).superRefine((v, ctx) => {
+  if (v.command === "npm") {
+    const sub = v.args[0];
+    if (!sub || !NPM_SUB.has(sub)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `subperintah npm tidak diizinkan: ${sub ?? "(kosong)"} — pakai salah satu: ${[...NPM_SUB].join(", ")}` });
+    }
+  }
 });
 
 /** `ls` internal: daftar direktori (nama + tanda d/f) — tidak spawn proses. */
@@ -46,7 +58,7 @@ export function registerRunCommandTool(): void {
   registry.register({
     name: "run_command",
     description:
-      "Jalankan perintah: `ls` (daftar direktori — internal, aman, tanpa approval), `echo`, atau `node <file.js>` (cwd = root proyek, dijalankan di container sandbox terisolasi — tanpa akses jaringan, resource capped, timeout 20 dtk; butuh approval).",
+      "Jalankan perintah: `ls` (daftar direktori — internal, aman, tanpa approval), `echo`, `node <file.js>` (sandbox terisolasi, TANPA jaringan, timeout 20 dtk), `npm <install|ci|run|test|...>` (install/ci mendapat egress TERBATAS ke registry npm via allowlist — default registry.npmjs.org dsb., bisa diubah per proyek di .yuika/egress.json), atau `npx <pkg>` (egress sama seperti npm install). Semua kecuali ls/echo butuh approval dan jalan di container sandbox (cwd = root proyek).",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
       // ls/echo dieksekusi in-process: hasil identik di Windows/Unix, tanpa risiko
@@ -54,12 +66,18 @@ export function registerRunCommandTool(): void {
       if (args.command === "ls") return { result: lsInternal(ctx.workspacePath, args.args) };
       if (args.command === "echo") return { result: { stdout: args.args.join(" ") } };
 
-      // node → sandbox (P0-SEC-1)
+      // node/npm/npx → sandbox (P0-SEC-1). npm install/ci & npx butuh registry
+      // → egress allowlist per-project (P1-MCP-4, default npm/yarn registry,
+      // override: <workspace>/.yuika/egress.json atau YUI_EGRESS_ALLOW).
       const mode = sandbox.readSandboxMode();
       const useSandbox = mode === "off" ? false : mode === "docker" ? true : await sandbox.dockerAvailable();
+      const needsNet =
+        args.command === "npx" ||
+        (args.command === "npm" && (args.args[0] === "install" || args.args[0] === "ci"));
+      const egress = needsNet ? egressMod.readEgressAllow(ctx.workspacePath) : [];
 
       if (useSandbox) {
-        const r = await sandbox.runInSandbox(args.command, args.args, ctx.workspacePath);
+        const r = await sandbox.runInSandbox(args.command, args.args, ctx.workspacePath, egress.length ? { egress } : {});
         // exit 125 = docker daemon error (image tak ada dsb.) — pesan jelas utk agent
         const dockerErr = r.exitCode === 125 || r.exitCode === null;
         return {
@@ -78,7 +96,8 @@ export function registerRunCommandTool(): void {
       }
 
       // fail-open hanya di mode auto: Docker tak ada → jalankan lokal + catatan
-      // eksplisit agar agent & user tahu eksekusi TIDAK terisolasi.
+      // eksplisit agar agent & user tahu eksekusi TIDAK terisolasi (egress pun
+      // TIDAK ditegakkan — proxy hanya jalan di dalam container).
       const out = await runLocal(args.command, args.args, ctx.workspacePath);
       return {
         result: {
@@ -88,13 +107,13 @@ export function registerRunCommandTool(): void {
         },
       };
     },
-    // Hanya `node` yang mengeksekusi kode → butuh approval (defense-in-depth:
-    // sandbox mengurangi dampak, tapi user tetap tahu & mengizinkan). ls/echo
-    // internal = bebas.
+    // node/npm/npx = eksekusi kode / unduh paket → butuh approval (defense-in-
+    // depth: sandbox mengurangi dampak, tapi user tetap tahu & mengizinkan).
+    // ls/echo internal = bebas.
     approvalPolicy: (args: z.infer<typeof schema>) => {
-      if (args.command !== "node") return null;
+      if (args.command === "ls" || args.command === "echo") return null;
       const argv = args.args.join(" ").slice(0, 80);
-      return `Menjalankan node ${argv} (cwd: root proyek, container sandbox)`;
+      return `Menjalankan ${args.command} ${argv} (cwd: root proyek, container sandbox)`;
     },
   });
 }
