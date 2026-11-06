@@ -1,14 +1,7 @@
-// @yuika/contracts — P1-INF-1: auth (email+password; magic link menyusul
-// bersama infra email). Skema dipakai apps/api routes & web AuthGate.
+// @yuika/contracts — auth (CP-3: portal-only — akun & signup hidup di
+// yuika-portal; Yuika tidak punya kredensial lokal). Skema dipakai
+// apps/api routes & web AuthGate.
 import { z } from "zod";
-
-/** Register & login memakai bentuk yang sama (email + password). */
-export const AuthCredentials = z.object({
-  email: z.string().email("valid email required").max(200),
-  password: z.string().min(8, "password min 8 characters").max(200),
-});
-export const AuthRegisterRequest = AuthCredentials;
-export const AuthLoginRequest = AuthCredentials;
 
 /** User publik (tanpa hash). */
 export const AuthUser = z.object({ id: z.string(), email: z.string() });
@@ -23,7 +16,6 @@ export const AuthStatus = z.object({
   authRequired: z.boolean(),
 });
 
-export type AuthCredentialsT = z.infer<typeof AuthCredentials>;
 export type AuthUserT = z.infer<typeof AuthUser>;
 export type AuthSessionT = z.infer<typeof AuthSession>;
 export type AuthStatusT = z.infer<typeof AuthStatus>;

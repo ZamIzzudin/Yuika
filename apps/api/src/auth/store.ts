@@ -1,12 +1,14 @@
-// @yuika/api — P1-INF-1: auth store (SQLite terpisah dari sesi).
-// - Password: scrypt (salt acak per user) + timingSafeEqual saat verify.
+// @yuika/api — auth store (SQLite terpisah dari sesi). Portal-only (CP-3+):
+// - Kredensial TIDAK ada di sini — akun & signup hidup di yuika-portal;
+//   user lokal dibuat otomatis saat sign-in SSO pertama.
+// - Identitas user = portal_account_id (dari exchange code portal).
 // - Token sesi: random 32B (base64url) dikirim ke klien; di DB hanya SHA-256
 //   hash-nya (bocor DB ≠ token bisa dipakai). TTL 30 hari, expired dipurge.
-// - Mode lokal: selama tabel users kosong, API terbuka (self-hosted single
-//   user ala Gitea) — setelah user pertama mendaftar, SEMUA route non-auth
-//   wajib Bearer token (lihat middleware di app.ts).
+// - Mode terbuka: selama tabel users kosong, API terbuka (self-hosted solo
+//   ala Gitea) — user pertama lahir dari portal sign-in pertama, setelah itu
+//   SEMUA route non-auth wajib Bearer token (lihat middleware di app.ts).
 // DB path: env YUI_AUTH_DB || <repo>/auth.db (tergitignore via *.db).
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
@@ -48,7 +50,10 @@ function open(): Database.Database {
       );
       CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id);
     `);
-    // CP-3 SSO: mapping akun portal → user lokal (nullable; user lokal murni = null).
+    // CP-3 SSO: identitas user = portal_account_id (unique, nullable utk
+    // user lokal lama pra-migrasi — tak bisa login lagi, data tetap aman).
+    // password_hash dipertahankan hanya kompatibilitas skema lama; nilai
+    // sentinel "!portal-only" tak pernah diverifikasi (login lokal dihapus).
     ensureColumn(d, "users", "portal_account_id", "portal_account_id TEXT");
     d.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_portal ON users(portal_account_id) WHERE portal_account_id IS NOT NULL");
     return d;
@@ -56,61 +61,10 @@ function open(): Database.Database {
   return db;
 }
 
-export class AuthError extends Error {
-  constructor(
-    message: string,
-    readonly code: "EMAIL_TAKEN" | "INVALID_CREDENTIALS",
-  ) {
-    super(message);
-  }
-}
-
-/** Jumlah user terdaftar — 0 berarti mode lokal (API terbuka). */
+/** Jumlah user terdaftar — 0 berarti mode terbuka (API terbuka). */
 export function authUserCount(): number {
   const row = open().prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number };
   return row.n;
-}
-
-function hashPassword(password: string): string {
-  const salt = randomBytes(16);
-  const key = scryptSync(password, salt, 64);
-  return `s1$${salt.toString("hex")}$${key.toString("hex")}`;
-}
-
-function verifyPassword(password: string, stored: string): boolean {
-  const [v, saltHex, hashHex] = stored.split("$");
-  if (v !== "s1" || !saltHex || !hashHex) return false;
-  const expect = Buffer.from(hashHex, "hex");
-  const got = scryptSync(password, Buffer.from(saltHex, "hex"), expect.length);
-  return timingSafeEqual(expect, got);
-}
-
-/** Daftar user baru; email unik (case-insensitive). */
-export function createUser(email: string, password: string): AuthUserRecord {
-  const d = open();
-  try {
-    const id = `u_${randomBytes(8).toString("hex")}`;
-    d.prepare("INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)").run(
-      id,
-      email.trim().toLowerCase(),
-      hashPassword(password),
-      Date.now(),
-    );
-    return { id, email: email.trim().toLowerCase() };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("UNIQUE")) throw new AuthError("email already registered", "EMAIL_TAKEN");
-    throw e;
-  }
-}
-
-/** Verifikasi kredensial → user record, atau null (email/password salah). */
-export function verifyUser(email: string, password: string): AuthUserRecord | null {
-  const row = open().prepare("SELECT id, email, password_hash FROM users WHERE email = ?").get(
-    email.trim().toLowerCase(),
-  ) as { id: string; email: string; password_hash: string } | undefined;
-  if (!row || !verifyPassword(password, row.password_hash)) return null;
-  return { id: row.id, email: row.email };
 }
 
 /** Buat sesi: return token (plain, untuk klien). */
@@ -147,11 +101,18 @@ export function deleteSession(token: string): void {
 
 // ── CP-3 SSO: find-or-create user dari identitas portal ──────────────────
 
+/** Email sudah dipakai user milik akun portal LAIN — penolakan, bukan takeover. */
+export class PortalLinkConflictError extends Error {
+  constructor(email: string) {
+    super(`email ${email} already belongs to another portal account`);
+  }
+}
+
 /**
- * Login via portal (CP-3): cari user berdasarkan portalAccountId; bila belum
- * ada, COCOKKAN email (menghubungkan akun lokal lama dengan identitas portal
- * yang sama), bila tetap tidak ada → buat user baru (password acak tidak
- * terpakai — kredensial ada di portal, bukan di sini).
+ * Login via portal (CP-3): identitas = portalAccountId — akun portal lain
+ * dgn email sama DITOLAK (anti takeover; email portal unik per akun).
+ * Pengecualian: user LAMA pra-portal (portal_account_id NULL, sisa migrasi)
+ * dgn email sama → di-link sekali (portal menjamin kepemilikan email).
  */
 export function findOrCreatePortalUser(portalAccountId: string, email: string): AuthUserRecord {
   const d = open();
@@ -160,19 +121,20 @@ export function findOrCreatePortalUser(portalAccountId: string, email: string): 
     | { id: string; email: string }
     | undefined;
   if (byPortal) return byPortal;
-  const byEmail = d.prepare("SELECT id, email FROM users WHERE email = ?").get(norm) as
-    | { id: string; email: string }
+  const byEmail = d.prepare("SELECT id, email, portal_account_id AS pid FROM users WHERE email = ?").get(norm) as
+    | { id: string; email: string; pid: string | null }
     | undefined;
   if (byEmail) {
+    if (byEmail.pid && byEmail.pid !== portalAccountId) throw new PortalLinkConflictError(norm);
+    // user legacy lokal (pid NULL) → migrasi: kaitkan sekali ke akun portal ini
     d.prepare("UPDATE users SET portal_account_id = ? WHERE id = ?").run(portalAccountId, byEmail.id);
-    return byEmail;
+    return { id: byEmail.id, email: byEmail.email };
   }
   const id = `u_${randomBytes(8).toString("hex")}`;
-  // password acak 32B — tidak bisa dipakai login lokal (tidak diketahui siapa pun)
   d.prepare("INSERT INTO users (id, email, password_hash, created_at, portal_account_id) VALUES (?, ?, ?, ?, ?)").run(
     id,
     norm,
-    hashPassword(randomBytes(32).toString("hex")),
+    "!portal-only",
     Date.now(),
     portalAccountId,
   );

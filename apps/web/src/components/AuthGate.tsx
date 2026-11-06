@@ -1,23 +1,18 @@
 "use client";
-// P1-INF-1: AuthGate — gerbang login di depan workspace. Selama server belum
-// punya user terdaftar (mode lokal) children langsung dirender; setelah itu
-// wajib login/register. Token disimpan di localStorage (authFetch memakai).
+// AuthGate — gerbang sign-in di depan workspace. Portal-only (CP-3):
+// akun & signup hidup di yuika-portal; Yuika tidak punya form kredensial.
+// Selama server belum punya user (mode terbuka) children langsung dirender;
+// user pertama lahir dari portal sign-in pertama, setelah itu wajib login.
+// Token disimpan di localStorage (authFetch memakai).
 import { useEffect, useState } from "react";
-import { Globe, Key, SignIn, UserPlus } from "@phosphor-icons/react";
+import { Globe, Key, SignIn } from "@phosphor-icons/react";
 import type { AuthStatusT } from "@yuika/contracts";
-import { apiUrl, authFetch, clearAuthToken, setAuthToken } from "@/lib/api";
-import { Button, Field, TextInput } from "./ui";
-import { toastErr } from "./ui/toast";
+import { apiUrl, authFetch, clearAuthToken } from "@/lib/api";
 import { OrinPortrait } from "./OrinPortrait";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatusT | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
-  /** Mode lokal: user membuka form register via "Set up account" (bisa dibatalkan). */
-  const [setupOpen, setSetupOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -34,29 +29,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       alive = false;
     };
   }, []);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    try {
-      const r = await authFetch(apiUrl(`/api/auth/${mode === "login" ? "login" : "register"}`), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const body = (await r.json().catch(() => ({}))) as { token?: string; error?: string };
-      if (!r.ok || !body.token) throw new Error(body.error ?? "authentication failed");
-      setAuthToken(body.token);
-      setStatus({ user: { id: "", email }, authRequired: true });
-      setPassword("");
-      setSetupOpen(false);
-    } catch (err) {
-      toastErr(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function logout() {
     clearAuthToken();
@@ -79,6 +51,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (!r.ok || !body.authorizeUrl) throw new Error(body.error ?? "portal sign-in unavailable");
       window.location.href = body.authorizeUrl;
     } catch (err) {
+      const { toastErr } = await import("./ui/toast");
       toastErr(err instanceof Error ? err.message : String(err));
       setBusy(false);
     }
@@ -87,11 +60,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Server belum menjawab → jangan kedip-kedip (render kosong dulu).
   if (status === null) return <div className="h-dvh w-full bg-canvas" />;
 
-  // Mode lokal: form register dibuka manual dari tombol "Set up account".
-  // Setelah user pertama ada, gerbang aktif permanen (server sudah menutup mode lokal).
-  const gate = setupOpen || (status.authRequired && !status.user);
+  const gate = status.authRequired && !status.user;
 
-  // Mode lokal (belum ada user) / sudah valid → lewat.
+  // Mode terbuka (belum ada user) / sudah valid → lepas children.
   if (!gate) {
     return (
       <>
@@ -106,25 +77,23 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             <Key size={12} aria-hidden /> {status.user.email}
           </button>
         ) : (
-          // Mode lokal (belum ada user): jalan masuk ke akun pertama — opsional,
-          // bisa dibiarkan terbuka untuk pemakaian solo/self-host.
+          // Mode terbuka: bisa dipakai langsung tanpa login; portal sign-in
+          // opsional (user pertama menutup mode terbuka untuk orang lain).
           <button
-            onClick={() => {
-              setMode("register");
-              setSetupOpen(true);
-            }}
-            aria-label="Set up account"
-            title="Create the first account — enables sign-in for this server"
+            onClick={() => void startPortal()}
+            disabled={busy}
+            aria-label="Sign in"
+            title="Sign in via your Yuika Portal account"
             className="fixed right-3 bottom-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
           >
-            <UserPlus size={12} aria-hidden /> Set up account
+            {busy ? <SignIn size={12} aria-hidden /> : <Globe size={12} aria-hidden />} Sign in
           </button>
         )}
       </>
     );
   }
 
-  // Gerbang login.
+  // Gerbang sign-in: portal-only.
   return (
     <main className="relative flex h-dvh w-full items-center justify-center overflow-hidden bg-canvas px-4">
       {/* oval berlapis ala CharacterStage (identitas visual konsisten) */}
@@ -137,8 +106,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         <div className="absolute top-[44%] left-1/2 h-[320px] w-[54vw] max-w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
       </div>
 
-      <form
-        onSubmit={submit}
+      <section
         aria-label="Sign in to Yuika"
         className="relative z-10 flex w-full max-w-[360px] flex-col gap-4 rounded-lg2 border border-line bg-surface p-6 shadow-[0_30px_80px_-40px_rgb(0_0_0/.6)]"
       >
@@ -148,71 +116,18 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           <p className="text-caption text-muted">Sign in to your agent studio</p>
         </div>
 
-        {/* CP-3: jalur utama = portal (satu klik Accept bila sesi portal hidup).
-         *  Form lokal di bawah tetap tersedia sebagai fallback offline/dev. */}
-        <Button type="button" variant="primary" disabled={busy} onClick={() => void startPortal()}>
-          <Globe size={13} aria-hidden /> Sign in with Yuika Portal
-        </Button>
-        <div className="flex items-center gap-3 text-caption text-faint" aria-hidden>
-          <span className="h-px flex-1 bg-line" /> or local account <span className="h-px flex-1 bg-line" />
-        </div>
-
-        <Field label="Email">
-          <TextInput
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </Field>
-        <Field label="Password">
-          <TextInput
-            type="password"
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-            placeholder="At least 8 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </Field>
-
-        <Button type="submit" variant="primary" disabled={busy}>
-          {busy ? (
-            "Signing in…"
-          ) : mode === "login" ? (
-            <>
-              <SignIn size={13} aria-hidden /> Sign in
-            </>
-          ) : (
-            <>
-              <UserPlus size={13} aria-hidden /> Create account
-            </>
-          )}
-        </Button>
-
         <button
           type="button"
-          onClick={() => setMode(mode === "login" ? "register" : "login")}
-          className="cursor-pointer text-center text-caption text-dim underline-offset-2 transition-colors hover:text-primary hover:underline"
+          disabled={busy}
+          onClick={() => void startPortal()}
+          className="inline-flex h-9 cursor-pointer select-none items-center justify-center gap-1.5 rounded-md2 border border-accent bg-accent px-4 text-body font-medium text-white transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent-hover hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-40"
         >
-          {mode === "login"
-            ? "First time here? Create an account"
-            : "Already have an account? Sign in"}
+          <Globe size={13} aria-hidden /> {busy ? "Redirecting…" : "Sign in with Yuika Portal"}
         </button>
-
-        {/* Dibuka dari tombol "Set up account" di mode lokal — boleh dibatalkan. */}
-        {setupOpen && !status.authRequired && (
-          <button
-            type="button"
-            onClick={() => setSetupOpen(false)}
-            className="cursor-pointer text-center text-caption text-dim underline-offset-2 transition-colors hover:text-primary hover:underline"
-          >
-            Cancel — keep this server open (local mode)
-          </button>
-        )}
-      </form>
+        <p className="text-center text-caption text-faint">
+          Accounts live in your Yuika Portal — create one there, then sign in here.
+        </p>
+      </section>
     </main>
   );
 }

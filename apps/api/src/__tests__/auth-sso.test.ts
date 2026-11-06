@@ -148,24 +148,32 @@ describe("CP-3 SSO via portal", () => {
     expect((r.json() as { error: string }).error).toContain("mismatch");
   });
 
-  it("mapping: SSO kedua (account sama) → user ID sama; email sama dgn lokal → ter-link", async () => {
-    // pre-create user lokal ber-email sama → SSO harus MENGIKATKAN (id sama)
-    const reg = await app.inject({
-      method: "POST", url: "/api/auth/register",
-      payload: { email: "linked@yuika.test", password: "local-pass-123" },
-    });
-    expect(reg.statusCode).toBe(201);
-    const localId = (reg.json() as { user: { id: string } }).user.id;
-
+  it("mapping: SSO kedua (account sama) → user ID sama; email sama dari account BEDA → TIDAK mengambil alih", async () => {
+    // SSO pertama utk acc_link_1 → user baru
     const st1 = await start();
     const c1 = issueCode(new URL(st1.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_link_1", "linked@yuika.test");
     const r1 = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: c1, state: st1.state } });
-    expect((r1.json() as { user: { id: string } }).user.id).toBe(localId);
+    const id1 = (r1.json() as { user: { id: string } }).user.id;
 
     // SSO lagi account sama → tetap user itu (bukan duplikat)
     const st2 = await start();
     const c2 = issueCode(new URL(st2.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_link_1", "linked@yuika.test");
     const r2 = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: c2, state: st2.state } });
-    expect((r2.json() as { user: { id: string } }).user.id).toBe(localId);
+    expect((r2.json() as { user: { id: string } }).user.id).toBe(id1);
+
+    // Account portal BEDA dgn email SAMA → 409 (anti takeover: email sudah
+    // milik akun portal lain — identitas = portalAccountId).
+    const st3 = await start();
+    const c3 = issueCode(new URL(st3.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_link_2", "linked@yuika.test");
+    const r3 = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: c3, state: st3.state } });
+    expect(r3.statusCode).toBe(409);
+    expect((r3.json() as { error: string }).error).toContain("another portal account");
+  });
+
+  it("portal-only: register & login lokal → 404 (konsep dihapus)", async () => {
+    const reg = await app.inject({ method: "POST", url: "/api/auth/register", payload: { email: "x@yuika.test", password: "whatever-123" } });
+    expect(reg.statusCode).toBe(404);
+    const login = await app.inject({ method: "POST", url: "/api/auth/login", payload: { email: "x@yuika.test", password: "whatever-123" } });
+    expect(login.statusCode).toBe(404);
   });
 });

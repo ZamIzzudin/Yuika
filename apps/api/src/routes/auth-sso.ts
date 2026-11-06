@@ -17,7 +17,7 @@ import {
   PortalSsoCompleteRequest,
   PortalSsoStartRequest,
 } from "@yuika/contracts";
-import { createSession, findOrCreatePortalUser } from "../auth/store.js";
+import { createSession, findOrCreatePortalUser, PortalLinkConflictError } from "../auth/store.js";
 
 const ATTEMPT_TTL_MS = 5 * 60 * 1000;
 const CLIENT_ID = "yuika-web";
@@ -107,7 +107,12 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
       return reply.code(502).send({ error: "portal token response missing accountId/email" });
     }
 
-    const user = findOrCreatePortalUser(exchanged.accountId, exchanged.email);
-    return reply.send({ token: createSession(user.id), user });
+    try {
+      const user = findOrCreatePortalUser(exchanged.accountId, exchanged.email);
+      return reply.send({ token: createSession(user.id), user });
+    } catch (e) {
+      if (e instanceof PortalLinkConflictError) return reply.code(409).send({ error: e.message });
+      throw e;
+    }
   });
 }
