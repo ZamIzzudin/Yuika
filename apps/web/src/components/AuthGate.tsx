@@ -22,7 +22,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         const s = (await r.json()) as AuthStatusT;
         if (alive) setStatus(s);
       } catch {
-        if (alive) setStatus({ user: null, authRequired: false, portalUrl: "http://localhost:3100" }); // API mati → biarkan app jalan (errornya muncul di data fetch)
+        if (alive)
+          setStatus({
+            user: null,
+            authRequired: false,
+            portalUrl: "http://localhost:3100",
+          }); // API mati → biarkan app jalan (errornya muncul di data fetch)
       }
     })();
     return () => {
@@ -32,7 +37,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     clearAuthToken();
-    await authFetch(apiUrl("/api/auth/logout"), { method: "POST" }).catch(() => undefined);
+    await authFetch(apiUrl("/api/auth/logout"), { method: "POST" }).catch(
+      () => undefined,
+    );
     setStatus((s) => (s ? { ...s, user: null, authRequired: true } : s));
   }
 
@@ -45,10 +52,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       const r = await authFetch(apiUrl("/api/auth/portal/start"), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ redirectUri: `${window.location.origin}/auth/callback` }),
+        body: JSON.stringify({
+          redirectUri: `${window.location.origin}/auth/callback`,
+        }),
       });
-      const body = (await r.json().catch(() => ({}))) as { authorizeUrl?: string; error?: string };
-      if (!r.ok || !body.authorizeUrl) throw new Error(body.error ?? "portal sign-in unavailable");
+      const body = (await r.json().catch(() => ({}))) as {
+        authorizeUrl?: string;
+        error?: string;
+      };
+      if (!r.ok || !body.authorizeUrl)
+        throw new Error(body.error ?? "portal sign-in unavailable");
       window.location.href = body.authorizeUrl;
     } catch (err) {
       const { toastErr } = await import("./ui/toast");
@@ -86,7 +99,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             title="Sign in via your Yuika Portal account"
             className="fixed right-3 bottom-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
           >
-            {busy ? <SignIn size={12} aria-hidden /> : <Globe size={12} aria-hidden />} Sign in
+            {busy ? (
+              <SignIn size={12} aria-hidden />
+            ) : (
+              <Globe size={12} aria-hidden />
+            )}{" "}
+            Sign in
           </button>
         )}
       </>
@@ -97,7 +115,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   return (
     <main className="relative flex h-dvh w-full items-center justify-center overflow-hidden bg-canvas px-4">
       {/* oval berlapis ala CharacterStage (identitas visual konsisten) */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 max-[1099px]:hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 max-[1099px]:hidden"
+      >
         <div className="absolute top-[44%] left-1/2 h-[560px] max-h-[92vh] w-[92vw] max-w-[1280px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/70" />
         <div className="absolute top-[44%] left-1/2 h-[640px] max-h-[96vh] w-[96vw] max-w-[1400px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/50" />
         <div className="absolute top-[44%] left-1/2 h-[390px] w-[64vw] max-w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
@@ -111,9 +132,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         className="relative z-10 flex w-full max-w-[360px] flex-col gap-4 rounded-lg2 border border-line bg-surface p-6 shadow-[0_30px_80px_-40px_rgb(0_0_0/.6)]"
       >
         <div className="flex flex-col items-center gap-2 text-center">
-          <OrinPortrait state="idle" size={72} />
+          <OrinPortrait state="idle" size={150} />
           <h1 className="text-title font-semibold text-primary">Yuika</h1>
-          <p className="text-caption text-muted">Sign in to your agent studio</p>
+          <p className="text-caption text-muted">
+            Welcome to your agentic persona studio
+          </p>
         </div>
 
         <button
@@ -122,7 +145,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           onClick={() => void startPortal()}
           className="inline-flex h-9 cursor-pointer select-none items-center justify-center gap-1.5 rounded-md2 border border-accent bg-accent px-4 text-body font-medium text-white transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent-hover hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-40"
         >
-          <Globe size={13} aria-hidden /> {busy ? "Redirecting…" : "Sign in with Yuika Portal"}
+          <Globe size={13} aria-hidden />{" "}
+          {busy ? "Redirecting…" : "Sign in with Yuika Portal"}
         </button>
         <p className="text-center text-caption text-faint">
           Don&rsquo;t have an account?{" "}
@@ -132,7 +156,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             rel="noopener noreferrer"
             className="text-dim underline-offset-2 transition-colors hover:text-primary hover:underline"
           >
-            Sign in to Yuika Portal
+            Sign Up to Yuika Portal
           </a>
         </p>
       </section>

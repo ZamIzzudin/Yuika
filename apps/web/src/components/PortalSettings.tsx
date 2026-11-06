@@ -49,7 +49,16 @@ export function PortalSettings() {
       });
       const body = (await res.json()) as { error?: string; deviceId?: string };
       if (!res.ok) {
-        toastErr(body.error ?? "pairing failed");
+        // Pesan portal "token is for kind 'web'" → arahkan ke tujuan benar:
+        // token Web = remote browser (/dev/remote), bukan pairing host ini.
+        const m = body.error?.match(/for kind '(\w+)'/i);
+        if (m && m[1] && m[1].toLowerCase() !== "desktop") {
+          toastErr(
+            `${body.error} — this input pairs Yuika as a host: generate a Desktop token (Portal → Devices). ${m[1] === "web" ? "Web tokens are for the Remote page (/dev/remote)." : ""}`,
+          );
+        } else {
+          toastErr(body.error ?? "pairing failed");
+        }
         return;
       }
       toastOk(`Host linked as ${body.deviceId}`);
@@ -140,9 +149,13 @@ export function PortalSettings() {
         <Card className="flex flex-col gap-3 p-4">
           <ol className="flex flex-col gap-1 text-caption text-dim">
             <li>1. Register or sign in at your Yuika Portal account.</li>
-            <li>2. Open Devices, add a pairing token for this host.</li>
+            <li>2. Open Devices, add a pairing token — choose the <span className="text-primary">Desktop</span> kind (this app is a host).</li>
             <li>3. Paste the token below (valid for 2 minutes, single use).</li>
           </ol>
+          <p className="text-caption text-faint">
+            Web tokens are not for this input — they pair a remote browser at the{" "}
+            <span className="font-mono">/dev/remote</span> page.
+          </p>
           <Field label="Portal URL">
             <TextInput value={portalUrl} onChange={(e) => setPortalUrl(e.target.value)} spellCheck={false} />
           </Field>
