@@ -105,7 +105,15 @@ const server = http.createServer((req, res) => {
       if (expect !== rec.challenge) return bad("pkce verifier mismatch", 401);
       if (b.redirect_uri !== rec.redirectUri) return bad("redirect_uri mismatch", 401);
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ accountId: ACCOUNT_ID, email: SSO_EMAIL }));
+      // CP-4 double: deviceToken sekali-pakai (kind web) utk auto-link browser
+      // — kontrak sama dgn portal nyata setelah CP-4 diterima.
+      res.end(
+        JSON.stringify({
+          accountId: ACCOUNT_ID,
+          email: SSO_EMAIL,
+          deviceToken: `tok_sso_web_${randomBytes(12).toString("hex")}`,
+        }),
+      );
     });
     return;
   }

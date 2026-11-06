@@ -18,6 +18,10 @@ import {
   PortalSsoStartRequest,
 } from "@yuika/contracts";
 import { createSession, findOrCreatePortalUser, PortalLinkConflictError } from "../auth/store.js";
+import { getWebDevice, saveWebDevice } from "../portal/store.js";
+import { claimAtPortal } from "./portal.js";
+import { generateDeviceKeys } from "@yuika/crypto";
+import { defaultRelayUrl } from "../portal/service.js";
 
 const ATTEMPT_TTL_MS = 5 * 60 * 1000;
 const CLIENT_ID = "yuika-web";
@@ -83,7 +87,7 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
     attempts.delete(attemptId); // sekali pakai
 
     // Tukar code di portal (server-to-server, PKCE verifier ikut dikirim).
-    let exchanged: { accountId?: string; email?: string } = {};
+    let exchanged: { accountId?: string; email?: string; deviceToken?: string } = {};
     try {
       const res = await fetch(`${attempt.portalUrl}/api/oauth/token`, {
         method: "POST",
@@ -109,6 +113,42 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
 
     try {
       const user = findOrCreatePortalUser(exchanged.accountId, exchanged.email);
+      // CP-4: auto-link browser — portal menyertakan deviceToken sekali-pakai
+      // di exchange; klaim slot web SEKALI (kunci stabil tersimpan lokal).
+      // Gagal klaim ≠ gagal login (device bisa di-link ulang nanti).
+      if (exchanged.deviceToken) {
+        const existing = getWebDevice();
+        if (!existing || existing.accountId !== exchanged.accountId) {
+          try {
+            const keys = generateDeviceKeys();
+            const { deviceId } = await claimAtPortal(attempt.portalUrl, {
+              token: exchanged.deviceToken,
+              kind: "web",
+              name: "Yuika web (SSO)",
+              signPub: keys.signPub,
+              dhPub: keys.dhPub,
+            });
+            saveWebDevice({
+              deviceId,
+              accountId: exchanged.accountId,
+              kind: "web",
+              name: "Yuika web (SSO)",
+              signPriv: keys.signPriv,
+              signPub: keys.signPub,
+              dhPriv: keys.dhPriv,
+              dhPub: keys.dhPub,
+              portalUrl: attempt.portalUrl,
+              relayUrl: defaultRelayUrl(),
+              linkedAt: Date.now(),
+            });
+            req.log.info({ deviceId }, "[sso] web device auto-linked");
+          } catch (e) {
+            req.log.warn({ err: e instanceof Error ? e.message : String(e) }, "[sso] web device auto-link gagal — login tetap lanjut");
+          }
+        } else {
+          req.log.info({ deviceId: existing.deviceId }, "[sso] web device sudah ter-link — skip claim");
+        }
+      }
       return reply.send({ token: createSession(user.id), user });
     } catch (e) {
       if (e instanceof PortalLinkConflictError) return reply.code(409).send({ error: e.message });

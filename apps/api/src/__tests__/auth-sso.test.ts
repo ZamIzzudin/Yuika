@@ -12,21 +12,31 @@ import path from "node:path";
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "yui-api-sso-"));
 process.env.YUI_AUTH_DB = path.join(TMP, "auth.db");
+process.env.YUI_PORTAL_DEVICE_DB = path.join(TMP, "portal-device.db"); // auto-link tak boleh sentuh db dev
 
-// ── double portal (hanya /api/oauth/token; code di-issue helper in-proses) ──
-const codes = new Map<string, { challenge: string; redirectUri: string; accountId: string; email: string }>();
+// ── double portal (/api/oauth/token + /api/devices/claim; code di-issue helper in-proses) ──
+const codes = new Map<string, { challenge: string; redirectUri: string; accountId: string; email: string; withDeviceToken: boolean }>();
+const claims: Array<{ token: string; kind: string; name: string; signPub: string }> = [];
+let failClaims = false;
 let server: http.Server;
 let portalUrl = "";
 
 const { buildApp } = await import("../app.js");
 const { _resetAuthForTests } = await import("../auth/store.js");
+const { getWebDevice, _resetPortalStoreForTests } = await import("../portal/store.js");
 
 type App = Awaited<ReturnType<typeof buildApp>>;
 let app: App;
 
-function issueCode(challenge: string, redirectUri: string, accountId = "acc_sso_1", email = "sso@yuika.test"): string {
+function issueCode(
+  challenge: string,
+  redirectUri: string,
+  accountId = "acc_sso_1",
+  email = "sso@yuika.test",
+  withDeviceToken = true,
+): string {
   const code = `oc_${randomBytes(12).toString("base64url")}`;
-  codes.set(code, { challenge, redirectUri, accountId, email });
+  codes.set(code, { challenge, redirectUri, accountId, email, withDeviceToken });
   return code;
 }
 const s256 = (v: string) => createHash("sha256").update(v).digest("base64url");
@@ -51,7 +61,36 @@ beforeAll(async () => {
           return;
         }
         res.writeHead(200, { "content-type": "application/json" });
-        res.end(JSON.stringify({ accountId: rec.accountId, email: rec.email }));
+        res.end(
+          JSON.stringify({
+            accountId: rec.accountId,
+            email: rec.email,
+            ...(rec.withDeviceToken ? { deviceToken: `tok_sso_web_${randomBytes(12).toString("hex")}` } : {}),
+          }),
+        );
+      });
+      return;
+    }
+    // CP-4 double: claim device (deviceId deterministik dari signPub — id stabil)
+    if (req.method === "POST" && req.url === "/api/devices/claim") {
+      let body = "";
+      req.on("data", (c) => (body += c));
+      req.on("end", () => {
+        if (failClaims) {
+          res.writeHead(409, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: "simulated claim failure" }));
+          return;
+        }
+        const b = JSON.parse(body || "{}") as { token?: string; kind?: string; name?: string; signPub?: string; dhPub?: string };
+        claims.push({ token: b.token ?? "", kind: b.kind ?? "", name: b.name ?? "", signPub: b.signPub ?? "" });
+        if (!b.token || b.token.length < 20 || !b.signPub) {
+          res.writeHead(400, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: "invalid claim" }));
+          return;
+        }
+        const deviceId = `dev_${createHash("sha256").update(b.signPub).digest("hex").slice(0, 16)}`;
+        res.writeHead(201, { "content-type": "application/json" });
+        res.end(JSON.stringify({ deviceId, accountId: "acc_claim_1" }));
       });
       return;
     }
@@ -67,9 +106,12 @@ beforeAll(async () => {
 
 afterAll(async () => {
   delete process.env.YUI_PORTAL_URL;
+  delete process.env.YUI_PORTAL_DEVICE_DB;
   await app.close();
   server.close();
   _resetAuthForTests();
+  _resetPortalStoreForTests();
+  fs.rmSync(TMP, { recursive: true, force: true });
 });
 
 const REDIRECT = "http://localhost:3990/auth/callback";
@@ -123,6 +165,35 @@ describe("CP-3 SSO via portal", () => {
     expect(body.user.email).toBe("sso@yuika.test");
     const me = await app.inject({ method: "GET", url: "/api/auth/me", headers: { authorization: `Bearer ${body.token}` } });
     expect((me.json() as { user: { email: string } }).user.email).toBe("sso@yuika.test");
+    // CP-4: auto-link — browser diklaim sebagai device web (sekali)
+    expect(claims).toHaveLength(1);
+    expect(claims[0]!.kind).toBe("web");
+    const web = getWebDevice();
+    expect(web?.deviceId).toMatch(/^dev_[0-9a-f]{16}$/);
+    expect(web?.kind).toBe("web");
+    // SSO ulang (account sama) → TIDAK claim lagi (device stabil tersimpan)
+    const st2 = await start();
+    const code2 = issueCode(new URL(st2.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT);
+    await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: code2, state: st2.state } });
+    expect(claims).toHaveLength(1);
+  });
+
+  it("auto-link: portal tanpa deviceToken → tanpa claim (backward compat)", async () => {
+    const n = claims.length;
+    const st = await start();
+    const code = issueCode(new URL(st.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_nodev", "nodev@yuika.test", false);
+    const r = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code, state: st.state } });
+    expect(r.statusCode).toBe(200);
+    expect(claims).toHaveLength(n);
+  });
+
+  it("auto-link: claim gagal → login TETAP sukses", async () => {
+    failClaims = true;
+    const st = await start();
+    const code = issueCode(new URL(st.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_fail", "fail@yuika.test");
+    const r = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code, state: st.state } });
+    expect(r.statusCode).toBe(200); // login jalan — device bisa di-link nanti
+    failClaims = false;
   });
 
   it("state salah → 400; code dipakai ulang → 401", async () => {

@@ -12,7 +12,7 @@ import type { FastifyInstance } from "fastify";
 import { generateDeviceKeys } from "@yuika/crypto";
 import { z } from "zod";
 import { getPortalHost, defaultPortalUrl, defaultRelayUrl } from "../portal/service.js";
-import { clearHostDevice, getHostDevice, saveHostDevice } from "../portal/store.js";
+import { clearHostDevice, getHostDevice, getWebDevice, saveHostDevice } from "../portal/store.js";
 
 const PairRequest = z.object({
   token: z.string().min(20),
@@ -33,7 +33,7 @@ const RemoteDevClaim = z.object({
 
 interface ClaimResponse { deviceId: string; accountId: string }
 
-async function claimAtPortal(portalUrl: string, body: unknown): Promise<ClaimResponse> {
+export async function claimAtPortal(portalUrl: string, body: unknown): Promise<ClaimResponse> {
   const res = await fetch(`${portalUrl.replace(/\/$/, "")}/api/devices/claim`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -84,12 +84,16 @@ export function registerPortalRoutes(app: FastifyInstance, getRt: () => import("
   app.get("/api/portal/status", async () => {
     const svc = getPortalHost();
     const st = svc.status();
+    // CP-4: device web auto-link (SSO) — presence di portal, terpisah dari host.
+    const web = getWebDevice();
+    const webDevice = web ? { deviceId: web.deviceId, name: web.name, linkedAt: web.linkedAt } : null;
     if (!st.linked) {
       const rec = getHostDevice();
-      if (rec) return { linked: true, accountId: rec.accountId, deviceId: rec.deviceId, relayUrl: rec.relayUrl, relayState: "offline", remotes: [] };
-      return { linked: false, accountId: null, deviceId: null, relayUrl: null, relayState: "offline", remotes: [] };
+      if (rec)
+        return { linked: true, accountId: rec.accountId, deviceId: rec.deviceId, relayUrl: rec.relayUrl, relayState: "offline", remotes: [], webDevice };
+      return { linked: false, accountId: null, deviceId: null, relayUrl: null, relayState: "offline", remotes: [], webDevice };
     }
-    return st;
+    return { ...st, webDevice };
   });
 
   app.delete("/api/portal/unlink", async () => {

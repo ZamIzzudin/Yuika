@@ -44,6 +44,19 @@ test("SSO — pill sign-in → authorize (auto-accept) → callback → login �
     "e2e-portal@yuika.test",
   );
 
+  // 4b) CP-4 auto-link: browser ter-claim sebagai device web di portal
+  // (deviceToken ikut exchange → /api/devices/claim kind=web).
+  const st = await page.evaluate(async () => {
+    const token = localStorage.getItem("yuika.auth.token");
+    const r = await fetch("http://127.0.0.1:3291/api/portal/status", {
+      headers: token ? { authorization: `Bearer ${token}` } : {},
+    });
+    return r.json();
+  });
+  expect((st as { webDevice: { deviceId: string } | null }).webDevice?.deviceId).toMatch(
+    /^dev_[0-9a-f]{16}$/,
+  );
+
   // 5) Sign out → kini ada user terdaftar → gerbang portal-only (tanpa form
   //    email/password; hanya tombol portal + hint akun di portal).
   await page.getByTitle("Sign out").click();

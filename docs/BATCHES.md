@@ -115,7 +115,11 @@ tab Terminal, approval muncul untuk perintah berisiko, dev server jalan.
 **Tindak lanjut CP-3 (2026-11-07): SSO login via portal** — P1-PRT-7 sisi Yuika
 
 **Portal-only auth (2026-11-08): local account dihapus** — P1-PRT-8: register/login
-lokal hilang dari API (404), AuthGate tanpa form kredensial (portal-only +
+
+**Auto-link browser (CP-4, 2026-11-08)** — P1-PRT-9 sisi Yuika: SSO login
+otomatis meng-claim device web di portal (presence; tanpa token manual).
+Token Web manual diusulkan dihapus (CP-4, portal) — web = host/presence,
+bukan remote.lokal hilang dari API (404), AuthGate tanpa form kredensial (portal-only +
 mode terbuka), identitas = portal_account_id (anti-takeover via 409).
 Akun & signup kini SATU tempat: yuika-portal.SELESAI (tombol "Sign in with Yuika Portal" + callback + sesi Yuika; api unit 6/6,
 e2e penuh 8/8 via portal-double) — endpoint portal nyata menunggu sesi portal

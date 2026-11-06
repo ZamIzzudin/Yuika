@@ -15,6 +15,8 @@ interface PortalStatus {
   relayUrl: string | null;
   relayState: "offline" | "connecting" | "authed" | "closed";
   remotes: Array<{ deviceId: string; kind: string; name: string }>;
+  /** CP-4: browser auto-link (SSO) — presence, terpisah dari host manual. */
+  webDevice: { deviceId: string; name: string; linkedAt: number } | null;
 }
 
 export function PortalSettings() {
@@ -96,6 +98,12 @@ export function PortalSettings() {
         encrypted through the relay.
       </p>
 
+      {st.webDevice && !st.linked && (
+        <p className="text-caption text-dim">
+          Web session auto-linked by portal sign-in: <span className="font-mono">{st.webDevice.deviceId}</span>
+        </p>
+      )}
+
       {st.linked ? (
         <Card className="flex flex-col gap-3 p-4">
           <div className="flex items-center justify-between gap-3">
@@ -132,6 +140,14 @@ export function PortalSettings() {
                 <span className="text-emerald-400">
                   {st.remotes.length} connected: {st.remotes.map((r) => r.name).join(", ")}
                 </span>
+              )}
+            </dd>
+            <dt>Web session</dt>
+            <dd>
+              {st.webDevice ? (
+                <span className="text-emerald-400">auto-linked · {st.webDevice.deviceId}</span>
+              ) : (
+                "not linked — sign in via Yuika Portal to auto-link this browser"
               )}
             </dd>
           </dl>
