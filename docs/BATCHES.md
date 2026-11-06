@@ -64,8 +64,10 @@ mobile ada. Ini jalur kritis menuju Batch 8 (mobile) & 9 (desktop).
 6. [ ] **P1-PRT-6** Gerbang e2e (2d) — host + 2 remote live sesi sama, approval
    dari remote, drop → resume snapshot; playwright (relay in-process).
    **Prasyarat: portal menandai "PORTAL READY FOR INTEGRATION".** — ✅ TERBIT
-   (2026-11-07, portal `70f84ed` + `docs/INTEGRATION.md`); lanjutan uji portal
-   nyata IN-PROGRESS (lihat TASKS P1-PRT-6).
+   (2026-11-07, portal `70f84ed` + `docs/INTEGRATION.md`) → uji portal nyata
+   SELESAI: `scripts/portal-integration.mts` **45/45 PASS** vs web+relay
+   produksi (INTEGRATION §5 penuh, tanpa patch dua repo) + flow manual user
+   `docs/TEST-FLOW-PORTAL-INTEGRATION.md` (lihat TASKS P1-PRT-6).
 
 **Acceptance batch:** skenario SPEC-PROTOCOL §11 butir 1–9 hijau via /dev/remote
 + gerbang e2e; badge remote connected tampil; host tetap diremotable tanpa tab
