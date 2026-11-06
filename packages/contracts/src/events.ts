@@ -162,6 +162,69 @@ export const SessionErrorEvent = EventMeta.extend({
   code: z.string().max(64).optional(),
 });
 
+// ── P2-FLOW: workflow.* (aditif; PLAN §13.3) ─────────────────────────────
+// Emit di sesi LEAD (Conductor) run — board & replay gratis via stream sesi.
+export const WorkflowStartedEvent = EventMeta.extend({
+  type: z.literal("workflow.started"),
+  runId: z.string(),
+  projectId: z.string().nullable(),
+  workflowName: z.string(),
+  phaseCount: z.number().int().positive(),
+});
+
+export const PhaseEnteredEvent = EventMeta.extend({
+  type: z.literal("phase.entered"),
+  runId: z.string(),
+  phaseId: z.string(),
+  mode: z.enum(["sequential", "parallel"]),
+});
+
+export const PhaseDoneEvent = EventMeta.extend({
+  type: z.literal("phase.done"),
+  runId: z.string(),
+  phaseId: z.string(),
+});
+
+export const StepStartedEvent = EventMeta.extend({
+  type: z.literal("step.started"),
+  runId: z.string(),
+  phaseId: z.string(),
+  stepId: z.string(),
+  personaId: z.string(),
+  task: z.string(),
+});
+
+export const StepDoneEvent = EventMeta.extend({
+  type: z.literal("step.done"),
+  runId: z.string(),
+  phaseId: z.string(),
+  stepId: z.string(),
+  personaId: z.string(),
+  ok: z.boolean(),
+  summary: z.string(),
+});
+
+export const WorkflowGateAwaitEvent = EventMeta.extend({
+  type: z.literal("workflow.gate.await"),
+  runId: z.string(),
+  phaseId: z.string(),
+});
+
+export const WorkflowGatePassedEvent = EventMeta.extend({
+  type: z.literal("workflow.gate.passed"),
+  runId: z.string(),
+  phaseId: z.string(),
+  decision: z.enum(["approved", "rejected"]),
+});
+
+export const WorkflowDoneEvent = EventMeta.extend({
+  type: z.literal("workflow.done"),
+  runId: z.string(),
+  projectId: z.string().nullable(),
+  ok: z.boolean(),
+  error: z.string().optional(),
+});
+
 /** P1-MEM-2: learn nudge menghasilkan catatan ( transparansi — tampil sebagai chip di chat). */
 export const MemoryNotedEvent = EventMeta.extend({
   type: z.literal("memory.noted"),
@@ -219,6 +282,14 @@ export const YuiEvent = z.discriminatedUnion("type", [
   ApprovalResolvedEvent,
   ApprovalExpiredEvent,
   SessionErrorEvent,
+  WorkflowStartedEvent,
+  PhaseEnteredEvent,
+  PhaseDoneEvent,
+  StepStartedEvent,
+  StepDoneEvent,
+  WorkflowGateAwaitEvent,
+  WorkflowGatePassedEvent,
+  WorkflowDoneEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;
 export type YuiEventType = YuiEvent["type"];

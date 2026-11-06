@@ -39,3 +39,4 @@ export {
   type TerminalSessionInfo,
 } from "./terminal/manager.js";
 export { ProjectStore } from "./project/store.js";
+export { WorkflowEngine, type WorkflowEngineDeps, type StartRunOptions, type StartRunResult } from "./workflow/engine.js";

@@ -11,3 +11,4 @@ export * from "./auth.js";
 export * from "./usage.js";
 export * from "./budget.js";
 export * from "./trace.js";
+export * from "./workflow.js";

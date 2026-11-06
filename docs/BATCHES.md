@@ -18,7 +18,7 @@
 | 2 | Agent Developer | ~8d | **DONE (2026-11-07)** — P1-MCP-4 + P2-STU-2 ✅; e2e T1-T3 hijau | ✅ sekarang |
 | 3 | Agent 24/7 | ~8d | TERSEDIA | ✅ sekarang |
 | 4 | Otak Yuika | ~8d | TERSEDIA | ✅ sekarang |
-| 5 | Workflow Engine | ~14d | TERSEDIA | ✅ sekarang |
+| 5 | Workflow Engine | ~14d | **IN-PROGRESS (2026-11-08)** — FLOW-1..4 ✅ | ✅ sekarang |
 | 6 | Workbench Studio | ~7d | TERSEDIA | ✅ sekarang |
 | 7 | Design→Code (Penpot) | ~9d | TERSEDIA | ⚠️ setelah Batch 6 (STU-1) |
 | 8 | Mobile Remote MVP | ~13d | TERSEDIA | ⛔ butuh Batch 1 + portal READY |
@@ -205,6 +205,12 @@ acceptance + validator coverage. Ini diferensiasi produk utama (PLAN §13 + D22)
 Lanjutan (batch berikutnya / lanjutan batch ini): FLOW-6 steering mid-run,
 FLOW-7 TaskTree board penuh, PM-4 RACI, PM-5 dashboard, PM-6 iterasi berantai
 (+11d) — catat di sini saat batch dieksekusi.
+
+**HASIL FLOW-1..4 (2026-11-08):** contracts workflow.ts (schema+lint+template 7 fase, test 7)
+· engine v0 (sequential/parallel topo-wave, delegation reuse, persist workflow_runs, REST
+runs/gate/stop/template) · gate + resume boot (gate re-ask, step tak diulang) · event
+workflow.* aditif di sesi lead (replay gratis). Bukti: turbo 5/5, engine 7/7, typecheck 6/6.
+Sisa batch: FLOW-5 board UI, FLOW-6 steering, PM-3 planner task-list validator.
 
 **Acceptance batch:** run template 7 fase di project demo E2E; kill server
 mid-run → restart → lanjut dari fase terakhir; 2 persona paralel terlihat

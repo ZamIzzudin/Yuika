@@ -4,7 +4,7 @@
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
-import { ProjectEvent, ProjectInfo, type TaskItem } from "@yuika/contracts";
+import { ProjectEvent, ProjectInfo, type TaskItem, WorkflowDef } from "@yuika/contracts";
 
 type ProjectEventType = ProjectEvent["type"];
 
@@ -61,6 +61,20 @@ export class ProjectStore {
     if (!pcols.some((c) => c.name === "kind")) {
       this.db.exec("ALTER TABLE projects ADD COLUMN kind TEXT NOT NULL DEFAULT 'project'");
     }
+    // P2-FLOW-2: run workflow — satu eksekusi workflow.yaml per project.
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS workflow_runs (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        lead_session_id TEXT NOT NULL,
+        workflow TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'queued',
+        phase_states TEXT NOT NULL DEFAULT '[]',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_workflow_runs_project ON workflow_runs(project_id);
+    `);
   }
 
   createProject(input: { id: string; name: string; description?: string; rootPath: string; kind?: "project" | "dungeon" }): ProjectInfo {
@@ -101,6 +115,50 @@ export class ProjectStore {
       .prepare("UPDATE projects SET name = ?, description = ?, status = ?, updated_at = ? WHERE id = ?")
       .run(next.name, next.description, next.status, next.updatedAt, id);
     return { ...cur, ...next };
+  }
+
+  // ---- P2-FLOW-2: workflow runs (engine = satu-satunya penulis status) ----
+
+  createWorkflowRun(input: { id: string; projectId: string; leadSessionId: string; workflow: unknown }): void {
+    const now = Date.now();
+    this.db
+      .prepare(
+        "INSERT INTO workflow_runs (id, project_id, lead_session_id, workflow, status, phase_states, created_at, updated_at) VALUES (?, ?, ?, ?, 'queued', '[]', ?, ?)",
+      )
+      .run(input.id, input.projectId, input.leadSessionId, JSON.stringify(input.workflow), now, now);
+  }
+
+  updateWorkflowRun(id: string, patch: { status?: string; phaseStates?: unknown }): void {
+    const sets: string[] = ["updated_at = ?"];
+    const vals: unknown[] = [Date.now()];
+    if (patch.status !== undefined) {
+      sets.push("status = ?");
+      vals.push(patch.status);
+    }
+    if (patch.phaseStates !== undefined) {
+      sets.push("phase_states = ?");
+      vals.push(JSON.stringify(patch.phaseStates));
+    }
+    vals.push(id);
+    this.db.prepare(`UPDATE workflow_runs SET ${sets.join(", ")} WHERE id = ?`).run(...vals);
+  }
+
+  getWorkflowRun(id: string): WorkflowRunRow | undefined {
+    const r = this.db.prepare("SELECT * FROM workflow_runs WHERE id = ?").get(id) as WorkflowRunDbRow | undefined;
+    return r ? toWorkflowRun(r) : undefined;
+  }
+
+  listWorkflowRuns(projectId: string): WorkflowRunRow[] {
+    return (this.db
+      .prepare("SELECT * FROM workflow_runs WHERE project_id = ? ORDER BY created_at DESC")
+      .all(projectId) as WorkflowRunDbRow[]).map(toWorkflowRun);
+  }
+
+  /** Boot resume: run yang belum tamat (FLOW-3). */
+  listActiveWorkflowRuns(): WorkflowRunRow[] {
+    return (this.db
+      .prepare("SELECT * FROM workflow_runs WHERE status IN ('queued','running','awaiting_gate') ORDER BY created_at ASC")
+      .all() as WorkflowRunDbRow[]).map(toWorkflowRun);
   }
 
   // ---- tasks (P1-PRJ-4) + event task.node.* (P1-PRJ-7, PLAN §13.7) ----
@@ -232,4 +290,65 @@ function toInfo(r: ProjectRow): ProjectInfo {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   });
+}
+
+// ── P2-FLOW-2 ───────────────────────────────────────────────────────────────
+
+export type WorkflowRunStatus =
+  | "queued"
+  | "running"
+  | "awaiting_gate"
+  | "done"
+  | "failed"
+  | "stopped";
+
+export interface WorkflowStepState {
+  id: string;
+  personaId: string;
+  ok: boolean | null; // null = belum jalan
+  summary: string;
+}
+
+export interface WorkflowPhaseState {
+  phaseId: string;
+  status: "pending" | "running" | "done";
+  steps: WorkflowStepState[];
+  /** FLOW-3: true = gate fase ini SUDAH di-approve (persist) — resume tidak
+   *  menanya ulang; undefined/false + gate ON = gate harus ditanya lagi. */
+  gatePassed?: boolean;
+}
+
+export interface WorkflowRunRow {
+  id: string;
+  projectId: string;
+  leadSessionId: string;
+  workflow: WorkflowDef;
+  status: WorkflowRunStatus;
+  phaseStates: WorkflowPhaseState[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface WorkflowRunDbRow {
+  id: string;
+  project_id: string;
+  lead_session_id: string;
+  workflow: string;
+  status: string;
+  phase_states: string;
+  created_at: number;
+  updated_at: number;
+}
+
+function toWorkflowRun(r: WorkflowRunDbRow): WorkflowRunRow {
+  return {
+    id: r.id,
+    projectId: r.project_id,
+    leadSessionId: r.lead_session_id,
+    workflow: WorkflowDef.parse(JSON.parse(r.workflow)),
+    status: (r.status as WorkflowRunStatus) ?? "queued",
+    phaseStates: JSON.parse(r.phase_states) as WorkflowPhaseState[],
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
 }

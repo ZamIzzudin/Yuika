@@ -19,6 +19,7 @@ import { listPersonas } from "./personas/loader.js";
 import { buildPersonaGrowth } from "./personas/growth.js";
 import { loadPersonaShapes, savePersonaShape } from "./personas/shapes.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
+import { WorkflowEngine } from "./workflow/engine.js";
 import { loadSkillBindings, saveSkillBindings, applyBindingAction, effectiveSkillNames, type SkillBinding, type SkillBindingsFile } from "./skills/bindings.js";
 import { registerFileTools } from "./tools/file-tools.js";
 import { registerWebTools } from "./tools/web-tools.js";
@@ -220,6 +221,40 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // P2-PM-2 (D22): consult — brainstorm terstruktur Planner ke persona spesialis
   // (paralel via delegation runner yang sama: metering/cap/event/audit berlaku).
   registerConsultTool(delegateDeps);
+
+  // P2-FLOW-2: workflow engine — deps memakai GETTER yang sama dgn delegateDeps
+  // (provider/model hot-swap tetap terlihat; spread langsung akan membekukan nilai).
+  const workflowEngine = new WorkflowEngine({
+    get store() {
+      return store;
+    },
+    get bus() {
+      return EventBus;
+    },
+    get provider() {
+      return provider;
+    },
+    get model() {
+      return model;
+    },
+    personasDir: paths.personasDir,
+    skillsDir: paths.skillsDir,
+    workspacePath: paths.workspacePath,
+    workspaceGlobalPath: paths.workspacePath,
+    routeModel: routeModelFor,
+    mcpAllowlistFor,
+    skillBindingsFor: (personaId) => skillBindingsFile()[personaId],
+    recordUsage: (u) => {
+      usageLedger.record(u);
+      admission.noteUsage();
+    },
+    maxChildren: () => admission.maxChildren(),
+    projects: projectStore,
+  });
+  // FLOW-3: run yang belum tamat dilanjutkan saat boot (gate yang belum
+  // diputuskan ditanya ulang; step done tidak diulang).
+  const resumedRuns = workflowEngine.resumeRuns();
+  if (resumedRuns.length) moduleLogger("workflow").info({ runs: resumedRuns }, "resume: run belum tamat dilanjutkan");
 
   // MCP dari config (demo: best-effort, lanjut jika gagal).
   // Placeholder {workspace} di-substitusi path absolut — path relatif salah resolve
@@ -1127,5 +1162,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       saveRoster(projectRoot(projectId), roster);
       return loadRoster(projectRoot(projectId));
     },
+    // ---- workflow (P2-FLOW) ----
+    workflowEngine,
+    listWorkflowRuns: (projectId: string) => projectStore.listWorkflowRuns(projectId),
+    getWorkflowRun: (runId: string) => projectStore.getWorkflowRun(runId),
   };
 }
