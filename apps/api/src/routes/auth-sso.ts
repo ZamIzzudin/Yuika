@@ -115,44 +115,46 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
     try {
       const user = findOrCreatePortalUser(exchanged.accountId, exchanged.email);
       // CP-4: auto-link browser — portal menyertakan deviceToken sekali-pakai
-      // di exchange; klaim slot web SEKALI (kunci stabil tersimpan lokal).
-      // Gagal klaim ≠ gagal login (device bisa di-link ulang nanti).
+      // di exchange; klaim dengan kunci STABIL (tersimpan lokal) agar
+      // idempotent (deviceId stabil — CP-4 portal). Re-claim SETIAP login:
+      // menyembuhkan drift bila device terhapus di portal (unlink/reset db)
+      // — bukan skip. Gagal klaim ≠ gagal login (row lama tetap utuh).
       if (exchanged.deviceToken) {
         const existing = getWebDevice();
-        if (!existing || existing.accountId !== exchanged.accountId) {
-          try {
-            const keys = generateDeviceKeys();
-            const { deviceId } = await claimAtPortal(attempt.portalUrl, {
-              token: exchanged.deviceToken,
-              kind: "web",
-              name: "Yuika web (SSO)",
-              signPub: keys.signPub,
-              dhPub: keys.dhPub,
-            });
-            saveWebDevice({
-              deviceId,
-              accountId: exchanged.accountId,
-              kind: "web",
-              name: "Yuika web (SSO)",
-              signPriv: keys.signPriv,
-              signPub: keys.signPub,
-              dhPriv: keys.dhPriv,
-              dhPub: keys.dhPub,
-              portalUrl: attempt.portalUrl,
-              relayUrl: defaultRelayUrl(),
-              linkedAt: Date.now(),
-            });
-            // CP-5: presence online (device tampil online di portal Devices;
-            // bye 4001 saat di-unlink → row dihapus + sesi dicabut).
-            void getWebPresence()
-              .start(getWebDevice()!)
-              .catch(() => undefined);
-            req.log.info({ deviceId }, "[sso] web device auto-linked");
-          } catch (e) {
-            req.log.warn({ err: e instanceof Error ? e.message : String(e) }, "[sso] web device auto-link gagal — login tetap lanjut");
-          }
-        } else {
-          req.log.info({ deviceId: existing.deviceId }, "[sso] web device sudah ter-link — skip claim");
+        const sameAccount = existing?.accountId === exchanged.accountId;
+        // kunci sama selama akun sama (deviceId stabil); akun beda → kunci baru
+        const keys = sameAccount && existing
+          ? { signPriv: existing.signPriv, signPub: existing.signPub, dhPriv: existing.dhPriv, dhPub: existing.dhPub }
+          : generateDeviceKeys();
+        try {
+          const { deviceId } = await claimAtPortal(attempt.portalUrl, {
+            token: exchanged.deviceToken,
+            kind: "web",
+            name: "Yuika web (SSO)",
+            signPub: keys.signPub,
+            dhPub: keys.dhPub,
+          });
+          saveWebDevice({
+            deviceId,
+            accountId: exchanged.accountId,
+            kind: "web",
+            name: "Yuika web (SSO)",
+            signPriv: keys.signPriv,
+            signPub: keys.signPub,
+            dhPriv: keys.dhPriv,
+            dhPub: keys.dhPub,
+            portalUrl: attempt.portalUrl,
+            relayUrl: defaultRelayUrl(),
+            linkedAt: Date.now(),
+          });
+          // CP-5: presence online (device tampil online di portal Devices;
+          // bye 4001 saat di-unlink → row dihapus + sesi dicabut).
+          void getWebPresence()
+            .start(getWebDevice()!)
+            .catch(() => undefined);
+          req.log.info({ deviceId }, sameAccount ? "[sso] web device re-linked (idempotent)" : "[sso] web device auto-linked");
+        } catch (e) {
+          req.log.warn({ err: e instanceof Error ? e.message : String(e) }, "[sso] web device auto-link gagal — login tetap lanjut");
         }
       }
       return reply.send({ token: createSession(user.id), user });

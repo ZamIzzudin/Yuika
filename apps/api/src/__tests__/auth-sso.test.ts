@@ -167,17 +167,20 @@ describe("CP-3 SSO via portal", () => {
     expect(body.user.email).toBe("sso@yuika.test");
     const me = await app.inject({ method: "GET", url: "/api/auth/me", headers: { authorization: `Bearer ${body.token}` } });
     expect((me.json() as { user: { email: string } }).user.email).toBe("sso@yuika.test");
-    // CP-4: auto-link — browser diklaim sebagai device web (sekali)
+    // CP-4: auto-link — browser diklaim sebagai device web; kunci STABIL
     expect(claims).toHaveLength(1);
     expect(claims[0]!.kind).toBe("web");
     const web = getWebDevice();
     expect(web?.deviceId).toMatch(/^dev_[0-9a-f]{16}$/);
     expect(web?.kind).toBe("web");
-    // SSO ulang (account sama) → TIDAK claim lagi (device stabil tersimpan)
+    // SSO ulang (account sama) → RE-CLAIM idempotent (self-heal bila device
+    // terhapus di portal) dgn kunci sama → deviceId tidak berubah.
     const st2 = await start();
     const code2 = issueCode(new URL(st2.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT);
     await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: code2, state: st2.state } });
-    expect(claims).toHaveLength(1);
+    expect(claims).toHaveLength(2);
+    expect(claims[1]!.signPub).toBe(claims[0]!.signPub);
+    expect(getWebDevice()?.deviceId).toBe(web?.deviceId);
   });
 
   it("auto-link: portal tanpa deviceToken → tanpa claim (backward compat)", async () => {
