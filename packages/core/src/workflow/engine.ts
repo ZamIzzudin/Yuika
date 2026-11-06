@@ -42,6 +42,17 @@ interface GateWaiter {
   resolve: (decision: "approved" | "rejected") => void;
 }
 
+/** State hidup run (FLOW-6: steering butuh akses dari method publik). */
+interface RunHandle {
+  def: NormalizedWorkflowDef;
+  states: WorkflowPhaseState[];
+  projectId: string;
+  leadSessionId: string;
+  brief: string;
+  /** Instruksi steering user (urutan masuk) — masuk konteks fase berikutnya. */
+  steers: string[];
+}
+
 /** Def valid + ternormalisasi, atau lempar (lint errors lengkap). */
 function validated(input: WorkflowDef): NormalizedWorkflowDef {
   const lint = lintWorkflow(input);
@@ -52,6 +63,9 @@ function validated(input: WorkflowDef): NormalizedWorkflowDef {
 export class WorkflowEngine {
   private readonly gates = new Map<string, GateWaiter>();
   private readonly stopped = new Set<string>();
+  private readonly runs = new Map<string, RunHandle>();
+  private readonly paused = new Set<string>();
+  private readonly pauseWaiters = new Map<string, () => void>();
 
   constructor(private readonly deps: WorkflowEngineDeps) {}
 
@@ -101,6 +115,80 @@ export class WorkflowEngine {
   stopRun(runId: string): void {
     this.stopped.add(runId);
     this.approveGate(runId, "rejected"); // bangunkan bila nunggu gate
+    this.wakePaused(runId); // bangunkan bila nunggu resume
+  }
+
+  // ── FLOW-6: steering mid-run ─────────────────────────────────────────────
+
+  /** Suntik instruksi mid-run: masuk konteks fase BERIKUTNYA + tercatat
+   *  sebagai pesan user di sesi lead (audit) + event workflow.steer. */
+  steerRun(runId: string, instruction: string): boolean {
+    const h = this.runs.get(runId);
+    const text = instruction.trim();
+    if (!h || !text) return false;
+    h.steers.push(text);
+    this.deps.store.appendMessage(h.leadSessionId, { role: "user", content: `[steering] ${text}` });
+    makeEmitter(this.deps.store, this.deps.bus, h.leadSessionId)({ type: "workflow.steer", runId, instruction: text });
+    return true;
+  }
+
+  /** Pause di batas step berikutnya (step yang sedang jalan diselesaikan).
+   *  Saat awaiting_gate: status `paused` LANGSUNG (eksekusi memang berhenti;
+   *  keputusan gate tetap boleh — berlaku setelah resume). */
+  pauseRun(runId: string): boolean {
+    const h = this.runs.get(runId);
+    if (!h || this.stopped.has(runId)) return false;
+    this.paused.add(runId);
+    if (this.deps.projects.getWorkflowRun(runId)?.status === "awaiting_gate") {
+      this.deps.projects.updateWorkflowRun(runId, { status: "paused" });
+      makeEmitter(this.deps.store, this.deps.bus, h.leadSessionId)({ type: "workflow.paused", runId });
+    }
+    return true;
+  }
+
+  resumeRun(runId: string): boolean {
+    if (!this.runs.has(runId)) return false;
+    const h = this.runs.get(runId)!;
+    this.paused.delete(runId);
+    this.wakePaused(runId);
+    // bila tak ada checkpoint yang berjalan (mis. paused saat gate), pulihkan
+    // status manual: nunggu gate lagi bila gate belum diputuskan.
+    if (this.deps.projects.getWorkflowRun(runId)?.status === "paused") {
+      this.deps.projects.updateWorkflowRun(runId, { status: this.gates.has(runId) ? "awaiting_gate" : "running" });
+      makeEmitter(this.deps.store, this.deps.bus, h.leadSessionId)({ type: "workflow.resumed", runId });
+    }
+    return true;
+  }
+
+  /** Reassign step yang BELUM selesai ke persona lain. Step yang sedang
+   *  berjalan memakai persona lama sampai selesai (abort mid-provider
+   *  menyusul); def + state dimutasi & di-persist agar resume tetap baru. */
+  reassignStep(runId: string, phaseId: string, stepId: string, toPersona: string): { ok: boolean; error?: string } {
+    const h = this.runs.get(runId);
+    if (!h) return { ok: false, error: "run tidak aktif" };
+    const phase = h.def.phases.find((p) => p.id === phaseId);
+    if (!phase) return { ok: false, error: `fase "${phaseId}" tidak ditemukan` };
+    const idx = phase.steps.findIndex((s) => s.id === stepId);
+    if (idx < 0) return { ok: false, error: `step "${stepId}" tidak ditemukan` };
+    const st = h.states.find((p) => p.phaseId === phaseId);
+    if (st?.steps[idx]?.ok === true) return { ok: false, error: "step sudah selesai" };
+    const from = phase.steps[idx]!.persona;
+    if (from === toPersona) return { ok: false, error: "persona sama" };
+    if (!listPersonas(this.deps.personasDir).some((p) => p.manifest.id === toPersona)) {
+      return { ok: false, error: `persona "${toPersona}" tidak dikenal` };
+    }
+    phase.steps[idx]!.persona = toPersona;
+    if (st?.steps[idx]) st.steps[idx].personaId = toPersona;
+    this.deps.projects.updateWorkflowRun(runId, { workflow: h.def, phaseStates: h.states });
+    makeEmitter(this.deps.store, this.deps.bus, h.leadSessionId)({
+      type: "workflow.step.reassigned", runId, phaseId, stepId, fromPersona: from, toPersona,
+    });
+    return { ok: true };
+  }
+
+  private wakePaused(runId: string): void {
+    this.pauseWaiters.get(runId)?.();
+    this.pauseWaiters.delete(runId);
   }
 
   /** Boot resume (FLOW-3): lanjutkan run yang belum tamat — fase done
@@ -131,12 +219,15 @@ export class WorkflowEngine {
     const persist = () => this.deps.projects.updateWorkflowRun(runId, { phaseStates: states });
 
     const turnId = `wf-${runId}`;
+    const handle: RunHandle = { def, states, projectId, leadSessionId, brief, steers: [] };
+    this.runs.set(runId, handle);
     try {
       this.deps.projects.updateWorkflowRun(runId, { status: "running" });
       e({ type: "workflow.started", runId, projectId, workflowName: def.name, phaseCount: def.phases.length });
 
       for (let i = 0; i < def.phases.length; i++) {
         if (this.stopped.has(runId)) throw new StopRun();
+        await this.waitWhilePaused(runId, e);
         const phase = def.phases[i]!;
         const st = states[i] ?? (states[i] = { phaseId: phase.id, status: "pending", steps: [] });
         if (st.status === "done") {
@@ -153,7 +244,7 @@ export class WorkflowEngine {
         persist();
         e({ type: "phase.entered", runId, phaseId: phase.id, mode: phase.mode });
 
-        const phaseContext = buildContext(brief, def, states, i);
+        const phaseContext = buildContext(brief, handle.steers, def, states, i);
         const stepDefs = phase.steps.map((s, idx) => ({
           def: s,
           state: st.steps[idx] ?? (st.steps[idx] = { id: s.id, personaId: s.persona, ok: null, summary: "" }),
@@ -172,6 +263,7 @@ export class WorkflowEngine {
         if (phase.mode === "sequential") {
           for (let idx = 0; idx < stepDefs.length; idx++) {
             if (this.stopped.has(runId)) throw new StopRun();
+            await this.waitWhilePaused(runId, e);
             const { def: step } = stepDefs[idx]!;
             if (stepDefs[idx]!.state.ok !== null) continue; // resume: step done diulang? tidak — dilewati
             e({ type: "step.started", runId, phaseId: phase.id, stepId: step.id, personaId: step.persona, task: step.task });
@@ -194,6 +286,7 @@ export class WorkflowEngine {
               if (sd.state.ok !== null || inflight.has(idx)) continue;
               if (!sd.def.depends_on.every((d) => results.has(d))) continue;
               if (inflight.size >= cap) break;
+              await this.waitWhilePaused(runId, e); // jangan spawn step baru saat pause
               e({ type: "step.started", runId, phaseId: phase.id, stepId: sd.def.id, personaId: sd.def.persona, task: sd.def.task });
               const p = (async () => {
                 try {
@@ -232,6 +325,24 @@ export class WorkflowEngine {
       const message = err instanceof StopRun ? "dihentikan (stop/gate rejected)" : err instanceof Error ? err.message : String(err);
       this.deps.projects.updateWorkflowRun(runId, { status });
       e({ type: "workflow.done", runId, projectId, ok: false, error: message });
+    } finally {
+      // bersihkan registry steering — run tamat (done/failed/stopped)
+      this.runs.delete(runId);
+      this.paused.delete(runId);
+      this.pauseWaiters.delete(runId);
+    }
+  }
+
+  /** Titik jeda steering: selama paused (dan tidak di-stop) tahan eksekusi
+   *  di sini — step yang sedang berjalan tetap diselesaikan. */
+  private async waitWhilePaused(runId: string, e: Emit): Promise<void> {
+    while (this.paused.has(runId) && !this.stopped.has(runId)) {
+      this.deps.projects.updateWorkflowRun(runId, { status: "paused" });
+      e({ type: "workflow.paused", runId });
+      await new Promise<void>((r) => this.pauseWaiters.set(runId, r));
+      if (this.paused.has(runId)) continue; // di-pause lagi segera setelah resume
+      this.deps.projects.updateWorkflowRun(runId, { status: "running" });
+      e({ type: "workflow.resumed", runId });
     }
   }
 
@@ -300,8 +411,9 @@ function freshPhaseStates(def: NormalizedWorkflowDef): WorkflowPhaseState[] {
   }));
 }
 
-/** Konteks fase = brief + ringkasan semua step fase sebelumnya (terpotong). */
-function buildContext(brief: string, def: NormalizedWorkflowDef, states: WorkflowPhaseState[], upto: number): string | null {
+/** Konteks fase = brief + ringkasan semua step fase sebelumnya (terpotong)
+ *  + instruksi steering user (FLOW-6 — ditaruh paling bawah: paling menonjol). */
+function buildContext(brief: string, steers: string[], def: NormalizedWorkflowDef, states: WorkflowPhaseState[], upto: number): string | null {
   const parts: string[] = [];
   if (brief) parts.push(`Brief:\n${brief}`);
   for (let i = 0; i < upto; i++) {
@@ -313,6 +425,9 @@ function buildContext(brief: string, def: NormalizedWorkflowDef, states: Workflo
       .map((s) => `- ${s.personaId}: ${s.summary}`)
       .join("\n");
     if (summaries) parts.push(`Hasil fase "${phase.name}":\n${summaries}`);
+  }
+  if (steers.length) {
+    parts.push(`Instruksi steering user (terbaru paling bawah):\n${steers.map((s) => `- ${s}`).join("\n")}`);
   }
   if (!parts.length) return null;
   const text = parts.join("\n\n");

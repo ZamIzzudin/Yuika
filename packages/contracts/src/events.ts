@@ -225,6 +225,32 @@ export const WorkflowDoneEvent = EventMeta.extend({
   error: z.string().optional(),
 });
 
+/** P2-FLOW-6: steering mid-run — pause/resume, suntik instruksi, reassign step. */
+export const WorkflowSteerEvent = EventMeta.extend({
+  type: z.literal("workflow.steer"),
+  runId: z.string(),
+  instruction: z.string(),
+});
+
+export const WorkflowPausedEvent = EventMeta.extend({
+  type: z.literal("workflow.paused"),
+  runId: z.string(),
+});
+
+export const WorkflowResumedEvent = EventMeta.extend({
+  type: z.literal("workflow.resumed"),
+  runId: z.string(),
+});
+
+export const StepReassignedEvent = EventMeta.extend({
+  type: z.literal("workflow.step.reassigned"),
+  runId: z.string(),
+  phaseId: z.string(),
+  stepId: z.string(),
+  fromPersona: z.string(),
+  toPersona: z.string(),
+});
+
 /** P1-MEM-2: learn nudge menghasilkan catatan ( transparansi — tampil sebagai chip di chat). */
 export const MemoryNotedEvent = EventMeta.extend({
   type: z.literal("memory.noted"),
@@ -290,6 +316,10 @@ export const YuiEvent = z.discriminatedUnion("type", [
   WorkflowGateAwaitEvent,
   WorkflowGatePassedEvent,
   WorkflowDoneEvent,
+  WorkflowSteerEvent,
+  WorkflowPausedEvent,
+  WorkflowResumedEvent,
+  StepReassignedEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;
 export type YuiEventType = YuiEvent["type"];

@@ -16,6 +16,16 @@ const GateRequest = z.object({
   decision: z.enum(["approved", "rejected"]),
 });
 
+const SteerRequest = z.object({
+  instruction: z.string().min(1).max(4_000),
+});
+
+const ReassignRequest = z.object({
+  phaseId: z.string().min(1),
+  stepId: z.string().min(1),
+  persona: z.string().min(1),
+});
+
 /** Parse input workflow (object | YAML | undefined → template) + lint. */
 function parseWorkflowInput(input: unknown): WorkflowDef {
   let def: WorkflowDef;
@@ -77,6 +87,40 @@ export function registerWorkflowRoutes(app: FastifyInstance, getRt: () => YuiRun
     const rt = getRt();
     if (!rt.getWorkflowRun(runId)) return reply.code(404).send({ error: "run tidak ditemukan" });
     rt.workflowEngine.stopRun(runId);
+    return { ok: true };
+  });
+
+  // ── P2-FLOW-6: steering mid-run ──────────────────────────────────────────
+  app.post("/api/workflows/runs/:runId/steer", async (req, reply) => {
+    const { runId } = req.params as { runId: string };
+    const body = SteerRequest.parse(req.body);
+    if (!getRt().workflowEngine.steerRun(runId, body.instruction)) {
+      return reply.code(409).send({ error: "run tidak aktif" });
+    }
+    return { ok: true };
+  });
+
+  app.post("/api/workflows/runs/:runId/pause", async (req, reply) => {
+    const { runId } = req.params as { runId: string };
+    if (!getRt().workflowEngine.pauseRun(runId)) {
+      return reply.code(409).send({ error: "run tidak aktif" });
+    }
+    return { ok: true };
+  });
+
+  app.post("/api/workflows/runs/:runId/resume", async (req, reply) => {
+    const { runId } = req.params as { runId: string };
+    if (!getRt().workflowEngine.resumeRun(runId)) {
+      return reply.code(409).send({ error: "run tidak aktif" });
+    }
+    return { ok: true };
+  });
+
+  app.post("/api/workflows/runs/:runId/steps/reassign", async (req, reply) => {
+    const { runId } = req.params as { runId: string };
+    const body = ReassignRequest.parse(req.body);
+    const res = getRt().workflowEngine.reassignStep(runId, body.phaseId, body.stepId, body.persona);
+    if (!res.ok) return reply.code(409).send({ error: res.error });
     return { ok: true };
   });
 

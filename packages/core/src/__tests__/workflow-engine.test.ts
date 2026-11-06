@@ -16,12 +16,15 @@ import { WorkflowEngine } from "../workflow/engine.js";
 import { loadWorkflowYaml, SEVEN_PHASE_TEMPLATE_YAML, type YuiEvent, type WorkflowDef } from "@yuika/contracts";
 import { resolveRepoRoot } from "../paths.js";
 
-/** Provider tak pernah habis: tiap call = satu kalimat deterministik. */
+/** Provider tak pernah habis: tiap call = satu kalimat deterministik.
+ *  `reqs` merekam konteks tiap call (untuk assert steering masuk konteks). */
 class EndlessProvider implements ProviderAdapter {
   readonly id = "endless";
   calls = 0;
-  async chatStream(_req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
+  reqs: string[] = [];
+  async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
     this.calls++;
+    this.reqs.push(req.messages.map((m) => m.content).join("\n"));
     onChunk({ type: "text_delta", delta: `step-output-${this.calls}` });
     return { type: "done", finishReason: "stop", text: `step-output-${this.calls}`, toolCalls: [] };
   }
@@ -232,5 +235,100 @@ describe("P2-FLOW-3 — gate + resume", () => {
     expect(run.phaseStates[1]!.steps[0]!.ok).toBe(true); // fase B jalan
     // fase A hanya dijalankan SEKALI (engine 1) — resume tak mengulang
     expect(types().filter((t) => t === "step.started")).toHaveLength(2);
+  }, 30_000);
+});
+
+// ── P2-FLOW-6: steering mid-run — steer / pause+resume / reassign ──────────
+const two = (): WorkflowDef => ({
+  name: "two",
+  phases: [
+    { id: "a", name: "A", mode: "sequential", steps: [{ id: "s1", persona: "yui-scribe", task: "step A" }] },
+    { id: "b", name: "B", mode: "sequential", steps: [{ id: "s1", persona: "yui-scribe", task: "step B" }] },
+  ],
+});
+
+describe("P2-FLOW-6 — steering mid-run", () => {
+  it("steer: pesan user di sesi lead + event + instruksi masuk konteks fase berikut", async () => {
+    const prov = new EndlessProvider();
+    const engine = makeEngine(prov);
+    const { runId, leadSessionId } = engine.startRun({ projectId: "p_demo", workflow: two() });
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "awaiting_gate");
+
+    expect(engine.steerRun(runId, "jaga scope tetap kecil")).toBe(true);
+    expect(engine.steerRun("wf_nope", "x")).toBe(false);
+    expect(engine.steerRun(runId, "   ")).toBe(false);
+    await waitFor(() => types().includes("workflow.steer"));
+    expect(events.find((e) => e.type === "workflow.steer")).toMatchObject({
+      runId,
+      instruction: "jaga scope tetap kecil",
+    });
+    // audit: instruksi terekam sebagai pesan user di sesi lead
+    expect(
+      store.getMessages(leadSessionId).some((m) => m.role === "user" && m.content.includes("[steering] jaga scope tetap kecil")),
+    ).toBe(true);
+
+    engine.approveGate(runId, "approved");
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "done");
+    // konteks step fase B memuat instruksi steering
+    expect(prov.reqs.at(-1)).toContain("Instruksi steering");
+    expect(prov.reqs.at(-1)).toContain("jaga scope tetap kecil");
+  }, 30_000);
+
+  it("pause → step fase berikut TIDAK jalan; resume → lanjut sampai done", async () => {
+    const engine = makeEngine(new EndlessProvider());
+    const { runId } = engine.startRun({ projectId: "p_demo", workflow: two() });
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "awaiting_gate");
+
+    expect(engine.pauseRun(runId)).toBe(true);
+    engine.approveGate(runId, "approved");
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "paused");
+    await new Promise((r) => setTimeout(r, 150)); // beri waktu bila eksekusi bocor
+    expect(events.filter((e) => e.type === "phase.entered" && e.phaseId === "b")).toHaveLength(0);
+    expect(types()).toContain("workflow.paused");
+
+    expect(engine.resumeRun(runId)).toBe(true);
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "done");
+    expect(types()).toContain("workflow.resumed");
+    expect(events.filter((e) => e.type === "phase.entered" && e.phaseId === "b")).toHaveLength(1);
+  }, 30_000);
+
+  it("stop saat paused → run stopped; resume setelah tamat → false", async () => {
+    const engine = makeEngine(new EndlessProvider());
+    const { runId } = engine.startRun({ projectId: "p_demo", workflow: two() });
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "awaiting_gate");
+    engine.pauseRun(runId);
+    engine.approveGate(runId, "approved");
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "paused");
+    engine.stopRun(runId);
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "stopped");
+    expect(engine.resumeRun(runId)).toBe(false);
+  }, 30_000);
+
+  it("reassign step pending: def+state persist, event tercatat, step jalan dengan persona baru; done step ditolak", async () => {
+    const engine = makeEngine(new EndlessProvider());
+    const { runId } = engine.startRun({ projectId: "p_demo", workflow: two() });
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "awaiting_gate");
+
+    // error paths dulu
+    expect(engine.reassignStep(runId, "b", "s1", "yui-scribe")).toMatchObject({ ok: false, error: "persona sama" });
+    expect(engine.reassignStep(runId, "b", "ngaco", "yui-coder").ok).toBe(false);
+    expect(engine.reassignStep(runId, "b", "s1", "persona-ngaco").ok).toBe(false);
+    expect(engine.reassignStep(runId, "a", "s1", "yui-coder").ok).toBe(false); // fase A done
+
+    const res = engine.reassignStep(runId, "b", "s1", "yui-coder");
+    expect(res).toEqual({ ok: true });
+    await waitFor(() => types().includes("workflow.step.reassigned"));
+    expect(events.find((e) => e.type === "workflow.step.reassigned")).toMatchObject({
+      runId, phaseId: "b", stepId: "s1", fromPersona: "yui-scribe", toPersona: "yui-coder",
+    });
+    // persist: def tersimpan memuat persona baru
+    const stored = projects.getWorkflowRun(runId)!.workflow as ReturnType<typeof two>;
+    expect(stored.phases[1]!.steps[0]!.persona).toBe("yui-coder");
+
+    engine.approveGate(runId, "approved");
+    await waitFor(() => projects.getWorkflowRun(runId)?.status === "done");
+    const bStarted = events.filter((e) => e.type === "step.started" && e.phaseId === "b");
+    expect(bStarted).toHaveLength(1);
+    expect(bStarted[0]).toMatchObject({ personaId: "yui-coder" });
   }, 30_000);
 });

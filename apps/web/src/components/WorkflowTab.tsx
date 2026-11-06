@@ -8,6 +8,7 @@ import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WorkflowDef } from "@yuika/contracts";
 import { Check, Circle, CircleNotch, Play, Stop, X } from "@phosphor-icons/react";
+import { Pause, ChatCircleDots, ArrowFatUp } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { Button, Card, Chip } from "./ui";
 import type { ChipTone } from "./ui/chip";
@@ -26,7 +27,7 @@ interface PhaseState {
   steps: StepState[];
   gatePassed?: boolean;
 }
-type RunStatus = "queued" | "running" | "awaiting_gate" | "done" | "failed" | "stopped";
+type RunStatus = "queued" | "running" | "awaiting_gate" | "paused" | "done" | "failed" | "stopped";
 interface RunSummary {
   id: string;
   status: RunStatus;
@@ -46,6 +47,7 @@ const STATUS_TONE: Record<RunStatus, ChipTone> = {
   queued: "muted",
   running: "accent",
   awaiting_gate: "warn",
+  paused: "info",
   done: "ok",
   failed: "danger",
   stopped: "muted",
@@ -54,6 +56,7 @@ const STATUS_LABEL: Record<RunStatus, string> = {
   queued: "queued",
   running: "running",
   awaiting_gate: "awaiting approval",
+  paused: "paused",
   done: "done",
   failed: "failed",
   stopped: "stopped",
@@ -72,6 +75,8 @@ export function WorkflowTab({ projectId }: { projectId: string }) {
   const [runId, setRunId] = useState<string | null>(null);
   const [run, setRun] = useState<RunDetail | null>(null);
   const [brief, setBrief] = useState("");
+  const [steer, setSteer] = useState("");
+  const [roster, setRoster] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   // throttle refetch saat event workflow.* masuk deras (12 step × 3 event)
   const refetchTimer = useRef<number | null>(null);
@@ -99,6 +104,11 @@ export function WorkflowTab({ projectId }: { projectId: string }) {
     setRunId(null);
     setRun(null);
     void loadRuns();
+    // roster persona untuk reassign (FLOW-6)
+    void authFetch(apiUrl("/api/personas"))
+      .then((r) => (r.ok ? r.json() : { personas: [] }))
+      .then((b: { personas: { id: string }[] }) => setRoster(b.personas.map((p) => p.id)))
+      .catch(() => setRoster([]));
   }, [loadRuns]);
 
   useEffect(() => {
@@ -188,9 +198,34 @@ export function WorkflowTab({ projectId }: { projectId: string }) {
     }
   }
 
-  const active = run ? ["queued", "running", "awaiting_gate"].includes(run.status) : false;
+  // ── FLOW-6: steering mid-run ──────────────────────────────────────────────
+  async function postAction(path: string, body?: unknown): Promise<boolean> {
+    if (!runId) return false;
+    try {
+      const r = await authFetch(apiUrl(`/api/workflows/runs/${runId}${path}`), {
+        method: "POST",
+        ...(body === undefined ? {} : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+      });
+      if (!r.ok) throw new Error(((await r.json()) as { error?: string }).error ?? "gagal");
+      await loadRun(runId);
+      return true;
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : "gagal");
+      return false;
+    }
+  }
+
+  async function reassign(phaseId: string, stepId: string, persona: string) {
+    const ok = await postAction("/steps/reassign", { phaseId, stepId, persona });
+    if (ok) toastOk(`Step ${stepId} → ${persona}`);
+  }
+
+  const active = run ? ["queued", "running", "awaiting_gate", "paused"].includes(run.status) : false;
+  const steerable = run ? ["running", "awaiting_gate", "paused"].includes(run.status) : false;
   const donePhases = run?.phaseStates.filter((p) => p.status === "done").length ?? 0;
-  const gatePhase = run?.status === "awaiting_gate"
+  // gerbang fase tampil saat awaiting_gate ATAU paused (pause saat gate —
+  // keputusan tetap bisa diambil, berlaku setelah resume)
+  const gatePhase = run && (run.status === "awaiting_gate" || run.status === "paused")
     ? run.phaseStates.filter((p) => p.status === "done" && p.gatePassed === undefined).at(-1)
     : undefined;
   const phaseName = (id: string) => run?.workflow.phases.find((p) => p.id === id)?.name ?? id;
@@ -211,12 +246,52 @@ export function WorkflowTab({ projectId }: { projectId: string }) {
           </span>
         )}
         <span className="flex-1" />
-        {active && (
+        {run?.status === "paused" ? (
+          <Button size="sm" variant="primary" onClick={() => void postAction("/resume")} disabled={busy}>
+            <Play size={12} aria-hidden /> Resume
+          </Button>
+        ) : (
+          active && (
+            <Button size="sm" variant="secondary" onClick={() => void postAction("/pause")} disabled={busy}>
+              <Pause size={12} aria-hidden /> Pause
+            </Button>
+          )
+        )}
+        {active && run!.status !== "paused" && (
           <Button size="sm" variant="danger" onClick={() => void stopRun()} disabled={busy}>
             <Stop size={12} aria-hidden /> Stop
           </Button>
         )}
       </header>
+
+      {/* steering — suntik instruksi mid-run (masuk konteks fase berikutnya) */}
+      {steerable && (
+        <div className="flex flex-none items-center gap-2">
+          <ChatCircleDots size={14} className="shrink-0 text-dim" aria-hidden />
+          <input
+            className="min-w-[180px] flex-1 rounded-md2 border border-line bg-control px-3 py-1.5 text-body text-primary outline-none focus:border-accent"
+            placeholder="Steer mid-run — e.g. keep scope minimal"
+            value={steer}
+            onChange={(e) => setSteer(e.target.value)}
+            aria-label="Steer instruction"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && steer.trim()) {
+                void postAction("/steer", { instruction: steer.trim() }).then((ok) => ok && setSteer(""));
+              }
+            }}
+          />
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={busy || !steer.trim()}
+            onClick={() =>
+              void postAction("/steer", { instruction: steer.trim() }).then((ok) => ok && setSteer(""))
+            }
+          >
+            <ArrowFatUp size={12} aria-hidden /> Steer
+          </Button>
+        </div>
+      )}
 
       {/* start baru — brief opsional; kosong = template 7 fase standar */}
       <Card className="flex-none p-3">
@@ -296,7 +371,7 @@ export function WorkflowTab({ projectId }: { projectId: string }) {
                   </Chip>
                 </header>
                 <div className="flex flex-col gap-1.5">
-                  {(st?.steps ?? phase.steps.map((ps) => ({ id: ps.id ?? "", personaId: ps.persona, ok: null, summary: "" }))).map((s) => {
+                  {(st && st.steps.length ? st.steps : phase.steps.map((ps) => ({ id: ps.id ?? "", personaId: ps.persona, ok: null, summary: "" }))).map((s) => {
                     const ss = st ? stepStatus(st, s) : "pending";
                     return (
                       <div
@@ -331,6 +406,26 @@ export function WorkflowTab({ projectId }: { projectId: string }) {
                           <small className="line-clamp-2 text-caption leading-4 text-dim" title={s.summary}>
                             {s.summary}
                           </small>
+                        )}
+                        {/* FLOW-6: reassign step yang belum jalan ke persona lain */}
+                        {ss === "pending" && steerable && roster.length > 0 && (
+                          <label className="flex items-center gap-1 text-caption text-dim">
+                            reassign
+                            <select
+                              className="min-w-0 flex-1 rounded-md2 border border-line bg-control px-1 py-0.5 text-caption text-primary outline-none"
+                              value={s.personaId}
+                              aria-label={`Reassign ${s.id}`}
+                              onChange={(ev) => {
+                                if (ev.target.value !== s.personaId) void reassign(phase.id, s.id, ev.target.value);
+                              }}
+                            >
+                              {roster.map((pid) => (
+                                <option key={pid} value={pid}>
+                                  {pid.replace("yui-", "")}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
                         )}
                       </div>
                     );

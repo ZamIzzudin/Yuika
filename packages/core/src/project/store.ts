@@ -128,7 +128,7 @@ export class ProjectStore {
       .run(input.id, input.projectId, input.leadSessionId, JSON.stringify(input.workflow), now, now);
   }
 
-  updateWorkflowRun(id: string, patch: { status?: string; phaseStates?: unknown }): void {
+  updateWorkflowRun(id: string, patch: { status?: string; phaseStates?: unknown; workflow?: unknown }): void {
     const sets: string[] = ["updated_at = ?"];
     const vals: unknown[] = [Date.now()];
     if (patch.status !== undefined) {
@@ -138,6 +138,12 @@ export class ProjectStore {
     if (patch.phaseStates !== undefined) {
       sets.push("phase_states = ?");
       vals.push(JSON.stringify(patch.phaseStates));
+    }
+    // P2-FLOW-6: reassign step mengubah persona di def — persist agar
+    // resume pasca-restart tetap memakai persona baru.
+    if (patch.workflow !== undefined) {
+      sets.push("workflow = ?");
+      vals.push(JSON.stringify(patch.workflow));
     }
     vals.push(id);
     this.db.prepare(`UPDATE workflow_runs SET ${sets.join(", ")} WHERE id = ?`).run(...vals);
@@ -298,6 +304,7 @@ export type WorkflowRunStatus =
   | "queued"
   | "running"
   | "awaiting_gate"
+  | "paused" // P2-FLOW-6: steering — pause mid-run (resume manual)
   | "done"
   | "failed"
   | "stopped";
