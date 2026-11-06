@@ -950,7 +950,6 @@ export default function Home() {
                             { id: "files", label: "Files" },
                             { id: "terminal", label: "Terminal" },
                             { id: "board", label: "Task" },
-                            { id: "flow", label: "Flow" },
                             { id: "browser", label: "Browser" },
                             { id: "config", label: "Config" },
                           ] as const)
@@ -1038,8 +1037,8 @@ export default function Home() {
                         {activeProject && active.id === "yui-conductor" && (
                           <button
                             type="button"
-                            onClick={() => setMainTab("flow")}
-                            title="Structured runs led by this persona — 7 phases, specialist personas, gates between phases"
+                            onClick={() => setMainTab("team")}
+                            title="Structured runs led by this persona — 7 phases, specialist personas, gates between phases (Team tab)"
                             aria-label="Open workflow"
                             className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary"
                           >
@@ -1148,7 +1147,7 @@ export default function Home() {
                               {active.id === "yui-conductor" && activeProject && (
                                 <button
                                   type="button"
-                                  onClick={() => setMainTab("flow")}
+                                  onClick={() => setMainTab("team")}
                                   className="flex w-full max-w-[560px] cursor-pointer items-center gap-3 rounded-lg2 border border-accent/40 bg-accent/5 px-4 py-3 text-left transition-colors hover:border-accent"
                                 >
                                   <Steps size={18} weight="bold" aria-hidden className="shrink-0 text-accent" />

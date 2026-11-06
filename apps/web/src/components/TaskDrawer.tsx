@@ -33,7 +33,7 @@ const TerminalTabLazy = dynamic(() => import("./TerminalTab"), {
   loading: () => <div className="p-4 text-caption text-dim">Loading terminal…</div>,
 });
 import { FileTab } from "./FileTab";
-import { WorkflowTab } from "./WorkflowTab";
+import { WorkflowTree } from "./WorkflowTree";
 import { BrowserTab } from "./BrowserTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
@@ -59,7 +59,6 @@ export type WorkspaceTab =
   | "files"
   | "terminal"
   | "board"
-  | "flow"
   | "browser"
   | "config";
 
@@ -671,7 +670,6 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
-      {loaded && activeTab === "flow" && <WorkflowTab projectId={project.id} />}
       {loaded && activeTab === "browser" && <BrowserTab projectId={project.id} />}
       {loaded && activeTab === "terminal" && (
         <TerminalTabLazy project={{ id: project.id, name: project.name }} />
@@ -719,6 +717,10 @@ export function ProjectTabs({
           aria-label="Team — delegation hierarchy diagram"
           className="flex flex-col gap-4"
         >
+          {/* merge Flow → Team (keputusan user 2026-11-08): informasi workflow
+              (run → fase → step, gate, steering) di atas canvas delegasi —
+              bahasa visual Team */}
+          <WorkflowTree projectId={project.id} />
           <TeamTree
             projectId={project.id}
             rootSessionId={activeSessionId}

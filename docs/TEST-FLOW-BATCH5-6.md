@@ -31,7 +31,7 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 ### A1. Start run + board live (FLOW-1/2/5)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Buka project → tab **Flow** | Kolom "Start run" tampil; template default 7 fase | |
+| 1 | Buka project → tab **Team** (workflow kini di sini) | Panel "Workflow" (led by Conductor Yui) + kartu Start run; template default 7 fase | |
 | 2 | Isi brief: `Build a product landing page for a coffee brand.` → **Start run** | Run baru muncul; kolom fase Planning aktif (kartu step ber-spin), chip status running | |
 | 3 | Tunggu fase planning selesai | Ringkasan step muncul di kartu (teks pendek) | |
 | 4 | Klik kembali tab **Chat** → **Flow** | Board tetap ada (state tak hilang) | |
@@ -47,17 +47,17 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
 | 1 | Start run BARU, approve gate pertama, saat fase research berjalan → **matikan API** (Ctrl+C di terminal `npm run dev`), jangan Stop run | — | |
-| 2 | Nyalakan ulang `npm run dev` → buka tab Flow | Run muncul dengan status running/paused; fase done TETAP done (tidak diulang); gate yang belum diputus ditanyakan lagi | |
+| 2 | Nyalakan ulang `npm run dev` → buka tab Team | Run muncul dengan status running/paused; fase done TETAP done (tidak diulang); gate yang belum diputus ditanyakan lagi | |
 | 3 | Lanjutkan approve sampai selesai | Run done; semua fase hijau | |
 
-### A4. Steering mid-run (FLOW-6)
+### A4. Steering mid-run (FLOW-6 — semua kontrol di panel Workflow, tab Team)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
 | 1 | Run baru → saat gate planning tampil, isi **Steer**: `Use a warm brown palette.` → **Steer** | Input ter-reset; event muncul; instruksi dipakai fase BERIKUTNYA | |
 | 2 | Klik **Pause** (saat gate) | Chip status paused LANGSUNG | |
 | 3 | Approve gate sambil paused | Tetap paused; banner gate hilang | |
 | 4 | **Resume** | Fase berikut jalan | |
-| 5 | Di kartu step pending (mis. research), buka dropdown **Reassign** → pilih persona lain | Kartu menampilkan persona baru | |
+| 5 | Di baris step pending (mis. research), buka dropdown **Reassign** → pilih persona lain | Baris menampilkan persona baru | |
 | 6 | **Stop** run aktif | Status stopped; tidak ada proses nyasar | |
 
 ---
@@ -108,7 +108,7 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 |---|---------|-----------|-------|
 | 1 | Pastikan persona aktif = **Conductor** (default) → lihat header chat | Tombol **Workflow** (ikon tangga) muncul — hanya untuk conductor | |
 | 2 | Empty state chat | Kartu aksen "Start a structured workflow run" | |
-| 3 | Klik tombol **Workflow** | Pindah ke tab Flow; header board menyebut "runs led by Conductor Yui" | |
+| 3 | Klik tombol **Workflow** | Pindah ke tab **Team**; panel Workflow (di atas canvas delegasi) menyebut "runs led by Conductor Yui" | |
 | 4 | Ganti persona aktif ke scholar (via picker) → lihat header | Tombol Workflow TIDAK muncul (chat = pekerjaan serabutan) | |
 
 ---

@@ -14,11 +14,11 @@ test("FLOW-5: start → board live → gate approve ×6 → done", async ({ page
   expect(r.ok()).toBeTruthy();
   const { project } = (await r.json()) as { project: { id: string } };
 
-  // UI: buka app → pilih project → tab Flow
+  // UI: buka app → pilih project → tab Team (merge Flow→Team 2026-11-08)
   await page.goto("/");
   const board = page.getByLabel("Workflow board");
   await page.getByRole("button", { name, exact: false }).first().click();
-  await page.getByRole("tab", { name: "Flow" }).click(); // TabPills role=tab
+  await page.getByRole("tab", { name: "Team" }).click(); // TabPills role=tab
 
   // start run (template default; brief opsional diisi agar terlihat di UI)
   await page.getByLabel("Run brief").fill("Build a small landing page from scratch.");
@@ -50,7 +50,7 @@ test("FLOW-6: steer + reassign + pause/resume mid-run", async ({ page, request }
 
   await page.goto("/");
   await page.getByRole("button", { name, exact: false }).first().click();
-  await page.getByRole("tab", { name: "Flow" }).click();
+  await page.getByRole("tab", { name: "Team" }).click();
   const board = page.getByLabel("Workflow board");
   await page.getByRole("button", { name: "Start run" }).click();
   await expect(page.getByRole("button", { name: "Approve" })).toBeVisible({ timeout: 30_000 }); // gate planning

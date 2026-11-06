@@ -123,8 +123,9 @@ test("FLOW gate: pintu Workflow dari chat conductor (keputusan user: flow = alat
   await expect(page.getByRole("button", { name: /Start a structured workflow run/ })).toBeVisible();
 
   await openFlow.click();
-  // sampai ke board Flow yang sekarang menyebut lead-nya conductor
+  // sampai ke Team tab — workflow board (merge Flow→Team) + canvas delegasi
   await expect(page.getByLabel("Workflow board")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/runs led by Conductor Yui/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Start run" })).toBeVisible();
+  await expect(page.getByLabel("Delegation hierarchy diagram — canvas")).toBeVisible();
 });
