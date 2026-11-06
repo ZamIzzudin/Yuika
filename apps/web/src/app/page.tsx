@@ -950,7 +950,6 @@ export default function Home() {
                             { id: "terminal", label: "Terminal" },
                             { id: "board", label: "Task" },
                             { id: "flow", label: "Flow" },
-                            { id: "docs", label: "Docs" },
                             { id: "browser", label: "Browser" },
                             { id: "config", label: "Config" },
                           ] as const)

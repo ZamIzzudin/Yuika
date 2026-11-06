@@ -241,8 +241,7 @@ terbaca sebagai doc; agent membuka URL riset dan user melihat halaman sama;
 **HASIL (2026-11-08):** STU-1 ✅ (diamendemen sesuai feedback user: satu
 tab = satu halaman — chat tertutup penuh saat tab lain aktif, tab aktif
 lebar penuh; chat disembunyikan CSS bukan unmount sehingga draft/streaming
-selamat; penggabungan tab Board/Tools disepakati menyusul). STU-7 ✅ tab Docs (Run reports disintesis markdown per fase/step/gate +
-Documents file .md project). STU-4 ✅ tab Browser read-only via proxy core
+selamat; penggabungan tab Board/Tools disepakati menyusul). STU-7 ✅ lalu **di-merge ke tab Files** (feedback user: satu konsep artefak — seksi Run reports + viewer markdown toggle Rendered/Source; tab Docs dihapus, 10→9 tab; + FIX bug 401 "authentication required" di FileTab: semua request kini authFetch). STU-4 ✅ tab Browser read-only via proxy core
 (allowlist per project, SSRF guard IP+DNS, redirect re-validated, content-type
 whitelist, cap 2MB, sanitizer) + iframe sandbox kosong + riwayat kunjungan
 agent/user (browser_visits) + `docs/SECURITY-REVIEW-BROWSER.md` (gerbang

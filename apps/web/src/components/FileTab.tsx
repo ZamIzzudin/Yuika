@@ -1,8 +1,12 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
-// Tab File (P2-STU-3 v0): tree kiri + viewer kanan. Artefak agent (reports/,
-// code/, MEMORY.md) bisa diperiksa tanpa keluar app. File teks/kode ≤256 KB
-// dibaca; selain itu tampil info ukuran. DS-1: ui/* + Tailwind + Phosphor.
+// Tab File (P2-STU-3 v0 → merge Docs P2-STU-7, 2026-11-08): SATU konsep
+// "artefak project" — tree file kiri (+ seksi Run reports di atasnya) dan
+// viewer kanan. File .md default ter-render (toggle Rendered/Source),
+// revisi & diff tetap utk file asli; run report workflow disintesis
+// markdown lokal. Semua request memakai authFetch (FIX bug user:
+// "authentication required" saat buka file — fetch polos tanpa token).
+// DS-1: ui/* + Tailwind + Phosphor.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileNode } from "@yuika/contracts";
 import type { Icon } from "@phosphor-icons/react";
@@ -16,9 +20,10 @@ import {
   UploadSimple,
 } from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
-import { Button, Select, TextInput } from "./ui";
+import { Button, Select } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 import { diffLines, diffStat } from "@yuika/core/project/diff";
+import { Markdown } from "./Markdown";
 
 interface Content {
   content: string;
@@ -30,6 +35,27 @@ interface Revision {
   bytes: number;
   createdAt: number;
 }
+interface StepState {
+  id: string;
+  personaId: string;
+  ok: boolean | null;
+  summary: string;
+}
+interface PhaseState {
+  phaseId: string;
+  status: "pending" | "running" | "done";
+  steps: StepState[];
+  gatePassed?: boolean;
+}
+interface RunRow {
+  id: string;
+  status: string;
+  workflow: { name?: string; phases?: Array<{ id: string; label?: string; gate?: boolean }> };
+  phaseStates: PhaseState[];
+  createdAt: number;
+  updatedAt: number;
+}
+type Sel = { kind: "file"; path: string } | { kind: "run"; id: string } | null;
 
 const TEXT_EXT = new Set([
   "md",
@@ -64,15 +90,51 @@ function fmtSize(n: number): string {
 const DirIcon: Icon = FolderSimple;
 const FileIcon: Icon = FileDoc;
 
+/** Run → laporan markdown (ringkasan fase + step + gate) — dari DocsTab lama. */
+function runToMarkdown(run: RunRow): string {
+  const label = (pid: string) => run.workflow.phases?.find((p) => p.id === pid)?.label ?? pid;
+  const lines: string[] = [];
+  lines.push(`# Run report — ${run.workflow.name ?? "workflow"}`, "");
+  lines.push(
+    `**Run** \`${run.id}\` · **Status** ${run.status} · ${new Date(run.createdAt).toLocaleString()} – ${new Date(run.updatedAt).toLocaleString()}`,
+    "",
+  );
+  for (const ph of run.phaseStates) {
+    const gate = ph.gatePassed === undefined ? "" : ph.gatePassed ? " · gate approved" : "";
+    lines.push(`## ${label(ph.phaseId)} — ${ph.status}${gate}`, "");
+    if (!ph.steps.length) {
+      lines.push("_No steps recorded._", "");
+      continue;
+    }
+    for (const st of ph.steps) {
+      const mark = st.ok === true ? "x" : st.ok === false ? " " : "·";
+      const summary = st.summary ? ` — ${st.summary.replace(/\n+/g, " ")}` : "";
+      lines.push(`- [${mark}] **${st.id}** (${st.personaId})${summary}`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+const STATUS_DOT: Record<string, string> = {
+  done: "bg-emerald-500",
+  running: "bg-accent animate-pulse",
+  awaiting_gate: "bg-amber-500",
+  paused: "bg-amber-500",
+  failed: "bg-rose-500",
+  stopped: "bg-rose-500",
+  queued: "bg-dim",
+};
+
 function TreeRow({
   node,
   depth,
-  sel,
+  selPath,
   onPick,
 }: {
   node: FileNode;
   depth: number;
-  sel: string | null;
+  selPath: string | null;
   onPick: (n: FileNode) => void;
 }) {
   const [open, setOpen] = useState(depth < 2);
@@ -80,9 +142,9 @@ function TreeRow({
   return (
     <>
       <button
-        aria-selected={sel === node.relPath ? true : undefined}
+        aria-selected={selPath === node.relPath ? true : undefined}
         className={`flex w-full cursor-pointer items-center gap-1.5 rounded-md2 px-1.5 py-1 text-left text-[13px] leading-5 transition-colors ${
-          sel === node.relPath
+          selPath === node.relPath
             ? "bg-hover font-semibold text-primary"
             : "text-secondary hover:bg-hover hover:text-primary"
         }`}
@@ -125,7 +187,7 @@ function TreeRow({
             key={c.relPath}
             node={c}
             depth={depth + 1}
-            sel={sel}
+            selPath={selPath}
             onPick={onPick}
           />
         ))}
@@ -135,7 +197,8 @@ function TreeRow({
 
 export function FileTab({ projectId }: { projectId: string }) {
   const [tree, setTree] = useState<FileNode[] | null>(null);
-  const [sel, setSel] = useState<string | null>(null);
+  const [runs, setRuns] = useState<RunRow[] | null>(null);
+  const [sel, setSel] = useState<Sel>(null);
   const [content, setContent] = useState<Content | null>(null);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [diffRev, setDiffRev] = useState<string>("");
@@ -145,31 +208,42 @@ export function FileTab({ projectId }: { projectId: string }) {
     removed: number;
   } | null>(null);
   const [loadingContent, setLoadingContent] = useState(false);
+  // mode tampilan .md / run report: rendered (default, pengalaman baca) vs source
+  const [view, setView] = useState<"rendered" | "source">("rendered");
 
   const loadTree = useCallback(async () => {
     try {
-      const r = await authFetch(apiUrl(`/api/projects/${projectId}/files`));
-      if (r.ok) setTree(((await r.json()) as { tree: FileNode[] }).tree);
+      const [t, rs] = await Promise.all([
+        authFetch(apiUrl(`/api/projects/${projectId}/files`)),
+        authFetch(apiUrl(`/api/projects/${projectId}/workflows/runs`)),
+      ]);
+      if (t.ok) setTree(((await t.json()) as { tree: FileNode[] }).tree);
       else
         toastErr(
-          (((await r.json()) as { error?: string }).error ??
+          (((await t.json()) as { error?: string }).error ??
             "failed to load files") + "",
+        );
+      if (rs.ok)
+        setRuns(
+          ((await rs.json()) as { runs?: RunRow[] }).runs
+            ?? [],
         );
     } catch {
       toastErr("could not reach the server");
     }
     // sinkronkan file yang sedang dibuka bila ditimpa agent di background
-    if (sel) {
+    // (FIX: authFetch — dulu fetch polos → 401 "authentication required")
+    if (sel?.kind === "file") {
       try {
         const [c, rv] = await Promise.all([
-          fetch(
+          authFetch(
             apiUrl(
-              `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}`,
+              `/api/projects/${projectId}/files?path=${encodeURIComponent(sel.path)}`,
             ),
           ),
-          fetch(
+          authFetch(
             apiUrl(
-              `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&revisions=1`,
+              `/api/projects/${projectId}/files?path=${encodeURIComponent(sel.path)}&revisions=1`,
             ),
           ),
         ]);
@@ -193,10 +267,12 @@ export function FileTab({ projectId }: { projectId: string }) {
   // me-reset sel ke null → pane kanan tak pernah menampilkan isi file.
   useEffect(() => {
     setTree(null);
+    setRuns(null);
     setSel(null);
     setContent(null);
     setRevisions([]);
     setDiff(null);
+    setView("rendered");
     void loadTreeRef.current();
   }, [projectId]);
 
@@ -213,20 +289,21 @@ export function FileTab({ projectId }: { projectId: string }) {
   }, [loadTree]);
 
   async function pick(n: FileNode) {
-    setSel(n.relPath);
+    setSel({ kind: "file", path: n.relPath });
     setContent(null);
     setRevisions([]);
     setDiff(null);
     setDiffRev("");
     setLoadingContent(true);
     try {
+      // FIX: authFetch (bug user "authentication required" saat buka file)
       const [c, r] = await Promise.all([
-        fetch(
+        authFetch(
           apiUrl(
             `/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}`,
           ),
         ),
-        fetch(
+        authFetch(
           apiUrl(
             `/api/projects/${projectId}/files?path=${encodeURIComponent(n.relPath)}&revisions=1`,
           ),
@@ -245,14 +322,36 @@ export function FileTab({ projectId }: { projectId: string }) {
     }
   }
 
+  /** Buka run report workflow (detail run → sintesis markdown lokal). */
+  async function pickRun(id: string) {
+    setSel({ kind: "run", id });
+    setContent(null);
+    setRevisions([]);
+    setDiff(null);
+    setDiffRev("");
+    setView("rendered");
+    setLoadingContent(true);
+    try {
+      const r = await authFetch(apiUrl(`/api/workflows/runs/${id}`));
+      const body = (await r.json()) as { run?: RunRow };
+      if (!r.ok || !body.run) {
+        toastErr("failed to load run report");
+        return;
+      }
+      setContent({ content: runToMarkdown(body.run), size: 0, truncated: false });
+    } finally {
+      setLoadingContent(false);
+    }
+  }
+
   /** Diff isi sekarang vs satu revisi lama (server kirim konten revisi; diff lokal). */
   async function showDiff(rev: string) {
     setDiffRev(rev);
     setDiff(null);
-    if (!sel || !rev || !content) return;
-    const r = await fetch(
+    if (!sel || sel.kind !== "file" || !rev || !content) return;
+    const r = await authFetch(
       apiUrl(
-        `/api/projects/${projectId}/files?path=${encodeURIComponent(sel)}&rev=${rev}`,
+        `/api/projects/${projectId}/files?path=${encodeURIComponent(sel.path)}&rev=${rev}`,
       ),
     );
     if (!r.ok) return;
@@ -261,13 +360,23 @@ export function FileTab({ projectId }: { projectId: string }) {
     setDiff({ ops, ...diffStat(ops) });
   }
 
-  const isText = sel
-    ? TEXT_EXT.has(sel.split(".").pop()!.toLowerCase())
+  const selPath = sel?.kind === "file" ? sel.path : null;
+  const selLabel =
+    sel?.kind === "file"
+      ? sel.path
+      : sel?.kind === "run"
+        ? `Run report — ${runs?.find((x) => x.id === sel.id)?.workflow.name ?? sel.id.slice(0, 8)}`
+        : null;
+  const isMd =
+    (selPath?.toLowerCase().endsWith(".md") ?? false) || sel?.kind === "run";
+  const isText = selPath
+    ? TEXT_EXT.has(selPath.split(".").pop()!.toLowerCase())
     : false;
 
   /** Upload dokumen user → uploads/ (lalu minta scribe membacanya via doc_read). */
   async function upload(f: File) {
-    const r = await fetch(
+    // FIX: authFetch + content-type hanya bila ada body
+    const r = await authFetch(
       apiUrl(
         `/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`,
       ),
@@ -312,8 +421,40 @@ export function FileTab({ projectId }: { projectId: string }) {
           <ArrowsClockwise size={12} aria-hidden />
         </Button>
       </div>
-      <div className="grid min-h-80 grid-cols-[minmax(200px,260px)_minmax(0,1fr)] gap-3 h-[85dvh]">
+      <div className="grid min-h-80 grid-cols-[minmax(210px,290px)_minmax(0,1fr)] gap-3 h-[85dvh]">
         <div className={pane} role="tree">
+          {/* Run reports — diserap dari tab Docs (P2-STU-7 merge, 2026-11-08) */}
+          <h3 className="px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-dim">
+            Run reports
+          </h3>
+          {runs === null ? null : runs.length === 0 ? (
+            <p className="px-1.5 pb-1.5 text-caption text-muted">
+              No workflow runs yet.
+            </p>
+          ) : (
+            runs.map((r) => (
+              <button
+                key={r.id}
+                aria-selected={sel?.kind === "run" && sel.id === r.id ? true : undefined}
+                className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 px-1.5 py-1 text-left text-[13px] leading-5 transition-colors ${
+                  sel?.kind === "run" && sel.id === r.id
+                    ? "bg-hover font-semibold text-primary"
+                    : "text-secondary hover:bg-hover hover:text-primary"
+                }`}
+                onClick={() => void pickRun(r.id)}
+              >
+                <span
+                  className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[r.status] ?? "bg-dim"}`}
+                  aria-label={r.status}
+                />
+                <span className="min-w-0 flex-1 truncate">
+                  {r.workflow.name ?? "workflow"} ·{" "}
+                  {new Date(r.createdAt).toLocaleDateString()}
+                </span>
+              </button>
+            ))
+          )}
+          <div className="my-1.5 border-t border-line" aria-hidden />
           {tree === null ? (
             <SkeletonRows rows={5} />
           ) : tree.length === 0 ? (
@@ -324,7 +465,7 @@ export function FileTab({ projectId }: { projectId: string }) {
                 key={n.relPath}
                 node={n}
                 depth={0}
-                sel={sel}
+                selPath={selPath}
                 onPick={pick}
               />
             ))
@@ -332,14 +473,14 @@ export function FileTab({ projectId }: { projectId: string }) {
         </div>
         <div className={pane}>
           {loadingContent && <SkeletonRows rows={4} />}
-          {!loadingContent && sel && content?.truncated && (
+          {!loadingContent && sel?.kind === "file" && content?.truncated && (
             <p className="text-caption text-dim">
               File terlalu besar untuk dibaca ({fmtSize(content.size)} &gt; 256
               KB) — buka di file explorer.
             </p>
           )}
           {!loadingContent &&
-            sel &&
+            sel?.kind === "file" &&
             content &&
             !content.truncated &&
             !isText && (
@@ -352,13 +493,36 @@ export function FileTab({ projectId }: { projectId: string }) {
             sel &&
             content &&
             !content.truncated &&
-            isText && (
+            (isText || isMd) && (
               <>
                 <header className="mb-2 flex items-center gap-2 border-b border-line pb-2">
                   <b className="min-w-0 flex-1 truncate font-mono text-caption font-semibold text-primary">
-                    {sel}
+                    {selLabel}
                   </b>
-                  {revisions.length > 0 && (
+                  {isMd && (
+                    <span
+                      className="flex shrink-0 overflow-hidden rounded-md2 border border-line"
+                      role="group"
+                      aria-label="View mode"
+                    >
+                      {(["rendered", "source"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          aria-pressed={view === m}
+                          className={`cursor-pointer px-2 py-0.5 text-[11px] font-medium capitalize transition-colors ${
+                            view === m
+                              ? "bg-hover text-primary"
+                              : "text-dim hover:bg-hover hover:text-secondary"
+                          }`}
+                          onClick={() => setView(m)}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </span>
+                  )}
+                  {sel.kind === "file" && revisions.length > 0 && (
                     <Select
                       value={diffRev}
                       onChange={(e) => void showDiff(e.target.value)}
@@ -374,9 +538,11 @@ export function FileTab({ projectId }: { projectId: string }) {
                       ))}
                     </Select>
                   )}
-                  <small className="shrink-0 text-caption text-dim">
-                    {fmtSize(content.size)}
-                  </small>
+                  {sel.kind === "file" && (
+                    <small className="shrink-0 text-caption text-dim">
+                      {fmtSize(content.size)}
+                    </small>
+                  )}
                 </header>
                 {diff ? (
                   <div aria-label="Diff vs revisi">
@@ -401,6 +567,10 @@ export function FileTab({ projectId }: { projectId: string }) {
                         </span>
                       ))}
                     </pre>
+                  </div>
+                ) : isMd && view === "rendered" ? (
+                  <div className="max-w-none px-1">
+                    <Markdown text={content.content} />
                   </div>
                 ) : (
                   <pre className="overflow-x-auto font-mono text-[12.5px] leading-5 text-secondary">

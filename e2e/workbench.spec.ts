@@ -33,7 +33,7 @@ test("STU-1: pindah tab → chat tertutup penuh, draft tetap selamat", async ({ 
   await expect(composer).toHaveValue("draft yang harus selamat");
 });
 
-test("STU-7: Docs tab — deliverable markdown terbaca sebagai dokumen", async ({ page, request }) => {
+test("STU-7 (merge ke Files): upload md → Files tab ter-render markdown + seksi Run reports", async ({ page, request }) => {
   const name = `Docs E2E ${Date.now()}`;
   const r = await request.post(`${API}/api/projects`, { data: { name, description: "docs e2e" } });
   const { project } = (await r.json()) as { project: { id: string } };
@@ -47,14 +47,22 @@ test("STU-7: Docs tab — deliverable markdown terbaca sebagai dokumen", async (
 
   await page.goto("/");
   await page.getByRole("button", { name, exact: false }).first().click();
-  await page.getByRole("tab", { name: "Docs" }).click();
+  // tab Docs sudah dihapus — fungsinya diserap tab Files (keputusan user)
+  await page.getByRole("tab", { name: "Files" }).click();
 
-  // daftar dokumen menampilkan file md → klik → ter-render sebagai markdown
-  await expect(page.getByRole("button", { name: /deliverable-note\.md/ })).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: /deliverable-note\.md/ }).click();
+  // tree menampilkan file (folder uploads) → klik file → default ter-render markdown
+  const fileBtn = page.getByRole("tree").getByRole("button", { name: /deliverable-note\.md/ });
+  await expect(fileBtn).toBeVisible({ timeout: 15_000 });
+  await fileBtn.click();
   await expect(page.getByRole("heading", { name: "Deliverable One" })).toBeVisible({ timeout: 10_000 });
 
-  // bagian run reports hadir (state kosong ok — belum ada run di project baru)
+  // toggle Source → mentah; kembali Rendered
+  await page.getByRole("button", { name: "source" }).click();
+  await expect(page.getByText("# Deliverable One")).toBeVisible();
+  await page.getByRole("button", { name: "rendered" }).click();
+  await expect(page.getByRole("heading", { name: "Deliverable One" })).toBeVisible();
+
+  // seksi Run reports hadir (state kosong ok — belum ada run di project baru)
   await expect(page.getByText("Run reports")).toBeVisible();
 });
 
