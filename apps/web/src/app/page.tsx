@@ -972,16 +972,18 @@ export default function Home() {
                     ]}
                   />
                 </div>
-                {/* P2-STU-1: layout kolom desktop — kolom chat tetap ter-mount
-                    (state draft/scroll + streaming aman saat pindah tab; mobile:
-                    disembunyikan CSS, bukan unmount), panel tab lain jadi kolom
-                    kanan (mobile: layar penuh). */}
-                <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+                {/* Satu tab = satu halaman (keputusan user 2026-11-08,
+                    revisi STU-1): saat tab lain aktif, chat TERTUTUP penuh dan
+                    tab aktif mendapat lebar penuh. Kolom chat tetap ter-mount
+                    (disembunyikan CSS, bukan unmount) supaya draft/scroll/
+                    streaming tetap valid saat kembali. Penggabungan tab
+                    (Board/Tools) menyusul. */}
+                <div className="flex min-h-0 flex-1 flex-col">
                   <div
                     className={
                       mainTab === "chat"
                         ? "flex min-h-0 min-w-0 flex-1 flex-col"
-                        : "hidden min-h-0 min-w-0 flex-1 flex-col lg:flex"
+                        : "hidden min-h-0 min-w-0 flex-1 flex-col"
                     }
                   >
                       <header className="relative flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
@@ -1161,7 +1163,7 @@ export default function Home() {
                       )}
                   </div>
                   {mainTab === "trace" && (
-                    <div className="flex min-h-0 flex-1 flex-col lg:max-w-[46%] lg:flex-none lg:border-l lg:border-line">
+                    <div className="flex min-h-0 flex-1 flex-col">
                       <TracePanel
                         sessionId={sessionId}
                         live={traceTick}
@@ -1172,7 +1174,7 @@ export default function Home() {
                   {activeProject &&
                     mainTab !== "chat" &&
                     mainTab !== "trace" && (
-                      <div className="flex min-h-0 flex-1 flex-col lg:max-w-[46%] lg:flex-none lg:border-l lg:border-line">
+                      <div className="flex min-h-0 flex-1 flex-col">
                         <ProjectTabs
                           project={activeProject}
                           activeSessionId={sessionId}

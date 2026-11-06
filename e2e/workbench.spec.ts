@@ -8,7 +8,7 @@ import type { AddressInfo } from "node:net";
 
 const API = "http://127.0.0.1:3291";
 
-test("STU-1: pindah tab → draft chat & riwayat tetap (kolom desktop)", async ({ page, request }) => {
+test("STU-1: pindah tab → chat tertutup penuh, draft tetap selamat", async ({ page, request }) => {
   const name = `Workbench E2E ${Date.now()}`;
   const r = await request.post(`${API}/api/projects`, { data: { name, description: "workbench e2e" } });
   expect(r.ok()).toBeTruthy();
@@ -21,14 +21,15 @@ test("STU-1: pindah tab → draft chat & riwayat tetap (kolom desktop)", async (
   await expect(composer).toBeVisible({ timeout: 15_000 });
   await composer.fill("draft yang harus selamat");
 
-  // pindah ke tab Files — chat TIDAK unmount (kolom kiri desktop tetap tampil)
+  // pindah ke tab Files — SATU TAB SATU HALAMAN: chat tertutup penuh,
+  // tab aktif lebar penuh (bukan lagi layout kolom Batch 6 awal)
   await page.getByRole("tab", { name: "Files" }).click();
   await expect(page.getByLabel("Project files")).toBeVisible({ timeout: 15_000 });
-  await expect(composer).toBeVisible(); // kolom chat masih ada di sebelah kiri
-  await expect(composer).toHaveValue("draft yang harus selamat");
+  await expect(composer).toBeHidden();
 
-  // kembali ke Chat — state tetap utuh (tanpa refetch/remount)
+  // kembali ke Chat — state tetap utuh (komponen disembunyikan, bukan unmount)
   await page.getByRole("tab", { name: "Chat" }).click();
+  await expect(composer).toBeVisible();
   await expect(composer).toHaveValue("draft yang harus selamat");
 });
 

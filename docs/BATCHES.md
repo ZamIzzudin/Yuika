@@ -238,9 +238,10 @@ run), tab Browser read-only (agent riset URL → Anda melihat halamannya).
 
 **Acceptance batch:** pindah-pindah tab tanpa kehilangan state; laporan run
 terbaca sebagai doc; agent membuka URL riset dan user melihat halaman sama;
-**HASIL (2026-11-08):** STU-1 ✅ layout kolom desktop — kolom chat tak pernah
-unmount (draft/streaming aman; CSS hidden di mobile), panel tab lain kolom
-kanan. STU-7 ✅ tab Docs (Run reports disintesis markdown per fase/step/gate +
+**HASIL (2026-11-08):** STU-1 ✅ (diamendemen sesuai feedback user: satu
+tab = satu halaman — chat tertutup penuh saat tab lain aktif, tab aktif
+lebar penuh; chat disembunyikan CSS bukan unmount sehingga draft/streaming
+selamat; penggabungan tab Board/Tools disepakati menyusul). STU-7 ✅ tab Docs (Run reports disintesis markdown per fase/step/gate +
 Documents file .md project). STU-4 ✅ tab Browser read-only via proxy core
 (allowlist per project, SSRF guard IP+DNS, redirect re-validated, content-type
 whitelist, cap 2MB, sanitizer) + iframe sandbox kosong + riwayat kunjungan
