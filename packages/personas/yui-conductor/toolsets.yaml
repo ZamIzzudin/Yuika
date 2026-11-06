@@ -8,6 +8,7 @@ tools:
   - list_files
   - web_fetch
   - run_command
+  - terminal
   - todo_list
   - todo_add
   - todo_update

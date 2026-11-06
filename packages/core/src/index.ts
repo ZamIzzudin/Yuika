@@ -26,4 +26,16 @@ export { resolvePaths, resolveRepoRoot } from "./paths.js";
 export { appendUserPreferenceNote, userMdPath } from "./memory/usermd.js";
 export { runChildPersona, type DelegationDeps } from "./delegation/runner.js";
 export { registerTodoTools } from "./tools/todo-tools.js";
+// P2-STU-2: terminal manager — sesi shared user (SSE api) & agent (tool).
+export {
+  ensureSession as ensureTerminalSession,
+  writeInput as writeTerminalInput,
+  subscribe as subscribeTerminal,
+  listSessions as listTerminalSessions,
+  getSession as getTerminalSession,
+  killSession as killTerminalSession,
+  closeAll as closeAllTerminals,
+  runInSession as runInTerminalSession,
+  type TerminalSessionInfo,
+} from "./terminal/manager.js";
 export { ProjectStore } from "./project/store.js";

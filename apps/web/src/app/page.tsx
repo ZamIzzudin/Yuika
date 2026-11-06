@@ -947,6 +947,7 @@ export default function Home() {
                               ),
                             },
                             { id: "files", label: "Files" },
+                            { id: "terminal", label: "Terminal" },
                             { id: "board", label: "Task" },
                             { id: "config", label: "Config" },
                           ] as const)

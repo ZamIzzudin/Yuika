@@ -2,6 +2,7 @@
 // Tiga server dikelola Playwright: mock provider (:3299) → api (:3291) → web (:3990).
 // Port & data terisolasi dari dev (3000/3211) — tidak bentrok dengan sesi dev user.
 import { defineConfig } from "@playwright/test";
+import path from "node:path";
 
 const MOCK_PORT = 3299;
 const API_PORT = 3291;
@@ -52,6 +53,9 @@ export default defineConfig({
         YUI_TRACE: "0",
         YUI_LOG_LEVEL: "warn",
         YUI_PORTAL_DEVICE_DB: "e2e/.tmp/portal-device.db",
+        // Batch 2: shell terminal deterministik (fixture echo-shell — ECHO:<line>).
+        YUI_TERMINAL_MODE: "local",
+        YUI_TERMINAL_CMD: `node ${path.resolve("packages/core/src/terminal/__fixture__/echo-shell.mjs")}`,
       },
     },
     {

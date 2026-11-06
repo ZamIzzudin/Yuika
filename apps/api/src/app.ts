@@ -18,6 +18,7 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSkillRoutes } from "./routes/skills.js";
 import { registerUsageRoutes } from "./routes/usage.js";
 import { registerPortalRoutes } from "./routes/portal.js";
+import { registerTerminalRoutes } from "./routes/terminal.js";
 import { getRuntime } from "./runtime.js";
 import { registerAuthRoutes, bearerToken } from "./routes/auth.js";
 import { authUserCount, validateToken } from "./auth/store.js";
@@ -70,6 +71,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   registerSettingsRoutes(app, getRt);
   registerSkillRoutes(app, getRt);
   registerUsageRoutes(app, getRt);
+  registerTerminalRoutes(app, getRt); // P2-STU-2: tab Terminal
   registerPortalRoutes(app, getRt);
   return app;
 }

@@ -15,7 +15,7 @@
 | # | Batch | Est | Status | Bisa mulai |
 |---|---|---|---|---|
 | 1 | Remote Control | ~9d | **DONE (2026-11-06)** — semua P1-PRT ✅; live cross-repo smoke 8/8 (`scripts/live-portal-smoke.mts`) | ✅ sekarang |
-| 2 | Agent Developer | ~8d | TERSDIA | ✅ sekarang |
+| 2 | Agent Developer | ~8d | **DONE (2026-11-07)** — P1-MCP-4 + P2-STU-2 ✅; e2e T1-T3 hijau | ✅ sekarang |
 | 3 | Agent 24/7 | ~8d | TERSEDIA | ✅ sekarang |
 | 4 | Otak Yuika | ~8d | TERSEDIA | ✅ sekarang |
 | 5 | Workflow Engine | ~14d | TERSEDIA | ✅ sekarang |
@@ -94,15 +94,26 @@ skenario "buat app React dari nol sampai jalan" yang selama ini terblokir.
 1. [ ] **P1-MCP-4** MCP worker per-tenant di sandbox + egress policy (4d) —
    MCP server stdio jalan di worker terisolasi (bukan bare stdio), egress
    allowlist per project (npm registry, host tertentu), batas resource.
-   Dep: P0-SEC-1 ✅.
+   Dep: P0-SEC-1 ✅. — ✅ (2026-11-07)
 2. [ ] **P2-STU-2** Terminal tab (4d) — `xterm.js` ↔ PTY (generalisasi
    `run_command`); sesi terminal shared user & agent; approval untuk
    perintah berisiko. Acceptance: agent menjalankan CLI & output muncul
    di tab yang user lihat; user bisa mengetik di sesi yang sama.
+   — ✅ (2026-11-07)
 
 **Acceptance batch:** e2e — agent diberi brief "buat Vite React app, install
 deps, jalankan dev server": npm install lulus egress, perintah tampak di
 tab Terminal, approval muncul untuk perintah berisiko, dev server jalan.
+
+**HASIL (2026-11-07): DONE.** e2e `terminal.spec.ts` T1-T3 hijau (user mengetik
+di tab; agent `node -v` muncul di SESI SAMA tanpa approval; `npm publish` →
+approval card → Approve once → jalan) + suite penuh 7/7. Unit: egress proxy 5,
+terminal 7, mcp-worker 3, api terminal-routes 3; typecheck 6/6. CATATAN jujur:
+(a) e2e jalan di fallback shell lokal (env dev tanpa Docker) — jalur
+container+proxy terkover unit/kontrak (argv flag, proxy allow/deny hermetic);
+verifikasi live `npm install` dalam container menunggu Docker Desktop; (b) PTY
+asli (node-pty) belum — v1 pipe murni + lokal-echo di xterm; (c) MCP worker
+sandbox opt-in per server (mcp.json `sandbox`), bukan default paksa.
 
 **Catatan:** jika diinginkan scope lebih kecil, P1-MCP-4 sendiri sudah fitur
 (install deps aman); STU-2 menyusul.

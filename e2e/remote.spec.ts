@@ -92,7 +92,11 @@ test("G2-G6 — remote browser: join, stream, approve, resume, dua remote", asyn
   const card = page.locator("div", { hasText: "write_file" }).filter({ has: page.getByRole("button", { name: "Approve" }) }).first();
   await expect(card).toBeVisible({ timeout: 60_000 });
   await card.getByRole("button", { name: "Approve" }).click();
-  await expect(card.getByText("approved")).toBeVisible({ timeout: 30_000 });
+  // setelah resolve tombol hilang → kartu tak cocok lagi filter Approve;
+  // assert teks resolusi pada kartu TANPA filter tombol.
+  await expect(
+    page.locator("div", { hasText: "write_file" }).filter({ hasText: "approved" }).first(),
+  ).toBeVisible({ timeout: 30_000 });
 
   // ── G5: resume — reload halaman (drop remote) → device tersimpan di
   // localStorage → auto connect → snapshot sesi memuat jawaban sebelumnya ─

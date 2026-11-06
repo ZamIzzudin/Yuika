@@ -24,6 +24,8 @@ import { registerFileTools } from "./tools/file-tools.js";
 import { registerWebTools } from "./tools/web-tools.js";
 import { registerSkillTools } from "./tools/skill-tools.js";
 import { registerRunCommandTool } from "./tools/run-command.js";
+import { registerTerminalTool } from "./tools/terminal-tool.js";
+import * as terminal from "./terminal/manager.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
 import { registerConsultTool } from "./tools/consult-tool.js";
 import { registerTodoTools } from "./tools/todo-tools.js";
@@ -173,6 +175,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerSessionSearchTools(store); // P1-MEM-5: riwayat sesi bisa ditelusuri agent
   registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)
   registerRunCommandTool();
+  registerTerminalTool(); // P2-STU-2: terminal shared user & agent
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({
     sessionStore: store,
@@ -339,6 +342,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       denyTools: entry.denyTools,
       onCall: onMcpCall,
       onDown: (reason) => onMcpDown(name, reason),
+      workspacePath: paths.workspacePath, // P1-MCP-4: mount utk cfg.sandbox
       // P1-MCP-6: daftar tool server berubah (notifikasi) → perbarui snapshot
       // status (McpPanel polling) — persona mengambil tool baru tanpa restart.
       onToolsChanged: (r) => {
@@ -624,6 +628,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       for (const name of [...mcpConns.keys()]) await disconnectMcp(name); // matikan proses stdio anak + unregister tools
       for (const r of mcpRetry.values()) clearTimeout(r.timer); // retry tertunda (parked/reconnecting)
       mcpRetry.clear();
+      // P2-STU-2: matikan sesi terminal (shell host / container sandbox).
+      try { await terminal.closeAll(); } catch { /* shutdown best-effort */ }
       // DELIBERAT: koneksi sqlite TIDAK ditutup — turn yang masih berjalan di
       // loop lama memakai objek store ini (WAL aman multi-handle; kebocoran
       // handle per HMR jauh lebih ringan daripada mematikan turn in-flight).
@@ -794,6 +800,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       // relatif terhadap cwd Next apps/web → tree selalu kosong).
       return buildFileTree(projectRoot(id));
     },
+    // P2-STU-2: root absolut project utk sesi terminal (tab Terminal).
+    projectWorkspacePath: (id: string) => projectRoot(id),
     readProjectFile: (id: string, relPath: string) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
