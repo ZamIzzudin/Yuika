@@ -28,3 +28,7 @@ apps/web/.next-e2e/
 auth.db
 auth.db-shm
 auth.db-wal
+
+# Runtime portal device credentials (SQLite WAL/SHM) — jangan di-commit
+*.db-shm
+*.db-wal
