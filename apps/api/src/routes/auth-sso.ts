@@ -37,7 +37,7 @@ function s256(verifier: string): string {
   return createHash("sha256").update(verifier).digest("base64url");
 }
 
-function portalBase(): string {
+export function portalBase(): string {
   return (process.env.YUI_PORTAL_URL || "http://localhost:3100").replace(/\/$/, "");
 }
 

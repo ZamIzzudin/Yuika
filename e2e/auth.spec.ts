@@ -15,9 +15,9 @@ test("auth: mode terbuka tanpa user → app langsung pakai; endpoint lokal 404",
   const pill = page.getByRole("button", { name: "Sign in", exact: true });
   await expect(pill).toBeVisible({ timeout: 15_000 });
 
-  // 2) /api/auth/me tanpa token → {user null, authRequired false}.
+  // 2) /api/auth/me tanpa token → {user null, authRequired false, portalUrl).
   const me = await request.get(`${API}/api/auth/me`);
-  expect((await me.json()) as object).toEqual({ user: null, authRequired: false });
+  expect((await me.json()) as object).toMatchObject({ user: null, authRequired: false });
 
   // 3) Konsep local account dihapus: register & login → 404.
   const reg = await request.post(`${API}/api/auth/register`, {

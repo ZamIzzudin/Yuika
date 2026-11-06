@@ -5,6 +5,7 @@
 import type { FastifyInstance } from "fastify";
 import { AuthStatus } from "@yuika/contracts";
 import { authUserCount, deleteSession, validateToken } from "../auth/store.js";
+import { portalBase } from "./auth-sso.js";
 
 /** Bearer token dari header Authorization (atau ?auth_token= utk SSE). */
 export function bearerToken(header: string | undefined, queryToken: unknown): string | null {
@@ -24,6 +25,6 @@ export function registerAuthRoutes(app: FastifyInstance): void {
   app.get("/api/auth/me", async (req) => {
     const token = bearerToken(req.headers.authorization, (req.query as Record<string, unknown>)?.auth_token);
     const user = token ? validateToken(token) : null;
-    return AuthStatus.parse({ user, authRequired: authUserCount() > 0 });
+    return AuthStatus.parse({ user, authRequired: authUserCount() > 0, portalUrl: portalBase() });
   });
 }

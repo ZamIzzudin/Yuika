@@ -14,6 +14,8 @@ export const AuthStatus = z.object({
   user: AuthUser.nullable(),
   /** true bila server sudah punya user terdaftar (semua route butuh token). */
   authRequired: z.boolean(),
+  /** Base URL portal (sumber YUI_PORTAL_URL di API) — untuk link "buat akun". */
+  portalUrl: z.string().url(),
 });
 
 export type AuthUserT = z.infer<typeof AuthUser>;

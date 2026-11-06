@@ -35,7 +35,8 @@ describe("auth gate portal-only (me/logout + tenant scope)", () => {
     const r = await app.inject({ method: "GET", url: "/api/personas" });
     expect(r.statusCode).toBe(200);
     const me = await app.inject({ method: "GET", url: "/api/auth/me" });
-    expect(me.json()).toEqual({ user: null, authRequired: false });
+    expect(me.json()).toMatchObject({ user: null, authRequired: false });
+    expect((me.json() as { portalUrl: string }).portalUrl).toMatch(/^https?:\/\//);
   });
 
   it("portal-only: register & login lokal → 404 (konsep dihapus)", async () => {

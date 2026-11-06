@@ -39,7 +39,11 @@ test("SSO — pill sign-in → authorize (auto-accept) → callback → login �
   const gate = page.getByLabel("Sign in to Yuika");
   await expect(gate).toBeVisible({ timeout: 15_000 });
   await expect(gate.getByRole("button", { name: "Sign in with Yuika Portal" })).toBeVisible();
-  await expect(gate.getByText("Accounts live in your Yuika Portal")).toBeVisible();
+  await expect(gate.getByText(/have an account\?/)).toBeVisible();
+  // Link portal membuka tab baru ke base portal (double :3110 di e2e).
+  const portalLink = gate.getByRole("link", { name: "Sign in to Yuika Portal" });
+  await expect(portalLink).toHaveAttribute("href", "http://127.0.0.1:3110");
+  await expect(portalLink).toHaveAttribute("target", "_blank");
   await expect(gate.getByPlaceholder("you@example.com")).toHaveCount(0);
 });
 

@@ -22,7 +22,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         const s = (await r.json()) as AuthStatusT;
         if (alive) setStatus(s);
       } catch {
-        if (alive) setStatus({ user: null, authRequired: false }); // API mati → biarkan app jalan (errornya muncul di data fetch)
+        if (alive) setStatus({ user: null, authRequired: false, portalUrl: "http://localhost:3100" }); // API mati → biarkan app jalan (errornya muncul di data fetch)
       }
     })();
     return () => {
@@ -33,7 +33,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   async function logout() {
     clearAuthToken();
     await authFetch(apiUrl("/api/auth/logout"), { method: "POST" }).catch(() => undefined);
-    setStatus({ user: null, authRequired: true });
+    setStatus((s) => (s ? { ...s, user: null, authRequired: true } : s));
   }
 
   /** CP-3 SSO: minta URL authorize lalu arahkan browser ke portal
@@ -125,7 +125,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           <Globe size={13} aria-hidden /> {busy ? "Redirecting…" : "Sign in with Yuika Portal"}
         </button>
         <p className="text-center text-caption text-faint">
-          Accounts live in your Yuika Portal — create one there, then sign in here.
+          Don&rsquo;t have an account?{" "}
+          <a
+            href={status.portalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-dim underline-offset-2 transition-colors hover:text-primary hover:underline"
+          >
+            Sign in to Yuika Portal
+          </a>
         </p>
       </section>
     </main>
