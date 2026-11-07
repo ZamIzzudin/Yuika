@@ -25,6 +25,12 @@ describe("RemoteAction (CONTRACTS-REMOTE v1)", () => {
   it("proto ≠ 1 ditolak", () => {
     expect(RemoteAction.safeParse({ proto: 2, act: "ping_host", rid: "r" }).success).toBe(false);
   });
+
+  // ── SCR-7 (v1.1 aditif): watch_screen/unwatch_screen + screen.state/frame ──
+  it("watch_screen/unwatch_screen valid", () => {
+    expect(RemoteAction.safeParse({ proto: 1, act: "watch_screen", rid: "r", key: "p1/yui-coder" }).success).toBe(true);
+    expect(RemoteAction.safeParse({ proto: 1, act: "unwatch_screen", rid: "r" }).success).toBe(true);
+  });
 });
 
 describe("RemoteEvent (CONTRACTS-REMOTE v1)", () => {
@@ -46,5 +52,28 @@ describe("RemoteEvent (CONTRACTS-REMOTE v1)", () => {
     const mod = await import("../index.js");
     expect(mod.RemoteAction).toBe(RemoteAction);
     expect(mod.RemoteEvent).toBe(RemoteEvent);
+  });
+
+  // ── SCR-7 (v1.1 aditif): host.state.screens + screen.state/frame ──
+  it("host.state.screens opsional (remote lama abaikan)", () => {
+    expect(RemoteEvent.safeParse({ proto: 1, ev: "host.state", sessions: [] }).success).toBe(true);
+    expect(RemoteEvent.safeParse({
+      proto: 1, ev: "host.state", sessions: [],
+      screens: [{ key: "p1/yui-coder", personaId: "yui-coder", url: "https://example.com", title: "Example", status: "running", viewers: 1, watchers: 0 }],
+    }).success).toBe(true);
+  });
+
+  it("screen.state & screen.frame valid (SCR-7)", () => {
+    expect(RemoteEvent.safeParse({
+      proto: 1, ev: "screen.state", rid: "r", key: "p1/yui-coder", url: "https://example.com", title: "Example",
+      status: "running", viewers: 1, watchers: 2, leaseOwner: "yui-coder",
+    }).success).toBe(true);
+    expect(RemoteEvent.safeParse({
+      proto: 1, ev: "screen.frame", key: "p1/yui-coder", data: "aGVsbG8=", width: 800, height: 600, ts: 123,
+    }).success).toBe(true);
+    // status di luar enum ditolak
+    expect(RemoteEvent.safeParse({
+      proto: 1, ev: "screen.state", key: "k", url: "u", title: "t", status: "exploded", viewers: 0, watchers: 0, leaseOwner: null,
+    }).success).toBe(false);
   });
 });

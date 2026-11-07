@@ -40,6 +40,17 @@ describe("persona roster D9 (P1-PER-6)", () => {
     expect(operator.manifest.tools).toContain("mcp__*");
   });
 
+  it("SCR-6 amandemen user: Analyst bisa MENONTON live screen (bukan hanya rekonstruksi riwayat) — verdict tetap milik Sherlock", () => {
+    const analyst = personas.find((p) => p.manifest.id === "yui-analyst")!;
+    expect(analyst.manifest.tools).toContain("qa_watch");
+    expect(analyst.manifest.tools).toContain("qa_snapshot");
+    // verdict QA = domain Sherlock
+    expect(analyst.manifest.tools).not.toContain("qa_check");
+    // panduan di PERSONA.md: pertanyaan "apa yang dibuka X di browser"
+    // dijawab live-watch dulu, bukan rekonstruksi riwayat
+    expect(analyst.personaMd).toContain("do not reconstruct from session history");
+  });
+
   it("P2-PM-1 (D22): Planner — PM bukan eksekutor; consult + task tools; konsultasi hanya ke 3 penasihat", () => {
     const planner = personas.find((p) => p.manifest.id === "yui-planner")!;
     expect(planner.manifest.tools).toContain("consult"); // brainstorm terstruktur

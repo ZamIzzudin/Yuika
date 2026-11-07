@@ -20,10 +20,28 @@ import {
 import { ByeCode } from "@yuika/relay-client";
 import { nodeSocket } from "@yuika/relay-client/node";
 import { clearHostDevice } from "./store.js";
+import { getScreenState, listScreens, subscribeScreen } from "./screen-bridge.js";
 import type { HostDeviceRecord } from "./store.js";
 
 const RING_CAP = 500; // event terakhir per sesi — resume delta subscribe{sinceSeq}
 const SNAPSHOT_MSGS = 50;
+
+/** SCR-7: interval pump frame remote-watch (default 1000ms = 1fps;
+ *  env YUI_REMOTE_SCREEN_MS, floor 250ms). */
+function remoteScreenPumpMs(): number {
+  return Math.max(250, Number(process.env.YUI_REMOTE_SCREEN_MS ?? 1_000) || 1_000);
+}
+/** Muat aman di bawah MAX_FRAME wire (262 144 B) setelah seal + JSON. */
+const REMOTE_FRAME_MAX = 200_000;
+
+/** Satu remote menonton satu screen (v0 — ganti = unsubscribe lama otomatis). */
+interface ScreenWatch {
+  key: string;
+  latest: { data: string; width: number; height: number; ts: number } | null;
+  sent: string;
+  timer: NodeJS.Timeout;
+  unsubscribe: () => void;
+}
 
 export interface PortalStatus {
   linked: boolean;
@@ -92,6 +110,8 @@ export class PortalHostService {
   private seq = new Map<string, number>(); // sessionId → seq terakhir
   private ring = new Map<string, RingEntry[]>();
   private remoteSubs = new Map<string, Set<string>>(); // remoteDeviceId → sessionIds
+  /** SCR-7: remoteDeviceId → screen watch aktif (1 per remote, v0). */
+  private screenWatches = new Map<string, ScreenWatch>();
   private known = new Set<string>(); // session id yang pernah divalidasi/dibuat
   private unsubAll: (() => void) | null = null;
   private introSent = new Set<string>();
@@ -142,9 +162,12 @@ export class PortalHostService {
       onAction: (from, action) => void this.dispatch(from, action).catch((e) =>
         console.error("[portal-host] action gagal:", e)),
       onRemotes: (remotes) => {
-        // remote pergi → berhenti kirim sesi langganannya
+        // remote pergi → berhenti kirim sesi langganannya + stop watch screen
         for (const id of [...this.remoteSubs.keys()]) {
           if (!remotes.has(id)) this.remoteSubs.delete(id);
+        }
+        for (const id of [...this.screenWatches.keys()]) {
+          if (!remotes.has(id)) this.stopWatch(id);
         }
         // remote BARU menempel → kirim host.state (CONTRACTS §3: intro roster)
         for (const id of remotes.keys()) {
@@ -153,6 +176,10 @@ export class PortalHostService {
             void host.sendEvent(id, {
               proto: 1, ev: "host.state",
               sessions: this.rt!.listRecentSessions(20),
+              screens: listScreens().map((s) => ({
+                key: s.key, personaId: s.personaId, url: s.url, title: s.title,
+                status: s.status, viewers: s.viewers, watchers: s.watchers,
+              })),
             }).catch(() => undefined);
           }
         }
@@ -172,6 +199,7 @@ export class PortalHostService {
     this.unsubAll?.();
     this.unsubAll = null;
     this.remoteSubs.clear();
+    for (const id of [...this.screenWatches.keys()]) this.stopWatch(id);
     this.client?.close();
     this.client = null;
     this.host = null;
@@ -294,7 +322,91 @@ export class PortalHostService {
         }
         return;
       }
+      case "watch_screen":
+        return void this.startWatch(from, action.key, action.rid);
+      case "unwatch_screen": {
+        // key dari watch aktif (contract unwatch tak bawa key — v0 satu watch per remote)
+        const key = this.screenWatches.get(from.deviceId)?.key ?? null;
+        this.stopWatch(from.deviceId);
+        // ack ber-rid (aturan CONTRACTS §1): state TERAKHIR screen yang ditinggalkan.
+        const st = key ? getScreenState(key) : null;
+        if (st) {
+          return void reply({
+            proto: 1, ev: "screen.state", rid: action.rid, key: st.key, url: st.url, title: st.title,
+            status: st.status, viewers: st.viewers, watchers: st.watchers, leaseOwner: st.leaseOwner,
+          });
+        }
+        return void reply({ proto: 1, ev: "error", rid: action.rid, code: "unknown_screen", message: "no active screen session" });
+      }
     }
+  }
+
+  // ── SCR-7: remote watch live screen (read-only, ~1fps) ────────────────
+
+  private startWatch(from: RemoteInfo, key: string, rid: string): void {
+    const host = this.host!;
+    const state = getScreenState(key);
+    if (!state) {
+      void host.sendEvent(from.deviceId, {
+        proto: 1, ev: "error", rid,
+        code: "unknown_screen", message: `no active screen session for ${key}`,
+      });
+      return;
+    }
+    this.stopWatch(from.deviceId); // satu watch per remote (v0)
+    const remoteId = from.deviceId;
+    const watch: ScreenWatch = {
+      key,
+      latest: null,
+      sent: "",
+      timer: null as unknown as NodeJS.Timeout,
+      unsubscribe: () => undefined,
+    };
+    // subscriber frame = VIEWER sesi (semantik sama QA watcher): sesi tetap
+    // hidup selama ada yang menonton dari jauh; frame hanya dipompa 1fps.
+    const sub = subscribeScreen(
+      key,
+      (f) => { watch.latest = { data: f.data, width: f.width, height: f.height, ts: f.ts }; },
+      (s) => {
+        void host.sendEvent(remoteId, {
+          proto: 1, ev: "screen.state", key: s.key, url: s.url, title: s.title,
+          status: s.status, viewers: s.viewers, watchers: s.watchers, leaseOwner: s.leaseOwner,
+        }).catch(() => undefined);
+      },
+    );
+    if (!sub) {
+      void host.sendEvent(from.deviceId, {
+        proto: 1, ev: "error", rid, code: "unknown_screen", message: `no active screen session for ${key}`,
+      });
+      return;
+    }
+    watch.unsubscribe = sub.unsubscribe;
+    const pump = () => {
+      const f = watch.latest;
+      if (!f || f.data === watch.sent || f.data.length > REMOTE_FRAME_MAX) return;
+      watch.sent = f.data;
+      void host.sendEvent(remoteId, {
+        proto: 1, ev: "screen.frame", key,
+        data: f.data, width: f.width, height: f.height, ts: f.ts,
+      }).catch(() => undefined);
+    };
+    watch.timer = setInterval(pump, remoteScreenPumpMs());
+    watch.timer.unref?.();
+    this.screenWatches.set(remoteId, watch);
+    // jawaban rid: state awal (frame pertama menyusul via pump ≤1 detik)
+    void host.sendEvent(remoteId, {
+      proto: 1, ev: "screen.state", rid,
+      key: state.key, url: state.url, title: state.title,
+      status: state.status, viewers: state.viewers, watchers: state.watchers, leaseOwner: state.leaseOwner,
+    }).catch(() => undefined);
+  }
+
+  private stopWatch(remoteId: string): void {
+    const w = this.screenWatches.get(remoteId);
+    if (!w) return;
+    clearInterval(w.timer);
+    w.unsubscribe();
+    this.screenWatches.delete(remoteId);
   }
 
   private track(remoteDeviceId: string, sessionId: string): void {

@@ -33,6 +33,7 @@ type Phase = "pair" | "idle" | "connecting" | "joined";
 
 interface Msg { role: "user" | "assistant" | "tool"; text: string }
 interface Approval { approvalId: string; title: string; summary: string; risk: string; resolved?: string }
+interface ScreenInfo { key: string; personaId: string; url: string; title: string; status: string; viewers: number; watchers: number }
 
 export default function DevRemotePage() {
   const [phase, setPhase] = useState<Phase>("pair");
@@ -51,11 +52,16 @@ export default function DevRemotePage() {
   const [prompt, setPrompt] = useState("");
   const [personaId, setPersonaId] = useState("yui-coder");
   const [personas, setPersonas] = useState<Array<{ id: string; name: string }>>([]);
+  // SCR-7: remote watch live screen (~1fps JPEG via relay)
+  const [screens, setScreens] = useState<ScreenInfo[]>([]);
+  const [watchKey, setWatchKey] = useState<string | null>(null);
+  const [frame, setFrame] = useState<{ data: string; width: number; height: number } | null>(null);
 
   const clientRef = useRef<RelayClient | null>(null);
   const remoteRef = useRef<RelayRemote | null>(null);
   const deviceRef = useRef<StoredDevice | null>(null);
   const activeRef = useRef<string | null>(null);
+  const watchKeyRef = useRef<string | null>(null);
   const seqRef = useRef<Map<string, number>>(new Map());
   const subscribedRef = useRef<boolean>(false);
 
@@ -66,7 +72,8 @@ export default function DevRemotePage() {
   useEffect(() => {
     deviceRef.current = device;
     activeRef.current = activeSession;
-  }, [device, activeSession]);
+    watchKeyRef.current = watchKey;
+  }, [device, activeSession, watchKey]);
 
   useEffect(() => {
     try {
@@ -98,9 +105,30 @@ export default function DevRemotePage() {
     switch (ev.ev) {
       case "host.state":
         setSessions(ev.sessions);
+        if (ev.screens) setScreens(ev.screens);
         break;
       case "session.list":
         setSessions(ev.sessions);
+        break;
+      case "screen.state":
+        addLog(`screen ${ev.status}: ${ev.title || ev.url} (viewers ${ev.viewers} · QA ${ev.watchers})`);
+        if (ev.rid) {
+          // reply watch_screen/unwatch_screen → tampilkan/hentikan viewer
+          if (watchKeyRef.current && watchKeyRef.current !== ev.key) break;
+          setWatchKey((k) => (k === ev.key && ev.status === "stopped" ? null : k));
+        }
+        setScreens((ss) => {
+          const i = ss.findIndex((x) => x.key === ev.key);
+          const next = { key: ev.key, personaId: ev.key.split("/")[1] ?? "", url: ev.url, title: ev.title, status: ev.status, viewers: ev.viewers, watchers: ev.watchers };
+          if (i === -1) return ev.status === "stopped" ? ss : [...ss, next];
+          const cp = [...ss];
+          if (ev.status === "stopped") cp.splice(i, 1);
+          else cp[i] = next;
+          return cp;
+        });
+        break;
+      case "screen.frame":
+        if (ev.key === watchKeyRef.current) setFrame({ data: ev.data, width: ev.width, height: ev.height });
         break;
       case "session.snapshot": {
         if (ev.rid) {
@@ -291,6 +319,25 @@ export default function DevRemotePage() {
     setMsgs([]);
     setApprovals([]);
     await remote.sendAction({ proto: 1, act: "subscribe", rid: newRid(), sessions: [sid], sinceSeq: Object.fromEntries(seqRef.current) });
+  }, []);
+
+  // SCR-7: watch/stop live screen dari jauh (read-only, ~1fps)
+  const watchScreen = useCallback(async (key: string) => {
+    const remote = remoteRef.current;
+    if (!remote) return;
+    setWatchKey(key);
+    watchKeyRef.current = key;
+    setFrame(null);
+    await remote.sendAction({ proto: 1, act: "watch_screen", rid: newRid(), key });
+  }, []);
+
+  const stopWatchScreen = useCallback(async () => {
+    const remote = remoteRef.current;
+    if (!remote) return;
+    await remote.sendAction({ proto: 1, act: "unwatch_screen", rid: newRid() });
+    setWatchKey(null);
+    watchKeyRef.current = null;
+    setFrame(null);
   }, []);
 
   const disconnect = useCallback(() => {
@@ -500,6 +547,41 @@ export default function DevRemotePage() {
                       )}
                     </div>
                   ))}
+                </Card>
+
+                {/* SCR-7 — remote watch live screen (~1fps JPEG, read-only) */}
+                <Card className="flex flex-col gap-2 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-body font-semibold">Live screens</p>
+                    {watchKey && (
+                      <Button variant="ghost" onClick={() => void stopWatchScreen()}>Stop watching</Button>
+                    )}
+                  </div>
+                  {screens.length === 0 && !watchKey && (
+                    <p className="text-caption text-dim">none active — a persona is not driving a browser right now</p>
+                  )}
+                  {screens.map((s) => (
+                    <div key={s.key} className="flex items-center justify-between gap-3 rounded-md2 border border-line px-3 py-2">
+                      <div className="min-w-0">
+                        <b className="text-body">{s.personaId}</b>
+                        <span className={`ml-2 text-caption ${s.status === "running" ? "text-emerald-400" : "text-amber-400"}`}>{s.status}</span>
+                        <p className="truncate text-caption text-dim">{s.title || s.url}</p>
+                      </div>
+                      <Button
+                        variant={watchKey === s.key ? "ghost" : "primary"}
+                        disabled={watchKey === s.key}
+                        onClick={() => void watchScreen(s.key)}
+                      >
+                        {watchKey === s.key ? "watching" : "Watch"}
+                      </Button>
+                    </div>
+                  ))}
+                  {frame && (
+                    <div className="overflow-hidden rounded-md2 border border-line">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`data:image/jpeg;base64,${frame.data}`} alt="live screen frame" className="w-full" />
+                    </div>
+                  )}
                 </Card>
               </div>
             </div>

@@ -21,7 +21,7 @@
 3. [x] **Batch 14b — Sherlock QA + SCR-6 watch QA** (~4d) — P1-PER-8 persona ke-9
    (roster) + SCR-6: persona menonton live screen persona lain, event
    `qa.check.*`, laporan QA non-blocking. Dep: live screen ✅.
-4. [ ] **SCR-7 remote watch via relay** (~2d) — live screen 1fps diteruskan lewat
+4. [x] **SCR-7 remote watch via relay** (~2d) — live screen 1fps diteruskan lewat
    relay portal; nonton dari device lain. Dep: relay-client ✅; butuh host relay.
 5. [ ] **P2-PM-4/5 — dashboard progres terukur** (~4d) — RACI ringan per fase +
    burndown + health fase (blocker, revisi, hold approval). Dep: board FLOW ✅.

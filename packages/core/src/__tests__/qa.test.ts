@@ -32,7 +32,13 @@ beforeEach(() => {
 afterEach(async () => {
   vi.unstubAllEnvs();
   await closeAllScreens();
-  fs.rmSync(dir, { recursive: true, force: true });
+  // best-effort: profil Edge bisa masih dikunci sesaat di Windows (EPERM) —
+  // dir tmp dibiarkan bila belum lepas (pola screen.test, OS akan bersihkan).
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch {
+    /* profil masih terkunci */
+  }
 });
 
 function ctx(personaId = WATCHER): ToolContext {

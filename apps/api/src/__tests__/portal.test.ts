@@ -1,7 +1,8 @@
 // P1-PRT-3 — host worker portal: dispatch RemoteAction → runtime (fake) dan
 // proyeksi YuiEvent → RemoteEvent (seq + ring resume), lewat SpecRelay nyata
 // + koneksi SDK nyata (sama seperti produksi, runtime saja dipalsukan).
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+// SCR-7: bridge screen JUGA dipalsukan (vi.mock) — stream frame sintetis.
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import type { YuiRuntime, } from "@yuika/core";
@@ -13,6 +14,34 @@ import { createSpecRelay } from "@yuika/relay-client/testing";
 import { PortalHostService } from "../portal/service.js";
 import type { HostDeviceRecord } from "../portal/store.js";
 import { _resetPortalStoreForTests, getHostDevice, saveHostDevice } from "../portal/store.js";
+
+// ── SCR-7: fake screen-bridge (frame sintetis, tanpa browser) ────────────
+const scr = vi.hoisted(() => {
+  const states = new Map<string, Record<string, unknown>>();
+  const subs = new Map<string, { onFrame: (f: unknown) => void; onState: (s: unknown) => void }>();
+  return {
+    states, subs,
+    frame: (key: string, data: string) => ({ key, data, width: 4, height: 4, ts: Date.now() }),
+    stateOf: (key: string) => ({
+      key, projectId: key.split("/")[0] ?? "p", personaId: key.split("/")[1] ?? "yui",
+      status: "running", url: "https://example.com", title: "Example",
+      leaseOwner: "yui-coder", viewers: 0, watchers: 0, startedAt: Date.now(),
+    }),
+  };
+});
+vi.mock("../portal/screen-bridge.js", () => ({
+  getScreenState: (key: string) => scr.states.get(key) ?? null,
+  listScreens: () => [...scr.states.values()],
+  subscribeScreen: (
+    key: string,
+    onFrame: (f: unknown) => void,
+    onState: (s: unknown) => void,
+  ) => {
+    if (!scr.states.has(key)) return null;
+    scr.subs.set(key, { onFrame, onState });
+    return { state: scr.states.get(key), lastFrame: null, unsubscribe: () => { scr.subs.delete(key); } };
+  },
+}));
 
 const ACC = "acc_test00000000009";
 
@@ -178,6 +207,71 @@ describe("portal host worker", () => {
       approvalId: "ap_1", title: "run_command", risk: "high",
     });
   });
+});
+
+describe("portal host worker — SCR-7 screen watch", () => {
+  const KEY = "p_scr7/yui-coder";
+
+  beforeAll(() => {
+    scr.states.set(KEY, scr.stateOf(KEY));
+  });
+
+  it("watch_screen → screen.state{rid}; frame dipompa ≤1fps + dedupe", async () => {
+    await remote.sendAction({ proto: 1, act: "watch_screen", rid: "r-w1", key: KEY });
+    await waitUntil(() => events.some((e) => e.ev === "screen.state" && e.rid === "r-w1"));
+    expect(events.find((e) => e.ev === "screen.state" && e.rid === "r-w1")).toMatchObject({
+      key: KEY, status: "running", title: "Example",
+    });
+    // frame AAAA → pump pertama kirim; BBBB → kirim; BBBB lagi → dedupe.
+    const h = scr.subs.get(KEY)!;
+    h.onFrame(scr.frame(KEY, "AAAA"));
+    await waitUntil(() => events.some((e) => e.ev === "screen.frame" && e.data === "AAAA"), 3_000);
+    h.onFrame(scr.frame(KEY, "BBBB"));
+    await waitUntil(() => events.some((e) => e.ev === "screen.frame" && e.data === "BBBB"), 3_000);
+    h.onFrame(scr.frame(KEY, "BBBB")); // identik — tak boleh dobel
+    await new Promise((r) => setTimeout(r, 1_400)); // > 1 pump
+    const frames = events.filter((e) => e.ev === "screen.frame") as unknown as { data: string }[];
+    expect(frames.filter((f) => f.data === "AAAA").length).toBe(1);
+    expect(frames.filter((f) => f.data === "BBBB").length).toBe(1);
+  }, 12_000);
+
+  it("unwatch_screen → ack screen.state{rid} + unsubscribe (frame berhenti)", async () => {
+    await remote.sendAction({ proto: 1, act: "unwatch_screen", rid: "r-uw" });
+    await waitUntil(() => events.some((e) => e.ev === "screen.state" && e.rid === "r-uw"));
+    expect(scr.subs.has(KEY), "unsubscribe → subs dibersihkan").toBe(false);
+  }, 8_000);
+
+  it("watch_screen key tak dikenal → error unknown_screen", async () => {
+    await remote.sendAction({ proto: 1, act: "watch_screen", rid: "r-bad", key: "p_x/nope" });
+    await waitUntil(() => events.some((e) => e.ev === "error" && e.rid === "r-bad"));
+    expect(events.find((e) => e.ev === "error" && e.rid === "r-bad")).toMatchObject({ code: "unknown_screen" });
+  });
+
+  it("host.state intro memuat daftar screens (v1.1)", async () => {
+    // remote baru menempel → intro; pakai perangkat remote kedua di akun sama
+    const keys2 = generateDeviceKeys();
+    relay.devices.set(keys2.deviceId, { deviceId: keys2.deviceId, accountId: ACC, kind: "web", name: "Remote 2", signPub: keys2.signPub, dhPub: keys2.dhPub });
+    const rc2 = new RelayClient({
+      url: relay.url(), deviceId: keys2.deviceId, signPriv: keys2.signPriv,
+      crypto: {
+        signChallenge: async (p, d, n) => (await import("@yuika/crypto")).signChallenge(p, d, n),
+        seal: async (f, t, pt) => (await import("@yuika/crypto")).seal(f, t, pt),
+        open: async (t, f, b) => (await import("@yuika/crypto")).open(t, f, b).toString("utf8"),
+      },
+      socketFactory: nodeSocket,
+    });
+    await rc2.connect();
+    const evs2: import("@yuika/contracts").RemoteEvent[] = [];
+    const r2 = new RelayRemote({
+      client: rc2, deviceId: keys2.deviceId, dhPriv: keys2.dhPriv, dhPub: keys2.dhPub,
+      onEvent: (ev) => evs2.push(ev),
+    });
+    await r2.join(hostKeys.deviceId);
+    await waitUntil(() => evs2.some((e) => e.ev === "host.state" && (e as { screens?: unknown }).screens !== undefined));
+    const intro = evs2.find((e) => e.ev === "host.state") as unknown as { screens?: Array<{ key: string }> };
+    expect(intro.screens?.map((s) => s.key)).toContain(KEY);
+    rc2.close();
+  }, 10_000);
 });
 
 describe("portal device store", () => {
