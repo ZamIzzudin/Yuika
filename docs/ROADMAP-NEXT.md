@@ -29,22 +29,42 @@
    per project (volume, wake/sleep, egress allowlist, `run_in_workshop`, UI,
    metering). **Staging/VPS-first** (Docker absen di host dev); `WorkshopHost`
    interface + fallback lokal.
-7. [ ] **SCR-5 DevTools embed** (~2d, opsional) — panel DevTools di floating
+7. [ ] **Desktop Tauri** (P2-DTL-1+3, ~4d; DTL-2 sudah melebur ke relay-client) —
+   shell Tauri reuse UI web + mode switch host/remote di onboarding + packaging
+   (NSIS/MSI) & auto-update. **Ditaruh pasca-Workshop** karena nilai utama Tauri
+   host = workshop/terminal/Docker di shell desktop. Bila test relay multi-platform
+   jadi mendesak sebelum Workshop → boleh di-swap maju (ubah dokumen ini saja).
+8. [ ] **SCR-5 DevTools embed** (~2d, opsional) — panel DevTools di floating
    window. Bisa di-swallow ke #3 bila QA butuh DOM inspector.
-8. [ ] **P2-DUN-x dungeon QA** (~2d) — misi research nyata + eval persona.
-9. [ ] **DSN Penpot pipeline** (P2-DSN-2..6) — butuh Penpot self-host; connector
-   RPC → tab Design embed → design→kode → golden path E2E.
-10. [ ] **Portal live session** (repo yuika-portal) — endpoint SSO nyata +
+9. [ ] **P2-DUN-x dungeon QA** (~2d) — misi research nyata + eval persona.
+10. [ ] **DSN Penpot pipeline** (P2-DSN-2..6) — butuh Penpot self-host; connector
+    RPC → tab Design embed → design→kode → golden path E2E.
+11. [ ] **Portal live session** (repo yuika-portal) — endpoint SSO nyata +
     swap portal-double + live test CP-5 (unlink & auto-link) + `YUI_AUTH_MODE=portal`.
-11. [ ] **Pra-beta infra/bisnis** — P1-CRED-5/6 billing + metering audit,
-    P1-INF-5 staging, P1-DEL-2 background jobs + push, P1-MCP-2/5, P1-PER-5
-    blind test.
-12. [ ] **Pra-publik repo** — PUB-1..4 (THIRD-PARTY-NOTICES, keputusan lisensi,
+12. [ ] **Mobile Expo** (P2-MOB-1..5 + P1-DEL-2 push, ~13d) — remote-only via
+    portal relay (D23): shell + chat streaming/resume via envelope, push approve
+    dari lock screen, persona picker, Mission Control mini. Dep: #11 portal live
+    + #4 SCR-7 remote watch (nonton screen dari HP).
+13. [ ] **Pra-beta infra/bisnis** — P1-CRED-5/6 billing + metering audit,
+    P1-INF-5 staging, P1-MCP-2/5, P1-PER-5 blind test, G-BETA checklist.
+14. [ ] **Pra-publik repo** — PUB-1..4 (THIRD-PARTY-NOTICES, keputusan lisensi,
     bersih-bersih artefak internal, CONTRIBUTING) + review `npm audit` dev-deps
     (6 vuln dev-toolchain; prod 0). WAJIB sebelum push publik.
 
 Sisanya (P3/P4 coarse, G-BETA checklist, P2-AGT/BIL/GROW lainnya) dirinci saat
 masuk fasenya — lihat TASKS.md.
+
+## Platform multi-platform (D23) — logika penempatan (disetujui user 2026-11)
+
+- **Desktop Tauri #7** & **Mobile Expo #12** TIDAK menunggu semua fitur web —
+  fondasi relay (P1-PRT, kontrak RemoteAction/RemoteEvent) sudah selesai.
+- Tauri dipasang pasca-Workshop (nilai host-mode-nya di sana); **bisa di-swap
+  maju** bila test relay jadi prioritas.
+- Mobile menunggu portal live (#11) + remote watch (#4) karena mobile =
+  remote-only (D23).
+- **Test relay HARI INI tanpa platform baru**: halaman dev `/dev/remote`
+  (web) sudah bisa jadi klien remote vs host di tab/lain mesin — dipakai e2e
+  remote.spec. Platform native nanti menggantikan harness ini, kontrak sama.
 
 ## Catatan rekonsiliasi docs (item #1)
 
