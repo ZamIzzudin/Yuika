@@ -13,6 +13,9 @@
 //   YUI_TERMINAL_CMD  = override perintah shell utk pengujian, mis.
 //                       "node test/fixtures/echo-shell.mjs"
 import { spawn, type ChildProcess } from "node:child_process";
+import { createHash } from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { moduleLogger } from "../logger.js";
 import { redactSecrets } from "../redact.js";
@@ -64,21 +67,76 @@ const COMMAND_LOG_CAP = 200;
 let cmdSeq = 0;
 
 /** Catat eksekusi perintah (dipanggil tool run_command SETELAH eksekusi;
- *  stdout/stderr sudah di-redact oleh pemanggil). */
+ *  stdout/stderr sudah di-redact oleh pemanggil).
+ *  Batch 13b: persist ring ke JSONL per workspace (dir data terminal) —
+ *  restart API tidak lagi mengosongkan view "Commands". */
+const commandLogFiles = new Map<string, string>();
+
+function logDir(): string {
+  // lazy (bukan module-const): env dibaca saat pemakaian — test/boot bisa
+  // men-setel YUI_TERMINAL_LOG_DIR kapan pun.
+  return process.env.YUI_TERMINAL_LOG_DIR
+    ? path.resolve(process.env.YUI_TERMINAL_LOG_DIR)
+    : path.join(os.tmpdir(), "yuika-terminal-log");
+}
+
+function logFilePath(wsKey: string): string {
+  let f = commandLogFiles.get(wsKey);
+  const want = path.join(logDir(), `${createHash("sha1").update(wsKey).digest("hex").slice(0, 16)}.jsonl`);
+  if (!f || f !== want) {
+    f = want;
+    commandLogFiles.set(wsKey, f);
+  }
+  return f;
+}
+
+function appendLogLine(f: string, line: string): void {
+  try {
+    fs.mkdirSync(path.dirname(f), { recursive: true });
+    fs.appendFileSync(f, line + "\n");
+  } catch {
+    /* best-effort: log UI tetap hidup dari memori */
+  }
+}
+
 export function logCommand(
   workspacePath: string,
   entry: Omit<CommandLogEntry, "id" | "ts">,
 ): void {
   const key = path.resolve(workspacePath);
   const list = commandLogs.get(key) ?? [];
-  list.push({ ...entry, id: ++cmdSeq, ts: Date.now() });
+  const rec = { ...entry, id: ++cmdSeq, ts: Date.now() };
+  list.push(rec);
   if (list.length > COMMAND_LOG_CAP) list.splice(0, list.length - COMMAND_LOG_CAP);
   commandLogs.set(key, list);
+  appendLogLine(logFilePath(key), JSON.stringify(rec));
 }
 
-/** Log eksekusi terbaru (terbaru terakhir) utk view "Commands". */
+/** Log eksekusi terbaru (terbaru terakhir) utk view "Commands".
+ *  Bila memori kosong (fresh restart), muat ekor JSONL dulu. */
 export function listCommandLog(workspacePath: string, limit = 100): CommandLogEntry[] {
-  return [...(commandLogs.get(path.resolve(workspacePath)) ?? [])].slice(-limit);
+  const key = path.resolve(workspacePath);
+  if (!commandLogs.has(key)) {
+    const f = logFilePath(key);
+    try {
+      const raw = fs.readFileSync(f, "utf8").trim();
+      if (raw) {
+        const lines = raw.split("\n").slice(-COMMAND_LOG_CAP);
+        const loaded: CommandLogEntry[] = [];
+        for (const l of lines) {
+          try {
+            loaded.push(JSON.parse(l) as CommandLogEntry);
+          } catch {
+            /* baris rusak → skip */
+          }
+        }
+        commandLogs.set(key, loaded);
+      }
+    } catch {
+      commandLogs.set(key, []); // file tak ada → kosong (bukan error)
+    }
+  }
+  return [...(commandLogs.get(key) ?? [])].slice(-limit);
 }
 
 export function readTerminalMode(): TerminalMode {

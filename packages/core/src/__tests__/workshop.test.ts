@@ -140,6 +140,20 @@ describe("workshop manager (fake host)", () => {
     await m.sleep("p_up", "idle");
     expect(m.info("p_up").uptimeMs).toBeGreaterThan(0);
   });
+
+  it("heal drift: store=running tapi container hilang → start me-recreate (13b)", async () => {
+    const host = fakeHost();
+    const m = managerWith(host);
+    await m.start("p_dr");
+    expect(m.info("p_dr").state).toBe("running");
+    // simulasikan container dihapus di luar (docker prune): fake host lupakan
+    // container TANPA menyentuh store → store masih "running".
+    host.states.delete("yuika-ws-p_dr");
+    const info = await m.start("p_dr");
+    expect(info.state).toBe("running");
+    // container dibuat ulang (ensureRunning dipanggil lagi — bukan early-return)
+    expect(host.states.get("yuika-ws-p_dr")).toBe("running");
+  });
 });
 
 // ── integrasi Docker ASLI (host dev punya daemon) ──────────────────────────
@@ -151,6 +165,18 @@ async function dockerUp(): Promise<boolean> {
 }
 
 describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
+  // anti-leak: bila test gagal di tengah, container test dibuang (pid test
+  // selalu p_it_/p_eg_/p_mg_ — container project user tak tersentuh).
+  afterEach(async () => {
+    const { execFile } = await import("node:child_process");
+    for (const pfx of ["yuika-ws-p_it_", "yuika-ws-p_eg_", "yuika-ws-p_mg_"]) {
+      const ids = await new Promise<string>((res) =>
+        execFile("docker", ["ps", "-aq", "--filter", `name=${pfx}`], { timeout: 10_000 },
+          (e, out) => res(e ? "" : (out ?? "").trim())),
+      );
+      if (ids) await new Promise<void>((res) => execFile("docker", ["rm", "-f", ...ids.split("\n")], () => res()));
+    }
+  });
   it("lifecycle penuh: start → exec node → sleep → wake → volume persist → reset → destroy", async () => {
     const m = makeManager(); // resolveHost → DockerWorkshopHost asli
     const pid = `p_it_${Date.now().toString(36)}`;
@@ -198,6 +224,25 @@ describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
     await m.start(pid, { egressAllow: ["registry.npmjs.org"] });
     const env = await m.exec(pid, "sh", ["-c", "echo $HTTPS_PROXY"]);
     expect(env.stdout).toContain("host.docker.internal:");
+    await m.destroy(pid);
+  }, 120_000);
+
+  it("migrasi layout: container lama tanpa label layout → recreate otomatis (13b)", async () => {
+    const m = makeManager();
+    const pid = `p_mg_${Date.now().toString(36)}`;
+    await m.start(pid, { egressAllow: [] });
+    const cname = m.info(pid).containerName;
+    // bajak container jadi "legacy": hapus label layout → simulasi pra-13b
+    const { execFile } = await import("node:child_process");
+    await new Promise<void>((res) => execFile("docker", ["rm", "-f", cname], () => res()));
+    await new Promise<void>((res) =>
+      execFile("docker", ["create", "--name", cname, "node:24-bookworm-slim", "sleep", "infinity"], () => res()),
+    );
+    // start → harus mendeteksi label hilang → recreate dengan bind workspace
+    await m.start(pid);
+    const r = await m.exec(pid, "sh", ["-c", "pwd && echo migrasi > mg.txt"]);
+    expect(r.stdout.trim()).toBe("/home/node/project");
+    expect(fs.readFileSync(path.join(dir, "mg.txt"), "utf8").trim()).toBe("migrasi");
     await m.destroy(pid);
   }, 120_000);
 });

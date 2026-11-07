@@ -1,6 +1,7 @@
 // P2-STU-2: TerminalManager + tool `terminal` — sesi shared user & agent.
 // Shell deterministik via fixture echo-shell.mjs (YUI_TERMINAL_CMD).
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -26,6 +27,34 @@ afterEach(async () => {
 });
 
 const ctx = () => ({ sessionId: "s1", turnId: "t1", workspacePath: dir, emit: () => {} });
+
+describe("command log persist (Batch 13b)", () => {
+  it("logCommand menulis JSONL + listCommandLog me-load dari file (restart API)", () => {
+    process.env.YUI_TERMINAL_LOG_DIR = path.join(dir, "cmdlog");
+    const wsA = path.join(dir, "ws-a");
+    tm.logCommand(wsA, { command: "npm", args: ["install"], exitCode: 0, stdout: "ok", stderr: "", note: "sandbox" });
+    // tulis via API → file JSONL ada di dir hash workspace
+    const h = createHash("sha1").update(path.resolve(wsA)).digest("hex").slice(0, 16);
+    const f = path.join(dir, "cmdlog", `${h}.jsonl`);
+    expect(fs.existsSync(f)).toBe(true);
+    // "restart": workspace BARU (memori kosong) punya file log pra-tulis →
+    // listCommandLog harus me-load dari file (jalur readFileSync).
+    const wsB = path.join(dir, "ws-b");
+    const hb = createHash("sha1").update(path.resolve(wsB)).digest("hex").slice(0, 16);
+    fs.mkdirSync(path.join(dir, "cmdlog"), { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, "cmdlog", `${hb}.jsonl`),
+      JSON.stringify({ id: 1, ts: 123, command: "node", args: ["-v"], exitCode: 0, stdout: "v24", stderr: "", note: "sandbox" }) + "\n",
+    );
+    const gotB = tm.listCommandLog(wsB, 10);
+    expect(gotB.length).toBe(1);
+    expect(gotB[0]).toMatchObject({ command: "node", exitCode: 0 });
+    const gotA = tm.listCommandLog(wsA, 10);
+    expect(gotA).toHaveLength(1);
+    expect(gotA[0]).toMatchObject({ command: "npm", args: ["install"] });
+    delete process.env.YUI_TERMINAL_LOG_DIR;
+  });
+});
 
 describe("TerminalManager", () => {
   it("ensureSession: satu sesi per workspace (idempotent), backend local", async () => {

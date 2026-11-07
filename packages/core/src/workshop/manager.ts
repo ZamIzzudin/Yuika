@@ -91,7 +91,21 @@ export class DockerWorkshopHost implements WorkshopHost {
       const vc = await run("docker", ["volume", "create", input.volume]);
       if (vc.code !== 0) throw new Error(`volume create gagal: ${vc.err}`);
     }
-    const st = await this.state(input.container);
+    let st = await this.state(input.container);
+    if (st !== "absent") {
+      // Migrasi layout: container pra-label (mis. volume /home/yui, tanpa
+      // bind workspace) → docker exec -w /home/node/project langsung mati.
+      // Buang container (VOLUME diutuhkan — isinya cache; file project di
+      // host) lalu buat ulang dengan layout sekarang.
+      const lbl = await run("docker", [
+        "inspect", "-f", `{{index .Config.Labels "yuika.workshop.layout"}}`, input.container,
+      ]);
+      if (lbl.code !== 0 || lbl.out.trim() !== WORKSHOP_LAYOUT) {
+        log.warn({ container: input.container, label: lbl.out.trim() || "<none>" }, "workshop layout lama → recreate");
+        await run("docker", ["rm", "-f", input.container]);
+        st = "absent";
+      }
+    }
     if (st === "absent") {
       const egressOn = input.egressProxyPort !== undefined && input.egressAllow.length > 0;
       const argv = [
@@ -113,6 +127,7 @@ export class DockerWorkshopHost implements WorkshopHost {
         // dengan tab Files / write_file / run_command sandbox (/workspace).
         "-v", `${mountPath(input.workspacePath)}:/home/node/project:rw`,
         "-w", "/home/node/project",
+        `--label=yuika.workshop.layout=${WORKSHOP_LAYOUT}`,
       ];
       if (egressOn) {
         const proxy = `http://host.docker.internal:${input.egressProxyPort}`;
@@ -183,6 +198,11 @@ export class DockerWorkshopHost implements WorkshopHost {
     });
   }
 }
+
+/** Versi layout container — dinaikkan saat struktur mount/flag berubah.
+ *  Container lama (tanpa label ini) dimigrasi otomatis: container dibuang
+ *  (VOLUME & file project tetap) lalu dibuat ulang dengan layout baru. */
+const WORKSHOP_LAYOUT = "2"; // 2 = bind workspace /home/node/project + cwd situ
 
 /** Fallback TANPA Docker: direktori .yuika/workshop di project — shell lokal,
  *  TIDAK terisolasi (setara terminal lokal). Warning eksplisit di log/info. */
@@ -392,7 +412,15 @@ export class WorkshopManager {
   async start(projectId: string, opts: { egressAllow?: string[]; by?: string } = {}): Promise<WorkshopInfo> {
     const host = await this.resolveHost();
     let info = this.info(projectId);
-    if (info.state === "running") return info;
+    // Heal drift: store bilang running tapi container nyatanya hilang/mati
+    // (docker prune, crash host, migrasi label) → jangan early-return;
+    // jatuh ke ensureRunning (recreate — volume & file project utuh).
+    if (info.state === "running") {
+      const real = await host.state(info.containerName);
+      if (real === "running") return info;
+      log.warn({ projectId, real }, "workshop drift: store=running, docker≠running → heal");
+      info = this.setState(info, "stopped", `drift-heal (${real})`);
+    }
     const egressAllow = opts.egressAllow ?? (info.state === "absent" ? this.readConfig(projectId).egressAllow : info.egressAllow);
     info = this.setState(info, "starting", `start by ${opts.by ?? "user"}`);
     try {
