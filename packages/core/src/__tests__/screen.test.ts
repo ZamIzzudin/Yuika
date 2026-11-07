@@ -245,6 +245,13 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
       async () => expect(await screenEvalJson<string>(key, "document.title")).toBe("LOGGED-IN:tester"),
       { timeout: 5_000 },
     );
+    // INVARIAN VLT-4 (hardening): snapshot pasca-fill TIDAK membocorkan
+    // password — input[type=password] di-mask di sumber + redactActive di
+    // tool result. Username (type=text) tetap terlihat (by design).
+    const snapRes = await registry.dispatch("browser_snapshot", {}, ctx());
+    const snapStr = JSON.stringify(snapRes.result);
+    expect(snapStr).not.toContain("s3cret-value");
+    expect(snapStr).toContain("tester");
     // INVARIAN: nilai tidak pernah muncul di event
     expect(JSON.stringify(events)).not.toContain("s3cret-value");
   }, 30_000);

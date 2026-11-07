@@ -335,6 +335,8 @@ async function cleanup(s: ScreenSession): Promise<void> {
   s.proc = null;
 }
 
+import { registerActiveSecret, releaseActiveSecret } from "../vault/redact.js";
+
 export async function stopScreen(key: string, reason = "manual"): Promise<boolean> {
   const s = sessions.get(key);
   if (!s) return false;
@@ -343,6 +345,9 @@ export async function stopScreen(key: string, reason = "manual"): Promise<boolea
   s.status = "stopped";
   fireState(s);
   sessions.delete(key);
+  // VLT-4: password kartu login (active secret) dilepas bersama sesinya.
+  for (const v of loginSecrets.get(key) ?? []) releaseActiveSecret(v);
+  loginSecrets.delete(key);
   return true;
 }
 
@@ -570,12 +575,16 @@ const SNAPSHOT_EXPR = `(() => {
   const nodes = [...document.querySelectorAll(sel)].filter(vis).slice(0, 120);
   const items = nodes.map((el, i) => {
     const r = el.getBoundingClientRect();
+    // VLT-4: input[type=password] DILARANG expose value/attr-value ke agent —
+    // di-mask DI SUMBER (apapun jalur isinya: kartu login / vault / user ketik).
+    const pw = el.tagName === "INPUT" && String(el.getAttribute("type") || "text").toLowerCase() === "password";
+    const shown = pw ? "" : String(el.value ?? "");
     return {
       ref: i,
       tag: el.tagName.toLowerCase(),
       role: el.getAttribute("role") ?? undefined,
-      name: (el.getAttribute("aria-label") || el.innerText || el.getAttribute("placeholder") || el.getAttribute("value") || el.value || "").trim().slice(0, 80) || undefined,
-      value: (el.tagName === "INPUT" || el.tagName === "TEXTAREA") ? String(el.value ?? "").slice(0, 80) : undefined,
+      name: (el.getAttribute("aria-label") || el.innerText || el.getAttribute("placeholder") || (pw ? "" : el.getAttribute("value") || "") || shown).trim().slice(0, 80) || undefined,
+      value: (el.tagName === "INPUT" || el.tagName === "TEXTAREA") ? (pw ? undefined : shown.slice(0, 80)) : undefined,
       x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2),
       w: Math.round(r.width), h: Math.round(r.height),
     };
@@ -708,6 +717,10 @@ interface LoginRegistry {
   seq: number;
 }
 
+/** Password card-path per key — didaftarkan sbg active secret saat fill
+ *  (scrub dari SEMUA teks keluar proses ini), dilepas saat sesi stop. */
+const loginSecrets = new Map<string, string[]>();
+
 const LG = globalThis as unknown as { __yuikaLoginRegistry?: LoginRegistry };
 const loginReq: LoginRegistry = (LG.__yuikaLoginRegistry ??= { pending: new Map(), seq: 0 });
 
@@ -819,6 +832,12 @@ export async function resolveLogin(
     rec.resolve({ status: "failed", saved: false, fill });
     return true;
   }
+  // VLT-4 hardening: password jadi active secret (VLT-5) selama sesi hidup —
+  // apa pun yang mencoba membacanya balik (snapshot/teks/log) di-scrub.
+  const prev = loginSecrets.get(rec.key) ?? [];
+  registerActiveSecret(creds.pass);
+  prev.push(creds.pass);
+  loginSecrets.set(rec.key, prev);
   rec.resolve({ status: "filled", saved: creds.save, fill });
   return true;
 }

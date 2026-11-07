@@ -16,6 +16,7 @@ import {
   openLoginRequest, screenFillLogin,
 } from "../screen/manager.js";
 import { getVault } from "../vault/manager.js";
+import { redactActive } from "../vault/redact.js";
 
 const log = moduleLogger("tools:screen");
 
@@ -97,7 +98,14 @@ export function registerScreenTools(opts: { dataDir: string }): void {
     description:
       "Read-only snapshot of the shared screen: URL, title, visible text, and interactive elements with refs for browser_click/browser_type. Does not require control of the screen.",
     parameters: snapSchema,
-    handler: (_args: Record<string, never>, ctx) => withScreen(ctx, (key) => screenSnapshot(key)),
+    handler: (_args: Record<string, never>, ctx) =>
+      withScreen(ctx, async (key) => {
+        const snap = await screenSnapshot(key);
+        // VLT-4 defense-in-depth: scrub active secret (password login terisi
+        // via kartu) sebelum hasil masuk konteks model — di luar masking
+        // input[type=password] yang sudah dilakukan di sumber snapshot.
+        return JSON.parse(redactActive(JSON.stringify(snap)));
+      }),
   });
 
   registry.register({
