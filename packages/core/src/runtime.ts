@@ -54,7 +54,7 @@ import { smokeModel } from "./provider/smoke.js";
 import type { ModelSmokeResult } from "@yuika/contracts";
 import { acceptDraft, listDrafts, readUsage, rejectDraft, updateDraft } from "./skills/manager.js";
 import { buildFileTree, readProjectFile, safeProjectPath } from "./project/files.js";
-import { readBrowserAllow, readBrowserPage } from "./browser/reader.js";
+import { readBrowserPolicy, readBrowserPage, writeBrowserPolicy } from "./browser/reader.js";
 import { FileRevisionStore } from "./project/revisions.js";
 import { listSkills } from "./skills/loader.js";
 import { ProjectStore } from "./project/store.js";
@@ -1200,13 +1200,28 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getBrowserPage: async (projectId: string, rawUrl: string, byRole: "agent" | "user") => {
       const p = projectStore.getProject(projectId);
       if (!p) throw new Error("project tidak ditemukan");
-      const allow = readBrowserAllow(projectRoot(projectId));
+      const policy = readBrowserPolicy(projectRoot(projectId));
       const page = await readBrowserPage(rawUrl, {
-        allow,
+        allow: policy.allow,
+        allowAll: policy.allowAll,
         allowPrivate: process.env.YUI_BROWSER_ALLOW_PRIVATE === "1",
       });
       projectStore.addBrowserVisit({ projectId, url: page.url, title: page.title, byRole });
       return page;
+    },
+    /** Policy browser project (allowlist + allowAll) — dipakai tab Browser. */
+    getBrowserPolicy: (projectId: string) => {
+      if (!projectStore.getProject(projectId)) throw new Error("project tidak ditemukan");
+      return readBrowserPolicy(projectRoot(projectId));
+    },
+    setBrowserPolicy: (projectId: string, patch: { allow?: string[]; allowAll?: boolean }) => {
+      if (!projectStore.getProject(projectId)) throw new Error("project tidak ditemukan");
+      const cur = readBrowserPolicy(projectRoot(projectId));
+      writeBrowserPolicy(projectRoot(projectId), {
+        allow: patch.allow ?? cur.allow,
+        allowAll: patch.allowAll ?? cur.allowAll,
+      });
+      return readBrowserPolicy(projectRoot(projectId));
     },
     listBrowserVisits: (projectId: string, limit?: number) => projectStore.listBrowserVisits(projectId, limit),
   };

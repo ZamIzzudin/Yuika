@@ -19,7 +19,7 @@ describe("P2-FLOW-1 — template 7 fase", () => {
   it("parse & lint hijau (termasuk cek roster persona)", () => {
     const def = loadWorkflowYaml(SEVEN_PHASE_TEMPLATE_YAML);
     expect(def.phases.map((p) => p.id)).toEqual([
-      "planning", "research", "design", "develop", "testing", "docs", "deliverable",
+      "planning", "research", "design", "develop", "testing", "documentation", "delivery",
     ]);
     const lint = lintWorkflow(def, { personas: PERSONAS });
     expect(lint.errors).toEqual([]);

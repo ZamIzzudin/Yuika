@@ -30,13 +30,18 @@ test("T1-T3 — terminal shared user & agent + approval perintah berisiko", asyn
 
   await page.goto("/");
 
-  // ── project "Terminal Batch" + buka tab Terminal ────────────────────
+  // ── project "Terminal Batch" + tab Browser (terminal = panel bawah) ──
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByPlaceholder("Project Name").fill("Terminal Batch");
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.getByRole("button", { name: /^Terminal Batch/ }).first().click();
 
-  await page.getByRole("tab", { name: "Terminal" }).click();
+  await page.getByRole("tab", { name: "Browser" }).click();
+  // panel terminal default terbuka (persist yui.termPanel); bila tertutup
+  // (state localStorage run sebelumnya) → buka via bar bawah.
+  const openBar = page.getByRole("button", { name: "Open terminal panel" });
+  if (await openBar.isVisible().catch(() => false)) await openBar.click();
+  await expect(page.getByRole("region", { name: "Terminal panel" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("● ready")).toBeVisible({ timeout: 30_000 });
 
   // sesi tunggal per project (dibuat tab) — ambil id utk polling buffer

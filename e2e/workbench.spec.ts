@@ -103,6 +103,13 @@ test("STU-4: Browser tab — halaman allowlist terbaca read-only, script distrip
     await page.getByLabel("Browser URL").fill("https://not-allowed.example/x");
     await page.getByRole("button", { name: "Open", exact: true }).click();
     await expect(page.getByRole("alert").filter({ hasText: /allowlist|not-allowed/ })).toBeVisible({ timeout: 15_000 });
+
+    // policy allowAll (user 2026-11 #4): toggle → host di luar allowlist
+    // (localhost) bisa dibuka — private guard lolos karena env e2e eksplisit.
+    await page.getByRole("checkbox", { name: "Allow all domains" }).check();
+    await page.getByLabel("Browser URL").fill(`http://localhost:${port}/page`);
+    await page.getByRole("button", { name: "Open", exact: true }).click();
+    await expect(frame.getByRole("heading", { name: "Research Page" })).toBeVisible({ timeout: 20_000 });
   } finally {
     server.close();
   }
@@ -128,7 +135,8 @@ test("FLOW gate: pintu Workflow dari chat conductor (keputusan user: flow = alat
     page.getByPlaceholder("Describe the goal — this message starts a workflow run"),
   ).toBeVisible();
 
-  // tombol header conductor → view alur di tab Team (canvas delegasi)
-  await page.getByRole("button", { name: "Open workflow view" }).click();
+  // (tombol header Workflow dihapus 2026-11 — menumpuk status persona; tab
+  // Team di tablist atas = pintu yang sama)
+  await page.getByRole("tab", { name: "Team" }).click();
   await expect(page.getByLabel("Delegation hierarchy diagram — canvas")).toBeVisible({ timeout: 15_000 });
 });

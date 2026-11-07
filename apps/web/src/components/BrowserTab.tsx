@@ -16,12 +16,31 @@ interface Visit {
   createdAt: number;
 }
 
+interface Policy {
+  allow: string[];
+  allowAll: boolean;
+}
+
 export function BrowserTab({ projectId }: { projectId: string }) {
   const [input, setInput] = useState("");
   const [page, setPage] = useState<{ url: string; title: string; html: string } | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [denied, setDenied] = useState<string | null>(null);
+  // Policy URL per-project (user 2026-11): allowAll = buka semua domain —
+  // SSRF guard (IP private/loopback) tetap jalan di sisi server.
+  const [policy, setPolicy] = useState<Policy | null>(null);
+  const [policyBusy, setPolicyBusy] = useState(false);
+
+  const loadPolicy = useCallback(async () => {
+    try {
+      const r = await authFetch(apiUrl(`/api/projects/${projectId}/browser/policy`));
+      if (r.ok) setPolicy((await r.json()) as Policy);
+    } catch {
+      /* best-effort */
+    }
+  }, [projectId]);
 
   const loadVisits = useCallback(async () => {
     try {
@@ -35,7 +54,28 @@ export function BrowserTab({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     void loadVisits();
-  }, [loadVisits]);
+    void loadPolicy();
+  }, [loadVisits, loadPolicy]);
+
+  const toggleAllowAll = useCallback(async () => {
+    if (!policy || policyBusy) return;
+    setPolicyBusy(true);
+    const next = !policy.allowAll;
+    setPolicy({ ...policy, allowAll: next }); // optimistic
+    try {
+      const r = await authFetch(apiUrl(`/api/projects/${projectId}/browser/policy`), {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ allowAll: next }),
+      });
+      if (r.ok) setPolicy((await r.json()) as Policy);
+      else setPolicy((await r.json().catch(() => policy)) as Policy);
+    } catch {
+      setPolicy(policy); // revert
+    } finally {
+      setPolicyBusy(false);
+    }
+  }, [policy, policyBusy, projectId]);
 
   const open = useCallback(
     async (rawUrl: string) => {
@@ -43,13 +83,15 @@ export function BrowserTab({ projectId }: { projectId: string }) {
       if (!url) return;
       setLoading(true);
       setErr(null);
+      setDenied(null);
       try {
         const r = await authFetch(
           apiUrl(`/api/projects/${projectId}/browser/fetch?url=${encodeURIComponent(url)}`),
         );
-        const body = (await r.json()) as { url?: string; title?: string; html?: string; error?: string };
+        const body = (await r.json()) as { url?: string; title?: string; html?: string; error?: string; code?: string };
         if (!r.ok || !body.html) {
           setErr(body.error ?? `Failed to open page (${r.status})`);
+          setDenied(body.code === "host_denied" ? url : null);
           setPage(null);
         } else {
           setPage({ url: body.url ?? url, title: body.title ?? url, html: body.html });
@@ -67,7 +109,7 @@ export function BrowserTab({ projectId }: { projectId: string }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
       <form
-        className="flex flex-none gap-2"
+        className="flex flex-none flex-wrap items-center gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           void open(input);
@@ -84,11 +126,33 @@ export function BrowserTab({ projectId }: { projectId: string }) {
         <Button type="submit" disabled={loading || !input.trim()}>
           {loading ? "Opening…" : "Open"}
         </Button>
+        <label
+          className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-pill border px-3 py-2 text-caption select-none transition-colors ${
+            policy?.allowAll
+              ? "border-accent/50 bg-accent/10 text-accent"
+              : "border-line bg-surface text-muted hover:text-primary"
+          }`}
+          title="When on, every public domain can be opened without adding it to the allowlist. Private/loopback hosts stay blocked (SSRF guard)."
+        >
+          <input
+            type="checkbox"
+            className="accent-current"
+            checked={policy?.allowAll ?? false}
+            disabled={!policy || policyBusy}
+            onChange={() => void toggleAllowAll()}
+          />
+          Allow all domains
+        </label>
       </form>
 
       {err && (
-        <p className="flex-none rounded-lg2 border border-line bg-surface px-3 py-2 text-caption text-rose-400" role="alert">
-          {err}
+        <p className="flex flex-none flex-wrap items-center gap-2 rounded-lg2 border border-line bg-surface px-3 py-2 text-caption text-rose-400" role="alert">
+          <span className="min-w-0 flex-1">{err}</span>
+          {denied && policy && !policy.allowAll && (
+            <Button size="sm" onClick={() => void toggleAllowAll()} disabled={policyBusy}>
+              Allow all domains
+            </Button>
+          )}
         </p>
       )}
 
@@ -126,7 +190,9 @@ export function BrowserTab({ projectId }: { projectId: string }) {
         <section className="flex min-h-0 flex-col overflow-hidden rounded-lg2 border border-line bg-surface">
           {!page ? (
             <div className="flex flex-1 items-center justify-center p-6 text-center text-caption text-muted">
-              Open an allowlisted URL to read it here. Scripts are stripped — this view is read-only.
+              {policy?.allowAll
+                ? "Any public URL can be opened here. Scripts are stripped — this view is read-only."
+                : "Open an allowlisted URL to read it here, or turn on \"Allow all domains\". Scripts are stripped — this view is read-only."}
             </div>
           ) : (
             <>

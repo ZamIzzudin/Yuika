@@ -351,4 +351,5 @@ sudah disiapkan di portal (D23). **Jangan dikerjakan tanpa instruksi user.**
   Kontrak beku = `docs/portal/` (hash vectors di README-nya).
 - **Batch 2/3/4/5/6 mandiri** — aman dijalankan paralel dengan sesi portal
   tanpa konflik file.
+- **BATCH FIX (2026-11): feedback test E2E manual user — 9 item**: FLOW-8 task↔fase binding + sweep + doing marker (engine), tombol Workflow header dihapus, policy browser allowAll per-project, merge Terminal→Browser (panel VS Code: hide/resize, Shell+Commands), run_command → Commands log (REST baru), Langkah kerja keluar dari chat (tinggal di Logs/Trace), dot tab center. Regresi: template fase id docs/deliverable → documentation/delivery. Bukti: typecheck 6/6 · turbo 5/5 · engine 15/15 · reader 9/9 · run-command 8/8 · e2e 15/15.
 - Est = perkiraan; ubah hanya via kesepakatan sinkron (aturan TASKS.md).

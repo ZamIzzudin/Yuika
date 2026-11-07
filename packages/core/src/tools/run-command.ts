@@ -9,6 +9,7 @@ import path from "node:path";
 import { z } from "zod";
 import { registry } from "../registry.js";
 import { redactSecrets } from "../redact.js";
+import { logCommand } from "../terminal/manager.js";
 // namespace import: test meng-ganti dockerAvailable/runInSandbox via vi.spyOn
 import * as sandbox from "./sandbox.js";
 import * as egressMod from "./egress.js";
@@ -80,14 +81,25 @@ export function registerRunCommandTool(): void {
         const r = await sandbox.runInSandbox(args.command, args.args, ctx.workspacePath, egress.length ? { egress } : {});
         // exit 125 = docker daemon error (image tak ada dsb.) — pesan jelas utk agent
         const dockerErr = r.exitCode === 125 || r.exitCode === null;
+        const out = redactSecrets(r.stdout.slice(0, 8_000));
+        const errOut = redactSecrets(
+          (r.timedOut ? "[sandbox] timeout — container dimatikan\n" : "") + r.stderr.slice(0, 2_000),
+        );
+        // FLOW #7: eksekusi terlihat di panel terminal (view "Commands")
+        logCommand(ctx.workspacePath, {
+          command: args.command,
+          args: args.args,
+          exitCode: r.exitCode,
+          stdout: out,
+          stderr: errOut,
+          note: r.timedOut ? "sandbox timeout" : "sandbox",
+        });
         return {
           result: {
             sandbox: true,
             exitCode: r.exitCode,
-            stdout: redactSecrets(r.stdout.slice(0, 8_000)),
-            stderr: redactSecrets(
-              (r.timedOut ? "[sandbox] timeout — container dimatikan\n" : "") + r.stderr.slice(0, 2_000),
-            ),
+            stdout: out,
+            stderr: errOut,
             ...(r.timedOut ? { timedOut: true } : {}),
             ...(dockerErr && !r.timedOut ? { error: "sandbox docker gagal (daemon/image?)" } : {}),
           },
@@ -99,6 +111,14 @@ export function registerRunCommandTool(): void {
       // eksplisit agar agent & user tahu eksekusi TIDAK terisolasi (egress pun
       // TIDAK ditegakkan — proxy hanya jalan di dalam container).
       const out = await runLocal(args.command, args.args, ctx.workspacePath);
+      logCommand(ctx.workspacePath, {
+        command: args.command,
+        args: args.args,
+        exitCode: out.err ? 1 : 0,
+        stdout: out.stdout,
+        stderr: out.stderr,
+        note: "local (tanpa isolasi)",
+      });
       return {
         result: {
           sandbox: false,

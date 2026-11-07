@@ -45,6 +45,42 @@ interface Session {
 let seq = 0;
 const sessions = new Map<string, Session>();
 
+// ── FLOW user 2026-11 (#7): log eksekusi run_command per workspace ──────────
+// run_command (node/npm/npx) TIDAK lewat sesi shell — output-nya hilang dari
+// tab Terminal. Log ini = sumber view "Commands" di panel terminal (browser
+// tab): setiap eksekusi tercatat (perintah, exit code, output tail).
+export interface CommandLogEntry {
+  id: number;
+  ts: number;
+  command: string;
+  args: string[];
+  exitCode: number | null;
+  stdout: string;
+  stderr: string;
+  note?: string;
+}
+const commandLogs = new Map<string, CommandLogEntry[]>();
+const COMMAND_LOG_CAP = 200;
+let cmdSeq = 0;
+
+/** Catat eksekusi perintah (dipanggil tool run_command SETELAH eksekusi;
+ *  stdout/stderr sudah di-redact oleh pemanggil). */
+export function logCommand(
+  workspacePath: string,
+  entry: Omit<CommandLogEntry, "id" | "ts">,
+): void {
+  const key = path.resolve(workspacePath);
+  const list = commandLogs.get(key) ?? [];
+  list.push({ ...entry, id: ++cmdSeq, ts: Date.now() });
+  if (list.length > COMMAND_LOG_CAP) list.splice(0, list.length - COMMAND_LOG_CAP);
+  commandLogs.set(key, list);
+}
+
+/** Log eksekusi terbaru (terbaru terakhir) utk view "Commands". */
+export function listCommandLog(workspacePath: string, limit = 100): CommandLogEntry[] {
+  return [...(commandLogs.get(path.resolve(workspacePath)) ?? [])].slice(-limit);
+}
+
 export function readTerminalMode(): TerminalMode {
   return (process.env.YUI_TERMINAL_MODE as TerminalMode) || "auto";
 }

@@ -1,6 +1,9 @@
 // P2-STU-4 — browser reader: allowlist, SSRF guard, sanitizer, redirect
 // re-validation, content-type/size gate. Server lokal utk fetch nyata.
 import { afterEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import {
@@ -119,5 +122,36 @@ describe("P2-STU-4 browser reader", () => {
     });
     const page = await readBrowserPage(txt, { allow: ["127.0.0.1"], allowPrivate: true });
     expect(page.html).toContain("&lt;b&gt;not html&lt;/b&gt;");
+  });
+});
+
+// ── FLOW user 2026-11 (#4): policy allowAll — buka semua domain publik ──────
+describe("browser policy allowAll", () => {
+  it("allowAll melewati cek host — SSRF guard IP private TETAP jalan", async () => {
+    // host di luar allowlist lolos saat allowAll
+    const url = await assertBrowserUrlAllowed("https://some-random-site.example.org/path", {
+      allow: ["example.com"],
+      allowAll: true,
+    });
+    expect(url.hostname).toBe("some-random-site.example.org");
+    // tanpa allowAll → host_denied
+    await expect(
+      assertBrowserUrlAllowed("https://some-random-site.example.org/", { allow: ["example.com"] }),
+    ).rejects.toMatchObject({ code: "host_denied" });
+    // allowAll TIDAK menurunkan guard private (127.0.0.1 tetap diblok)
+    await expect(
+      assertBrowserUrlAllowed("http://127.0.0.1:9/x", { allow: ["127.0.0.1"], allowAll: true }),
+    ).rejects.toMatchObject({ code: "private_blocked" });
+  });
+
+  it("readBrowserPolicy/writeBrowserPolicy round-trip (.yuika/browser.json)", async () => {
+    const { readBrowserPolicy, writeBrowserPolicy } = await import("../browser/reader.js");
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-policy-"));
+    expect(readBrowserPolicy(dir)).toEqual({ allow: ["example.com"], allowAll: false });
+    writeBrowserPolicy(dir, { allow: ["example.com", "news.ycombinator.com"], allowAll: true });
+    expect(readBrowserPolicy(dir)).toEqual({ allow: ["example.com", "news.ycombinator.com"], allowAll: true });
+    // file korup → fallback default (bukan throw)
+    fs.writeFileSync(path.join(dir, ".yuika", "browser.json"), "{not json");
+    expect(readBrowserPolicy(dir)).toEqual({ allow: ["example.com"], allowAll: false });
   });
 });

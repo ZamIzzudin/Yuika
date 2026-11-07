@@ -2,7 +2,6 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
 import { useCallback, useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import type {
   PersonaInfo,
   PersonaState,
@@ -27,14 +26,9 @@ import { PersonaFace } from "./PersonaPicker";
 import { TeamTree, fmtDur } from "./TeamTree";
 import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
-// P2-STU-2: xterm cuma di client — lazy + no-SSR (CSS/DOM xterm).
-const TerminalTabLazy = dynamic(() => import("./TerminalTab"), {
-  ssr: false,
-  loading: () => <div className="p-4 text-caption text-dim">Loading terminal…</div>,
-});
 import { FileTab } from "./FileTab";
 import { WorkflowStepsCard } from "./WorkflowStepsCard";
-import { BrowserTab } from "./BrowserTab";
+import { BrowserToolsTab } from "./BrowserToolsTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
@@ -57,7 +51,6 @@ export type WorkspaceTab =
   | "trace"
   | "team"
   | "files"
-  | "terminal"
   | "board"
   | "browser"
   | "config";
@@ -675,9 +668,11 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
-      {loaded && activeTab === "browser" && <BrowserTab projectId={project.id} />}
-      {loaded && activeTab === "terminal" && (
-        <TerminalTabLazy project={{ id: project.id, name: project.name }} />
+      {/* Browser + Terminal digabung (user 2026-11 #5): browser = tampilan
+          utama; terminal = panel bawah ala VS Code (hide/open + resize) dgn
+          view Shell (xterm) & Commands (log run_command — #7). */}
+      {loaded && activeTab === "browser" && (
+        <BrowserToolsTab project={{ id: project.id, name: project.name }} />
       )}
 
       {treeOpen && (

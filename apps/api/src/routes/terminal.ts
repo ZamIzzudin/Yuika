@@ -36,6 +36,21 @@ export function registerTerminalRoutes(app: FastifyInstance, getRt: () => YuiRun
 
   app.get("/api/terminal/sessions", async () => ({ sessions: listTerminalSessions() }));
 
+  /** Log eksekusi run_command project (view "Commands" panel terminal —
+   *  FLOW user 2026-11 #7: run_command terlihat tanpa membuka sesi shell). */
+  app.get("/api/projects/:id/terminal/commands", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    let ws: string;
+    try {
+      ws = getRt().projectWorkspacePath(id);
+    } catch {
+      return reply.code(404).send({ error: "project tidak ditemukan" });
+    }
+    const limit = Math.min(Number((req.query as Record<string, string | undefined>).limit ?? 50) || 50, 200);
+    const { listTerminalCommandLog } = await import("@yuika/core");
+    return { commands: listTerminalCommandLog(ws, limit).slice().reverse() }; // terbaru dulu
+  });
+
   /** SSE stream: replay ring penuh (event `replay`) lalu chunk live (`data`). */
   app.get("/api/terminal/sessions/:id/stream", async (req, reply) => {
     const { id } = req.params as { id: string };

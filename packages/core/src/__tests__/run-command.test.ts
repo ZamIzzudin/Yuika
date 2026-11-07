@@ -80,3 +80,28 @@ describe("run_command", () => {
     if (res.isError) expect(JSON.stringify(res.result)).toContain("denied");
   });
 });
+
+// FLOW user 2026-11 (#7): eksekusi run_command tercatat di log terminal
+// (view "Commands" panel terminal — tanpa membuka sesi shell).
+describe("run_command → terminal command log", () => {
+  it("node -v tercatat (command, args, exitCode, output) di listCommandLog", async () => {
+    const { listCommandLog } = await import("../terminal/manager.js");
+    const before = listCommandLog(dir).length;
+    await registry.dispatch("run_command", { command: "node", args: ["-v"] }, { ...ctx(), requestApproval: async () => true });
+    const log = listCommandLog(dir);
+    expect(log.length).toBe(before + 1);
+    const e = log[log.length - 1]!;
+    expect(e.command).toBe("node");
+    expect(e.args).toEqual(["-v"]);
+    expect(e.exitCode).not.toBe(null);
+    expect((e.stdout + e.stderr).length).toBeGreaterThan(0); // output terlihat
+  });
+
+  it("ls/echo internal TIDAK menambah log (bukan eksekusi proses)", async () => {
+    const { listCommandLog } = await import("../terminal/manager.js");
+    const before = listCommandLog(dir).length;
+    await registry.dispatch("run_command", { command: "ls", args: [] }, { ...ctx(), requestApproval: async () => true });
+    await registry.dispatch("run_command", { command: "echo", args: ["x"] }, { ...ctx(), requestApproval: async () => true });
+    expect(listCommandLog(dir).length).toBe(before);
+  });
+});

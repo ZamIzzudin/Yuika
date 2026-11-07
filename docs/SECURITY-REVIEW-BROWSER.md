@@ -9,7 +9,7 @@ ekfiltrasi data project.
 
 | # | Risiko | Pertahanan | Bukti test |
 |---|--------|-----------|-----------|
-| 1 | Fetch ke host arbitrer (SSRF) | Allowlist domain per project: `.yuika/browser.json` → env `YUI_BROWSER_ALLOW` → default hanya `example.com`. Host diluar allowlist → 403 `host_denied` | `browser-reader.test.ts` "allowlist" + api test 403 |
+| 1 | Fetch ke host arbitrer (SSRF) | Allowlist domain per project: `.yuika/browser.json` → env `YUI_BROWSER_ALLOW` → default hanya `example.com`. Host diluar allowlist → 403 `host_denied`. **Opt-in eksplisit user (2026-11): `allowAll: true`** (toggle "Allow all domains" di tab Browser; persist `.yuika/browser.json`) melewati CEK HOST saja — guard #3 (IP private/loopback/metadata) TETAP jalan tanpa pengecualian | `browser-reader.test.ts` "allowlist" + "allowAll melewati cek host — SSRF guard IP private TETAP jalan" + api test 403 |
 | 2 | Scheme berbahaya (`file:`, `data:`) | Hanya `http:`/`https:` → `scheme_denied` | unit `assertBrowserUrlAllowed` |
 | 3 | IP private / loopback / link-local / metadata cloud (`169.254.169.254`) | Guard: IP-literal + nama (`localhost`, `.local`, `.internal`) + **DNS resolve** → semua alamat private diblok `private_blocked`. Pengecualian EKSLISIT `YUI_BROWSER_ALLOW_PRIVATE=1` (dev/test) | unit `isPrivateIp` (12 kasus) + `private_blocked` |
 | 4 | SSRF via redirect (allowlisted.com → 169.254.169.254) | `redirect: "manual"`, max 4 hop, **setiap hop divalidasi ulang** (allowlist + private) | unit "redirect KE host private → blok" |

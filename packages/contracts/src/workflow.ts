@@ -167,7 +167,7 @@ export const SEVEN_PHASE_TEMPLATE_YAML = `# workflow.yaml — template 7 fase (P
 # (cap max_concurrent per step / cap global per project). gate = human approval
 # "fase X selesai — lanjut?" SEBELUM fase berikut (default ON).
 name: Seven-phase delivery
-description: planning → research → design → develop → testing → docs → deliverable
+description: planning → research → design → develop → testing → documentation → delivery
 phases:
   - id: planning
     name: Planning
@@ -228,7 +228,7 @@ phases:
         task: Run QA against acceptance criteria; write a defect report with severity.
     gate: true
 
-  - id: docs
+  - id: documentation
     name: Documentation
     mode: parallel
     steps:
@@ -240,7 +240,7 @@ phases:
         task: Write the changelog and release notes.
     gate: true
 
-  - id: deliverable
+  - id: delivery
     name: Deliverable
     mode: sequential
     steps:

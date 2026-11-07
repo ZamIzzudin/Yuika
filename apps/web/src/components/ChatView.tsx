@@ -191,7 +191,6 @@ export function ChatView({
       toastErr("could not reach the server");
     }
   }
-  const [stepsOpen, setStepsOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
@@ -211,6 +210,9 @@ export function ChatView({
     ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
   }, [input]);
 
+  // Tool steps TIDAK lagi dirender di chat (user 2026-11 #8) — observability
+  // langkah kerja ada di tab Logs (Session Trace, realtime). items activity
+  // tetap terkumpul (dipakai indikator dot tab Chat/Team).
   const steps = items.filter((it) => it.kind === "activity");
   const rest = items.filter((it) => it.kind !== "activity");
   const showTyping = personaState === "thinking" || personaState === "working";
@@ -607,47 +609,6 @@ export function ChatView({
                 <i className="typing-dot [animation-delay:140ms]" />
                 <i className="typing-dot [animation-delay:280ms]" />
               </span>
-            </div>
-          ) : null}
-
-          {steps.length > 0 ? (
-            <div className="flex flex-col gap-0.5">
-              <button
-                className="group inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md2 border border-transparent px-2 py-1 text-caption text-muted hover:bg-hover hover:text-primary"
-                aria-expanded={stepsOpen}
-                onClick={() => setStepsOpen((v) => !v)}
-              >
-                <span className={stepsOpen ? "rotate-180" : ""}>
-                  <Chevron />
-                </span>
-                Langkah kerja · {steps.length}
-              </button>
-              {stepsOpen ? (
-                <div className="ml-2 flex flex-col gap-px border-l border-line pl-2">
-                  {steps.map((it, i) => (
-                    <div
-                      key={`s${i}`}
-                      className="flex items-baseline gap-2 rounded-sm2 px-1 py-0.5 text-caption hover:bg-hover"
-                    >
-                      <code
-                        className={`font-mono ${it.isError ? "text-danger" : "text-secondary"}`}
-                      >
-                        {it.name}
-                      </code>
-                      {it.detail ? (
-                        <span className="min-w-0 flex-1 truncate text-dim">
-                          {it.detail}
-                        </span>
-                      ) : null}
-                      <span
-                        className={`shrink-0 ${it.isError ? "text-danger" : it.done ? "text-success" : "text-dim"}`}
-                      >
-                        {it.isError ? "failed" : it.done ? "✓" : "…"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
             </div>
           ) : null}
         </div>

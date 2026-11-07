@@ -11,6 +11,7 @@ import { SessionStore } from "../session/store.js";
 import { EventBus } from "../bus.js";
 import { registry, resetRegistryForTests } from "../registry.js";
 import { registerFileTools } from "../tools/file-tools.js";
+import { registerTodoTools } from "../tools/todo-tools.js";
 import { ProjectStore } from "../project/store.js";
 import { WorkflowEngine } from "../workflow/engine.js";
 import { loadWorkflowYaml, SEVEN_PHASE_TEMPLATE_YAML, type YuiEvent, type WorkflowDef } from "@yuika/contracts";
@@ -362,4 +363,114 @@ describe("P2-FLOW-6 — steering mid-run", () => {
     expect(bStarted).toHaveLength(1);
     expect(bStarted[0]).toMatchObject({ personaId: "yui-coder" });
   }, 30_000);
+});
+
+// ── FLOW-8 (laporan user 2026-11): task fase = sumber kerja engine ──────────
+describe("FLOW-8 — task↔fase binding + sweep", () => {
+  /** Provider: step biasa = teks; saat instruksi sweep masuk → tool todo_update
+   *  utk SEMUA task id yang muncul di instruksi (parse), lalu teks ringkasan. */
+  class SweepProvider implements ProviderAdapter {
+    readonly id = "sweep";
+    calls = 0;
+    mode: "done" | "review" = "done";
+    async chatStream(req: ChatRequest, onChunk: (c: ProviderChunk) => void): Promise<ProviderDone> {
+      this.calls++;
+      const text = req.messages.map((m) => m.content).join("\n");
+      const isSweep = text.includes("belum selesai");
+      const hasToolResult = req.messages.some((m) => m.role === "tool");
+      if (isSweep && !hasToolResult) {
+        const ids = [...new Set([...text.matchAll(/- (t_[a-z0-9-]+) ·/g)].map((m) => m[1]!))];
+        return {
+          type: "done",
+          finishReason: "tool_calls",
+          text: "",
+          toolCalls: ids.map((id, i) => ({
+            id: `c${i}`,
+            name: "todo_update",
+            args: { id, status: this.mode === "review" && i === 0 ? "review" : "done" },
+          })),
+        };
+      }
+      onChunk({ type: "text_delta", delta: "ok" });
+      return { type: "done", finishReason: "stop", text: "selesai", toolCalls: [] };
+    }
+  }
+
+  const onePhase = (): WorkflowDef => ({
+    name: "Sweep test",
+    description: "satu fase",
+    phases: [
+      {
+        id: "planning",
+        name: "Planning",
+        mode: "parallel",
+        steps: [{ id: "breakdown", persona: "yui-planner", task: "Susun rencana." }],
+        gate: false,
+      },
+    ],
+  });
+
+  it("task fase ditandai doing saat fase jalan; sweep mengerjakan sisa sampai done", async () => {
+    registerTodoTools({ sessionStore: store, projects });
+    projects.createTask({ id: "t_a1", projectId: "p_demo", title: "Kumpulkan keputusan", phase: "planning" });
+    projects.createTask({ id: "t_b1", projectId: "p_demo", title: "Task fase lain", phase: "design" });
+    const p = new SweepProvider();
+    const engine = makeEngine(p);
+    engine.startRun({ projectId: "p_demo", workflow: onePhase() });
+
+    await waitFor(() => types().includes("workflow.done"));
+    // sweep step tercatat sebagai step fase
+    const started = events.filter((e) => e.type === "step.started") as Extract<YuiEvent, { type: "step.started" }>[];
+    expect(started.some((e) => e.stepId === "sweep-1")).toBe(true);
+    // task fase: doing → done; task fase LAIN tak tersentuh
+    const statuses = projects
+      .listEvents("p_demo")
+      .filter((ev) => ev.type === "task.node.updated" && ev.taskId === "t_a1")
+      .map((ev) => (ev as { status?: string }).status);
+    expect(statuses).toContain("doing");
+    expect(statuses[statuses.length - 1]).toBe("done");
+    const t = projects.listTasks("p_demo").find((x) => x.id === "t_b1")!;
+    expect(t.status).toBe("todo");
+  });
+
+  it("task yang ditandai review oleh sweep (butuh owner) → run tetap selesai, sisa dilaporkan ke lead", async () => {
+    registerTodoTools({ sessionStore: store, projects });
+    projects.createTask({ id: "t_r1", projectId: "p_demo", title: "Pilih arah desain (owner)", phase: "planning" });
+    const p = new SweepProvider();
+    p.mode = "review";
+    const engine = makeEngine(p);
+    const { runId, leadSessionId } = engine.startRun({ projectId: "p_demo", workflow: onePhase() });
+    await waitFor(() => types().includes("workflow.done"));
+    expect(projects.getWorkflowRun(runId)!.status).toBe("done");
+    // task review = butuh owner → sweep cukup 1 putaran (tidak dipaksa done)
+    const sweeps = projects
+      .getWorkflowRun(runId)!
+      .phaseStates[0]!.steps.filter((s) => s.id.startsWith("sweep-"));
+    expect(sweeps.length).toBe(1);
+    const t = projects.listTasks("p_demo").find((x) => x.id === "t_r1")!;
+    expect(t.status).toBe("review");
+    // laporan sisa task ditempel ke sesi lead (audit — bukan dibiarkan diam)
+    const msgs = JSON.stringify(store.getMessages(leadSessionId));
+    expect(msgs).toContain("[workflow] Run selesai");
+    expect(msgs).toContain("t_r1");
+  });
+
+  it("alias fase lama (docs/deliverable) ter-bind ke documentation/delivery", async () => {
+    registerTodoTools({ sessionStore: store, projects });
+    projects.createTask({ id: "t_d1", projectId: "p_demo", title: "Tulis guide", phase: "documentation" });
+    const p = new SweepProvider();
+    const engine = makeEngine(p);
+    // pakai provider langsung — alias dicek lewat run def id "docs"
+    const def: WorkflowDef = {
+      name: "Alias",
+      description: "x",
+      phases: [
+        { id: "docs", name: "Documentation", mode: "parallel", steps: [{ id: "guide", persona: "yui-scribe", task: "Tulis guide." }], gate: false },
+      ],
+    };
+    engine.startRun({ projectId: "p_demo", workflow: def });
+    await waitFor(() => types().includes("workflow.done"));
+    const t = projects.listTasks("p_demo").find((x) => x.id === "t_d1")!;
+    expect(t.status).toBe("done");
+  });
 });

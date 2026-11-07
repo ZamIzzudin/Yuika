@@ -17,6 +17,14 @@ import path from "node:path";
 
 export const BROWSER_DEFAULT_ALLOW = ["example.com"];
 
+/** Policy browser per-project (FLOW user 2026-11: "semua URL bisa diakses").
+ *  allowAll = lewati cek host (SSRF guard IP-private TETAP jalan — pertahanan
+ *  non-negotiable). Disimpan `.yuika/browser.json` → { allow, allowAll }. */
+export interface BrowserPolicy {
+  allow: string[];
+  allowAll: boolean;
+}
+
 export class BrowserReadError extends Error {
   constructor(
     readonly code:
@@ -38,18 +46,36 @@ export class BrowserReadError extends Error {
 
 /** Allowlist efektif utk workspace (pola sama dgn egress.ts). */
 export function readBrowserAllow(workspacePath: string): string[] {
+  return readBrowserPolicy(workspacePath).allow;
+}
+
+/** Policy lengkap (allowlist + mode allow-all) utk workspace. */
+export function readBrowserPolicy(workspacePath: string): BrowserPolicy {
   const env = process.env.YUI_BROWSER_ALLOW?.trim();
   const file = path.join(workspacePath, ".yuika", "browser.json");
   try {
-    const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { allow?: unknown };
-    if (Array.isArray(parsed.allow) && parsed.allow.length && parsed.allow.every((h) => typeof h === "string")) {
-      return parsed.allow.map(String);
-    }
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { allow?: unknown; allowAll?: unknown };
+    const allow = Array.isArray(parsed.allow) && parsed.allow.length && parsed.allow.every((h) => typeof h === "string")
+      ? parsed.allow.map(String)
+      : null;
+    if (allow) return { allow, allowAll: parsed.allowAll === true };
+    if (parsed.allowAll === true) return { allow: env ? env.split(",").map((s) => s.trim()).filter(Boolean) : [...BROWSER_DEFAULT_ALLOW], allowAll: true };
   } catch {
     /* file opsional */
   }
-  if (env) return env.split(",").map((s) => s.trim()).filter(Boolean);
-  return [...BROWSER_DEFAULT_ALLOW];
+  if (env)
+    return {
+      allow: env.split(",").map((s) => s.trim()).filter(Boolean),
+      allowAll: false,
+    };
+  return { allow: [...BROWSER_DEFAULT_ALLOW], allowAll: false };
+}
+
+/** Tulis policy project (`.yuika/browser.json`). */
+export function writeBrowserPolicy(workspacePath: string, policy: BrowserPolicy): void {
+  const dir = path.join(workspacePath, ".yuika");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "browser.json"), JSON.stringify(policy, null, 2) + "\n", "utf8");
 }
 
 /** Hostname cocok allowlist (eksak atau suffix `.`). */
@@ -96,7 +122,7 @@ export async function hostnameIsPrivate(host: string): Promise<boolean> {
 /** Validasi URL utk dibaca (throw BrowserReadError bila ditolak). */
 export async function assertBrowserUrlAllowed(
   rawUrl: string,
-  opts: { allow: string[]; allowPrivate?: boolean },
+  opts: { allow: string[]; allowAll?: boolean; allowPrivate?: boolean },
 ): Promise<URL> {
   let url: URL;
   try {
@@ -107,8 +133,8 @@ export async function assertBrowserUrlAllowed(
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new BrowserReadError("scheme_denied", `hanya http/https (dapat: ${url.protocol})`);
   }
-  if (!hostAllowedBrowser(url.hostname, opts.allow)) {
-    throw new BrowserReadError("host_denied", `domain tidak di allowlist project: ${url.hostname}`);
+  if (!opts.allowAll && !hostAllowedBrowser(url.hostname, opts.allow)) {
+    throw new BrowserReadError("host_denied", `domain tidak di allowlist project: ${url.hostname} (aktifkan \"Allow all domains\" di tab Browser utk membuka bebas)`);
   }
   if (!opts.allowPrivate && (await hostnameIsPrivate(url.hostname))) {
     throw new BrowserReadError("private_blocked", `host private/loopback diblok SSRF guard: ${url.hostname}`);
@@ -152,7 +178,7 @@ export interface BrowserPage {
 /** Baca halaman utk tab Browser (read-only). Setiap hop redirect divalidasi. */
 export async function readBrowserPage(
   rawUrl: string,
-  opts: { allow: string[]; allowPrivate?: boolean },
+  opts: { allow: string[]; allowAll?: boolean; allowPrivate?: boolean },
 ): Promise<BrowserPage> {
   let url = await assertBrowserUrlAllowed(rawUrl, opts);
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {

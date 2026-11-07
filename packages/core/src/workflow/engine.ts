@@ -8,7 +8,7 @@
 // (workflow_runs) → resume pasca-restart = lanjut fase terakhir yang belum
 // selesai, step yang sudah done tidak diulang.
 import { randomUUID } from "node:crypto";
-import type { WorkflowDef } from "@yuika/contracts";
+import type { TaskItem, WorkflowDef } from "@yuika/contracts";
 import { normalizeWorkflowDef, lintWorkflow, type NormalizedWorkflowDef } from "@yuika/contracts";
 import { runChildPersona, type DelegationDeps } from "../delegation/runner.js";
 import { createSessionWithPrompt } from "../runtime-helpers.js";
@@ -22,6 +22,20 @@ export type { WorkflowPhaseState, WorkflowRunRow, WorkflowRunStatus } from "../p
 /** Ringkasan step dipotong agar konteks fase berikut tak membengkak. */
 const MAX_SUMMARY_CHARS = 800;
 const MAX_CONTEXT_CHARS = 4_000;
+
+/** FLOW-8 (laporan user 2026-11): alias id fase template lama ↔ enum phase
+ *  TaskItem (dokumentasi/delivery) — run lama tetap ter-bind pasca-rename. */
+const PHASE_ALIASES: Record<string, string> = {
+  docs: "documentation",
+  deliverable: "delivery",
+};
+function taskPhaseOf(phaseId: string): string {
+  return PHASE_ALIASES[phaseId] ?? phaseId;
+}
+
+/** Sweep maksimum per fase: task sisa di-dispatch ulang maks 2 putaran —
+ *  task yang butuh keputusan owner ditandai `review` (bukan dipaksa done). */
+const MAX_SWEEP_ROUNDS = 2;
 
 export interface WorkflowEngineDeps extends DelegationDeps {
   projects: ProjectStore;
@@ -269,7 +283,23 @@ export class WorkflowEngine {
         persist();
         e({ type: "phase.entered", runId, phaseId: phase.id, mode: phase.mode });
 
-        const phaseContext = buildContext(brief, handle.steers, def, states, i);
+        // FLOW-8: task fase = sumber kerja — tandai doing saat fase berjalan
+        // (board live: "tiba-tiba done" tak terjadi lagi) & konteks step diberi
+        // daftar task fase-nya (persona tak bingung oleh task fase lain).
+        const taskPhase = taskPhaseOf(phase.id);
+        const markDoing = this.deps.projects
+          .listTasks(projectId)
+          .filter((t) => t.phase === taskPhase && t.status === "todo");
+        for (const t of markDoing) this.deps.projects.updateTask(t.id, { status: "doing" });
+        const phaseTasks = this.deps.projects.listTasks(projectId).filter((t) => t.phase === taskPhase);
+
+        const baseContext = buildContext(brief, handle.steers, def, states, i);
+        const taskLines = phaseTasks
+          .map((t) => `- ${t.id} · ${t.title} · ${t.status}${t.assignee ? ` · ${t.assignee}` : ""}`)
+          .join("\n");
+        const phaseContext = taskLines
+          ? `${baseContext ? `${baseContext}\n\n` : ""}Task fase "${phase.name}" (todo_update: doing saat mulai, done saat selesai) — kerjakan dari daftar ini; task fase LAIN abaikan dulu:\n${taskLines}`
+          : baseContext;
         const stepDefs = phase.steps.map((s, idx) => ({
           def: s,
           state: st.steps[idx] ?? (st.steps[idx] = { id: s.id, personaId: s.persona, ok: null, summary: "" }),
@@ -330,6 +360,47 @@ export class WorkflowEngine {
           }
         }
 
+        // FLOW-8 sweep: fase belum boleh selesai selama masih ada task fase-nya
+        // yang belum dikerjakan — dispatch ulang (pseudo-step sweep-N) sampai
+        // done, atau review utk task yang butuh keputusan owner.
+        const sweepsDone = () => st.steps.filter((s) => s.id.startsWith("sweep-")).length;
+        while (sweepsDone() < MAX_SWEEP_ROUNDS) {
+          if (this.stopped.has(runId)) throw new StopRun();
+          await this.waitWhilePaused(runId, e);
+          const pending = this.deps.projects
+            .listTasks(projectId)
+            .filter((t) => t.phase === taskPhase && (t.status === "todo" || t.status === "doing"));
+          if (!pending.length) break;
+          const sweeper = phase.steps[0]?.persona ?? "yui-conductor";
+          const stepId = `sweep-${sweepsDone() + 1}`;
+          const listText = pending
+            .map((t) => `- ${t.id} · ${t.title}${t.assignee ? ` (assignee ${t.assignee})` : ""}`)
+            .join("\n");
+          const instr =
+            `Task fase "${phase.name}" belum selesai:\n${listText}\n\n` +
+            `Kerjakan satu per satu sampai done (todo_update). Task yang benar-benar butuh ` +
+            `keputusan owner/user: tandai status \`review\` dan tulis alasannya. ` +
+            `JANGAN menandai done tanpa benar-benar mengerjakan.`;
+          st.steps.push({ id: stepId, personaId: sweeper, ok: null, summary: "" });
+          persist();
+          e({ type: "step.started", runId, phaseId: phase.id, stepId, personaId: sweeper, task: `Selesaikan ${pending.length} task fase yang tersisa` });
+          try {
+            const summary = await this.runStep(leadSessionId, turnId, sweeper, instr, phaseContext);
+            const sw = st.steps[st.steps.length - 1]!;
+            sw.ok = true;
+            sw.summary = summary.slice(0, MAX_SUMMARY_CHARS);
+            persist();
+            e({ type: "step.done", runId, phaseId: phase.id, stepId, personaId: sweeper, ok: true, summary: sw.summary });
+          } catch (err) {
+            const sw = st.steps[st.steps.length - 1]!;
+            sw.ok = false;
+            sw.summary = (err instanceof Error ? err.message : String(err)).slice(0, MAX_SUMMARY_CHARS);
+            persist();
+            e({ type: "step.done", runId, phaseId: phase.id, stepId, personaId: sweeper, ok: false, summary: sw.summary });
+            break; // sweep gagal (mis. provider) — run lanjut, sisa task dilaporkan
+          }
+        }
+
         st.status = "done";
         persist();
         e({ type: "phase.done", runId, phaseId: phase.id });
@@ -343,6 +414,24 @@ export class WorkflowEngine {
 
       this.deps.projects.updateWorkflowRun(runId, { status: "done" });
       e({ type: "workflow.done", runId, projectId, ok: true });
+
+      // FLOW-8: sisa task (kalau sweep pun tak habiskan, mis. butuh owner)
+      // dilaporkan eksplisit ke lead — bukan dibiarkan menggantung diam-diam.
+      const after = this.deps.projects.listTasks(projectId);
+      const unfinished = after.filter((t) => t.status === "todo" || t.status === "doing");
+      const awaiting = after.filter((t) => t.status === "review");
+      if (unfinished.length || awaiting.length) {
+        const lines = [
+          ...unfinished.map((t) => `- ${t.id} · ${t.title} (${t.phase ?? "-"}, ${t.status})`),
+          ...awaiting.map((t) => `- ${t.id} · ${t.title} (${t.phase ?? "-"}, review — menunggu keputusan Anda)`),
+        ];
+        this.deps.store.appendMessage(leadSessionId, {
+          role: "user",
+          content:
+            `[workflow] Run selesai. Task belum selesai (${unfinished.length + awaiting.length}) — cek tab Task:\n` +
+            lines.join("\n"),
+        });
+      }
     } catch (err) {
       const stopped = err instanceof StopRun || this.stopped.has(runId);
       this.stopped.delete(runId);

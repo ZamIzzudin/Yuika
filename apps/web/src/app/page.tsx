@@ -1006,15 +1006,13 @@ export default function Home() {
                       {
                         id: "chat",
                         label: (
-                          <div className="flex gap-2">
+                          <span className="inline-flex items-center gap-1.5">
                             <PersonaFace personaId={active.id} size={16} /> Chat
                             {items.some(
                               (it) => it.kind === "approval" && !it.resolved,
-                            ) && <Dot tone="warn" pulse className="ml-1" />}
-                            {busy && (
-                              <Dot tone="accent" pulse className="ml-1" />
-                            )}
-                          </div>
+                            ) && <Dot tone="warn" pulse />}
+                            {busy && <Dot tone="accent" pulse />}
+                          </span>
                         ),
                       },
                       ...(activeProject
@@ -1022,17 +1020,16 @@ export default function Home() {
                             {
                               id: "team",
                               label: (
-                                <span>
+                                <span className="inline-flex items-center gap-1.5">
                                   Team
                                   {items.some(
                                     (it) =>
                                       it.kind === "delegation" && !it.text,
-                                  ) && <Dot pulse className="ml-1" />}
+                                  ) && <Dot pulse />}
                                 </span>
                               ),
                             },
                             { id: "files", label: "Files" },
-                            { id: "terminal", label: "Terminal" },
                             { id: "board", label: "Task" },
                             { id: "browser", label: "Browser" },
                             { id: "config", label: "Config" },
@@ -1041,15 +1038,13 @@ export default function Home() {
                       {
                         id: "trace",
                         label: (
-                          <span>
+                          <span className="inline-flex items-center gap-1.5">
                             Logs
-                            {sessionId && busy && (
-                              <Dot pulse className="ml-1" />
-                            )}
+                            {sessionId && busy && <Dot pulse />}
                           </span>
                         ),
                         title: sessionId
-                          ? "Step-by-step trace per turn of this session"
+                          ? "Step-by-step trace per turn of this session (tool steps live here — kept out of chat)"
                           : "Start a session to see the trace",
                       },
                     ]}
@@ -1116,19 +1111,9 @@ export default function Home() {
                         <span className="pointer-events-none absolute left-1/2 -translate-x-1/2">
                           <StateChip state={personaState} />
                         </span>
-                        {/* Kanan: pintu Flow (khusus conductor — workflow adalah
-                            alat kerja orchestrator; persona lain = chat serabutan) */}
-                        {activeProject && active.id === "yui-conductor" && (
-                          <button
-                            type="button"
-                            onClick={() => setMainTab("team")}
-                            title="Watch run progress as a delegation tree in the Team tab"
-                            aria-label="Open workflow view"
-                            className="ml-auto flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary"
-                          >
-                            <Steps size={12} aria-hidden /> Workflow
-                          </button>
-                        )}
+                        {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama).
+                            (Tombol pintu Workflow dihapus 2026-11 — menumpuk dgn
+                            status persona; tab Team sudah ada di tablist atas.) */}
                         {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama) */}
                         {activeProject && (
                           <details className="group relative ml-auto">
