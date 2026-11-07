@@ -5,6 +5,7 @@ import { expect, test } from "@playwright/test";
 import type { Server } from "node:http";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
+import { openProjectWithLead } from "./lib";
 
 const API = "http://127.0.0.1:3291";
 
@@ -13,8 +14,7 @@ test("STU-1: pindah tab → chat tertutup penuh, draft tetap selamat", async ({ 
   const r = await request.post(`${API}/api/projects`, { data: { name, description: "workbench e2e" } });
   expect(r.ok()).toBeTruthy();
 
-  await page.goto("/");
-  await page.getByRole("button", { name, exact: false }).first().click();
+  await openProjectWithLead(page, name);
 
   // tulis draft (belum kirim) di composer chat
   const composer = page.getByPlaceholder(/Describe a task for/);
@@ -45,8 +45,7 @@ test("STU-7 (merge ke Files): upload md → Files tab ter-render markdown + seks
   });
   expect(up.ok()).toBeTruthy();
 
-  await page.goto("/");
-  await page.getByRole("button", { name, exact: false }).first().click();
+  await openProjectWithLead(page, name);
   // tab Docs sudah dihapus — fungsinya diserap tab Files (keputusan user)
   await page.getByRole("tab", { name: "Files" }).click();
 
@@ -88,8 +87,7 @@ test("STU-4 (Batch 14a++): policy browser di Config + fetch reader via REST", as
     expect(r.ok()).toBeTruthy();
     const pid = ((await r.json()) as { project: { id: string } }).project.id;
 
-    await page.goto("/");
-    await page.getByRole("button", { name, exact: false }).first().click();
+    await openProjectWithLead(page, name);
 
     // toggle policy di Config → Browser (persist .yuika/browser.json)
     await page.getByRole("tab", { name: "Config" }).click();
@@ -124,12 +122,12 @@ test("STU-4 (Batch 14a++): policy browser di Config + fetch reader via REST", as
 });
 
 test("FLOW gate: pintu Workflow dari chat conductor (keputusan user: flow = alat orchestrator)", async ({ page, request }) => {
+  test.setTimeout(240_000); // suite paralel: langkah UI bertambah (TeamSetup)
   const name = `Gate Flow E2E ${Date.now()}`;
   const r = await request.post(`${API}/api/projects`, { data: { name, description: "flow gate e2e" } });
   expect(r.ok()).toBeTruthy();
 
-  await page.goto("/");
-  await page.getByRole("button", { name, exact: false }).first().click();
+  await openProjectWithLead(page, name);
 
   // persona default = conductor → toggle Workflow Mode di sebelah Hardcore Mode
   const toggle = page.getByRole("button", { name: "Ad-hoc Mode" });

@@ -94,6 +94,9 @@ export class WorkflowEngine {
   startRun(opts: StartRunOptions): StartRunResult {
     const def = validated(opts.workflow);
     if (!this.deps.projects.getProject(opts.projectId)) throw new Error(`project tidak ditemukan: ${opts.projectId}`);
+    // Batch 16 (Team Assembly): satu workflow run = SELURUH tim ter-assign
+    // otomatis (merge — entry roster custom tak tersentuh).
+    this.deps.ensureFullRoster?.(opts.projectId);
     const runId = `wf_${randomUUID().slice(0, 8)}`;
 
     const personas = listPersonas(this.deps.personasDir);

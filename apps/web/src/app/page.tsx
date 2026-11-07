@@ -7,7 +7,7 @@ import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
  * SEMUA tipe dari @yuika/contracts (dilarang tipe tangan — PLAN §6.3).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PersonaOrbit, PersonaFace } from "@/components/PersonaPicker";
+import { PersonaFace } from "@/components/PersonaPicker";
 import {
   CaretDown,
   Gear,
@@ -24,6 +24,8 @@ import { TracePanel } from "@/components/TracePanel";
 import { LogsTab } from "@/components/LogsTab";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { useMenuAutoClose } from "@/components/ui/menu";
+import { HomeView } from "@/components/HomeView";
+import { TeamSetupView } from "@/components/TeamSetupView";
 import {
   ChatView,
   type ChatItem,
@@ -117,9 +119,14 @@ export default function Home() {
   const personaMenu = useMenuAutoClose<HTMLDetailsElement>();
   const sessionsMenu = useMenuAutoClose<HTMLDetailsElement>();
   // Batch 14a follow-up: floating shared screen — melayang di atas SEMUA tab.
-  const [pip, setPip] = useState<{ projectId: string; personaId: string } | null>(null);
+  const [pip, setPip] = useState<{
+    projectId: string;
+    personaId: string;
+  } | null>(null);
   const [projSessions, setProjSessions] = useState<ProjectSessionSummary[]>([]);
   const [booted, setBooted] = useState(false); // skeleton hanya selama fetch awal
+  // Batch 16 (Team Assembly): roster project aktif (siapa yang boleh dipakai).
+  const [rosterIds, setRosterIds] = useState<string[]>([]);
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
   const loadProjects = useCallback(async () => {
@@ -139,19 +146,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const saved =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("yui.projectId")
-        : null;
-    if (saved) setActiveProjectId(saved);
+    // Batch 16: TIDAK ada restore project terakhir — aplikasi selalu dibuka
+    // di halaman HOME (typing + kartu project). Freespace dihapus.
     void loadProjects();
   }, [loadProjects]);
-
-  useEffect(() => {
-    if (activeProjectId)
-      window.localStorage.setItem("yui.projectId", activeProjectId);
-    else window.localStorage.removeItem("yui.projectId");
-  }, [activeProjectId]);
 
   useEffect(() => {
     authFetch(apiUrl("/api/personas"))
@@ -446,9 +444,18 @@ export default function Home() {
         // lama (URL baru) — bukan ditumpuk, dan tidak hilang diam-diam.
         if (e.status === "running" || e.status === "starting") {
           setItems((prev) => {
-            const i = prev.findIndex((it) => it.kind === "screen" && it.name === e.personaId);
+            const i = prev.findIndex(
+              (it) => it.kind === "screen" && it.name === e.personaId,
+            );
             if (i === -1)
-              return [...prev, { kind: "screen" as const, name: e.personaId, screenUrl: e.url }];
+              return [
+                ...prev,
+                {
+                  kind: "screen" as const,
+                  name: e.personaId,
+                  screenUrl: e.url,
+                },
+              ];
             const next = [...prev];
             next[i] = { ...next[i]!, screenUrl: e.url };
             return next;
@@ -692,27 +699,46 @@ export default function Home() {
     if (projectId) void loadProjectSessions(projectId);
   }
 
-  /** Ganti scope project → project = sesi langsung dengan PROJECT LEAD (Conductor):
-   *  user tak pernah memilih persona manual di scope project — sebutkan tugasnya,
-   *  Conductor mendelegasikan ke spesialis sesuai keahlian (delegate_task).
-   *  Resume: bila project sudah punya sesi, sesi TERBARU dibuka kembali (replay SSE). */
+  /** Batch 16: roster project aktif (person yang ter-assign — project.yaml). */
+  const loadRoster = useCallback(async (pid: string) => {
+    try {
+      const r = await authFetch(apiUrl(`/api/projects/${pid}/roster`));
+      if (!r.ok) return;
+      const d = (await r.json()) as { roster: { personaId: string }[] };
+      setRosterIds(d.roster.map((e) => e.personaId));
+    } catch {
+      /* roster opsional */
+    }
+  }, []);
+
+  // Config → Roster bisa mengubah assignment mid-project → terminal tab gating
+  // live (Hiro/Neo di-assign = tab Terminal muncul).
+  useEffect(() => {
+    const h = () => {
+      if (activeProjectId) void loadRoster(activeProjectId);
+    };
+    window.addEventListener("yui:roster-changed", h);
+    return () => window.removeEventListener("yui:roster-changed", h);
+  }, [activeProjectId, loadRoster]);
+
+  /** Ganti scope project → Batch 16: sesi ada → buka terbaru; BELUM ada sesi
+   *  → layar Team Assembly (playground) — TIDAK lagi auto-buka Conductor. */
   async function pickProject(id: string | null) {
     setActiveProjectId(id);
     setMainTab("chat");
     setStudioOpen(false); // pilih project = keluar dari halaman Persona
     if (!id) {
-      // Workspace global: persona dipilih dari kartu di tengah layar
-      resetSession();
+      resetSession(); // kembali ke halaman HOME
       setProjSessions([]);
+      setRosterIds([]);
       return;
     }
+    void loadRoster(id);
     const list = await loadProjectSessions(id);
     if (list.length > 0) {
       openSession(list[0]!);
     } else {
-      const lead =
-        personas.find((p) => p.id === "yui-conductor") ?? personas[0];
-      if (lead) void pick(lead, id);
+      resetSession(); // TeamSetupView (playground assign persona)
     }
   }
 
@@ -747,11 +773,15 @@ export default function Home() {
     }
   }
 
-  /** Sesi baru di project aktif (Conductor lead). */
+  /** Sesi baru di project aktif (Conductor lead). Batch 16: Conductor harus
+   *  ter-assign — kalau belum, assign dulu (merge roster) lalu buka sesi. */
   async function newProjectSession() {
     if (!activeProjectId) return;
     const lead = personas.find((p) => p.id === "yui-conductor") ?? personas[0];
-    if (lead) await pick(lead, activeProjectId);
+    if (!lead) return;
+    if (!rosterIds.includes(lead.id))
+      await assignPersonas(activeProjectId, [lead.id]);
+    await pick(lead, activeProjectId);
   }
 
   function resetSession() {
@@ -768,6 +798,71 @@ export default function Home() {
     if (p.id === active?.id) return;
     await pick(p);
   }
+
+  /** Batch 16 (Team Assembly): assign persona → merge roster (project.yaml).
+   *  Dipakai TeamSetupView (playground) + dropdown Sessions. */
+  async function assignPersonas(pid: string, personaIds: string[]) {
+    const r0 = await authFetch(apiUrl(`/api/projects/${pid}/roster`));
+    const d0 = (await r0.json()) as {
+      roster: {
+        personaId: string;
+        role: string;
+        phases?: string[];
+        mcp?: unknown[];
+      }[];
+    };
+    const known = new Map(personas.map((p) => [p.id, p]));
+    const merged = [...d0.roster];
+    for (const id of personaIds) {
+      if (merged.some((e) => e.personaId === id)) continue;
+      const p = known.get(id);
+      merged.push({
+        personaId: id,
+        role: p?.expertise ?? "team",
+        phases: [],
+        mcp: [],
+      });
+    }
+    const res = await authFetch(apiUrl(`/api/projects/${pid}/roster`), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ roster: merged }),
+    });
+    if (!res.ok)
+      throw new Error(
+        (await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`,
+      );
+    const d = (await res.json()) as { roster: { personaId: string }[] };
+    setRosterIds(d.roster.map((e) => e.personaId));
+    window.dispatchEvent(new Event("yui:roster-changed"));
+  }
+
+  async function unassignPersona(pid: string, personaId: string) {
+    const r0 = await authFetch(apiUrl(`/api/projects/${pid}/roster`));
+    const d0 = (await r0.json()) as { roster: { personaId: string }[] };
+    const res = await authFetch(apiUrl(`/api/projects/${pid}/roster`), {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        roster: d0.roster.filter((e) => e.personaId !== personaId),
+      }),
+    });
+    if (!res.ok)
+      throw new Error(
+        (await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`,
+      );
+    const d = (await res.json()) as { roster: { personaId: string }[] };
+    setRosterIds(d.roster.map((e) => e.personaId));
+    window.dispatchEvent(new Event("yui:roster-changed"));
+  }
+
+  // Batch 16: tab Terminal hanya muncul bila Hiro/Neo ter-assign — tanpa itu
+  // docker tak disiapkan (hemat resource), persis permintaan user.
+  const showTerminalTab =
+    rosterIds.includes("yui-coder") || rosterIds.includes("yui-operator");
+  useEffect(() => {
+    if (mainTab === "terminal" && !showTerminalTab) setMainTab("chat");
+  }, [mainTab, showTerminalTab]);
 
   async function send(text: string) {
     if (!sessionId) return;
@@ -945,18 +1040,26 @@ export default function Home() {
           {sidebarOpen ? (
             <>
               <div className="flex items-center gap-2.5 px-2 pb-4">
-                {/* Logo maskot Orin (favicon_io) + wordmark Yuika */}
-                <img
-                  src="/android-chrome-192x192.png"
-                  alt=""
-                  aria-hidden
-                  className="size-7 shrink-0 rounded-full"
-                />
-                <span className="flex min-w-0 flex-col">
-                  <b className="text-body font-semibold tracking-tight text-primary">
-                    Yuika
-                  </b>
-                </span>
+                {/* Logo maskot Orin — Batch 16: klik = kembali ke HOME. */}
+                <button
+                  type="button"
+                  onClick={() => void pickProject(null)}
+                  title="Home — all projects"
+                  aria-label="Home — all projects"
+                  className="flex min-w-0 cursor-pointer items-end gap-2.5 rounded-md2 border border-transparent px-1 py-0.5 text-left"
+                >
+                  <img
+                    src="/android-chrome-192x192.png"
+                    alt=""
+                    aria-hidden
+                    className="size-7 shrink-0 rounded-full"
+                  />
+                  <span className="flex min-w-0 flex-col">
+                    <b className="text-body font-semibold tracking-wide text-primary">
+                      Yuika
+                    </b>
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={toggleSidebar}
@@ -972,10 +1075,9 @@ export default function Home() {
                 booted={booted}
                 activeId={activeProjectId}
                 onPick={pickProject}
-                onCreated={loadProjects}
                 onDeleted={(pid) => {
-                  // Scope yang aktif terhapus → kembali ke workspace global (reset sesi);
-                  // selain itu cukup refresh daftar project + sesi project aktif.
+                  // Scope aktif terhapus → kembali ke HOME; selain itu refresh
+                  // daftar project + sesi project aktif.
                   void loadProjects();
                   if (activeProjectId === pid) {
                     void pickProject(null);
@@ -1075,36 +1177,34 @@ export default function Home() {
           ) : (
             <>
               {!active ? (
-                <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-                  {activeProject ? (
-                    <>
-                      <h1 className="mt-4 text-display font-semibold text-primary">
-                        Setting up {activeProject.name}…
-                      </h1>
-                      <p className="max-w-[420px] text-body text-muted">
-                        Opening Conductor as the project lead.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h1 className="sr-only">
-                        Choose a partner for the Workspace session
-                      </h1>
-                      {personas.length === 0 ? (
-                        <div className="mt-4 grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
-                          {Array.from({ length: 4 }, (_, i) => (
-                            <Skeleton key={i} lines={3} />
-                          ))}
-                        </div>
-                      ) : (
-                        <PersonaOrbit
-                          personas={personas}
-                          onPick={(p) => void pick(p)}
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
+                activeProject ? (
+                  <TeamSetupView
+                    project={activeProject}
+                    personas={personas}
+                    assignedIds={rosterIds}
+                    onAssign={(pid) => {
+                      void assignPersonas(activeProject.id, [pid]).catch((e) =>
+                        toastErr(e instanceof Error ? e.message : String(e)),
+                      );
+                    }}
+                    onUnassign={(pid) => {
+                      void unassignPersona(activeProject.id, pid).catch((e) =>
+                        toastErr(e instanceof Error ? e.message : String(e)),
+                      );
+                    }}
+                    onStart={(p) => void pick(p, activeProject.id)}
+                  />
+                ) : (
+                  <HomeView
+                    projects={projects}
+                    booted={booted}
+                    onOpenProject={(id) => void pickProject(id)}
+                    onCreated={(id) => {
+                      void loadProjects();
+                      void pickProject(id);
+                    }}
+                  />
+                )
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                   {/* pills terpusat ala page Persona — grid [1fr_auto_1fr]
@@ -1145,7 +1245,9 @@ export default function Home() {
                               },
                               { id: "files", label: "Files" },
                               { id: "board", label: "Task" },
-                              { id: "terminal", label: "Terminal" },
+                              ...(showTerminalTab
+                                ? [{ id: "terminal", label: "Terminal" }]
+                                : []),
                               { id: "config", label: "Config" },
                             ] as const)
                           : []),
@@ -1179,7 +1281,10 @@ export default function Home() {
                       }
                     >
                       <header className="relative flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
-                        <details className="group relative" ref={personaMenu.ref}>
+                        <details
+                          className="group relative"
+                          ref={personaMenu.ref}
+                        >
                           <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill pl-3 pr-6 py-3 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
                             <PersonaPortrait
                               name={active.name}
@@ -1197,7 +1302,14 @@ export default function Home() {
                             </span>
                           </summary>
                           <div className="glass-panel absolute top-full left-0 z-30 mt-1 flex w-64 flex-col gap-px rounded-lg2 p-1 shadow-pop">
-                            {personas.map((p) => (
+                            {(activeProject
+                              ? rosterIds.length
+                                ? personas.filter((p) =>
+                                    rosterIds.includes(p.id),
+                                  )
+                                : personas // project lama roster kosong: jangan kunci user keluar
+                              : personas
+                            ).map((p) => (
                               <button
                                 key={p.id}
                                 aria-current={
@@ -1233,7 +1345,10 @@ export default function Home() {
                             status persona; tab Team sudah ada di tablist atas.) */}
                         {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama) */}
                         {activeProject && (
-                          <details className="group relative ml-auto" ref={sessionsMenu.ref}>
+                          <details
+                            className="group relative ml-auto"
+                            ref={sessionsMenu.ref}
+                          >
                             <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary select-none transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary [&::-webkit-details-marker]:hidden">
                               <CaretDown size={12} aria-hidden /> Sessions
                             </summary>
@@ -1301,7 +1416,11 @@ export default function Home() {
                           personaName={active.name}
                           workflow={wfCtx}
                           onOpenScreen={(pid) => {
-                            if (activeProject) setPip({ projectId: activeProject.id, personaId: pid });
+                            if (activeProject)
+                              setPip({
+                                projectId: activeProject.id,
+                                personaId: pid,
+                              });
                           }}
                           onSend={send}
                           onCancel={cancelTurn}
@@ -1367,7 +1486,11 @@ export default function Home() {
                           personaName={active.name}
                           workflow={wfCtx}
                           onOpenScreen={(pid) => {
-                            if (activeProject) setPip({ projectId: activeProject.id, personaId: pid });
+                            if (activeProject)
+                              setPip({
+                                projectId: activeProject.id,
+                                personaId: pid,
+                              });
                           }}
                           onSend={send}
                           onCancel={cancelTurn}
@@ -1397,7 +1520,7 @@ export default function Home() {
                             personas={personas}
                             activeTab={mainTab}
                             rev={taskRev}
-
+                            onProjectUpdated={() => void loadProjects()}
                             live={{
                               parentPersonaId: active.id,
                               parentState: personaState,
@@ -1429,7 +1552,9 @@ export default function Home() {
         <ScreenPip
           projectId={pip.projectId}
           personaId={pip.personaId}
-          personaName={personas.find((p) => p.id === pip.personaId)?.name ?? pip.personaId}
+          personaName={
+            personas.find((p) => p.id === pip.personaId)?.name ?? pip.personaId
+          }
           onClose={() => setPip(null)}
         />
       )}

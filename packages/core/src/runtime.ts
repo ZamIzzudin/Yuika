@@ -259,6 +259,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       register: (childSessionId, parentSessionId, ctl) => childControls.set(childSessionId, { parentSessionId, ctl }),
       unregister: (childSessionId) => childControls.delete(childSessionId),
     }, // P0-DEL-2
+    onChildSpawn: (personaId, projectId) => {
+      if (projectId) rtMergeAssign(projectId, [personaId]);
+    }, // Batch 16: delegasi = merge-assign anak ke roster
   };
   registerDelegateTool(delegateDeps);
   // P2-PM-2 (D22): consult — brainstorm terstruktur Planner ke persona spesialis
@@ -293,6 +296,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     maxChildren: () => admission.maxChildren(),
     projects: projectStore,
+    onChildSpawn: (personaId, projectId) => {
+      if (projectId) rtMergeAssign(projectId, [personaId]);
+    },
+    ensureFullRoster: (projectId) => {
+      rtAssignAll(projectId);
+    },
   });
   // FLOW-3: run yang belum tamat dilanjutkan saat boot (gate yang belum
   // diputuskan ditanya ulang; step done tidak diulang).
@@ -519,6 +528,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     if (projectId && !projectStore.getProject(projectId)) {
       throw new Error(`project tidak ditemukan: ${projectId}`);
     }
+    // Batch 16 (Team Assembly): persona project HARUS ter-assign di roster
+    // (project.yaml). Pintu assign: welcome screen project (playground), Config
+    // → Roster, workflow run (auto-assign semua), dan delegasi Maestro (merge).
+    // Dungeon (arena latihan) dikecualikan — sesinya ephemeral per misi.
+    if (projectId && projectStore.getProject(projectId)?.kind !== "dungeon") {
+      if (!loadRoster(projectRoot(projectId)).some((r) => r.personaId === personaId)) {
+        throw new Error(
+          `${persona.manifest.name} is not assigned to this project — assign them on the project welcome screen or in Config → Roster first`,
+        );
+      }
+    }
     const sessionId = `s_${randomUUID()}`;
     // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline).
     // P1-MEM-1: USER.md + MEMORY.md project di-inject saat sesi dibuat (frozen).
@@ -674,6 +694,28 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     } finally {
       smokeRunning = false;
     }
+  }
+
+  /** Batch 16: assign SEMUA persona ke roster project (merge) — dipanggil
+   *  saat workflow run dimulai (satu run = seluruh tim ter-assign). */
+  function rtAssignAll(projectId: string): RosterEntryIn[] {
+    const ids = listPersonas(paths.personasDir).map((p) => p.manifest.id);
+    return rtMergeAssign(projectId, ids);
+  }
+
+  /** Merge personaIds ke roster — entry lama utuh (role custom, phases, MCP). */
+  function rtMergeAssign(projectId: string, personaIds: string[]): RosterEntryIn[] {
+    const root = projectRoot(projectId); // validasi project ada
+    const cur = loadRoster(root);
+    let next = cur;
+    for (const pid of personaIds) {
+      if (next.some((r) => r.personaId === pid)) continue;
+      const p = listPersonas(paths.personasDir).find((x) => x.manifest.id === pid);
+      if (!p) throw new Error(`persona tidak ditemukan: ${pid}`);
+      next = [...next, { personaId: pid, role: p.manifest.expertise, phases: [], mcp: [] }];
+    }
+    if (next !== cur) saveRoster(root, next);
+    return loadRoster(root);
   }
 
   return {
@@ -1268,6 +1310,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       saveRoster(projectRoot(projectId), roster);
       return loadRoster(projectRoot(projectId));
     },
+    // ---- Batch 16 (Team Assembly): assign persona ke roster (merge) ----
+    /** Merge personaIds ke roster project — entry lama utuh (role custom,
+     * phases, binding MCP). Dipakai: welcome playground, delegasi Maestro,
+     * dan workflow run (assign SEMUA persona). Role default = expertise. */
+    assignProjectPersonas: (projectId: string, personaIds: string[]): RosterEntryIn[] =>
+      rtMergeAssign(projectId, personaIds),
+    /** Workflow mode: satu run = SELURUH tim (9 persona) ter-assign otomatis. */
+    ensureFullProjectRoster: (projectId: string): RosterEntryIn[] =>
+      rtAssignAll(projectId),
     // ---- workflow (P2-FLOW) ----
     workflowEngine,
     listWorkflowRuns: (projectId: string) => projectStore.listWorkflowRuns(projectId),

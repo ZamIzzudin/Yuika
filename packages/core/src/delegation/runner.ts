@@ -30,6 +30,12 @@ export interface DelegationDeps {
   mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
   /** Mapping manual skill → persona anak (menu Dungeon; skill-bindings.json). */
   skillBindingsFor?: (personaId: string) => SkillBinding | undefined;
+  /** Batch 16 (Team Assembly): dipanggil saat sesi anak lahir — runtime
+   *  merge-assign persona anak ke roster project (roster = siapa mengerjakan
+   *  project ini; delegasi Maestro = otoritas menambah anggota). */
+  onChildSpawn?: (personaId: string, projectId: string | null) => void;
+  /** Batch 16: workflow run = SELURUH tim — engine memanggil ini saat start. */
+  ensureFullRoster?: (projectId: string) => void;
   /** P1-CRED-1: metering loop anak juga tercatat (persona anak + model anak). */
   recordUsage?: LoopDeps["recordUsage"];
   /** P1-CRED-3: cap delegasi paralel dinamis (budget workspace); default 2. */
@@ -107,6 +113,8 @@ export function runChildPersona(
     memExtra,
     deps.skillBindingsFor?.(persona.manifest.id),
   );
+  // Batch 16: persona anak otomatis masuk roster project (merge).
+  deps.onChildSpawn?.(persona.manifest.id, childProjectId);
 
   parentEmit({ type: "delegation.started", turnId: parent.turnId, childSessionId, personaId, goal });
   activeChildren++;

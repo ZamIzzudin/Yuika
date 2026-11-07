@@ -33,7 +33,13 @@ test("demo §2: Conductor → riset → delegasi Scholar → selesai → replay"
   page.on("pageerror", (e) => logs.push(`[pageerror] ${String(e).slice(0, 300)}`));
   await page.goto("/");
   const sessionReady = page.waitForResponse((r) => r.url().endsWith("/api/sessions") && r.request().method() === "POST");
-  await page.getByRole("button", { name: "Maestro Yui" }).click();
+  // Batch 16: freespace dihapus — sesi WAJIB di dalam project. Buat project
+  // dari kartu HOME (modal), assign Maestro di TeamSetup, mulai sesi.
+  await page.getByRole("button", { name: "New project" }).click();
+  await page.getByPlaceholder("Project Name").fill(`Smoke Flow ${Date.now()}`);
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByRole("button", { name: "Maestro Yui", exact: true }).click();
+  await page.getByRole("button", { name: "Start session" }).click();
   await expect(page.getByPlaceholder(/Describe a task/)).toBeVisible({ timeout: 30_000 });
 
   // 2. Kirim tugas riset
@@ -65,8 +71,10 @@ test("demo §2: Conductor → riset → delegasi Scholar → selesai → replay"
   expect(body).toContain("Riset selesai");
 
   // 6. Delete project kini lewat POPUP konfirmasi (bukan aksi langsung):
-  //    buat project dummy → tombol 🗑 (opacity-0 → includeHidden+force) →
-  //    dialog “Delete project” → Cancel (popup tervalidasi, data tak berubah).
+  //    buka HOME (logo sidebar) → kartu New project (modal) → project dummy →
+  //    tombol 🗑 (opacity-0 → includeHidden+force) → dialog “Delete project” →
+  //    Cancel (popup tervalidasi, data tak berubah).
+  await page.getByRole("button", { name: "Home — all projects" }).click();
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByPlaceholder("Project Name").fill("Popup smoke check");
   await page.getByRole("button", { name: "Create", exact: true }).click();

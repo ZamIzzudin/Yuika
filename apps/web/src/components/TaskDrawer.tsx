@@ -31,7 +31,7 @@ import { WorkflowStepsCard } from "./WorkflowStepsCard";
 import { ProjectDashboardView } from "./ProjectDashboard";
 import { WorkshopPanel } from "./WorkshopPanel";
 import { TerminalFullTab } from "./TerminalFullTab";
-import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
+import { Button, Card, Chip, Field, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 /** Status cycle: klik chip = maju satu langkah. */
@@ -261,6 +261,90 @@ function TreeNode({
  * berbagi satu area konten — nav tab dirender page.tsx, komponen ini = konten non-chat.
  * DS-1: ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
  */
+/** Batch 16: edit nama & deskripsi project (Config → Project) — PATCH lalu
+ *  parent refresh (header/sidebar ikut berubah). */
+function ProjectEditCard({
+  project,
+  onSaved,
+}: {
+  project: ProjectInfo;
+  onSaved?: () => void;
+}) {
+  const [name, setName] = useState(project.name);
+  const [desc, setDesc] = useState(project.description);
+  const [busy, setBusy] = useState(false);
+  const dirty = name.trim() !== project.name || desc !== project.description;
+
+  async function save() {
+    if (!name.trim() || busy || !dirty) return;
+    setBusy(true);
+    try {
+      const res = await authFetch(apiUrl(`/api/projects/${project.id}`), {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), description: desc }),
+      });
+      if (!res.ok)
+        throw new Error(
+          (await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`,
+        );
+      toastOk("Project updated");
+      onSaved?.();
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section aria-label="Project details" className="flex flex-col gap-3">
+      <p className="text-caption text-dim">
+        Rename or re-describe the project — everyone (you and the team) sees
+        the change immediately.
+      </p>
+      <Card variant="inset" className="flex flex-col gap-3 p-3">
+        <Field label="Name">
+          <TextInput
+            value={name}
+            maxLength={80}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
+        <Field label="Description">
+          <TextArea
+            value={desc}
+            maxLength={280}
+            rows={3}
+            placeholder="What is this project about?"
+            onChange={(e) => setDesc(e.target.value)}
+          />
+        </Field>
+        <div className="flex justify-end gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              setName(project.name);
+              setDesc(project.description);
+            }}
+            disabled={!dirty || busy}
+          >
+            Reset
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={save}
+            disabled={!dirty || !name.trim() || busy}
+          >
+            {busy ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </Card>
+    </section>
+  );
+}
+
 export function ProjectTabs({
   project,
   personas,
@@ -268,6 +352,7 @@ export function ProjectTabs({
   rev,
   activeSessionId,
   live,
+  onProjectUpdated,
 }: {
   project: ProjectInfo;
   personas: PersonaInfo[];
@@ -279,11 +364,13 @@ export function ProjectTabs({
     parentState: PersonaState;
     delegations: LiveDelegation[];
   };
+  /** Batch 16: setelah edit nama/deskripsi (menu Project) — parent refresh. */
+  onProjectUpdated?: () => void;
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
   // Tab Konfigurasi: menu internal (roster/memori/skill) — ala SettingsModal, non-modal.
-  const [cfgMenu, setCfgMenu] = useState<"roster" | "memory" | "skills" | "browser" | "workshop">("roster");
+  const [cfgMenu, setCfgMenu] = useState<"project" | "roster" | "memory" | "skills" | "browser" | "workshop">("roster");
   // Drawer "Log Task" (bekas tab Pohon) — dibuka dari tab Task.
   const [treeOpen, setTreeOpen] = useState(false);
   // Jam live untuk durasi "sudah berjalan Xm" (tab Pohon & Tim)
@@ -359,8 +446,11 @@ export function ProjectTabs({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ roster: next }),
       });
-      if (res.ok)
+      if (res.ok) {
         setRoster(((await res.json()) as { roster: RosterEntry[] }).roster);
+        // Batch 16: assignment berubah → gating tab Terminal (Hiro/Neo) hidup.
+        window.dispatchEvent(new Event("yui:roster-changed"));
+      }
     } finally {
       setBusy(false);
     }
@@ -477,6 +567,7 @@ export function ProjectTabs({
           >
             {(
               [
+                ["project", "Project"],
                 ["roster", "Roster"],
                 ["memory", "Memory"],
                 ["skills", "Skill"],
@@ -498,6 +589,7 @@ export function ProjectTabs({
             ))}
           </nav>
           <div className="flex min-h-0 flex-1 flex-col">
+{loaded && cfgMenu === "project" && <ProjectEditCard project={project} onSaved={onProjectUpdated} />}
 {loaded && cfgMenu === "roster" && (
         <section aria-label="Project roster" className="flex flex-col gap-3">
           <p className="text-caption text-dim">

@@ -5,6 +5,7 @@
 // run = root conductor, fase implisit); reassign step = tab TASK. Provider =
 // mock lokal (fallback "ok" — step selesai instan).
 import { expect, test } from "@playwright/test";
+import { openProjectWithLead } from "./lib";
 
 const API = "http://127.0.0.1:3291";
 
@@ -18,8 +19,7 @@ test("FLOW-5: start via chat → gate approve ×6 → done; alur terlihat di Tea
   const { project } = (await r.json()) as { project: { id: string } };
 
   // UI: buka app → pilih project → CHAT (persona default conductor)
-  await page.goto("/");
-  await page.getByRole("button", { name, exact: false }).first().click();
+  await openProjectWithLead(page, name);
 
   // nyalakan Workflow Mode (sejajar Hardcore Mode) → bar armed muncul
   const toggle = page.getByRole("button", { name: "Ad-hoc Mode" });
@@ -62,8 +62,7 @@ test("FLOW-6: steer + reassign (Task) + pause/resume mid-run — semua via chat"
   const r = await request.post(`${API}/api/projects`, { data: { name, description: "steering e2e" } });
   expect(r.ok()).toBeTruthy();
 
-  await page.goto("/");
-  await page.getByRole("button", { name, exact: false }).first().click();
+  await openProjectWithLead(page, name);
   await page.getByRole("button", { name: "Ad-hoc Mode" }).click(); // Workflow Mode
   const bar = page.getByLabel("Workflow run bar");
   await expect(bar).toBeVisible({ timeout: 10_000 });

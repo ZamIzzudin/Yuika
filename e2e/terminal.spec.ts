@@ -34,7 +34,12 @@ test("T1-T3 — terminal shared user & agent + approval perintah berisiko", asyn
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByPlaceholder("Project Name").fill("Terminal Batch");
   await page.getByRole("button", { name: "Create", exact: true }).click();
-  await page.getByRole("button", { name: /^Terminal Batch/ }).first().click();
+  // Batch 16: create → auto-open TeamSetup; tab Terminal HIDDEN sampai
+  // Hiro/Neo di-assign (hemat resource docker) → assign Hiro lalu mulai sesi
+  // dengannya (tab bar muncul setelah sesi pertama ada).
+  await page.getByRole("button", { name: "Hiro Yui", exact: true }).click();
+  await page.getByRole("button", { name: "Start session" }).click();
+  await expect(page.getByRole("tab", { name: "Terminal" })).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("tab", { name: "Terminal" }).click();
   await expect(page.getByTestId("terminal-holder")).toBeVisible({ timeout: 15_000 });
