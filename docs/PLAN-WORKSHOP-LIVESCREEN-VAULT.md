@@ -608,19 +608,22 @@ P2-WKS — Workshop persisten per project (D24)
 P2-SCR — Screen runtime, Live Screen & Take Control (D25; menyerap LB-1..3
          dari PLAN-RESEARCH-LIVE-BROWSER.md — task LB diberi catatan "pindah ke
          P2-SCR, nomor lama dipertahankan untuk jejak")
-- [ ] P2-SCR-1  (=LB-1) Process manager dev-server + Chromium manager + screencast
-      WS + input relay (canvas) · A · 3d
-- [ ] P2-SCR-2  (=LB-2 inti) Agent shared-session: browser_* tools via CDP sesi
-      sama + takeover mutex user↔persona (yield) · A · 2d
-- [ ] P2-SCR-3  Profil browser per (project, persona) + screen selector tab Browser
-      (Preview | Scholar | Sherlock) + chip pengendali · B · 1.5d
-- [ ] P2-SCR-4  request_takeover: tool persona + kartu non-blocking + deadline
-      auto-skip + lease flow · A · 1.5d
+- [x] P2-SCR-1  (=LB-1) Process manager dev-server + Chromium manager + screencast
+      WS + input relay (canvas) · A · 3d — ✅ Batch 14a (raw CDP Node 24, SSE frame,
+      detail TASKS.md)
+- [x] P2-SCR-2  (=LB-2 inti) Agent shared-session: browser_* tools via CDP sesi
+      sama + takeover mutex user↔persona (yield) · A · 2d — ✅ Batch 14a (lease fence
+      rokazo)
+- [x] P2-SCR-3  Profil browser per (project, persona) + screen selector tab Browser
+      (Preview | Scholar | Sherlock) + chip pengendali · B · 1.5d — ✅ Batch 14a;
+      14a++: selector tab dihapus (floating window + bubble "Open Browser")
+- [x] P2-SCR-4  request_takeover: tool persona + kartu non-blocking + deadline
+      auto-skip + lease flow · A · 1.5d — ✅ Batch 14a
 - [ ] P2-SCR-5  (=LB-3, opsional) DevTools embedded (WS proxy + artefak pinned) · C · 2d
 - [ ] P2-SCR-6  Watch mode QA: event qa.check.* + kartu checklist live + laporan
-      QA doc-tools → run report · B · 2d
+      QA doc-tools → run report · B · 2d — antrian #3 (ROADMAP-NEXT)
 - [ ] P2-SCR-7  Remote watch v1: RemoteEvent screen.frame via relay (1fps read-only)
-      + RemoteAction takeover.* · A · 2d · dep P1-PRT (sudah DONE)
+      + RemoteAction takeover.* · A · 2d · dep P1-PRT (sudah DONE) — antrian #4
 
 P1-PER-8  Persona Sherlock (roster ke-9, D26): manifest + PERSONA.md detektif +
           toolsets (browser_*, todo, doc) + delegation.yaml + 3 skill seed +

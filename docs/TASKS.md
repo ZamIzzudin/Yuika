@@ -437,13 +437,13 @@
 
 ### P2-FLOW — Workflow engine & monitoring (Studio §13.3; D15)
 
-- [ ] **P2-FLOW-1** Format `workflow.yaml` deklaratif (fase, mode sequential/parallel, steps {persona,task,depends_on}, gate default ON) + validator zod di contracts + template 7 fase (planning→riset→desain→develop→testing→dokumentasi→deliverable) · *C+A · 2d · dep P1-PRJ-3* → template valid parse & lint
-- [ ] **P2-FLOW-2** Engine v0: run = DAG → job graph di queue; fase sequential satu-per-satu, fase parallel N delegation anak (cap per project) · *A · 4d · dep P0-DEL-1* → run template di project demo jalan E2E
-- [ ] **P2-FLOW-3** Human gate antar fase (reuse approval engine: "fase X selesai — lanjut?") + resume run pasca-restart via replay event · *A · 2d · dep P2-FLOW-2* → kill server mid-run → restart → run lanjut dari fase terakhir
-- [ ] **P2-FLOW-4** Event `workflow.started/phase.entered/phase.done/step.started/step.done/workflow.done` (aditif ke YuiEvent) + replay `?since=` · *A · 1d · dep P2-FLOW-2* → board di-refresh → state run utuh
-- [ ] **P2-FLOW-5** Monitoring board UI: kolom fase, kartu agent jalan (sequential satu kolom / paralel berdampingan), progress persona, hasil per langkah — live via SSE · *B · 3d · dep P2-FLOW-4* → 2 persona paralel terlihat jalan bersamaan + hasil terkumpul
-- [ ] **P2-FLOW-6** Steering mid-run: pause/stop step, reassign ke persona lain, suntik instruksi (pola OpenBot Stop/Resume/Reassign) · *B · 2d · dep P2-FLOW-5* → reassign mid-run tercatat di event & audit
-- [ ] **P2-FLOW-7** TaskTree board UI (D19): pohon task→subtask→step dengan kartu agent & status live; sequential/paralel terbaca dari struktur; klik node → sesi agent + steering · *B · 2d · dep P1-PRJ-7 + P2-FLOW-4* → pohon delegasi live; refresh → utuh via replay — *v0 sesi dev 8: tab **Papan** = kanban 4 kolom (Belum/Kerja/Reviu/Selesai) dari flatten TaskTree + task pra-migrasi, drag&drop HTML5 → PATCH status (sinkron tasklist & pohon, auto-refresh saat agent `todo_*`); sisa: kartu agent per langkah + klik node → sesi & steering (dep P2-FLOW-4)*
+- [~] **P2-FLOW-1** Format `workflow.yaml` deklaratif (fase, mode sequential/parallel, steps {persona,task,depends_on}, gate default ON) + validator zod di contracts + template 7 fase (planning→riset→desain→develop→testing→dokumentasi→deliverable) · *C+A · 2d · dep P1-PRJ-3* → template valid parse & lint — **REKONSILIASI 2026-11 (ROADMAP-NEXT #1)**: TIDAK diadopsi bentuk file yaml — engine jalan via template + brief chat-driven (keputusan UX user 2026-11: kendali run hidup di tab Chat); validator tasklist (lintTaskList) jalan di `/api/projects/:id/tasks/validate`. Sisa: file yaml eksternal bila ada kebutuhan reuse template lintas project.
+- [x] **P2-FLOW-2** Engine v0: run = DAG → job graph di queue; fase sequential satu-per-satu, fase parallel N delegation anak (cap per project) · *A · 4d · dep P0-DEL-1* → run template di project demo jalan E2E — ✅ `workflow/engine.ts` + workflow-engine.test; e2e workflow.spec hijau
+- [x] **P2-FLOW-3** Human gate antar fase (reuse approval engine: "fase X selesai — lanjut?") + resume run pasca-restart via replay event · *A · 2d · dep P2-FLOW-2* → kill server mid-run → restart → run lanjut dari fase terakhir — ✅ event `workflow.gate.await/passed` + e2e FLOW-5 (gate approve ×6); resume via replay store
+- [x] **P2-FLOW-4** Event `workflow.started/phase.entered/phase.done/step.started/step.done/workflow.done` (aditif ke YuiEvent) + replay `?since=` · *A · 1d · dep P2-FLOW-2* → board di-refresh → state run utuh — ✅ contracts events.ts lengkap (+steer/paused/resumed/step.reassigned)
+- [x] **P2-FLOW-5** Monitoring board UI: kolom fase, kartu agent jalan (sequential satu kolom / paralel berdampingan), progress persona, hasil per langkah — live via SSE · *B · 3d · dep P2-FLOW-4* → 2 persona paralel terlihat jalan bersamaan + hasil terkumpul — ✅ WorkflowRunBar + WorkflowStepsCard + WorkflowTree; live via SSE tick
+- [x] **P2-FLOW-6** Steering mid-run: pause/stop step, reassign ke persona lain, suntik instruksi (pola OpenBot Stop/Resume/Reassign) · *B · 2d · dep P2-FLOW-5* → reassign mid-run tercatat di event & audit — ✅ e2e FLOW-6 (steer/reassign/pause/resume mid-run via chat)
+- [x] **P2-FLOW-7** TaskTree board UI (D19): pohon task→subtask→step dengan kartu agent & status live; sequential/paralel terbaca dari struktur; klik node → sesi agent + steering · *B · 2d · dep P1-PRJ-7 + P2-FLOW-4* → pohon delegasi live; refresh → utuh via replay — ✅ v0: TreeNode di drawer + board kanban 4 kolom (drag&drop → PATCH status, auto-refresh agent `todo_*`); papan TaskTree agent-live penuh tetap target G-BETA
 
 ### P2-PM — Persona Project Manager & planning flow skala besar (request user v0.6; D22)
 
@@ -685,6 +685,8 @@
 - [ ] **LB-1** Process manager (spawn dev server + deteksi port) + Chromium headless CDP + screencast WS + input relay; tab Browser mode Live/Static · *M · ±3d*
 - [ ] **LB-2** Agent shared-session via connectOverCDP + tools browser_* + takeover indicator · *M · ±2d*
 - [ ] **LB-3** DevTools embedded (artefak pinned + WS proxy auth) · *M · ±2d*
+
+> **Urutan eksekusi sisa pekerjaan → docs/ROADMAP-NEXT.md** (dibuat 2026-11: antrian prioritas tunggal + catatan rekonsiliasi docs + keputusan desain VLT-4).
 
 ## Batch 12 · Vault v0 + Batch 14a · Live Screen (DISETUJUI 2026-11 — keputusan D24–D27)
 > **Batch 12 SELESAI (2026-11)** — detail di BATCHES.md.
