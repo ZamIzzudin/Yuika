@@ -11,6 +11,7 @@ import type { ISessionStore } from "../session/store.js";
 import type { ResearchCache } from "../research/cache.js";
 import { researchConfig, getResearchBudget, researchFetch, researchPolicyFor, researchSearch } from "../research/index.js";
 import { ResearchError } from "../research/types.js";
+import { withTimeout } from "../research/util.js";
 
 const searchSchema = z.object({
   query: z.string().min(2).max(300),
@@ -56,14 +57,20 @@ export function registerWebTools(deps?: {
       if (config().off) {
         return { result: { results: [], errors: [], note: "research disabled by operator (YUI_RESEARCH_OFF)" } };
       }
-      const outcome = await researchSearch(args.query, {
-        limit: args.limit,
-        cache,
-        sessionId: ctx.sessionId,
-        budget: getResearchBudget(),
-        searxngUrl: config().searxngUrl,
-        ddgEnabled: config().ddgEnabled,
-      });
+      // Watchdog (bug nyata 2026-11): await internal tanpa deadline (DNS, stream)
+      // bisa menggantung turn selamanya — tool WAJIB selalu balik.
+      const outcome = await withTimeout(
+        researchSearch(args.query, {
+          limit: args.limit,
+          cache,
+          sessionId: ctx.sessionId,
+          budget: getResearchBudget(),
+          searxngUrl: config().searxngUrl,
+          ddgEnabled: config().ddgEnabled,
+        }),
+        25_000,
+        "web_search timed out (25s watchdog)",
+      );
       return {
         result: {
           results: outcome.results,
@@ -87,14 +94,20 @@ export function registerWebTools(deps?: {
         return { result: { error: "disabled", message: "research disabled by operator (YUI_RESEARCH_OFF)" }, isError: true };
       }
       try {
-        const outcome = await researchFetch(args.url, {
-          policy: researchPolicyFor(ctx.workspacePath),
-          maxChars: args.maxChars,
-          cache,
-          sessionId: ctx.sessionId,
-          budget: getResearchBudget(),
-          domainDelayMs: config().domainDelayMs,
-        });
+        // Watchdog: pipeline punya timeout per-hop 20 dtk, tapi DNS/redirect/stream
+        // bisa bocor — jamin tool selalu menyelesaikan turn.
+        const outcome = await withTimeout(
+          researchFetch(args.url, {
+            policy: researchPolicyFor(ctx.workspacePath),
+            maxChars: args.maxChars,
+            cache,
+            sessionId: ctx.sessionId,
+            budget: getResearchBudget(),
+            domainDelayMs: config().domainDelayMs,
+          }),
+          45_000,
+          "web_fetch timed out (45s watchdog)",
+        );
         // P2-STU-4: catat kunjungan agent utk riwayat tab Browser project.
         if (deps) {
           try {

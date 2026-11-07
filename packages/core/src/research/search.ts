@@ -12,6 +12,7 @@ import { stackexProvider } from "./providers/stackex.js";
 import { docsitesProvider } from "./providers/docsites.js";
 import { ddgProvider } from "./providers/ddg.js";
 import { searxngProvider } from "./providers/searxng.js";
+import { withTimeout } from "./util.js";
 import { newsProvider } from "./providers/news.js";
 import { marketProvider } from "./providers/market.js";
 import { socialProvider } from "./providers/social.js";
@@ -70,7 +71,7 @@ export async function researchSearch(query: string, opts: SearchOpts = {}): Prom
     if (!b.ok) {
       return {
         results: [],
-        errors: [{ provider: "budget", error: `research query budget habis (${b.limit}/jam per sesi) — persempit query atau tunggu; hasil cache tetap bisa` }],
+        errors: [{ provider: "budget", error: `research query budget exhausted (${b.limit}/hour per session) — refine the query or wait; cached results still work` }],
         cached: false,
       };
     }
@@ -94,23 +95,28 @@ export async function researchSearch(query: string, opts: SearchOpts = {}): Prom
     else errors.push({ provider: matched[i]!.name, error: r.reason instanceof Error ? r.reason.message : String(r.reason) });
   });
 
-  // 2) engine umum: searxng (bila ada) → ddg fallback
+  // 2) engine umum — HANYA bila hasil site-router belum cukup (bug nyata 2026-11:
+  // ddg selalu dipanggil & timeout 10 dtk menambah latensi tiap search, padahal
+  // news/wikipedia sudah menjawab). searxng self-host (eksplisit dikonfigurasi
+  // operator) tetap selalu dipanggil; ddg nonofficial = pelengkap terakhir + race 5 dtk.
+  const enough = (n: number) => n >= Math.min(3, limit);
+  const totalSoFar = () => byProvider.reduce((n, b) => n + b.results.length, 0);
   if (opts.searxngUrl) {
     try {
       byProvider.push({ priority: providers.length, results: await searxngProvider(opts.searxngUrl).search(q, { limit }) });
     } catch (e) {
       errors.push({ provider: "searxng", error: e instanceof Error ? e.message : String(e) });
-      if (opts.ddgEnabled !== false) {
+      if (opts.ddgEnabled !== false && !enough(totalSoFar())) {
         try {
-          byProvider.push({ priority: providers.length + 1, results: await ddgProvider.search(q, { limit }) });
+          byProvider.push({ priority: providers.length + 1, results: await withTimeout(ddgProvider.search(q, { limit }), 5_000, "ddg timed out (5s)") });
         } catch (e2) {
           errors.push({ provider: "ddg", error: e2 instanceof Error ? e2.message : String(e2) });
         }
       }
     }
-  } else if (opts.ddgEnabled !== false) {
+  } else if (opts.ddgEnabled !== false && !enough(totalSoFar())) {
     try {
-      byProvider.push({ priority: providers.length, results: await ddgProvider.search(q, { limit }) });
+      byProvider.push({ priority: providers.length, results: await withTimeout(ddgProvider.search(q, { limit }), 5_000, "ddg timed out (5s)") });
     } catch (e) {
       errors.push({ provider: "ddg", error: e instanceof Error ? e.message : String(e) });
     }

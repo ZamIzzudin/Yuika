@@ -1,10 +1,18 @@
 # YOUR-YUI — Blueprint Platform Agent Multi-Platform
 
-> Dokumen perencanaan **v0.7** — diperbarui setelah putaran keputusan kedua (lihat §2),
+> Dokumen perencanaan **v0.8** — diperbarui setelah putaran keputusan kedua (lihat §2),
 > perluasan visi Studio Proyek (§13), pilar v0.5 (§13.7–13.10), dan **Portal & Linked
 > Device (§14, D23)**.
 > Disusun dari pembelajaran mendalam `hermes-agent` (Nous Research) + brainstorming
 > konsep dari ekosistem tools lain. Status: draft aktif — eksekusi demo dimulai.
+>
+> **Changelog v0.8:** **Workshop · Live Screen & Take Control · Vault (D24–D27)** — benchmark
+> `rokazo` diadaptasi (dokumen sumber: PLAN-WORKSHOP-LIVESCREEN-VAULT.md). Disetujui user
+> (2026-11): **(A) Vault v0** + **(B) Live Screen Scholar/takeover** dieksekusi duluan;
+> **(C) menyusul** (fill_login, Sherlock, Workshop persisten, remote watch);
+> **(D) ditolak semua** (payment card, one-time-code engine, contacts vault,
+> computer-use model role, spaces multi-user). Tabrakan nomor batch BATCHES.md diperbaiki;
+> Live Browser LB-1..3 diserap jadi P2-SCR (Batch 14a).
 >
 > **Changelog v0.7:** **Yuika Portal & Linked Device (D23)** — repo terpisah
 > `yuika-portal`: akun pribadi + device manager (pairing QR ala WhatsApp; 3 slot
@@ -136,6 +144,10 @@ pekerjaan. Pengalaman "teman kerja yang hidup", bukan "alat".
 | D20 | **Dungeon = arena latihan persona**: misi (research/praktik/template) → skill dengan lifecycle `draft→tested→ready`; assign ke project digating skill readiness | Bukan fine-tuning bobot model — skill = file deklaratif + memory domain; rigor eval = kunci kualitas (blind test + curator) |
 | D21 | **Model per persona**: persona.yaml `model` + `fallback` — tiap loop (parent & delegation anak) resolve model persona masing-masing | Quirk provider dinetralkan terpusat (`normalizeToolSchema` — pelajaran GLM 1210); metering per persona (P1-CRED-4) |
 | D22 | **Persona Project Manager (Liebert Yui, roster ke-8)**: pemisah peran PLANNING vs EKSEKUSI — Planner: brainstorm multi-persona terstruktur (`consult`) → dokumen perencanaan → task list detail (acceptance, depends_on, assignee); Conductor: delegasi eksekusi sequential/paralel. Tiap fase flow punya owner + metrik keluaran terukur (RACI ringan); iterasi besar = run berantai (delta + regresi), bukan restart | Untuk project skala besar dengan puluhan-ratusan task & iterasi berulang; butuh engine P2-FLOW; brainstorm = prompt terstruktur bukan chat bebas (output deterministik, ter-audit) |
+| D24 | **Dua kelas eksekusi** — sandbox disposable (tetap, eksekusi tak dipercaya) + **workshop persisten per project** (volume /home/yui, egress allowlist .yuika/workshop.json, idle-sleep 10 mnt, approval sekali per project, metering uptime). Workshop milik project bukan persona; **fallback mesin tanpa Docker = kelas satu** (mesin dev user Windows tanpa Docker); eksekusi MENYUSUL, staging/VPS-first — sumber PLAN-WORKSHOP-LIVESCREEN-VAULT §1 |
+| D25 | **Screen Runtime ter-unifikasi** — satu layanan Chromium+screencast+input utk (a) tab preview project, (b) screen persona Scholar (riset authenticated, profil persist per project×persona), (c) screen Sherlock QA (menyusul). **Take control dua arah**, lease tunggal pola fence (rokazo screen-lease.ts): user takeover (persona yield ber-bound) + persona request_takeover (kartu non-blocking + deadline). CDP hanya 127.0.0.1 via proxy auth |
+| D26 | **Persona Sherlock Yui (roster ke-9, domain QA & verifikasi)** — nama lama "Sherlock=data" kini dipegang Analyst (D9); pemilik fase testing workflow; eksekusi MENYUSUL setelah P2-SCR-2 |
+| D27 | **Vault kredensial + sharing lintas persona** — nilai TIDAK PERNAH masuk konteks model (backend-inject + redaksi per-run); scope workspace/project/persona; v0 = kinds api_key+command saja (fill_login menyusul); kartu protected; payment card & one-time-code engine DITOLAK user |
 | D23 | **Portal & Linked Device**: akun pribadi di portal (repo `yuika-portal`) + pairing sekali pakai (QR/copy-token, TTL 120 dtk) + **relay buta E2E** (payload AES-256-GCM, AAD from|to) — host & remote connect outbound; **remote action-based** (intent terstruktur + event delta), BUKAN screen mirroring; matriks: Web=host saja · Desktop=host/remote (switch) · Mobile=remote saja; 2 remote live bersamaan sesi sama; slot per kind × 1, pengganti = unlink manual | Identitas user pindah ke portal (menggantikan workspace multi-user per server P1-INF-1 bag. 2); host offline-friendly (kunci sesi lokal; portal hanya pairing/unlink + gateway LLM); natural bagi Yuika — YuiEvent+REST tinggal ditransport; detail = `yuika-portal/docs/ARCH-PORTAL.md` (sumber kebenaran tunggal) |
 
 ---
@@ -437,8 +449,12 @@ klien. Tidak ada klien yang menulis tipe tangan sendiri. Tiga keluarga:
 | Desktop | Tauri | Klien penuh + **device relay worker** (jalankan kode/terminal/browser lokal untuk data sensitif) |
 | Push | FCM/APNs/web push milik sendiri | Notifikasi & approval satu-satunya kanal keluar |
 
-### 6.5 Eksekusi & sandboxing (3 tier)
+### 6.5 Eksekusi & sandboxing (4 kelas — D24)
 
+0. **Workshop persisten per project** (D24, menyusul): container volume /home/yui menetap
+   (tidur idle 10 mnt, bangun < 2 s), egress allowlist per project, terminal per-project
+   pindah backend docker exec; **fallback mesin tanpa Docker = kelas satu** (direktori
+   .workshop/ + shell lokal + warning jujur); staging/VPS-first — bukan pengganti sandbox.
 1. **Container sandbox** (default): temp FS, network policy, timeout, resource cap; pool hangat
    untuk cold start < 1–2 s; scale-to-zero.
 2. **Device relay**: desktop user sebagai eksekutor untuk tool yang disetujui; approval ketat.
@@ -523,6 +539,11 @@ Satu sesi = satu persona utama; persona lain hadir sebagai **delegation target**
 | **Neo Yui** | otomasi/devops | terminal, cron, delegation | cron blueprints, monitoring |
 | **Picasso Yui** (v0.5) | desain produk/UI | Penpot connector (embed), file, delegation | design-system basics, design→code handoff, Penpot operation |
 
+> Amandemen D26 (2026-11): baris "Sherlock Yui | data" di atas = konsep pra-D9-final;
+> posisi data kini dipegang **Analyst**. Nama **Sherlock dibebaskan untuk persona QA**
+> (roster ke-9 — detektif: reproduce/isolate/verify; pemilik fase testing) — eksekusi
+> menyusul setelah P2-SCR-2 (PLAN-WORKSHOP-LIVESCREEN-VAULT §2.5).
+>
 > Mulai 4–6 persona; Conductor + 3 spesialis adalah minimum untuk demo cerita delegation.
 > v0.5: **Picasso Yui** ditambahkan (putusan user — D9 jadi 7) sebagai persona inti studio
 > desain→kode (§13.9); skill seed-nya dilatih lewat dungeon (P1-DUN, P1-PER-7).

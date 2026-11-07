@@ -16,6 +16,7 @@ import { researchSearch } from "../research/search.js";
 import { ResearchBudget } from "../research/budget.js";
 import { newResearchCache, SqliteResearchCache } from "../research/cache.js";
 import { researchFetch } from "../research/fetcher.js";
+import { domainThrottle, withTimeout } from "../research/util.js";
 import { ResearchError } from "../research/types.js";
 import type { SearchProvider, SearchResult } from "../research/types.js";
 import { registry, resetRegistryForTests } from "../registry.js";
@@ -339,5 +340,44 @@ describe("RS tools (web_search / web_fetch)", () => {
     expect(res.isError).toBe(true);
     expect((res.result as { error: string }).error).toBe("private_blocked");
     expect((res.result as { message: string }).message).toMatch(/SSRF/);
+  });
+});
+
+// ── fix 2026-11 (laporan user: turn Scholar menggantung) ────────────────────\n
+describe("RS fix: throttle livelock + watchdog + ddg kondisional", () => {
+  it("domainThrottle: 2 call paralel host sama selesai (tanpa livelock) + jeda terjaga", async () => {
+    const t0 = Date.now();
+    await Promise.all([domainThrottle("x.test", 150), domainThrottle("x.test", 150)]);
+    const ms = Date.now() - t0;
+    expect(ms).toBeGreaterThanOrEqual(140); // call ke-2 tetap jeda
+    expect(ms).toBeLessThan(5_000); // tapi TIDAK livelock (bug lama: menunggu selamanya)
+  });
+
+  it("withTimeout: lolos nilai; race deadline → reject", async () => {
+    await expect(withTimeout(Promise.resolve(7), 50, "x")).resolves.toBe(7);
+    await expect(withTimeout(new Promise(() => {}), 80, "boom")).rejects.toThrow("boom");
+  });
+
+  it("router: hasil site-router cukup (>=3) → ddg TIDAK dipanggil; kurang → dipanggil", async () => {
+    const ddgCalls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: unknown) => {
+        ddgCalls.push(String(input));
+        return new Response(
+          '<a rel="nofollow" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fddg.test%2Fr&amp;rut=x">DDG R</a>',
+          { status: 200 },
+        );
+      }),
+    );
+    const enough = fake("A", [R("https://a.test/1"), R("https://a.test/2"), R("https://a.test/3")]);
+    const o1 = await researchSearch("q", { providers: [enough], ddgEnabled: true, limit: 5 });
+    expect(ddgCalls.filter((u) => u.includes("duckduckgo")).length).toBe(0); // dilewati — cukup
+    expect(o1.results.length).toBe(3);
+
+    const thin = fake("B", [R("https://b.test/1")]);
+    const o2 = await researchSearch("q2", { providers: [thin], ddgEnabled: true, limit: 5 });
+    expect(ddgCalls.filter((u) => u.includes("duckduckgo")).length).toBe(1); // dipanggil — hasil tipis
+    expect(o2.results.some((r) => r.source.includes("ddg"))).toBe(true);
   });
 });

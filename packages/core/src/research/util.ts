@@ -49,18 +49,26 @@ export async function httpText(
   return { status: res.status, text: (await res.text()).slice(0, 2 * 1024 * 1024) };
 }
 
+/** Race promise dengan deadline — guard watchdog utk await yang bisa menggantung
+ *  (DNS, stream lambat). Label jadi pesan error. */
+export function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  const guard = new Promise<never>((_, rej) => {
+    t = setTimeout(() => rej(new Error(label)), ms);
+  });
+  return Promise.race([p, guard]).finally(() => clearTimeout(t)) as Promise<T>;
+}
+
 /** Throttle per-domain (RS-2): jeda minimum antar request ke host yang sama.
- *  Slot berbasis timestamp → aman untuk beberapa await bersamaan. */
+ *  RESERVASI SEKALI lalu tidur sampai slot — caller paralel tidak pernah
+ *  me-re-queue dirinya (bug lama: waiter menambah slot tiap bangun → livelock). */
 const nextSlot = new Map<string, number>();
 
 export async function domainThrottle(host: string, minMs: number): Promise<void> {
   if (minMs <= 0) return;
-  for (;;) {
-    const now = Date.now();
-    const slot = Math.max(nextSlot.get(host) ?? 0, now);
-    const wait = slot - now;
-    nextSlot.set(host, slot + minMs);
-    if (wait <= 0) return;
-    await new Promise((r) => setTimeout(r, wait));
-  }
+  const now = Date.now();
+  const slot = Math.max(nextSlot.get(host) ?? 0, now);
+  nextSlot.set(host, slot + minMs); // reservasi atomik (JS single-thread, tanpa await di antara)
+  const wait = slot - now;
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 }

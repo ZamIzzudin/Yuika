@@ -112,7 +112,15 @@ export async function hostnameIsPrivate(host: string): Promise<boolean> {
   if (net.isIP(host)) return isPrivateIp(host);
   if (host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) return true;
   try {
-    const res = await dns.lookup(host, { all: true });
+    // dns.lookup Node TIDAK punya timeout bawaan — resolver bermasalah (VPN/ISP)
+    // bisa menggantung call selamanya (bug nyata: turn Scholar mati 2026-11).
+    // Race 5 dtk; gagal resolve → anggap bukan private (fetch akan melaporkan error jaringan).
+    const lookup = dns.lookup(host, { all: true });
+    const bail = new Promise<never>((_, rej) => {
+      const t = setTimeout(() => rej(new Error("dns lookup timeout")), 5_000);
+      t.unref?.();
+    });
+    const res = await Promise.race([lookup, bail]);
     return res.some((a) => isPrivateIp(a.address));
   } catch {
     return false; // biarkan fetch yang melaporkan error jaringan

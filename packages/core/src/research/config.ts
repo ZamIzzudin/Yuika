@@ -24,7 +24,7 @@ export function researchConfig(): ResearchConfig {
     off: /^(1|true|yes)$/i.test(process.env.YUI_RESEARCH_OFF ?? ""),
     searxngUrl: process.env.YUI_SEARXNG_URL?.trim() || "",
     ddgEnabled: !/^(0|false|no)$/i.test(process.env.YUI_RESEARCH_DDG ?? ""),
-    maxQueries: num(process.env.YUI_RESEARCH_MAX_QUERIES, 10),
+    maxQueries: num(process.env.YUI_RESEARCH_MAX_QUERIES, 30),
     maxPages: num(process.env.YUI_RESEARCH_MAX_PAGES, 20),
     domainDelayMs: num(process.env.YUI_RESEARCH_DOMAIN_DELAY_MS, 1000),
   };

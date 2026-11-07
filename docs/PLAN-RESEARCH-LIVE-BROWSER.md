@@ -1,8 +1,9 @@
 # Rencana: Research Engine + Live Browser
 
-> Adaptasi brief "Remote Browser & Research Tool" (2026-11) ke arsitektur Yuika
-> yang berjalan sekarang. Status: RANCANGAN — menunggu persetujuan scope & est
-> sebelum masuk TASKS.md sebagai batch aktif.
+> **STATUS (2026-11): Research Engine SELESAI; LB-1..3 diserap P2-SCR-1..3 (Batch 14a,
+> DISETUJUI user)** — sumber kebenaran baru: PLAN-WORKSHOP-LIVESCREEN-VAULT.md §2
+> (Screen Runtime ter-unifikasi + take control dua arah). Nomor "Batch 7/8" di dokumen
+> ini = sebelum tabrakan diperbaiki; nomor resmi lihat BATCHES.md.
 
 Pertanyaan pembuka: **bisakah brief ini di-embed ke sistem sekarang?**
 Jawaban: **ya, keduanya** — tapi bukan sebagai proyek baru berdiri sendiri.

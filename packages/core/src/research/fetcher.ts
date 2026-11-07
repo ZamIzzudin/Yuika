@@ -87,7 +87,7 @@ export async function researchFetch(rawUrl: string, opts: FetchOpts): Promise<Fe
   if (opts.sessionId && opts.budget) {
     const b = opts.budget.consume(opts.sessionId, "page", opts.now);
     if (!b.ok) {
-      throw new ResearchError("budget_exceeded", `research page budget habis (${b.limit}/jam per sesi) — tunggu sebentar atau kurangi jumlah halaman`);
+      throw new ResearchError("budget_exceeded", `research page budget exhausted (${b.limit}/hour per session) — wait a bit or fetch fewer pages`);
     }
   }
 
@@ -104,14 +104,14 @@ export async function researchFetch(rawUrl: string, opts: FetchOpts): Promise<Fe
   // robots: selalu dicek (server tanpa robots.txt = 404 = diizinkan — dev server aman;
   // hasil di-cache 1 jam). Cache research (hit) melewati tahap ini.
   if (!(await isAllowedByRobots(url, opts.now))) {
-    throw new ResearchError("robots_denied", `robots.txt ${url.hostname} melarang pengambilan ${url.pathname} — kutip snippet hasil search atau cari sumber lain`);
+    throw new ResearchError("robots_denied", `robots.txt on ${url.hostname} disallows fetching ${url.pathname} — use the search snippet or find another source`);
   }
 
   await domainThrottle(url.hostname, opts.domainDelayMs ?? 1_000);
 
   let res: Response;
   for (let hop = 0; ; hop++) {
-    if (hop > MAX_REDIRECTS) throw new ResearchError("too_many_redirects", `lebih dari ${MAX_REDIRECTS} redirect`);
+    if (hop > MAX_REDIRECTS) throw new ResearchError("too_many_redirects", `too many redirects (more than ${MAX_REDIRECTS})`);
     try {
       res = await fetch(url, {
         redirect: "manual",
@@ -123,12 +123,12 @@ export async function researchFetch(rawUrl: string, opts: FetchOpts): Promise<Fe
         },
       });
     } catch (e) {
-      if (e instanceof Error && e.name === "TimeoutError") throw new ResearchError("timeout", "waktu habis (20s)");
-      throw new ResearchError("fetch_failed", `gagal fetch: ${(e as Error).message}`);
+      if (e instanceof Error && e.name === "TimeoutError") throw new ResearchError("timeout", "fetch timed out (20s)");
+      throw new ResearchError("fetch_failed", `fetch failed: ${(e as Error).message}`);
     }
     if ([301, 302, 303, 307, 308].includes(res.status)) {
       const loc = res.headers.get("location");
-      if (!loc) throw new ResearchError("fetch_failed", "redirect tanpa location");
+      if (!loc) throw new ResearchError("fetch_failed", "redirect without a location header");
       url = await guarded(new URL(loc, url).href); // tiap hop divalidasi ulang
       continue;
     }
@@ -137,7 +137,7 @@ export async function researchFetch(rawUrl: string, opts: FetchOpts): Promise<Fe
 
   const contentType = (res.headers.get("content-type") ?? "").split(";")[0]!.trim().toLowerCase();
   if (Number(res.headers.get("content-length") ?? 0) > MAX_BYTES) {
-    throw new ResearchError("too_large", `respons > ${MAX_BYTES} byte`);
+    throw new ResearchError("too_large", `response exceeds ${MAX_BYTES} bytes`);
   }
   const raw = (await res.text()).slice(0, MAX_BYTES);
 
@@ -158,7 +158,7 @@ export async function researchFetch(rawUrl: string, opts: FetchOpts): Promise<Fe
     title = decodeURIComponent(url.pathname.split("/").pop() || "") || url.hostname;
     body = raw;
   } else {
-    throw new ResearchError("content_type_denied", `tipe konten tidak didukung riset: ${contentType || "(kosong)"}`);
+    throw new ResearchError("content_type_denied", `unsupported content type for research: ${contentType || "(none)"}`);
   }
 
   const outcome: FetchOutcome = {
