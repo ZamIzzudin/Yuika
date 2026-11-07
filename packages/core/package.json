@@ -15,12 +15,15 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.8",
+    "@mozilla/readability": "^0.6.0",
     "@yuika/contracts": "*",
     "ajv": "^8.20.0",
     "better-sqlite3": "^12.2.0",
+    "linkedom": "^0.18.15",
     "openai": "^7.51.0",
     "pino": "^9.14.0",
     "postgres": "^4.0.0",
+    "turndown": "^7.2.5",
     "unpdf": "^2.1.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yaml": "^2.6.1",
@@ -29,6 +32,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^22.9.0",
+    "@types/turndown": "^5.0.6",
     "typescript": "^5.6.3",
     "vitest": "^2.1.4"
   }

@@ -136,6 +136,12 @@ terminal bawah (tetap). Reader lama tidak dibuang: turun kelas jadi mode
 ### LB-2 · Agent pada sesi yang sama + takeover (M)
 - Core connect `chromium.connectOverCDP("127.0.0.1:<port>")` — tab yang sama
   dengan yang di-stream user.
+- **Authenticated preview research (keputusan diskusi 2026-11):** user login
+  sendiri sekali di tab Live Browser (profil persist per project) → Scholar
+  membaca halaman yang sudah authenticated (hasil search, balasan, feed) dengan
+  kecepatan manusia — jalur jujur untuk platform tertutup (X/Threads/TikTok),
+  menggantikan gagalan scraping/Camoufox. Read-only by default; rate dibatasi
+  budget riset yang sama.
 - Tools: `browser_screenshot`, `browser_console` (log+error), `browser_click`,
   `browser_type`, `browser_snapshot` (a11y tree ringkas), `browser_network`
   (request gagal). (`browser_open` = URL bar programatik.)
@@ -200,7 +206,7 @@ terminal bawah (tetap). Reader lama tidak dibuang: turun kelas jadi mode
 
 | Batch | Isi | Est | Status |
 |---|---|---|---|
-| 7 · RS-1..RS-5 | Research Engine (search providers, web_fetch upgrade, web_search, cache, config) | 2–3 d | **usulan prioritas 1** |
+| 7 · RS-1..RS-5 | Research Engine (search providers, web_fetch upgrade, web_search, cache, config) | 2–3 d | **SELESAI 2026-11** (+ RS-1b news/market/social — riset bebas topik) |
 | 8a · LB-1 | Process manager + live viewport + input | ±3 d | usulan |
 | 8b · LB-2 | Agent shared-session + browser_* + takeover | ±2 d | usulan |
 | 8c · LB-3 | DevTools embedded | ±2 d | usulan |

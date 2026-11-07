@@ -23,6 +23,7 @@ import { WorkflowEngine } from "./workflow/engine.js";
 import { loadSkillBindings, saveSkillBindings, applyBindingAction, effectiveSkillNames, type SkillBinding, type SkillBindingsFile } from "./skills/bindings.js";
 import { registerFileTools } from "./tools/file-tools.js";
 import { registerWebTools } from "./tools/web-tools.js";
+import { newResearchCache } from "./research/cache.js";
 import { registerSkillTools } from "./tools/skill-tools.js";
 import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerTerminalTool } from "./tools/terminal-tool.js";
@@ -172,7 +173,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // tools core (sekali per proses)
   const fileRevisions = new FileRevisionStore(paths.dbPath);
   registerFileTools(fileRevisions);
-  registerWebTools({ sessionStore: store, projects: projectStore }); // P2-STU-4: fetch agent tercatat di tab Browser
+  // Batch 7 (RS-4): cache riset SQLite terpisah dari db sesi (aman dihapus ulang).
+  const researchCache = newResearchCache(path.join(path.dirname(paths.dbPath), "research.db"));
+  registerWebTools({ sessionStore: store, projects: projectStore, cache: researchCache }); // P2-STU-4: fetch agent tercatat di tab Browser
   registerSkillTools(paths.skillsDir);
   registerSessionSearchTools(store); // P1-MEM-5: riwayat sesi bisa ditelusuri agent
   registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)

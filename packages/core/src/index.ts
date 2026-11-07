@@ -28,6 +28,15 @@ export { runChildPersona, type DelegationDeps } from "./delegation/runner.js";
 export { registerTodoTools } from "./tools/todo-tools.js";
 // P2-STU-4: browser reader read-only (allowlist + SSRF guard + sanitizer).
 export { BrowserReadError, readBrowserAllow, readBrowserPolicy, writeBrowserPolicy, readBrowserPage, assertBrowserUrlAllowed, hostAllowedBrowser, isPrivateIp, sanitizeBrowserHtml } from "./browser/reader.js";
+// Batch 7 (RS): Research Engine — web_search provider chain + web_fetch pipeline
+// (SSRF/robots/throttle/Readability, cache SQLite, budget per sesi).
+export {
+  researchSearch, researchFetch, researchConfig, researchPolicyFor, getResearchBudget,
+  newResearchCache, ResearchBudget, ResearchError, type ResearchCache,
+  isAllowedByRobots, parseRobots, robotsAllows, clearRobotsCache,
+  DEFAULT_PROVIDERS, SEARCH_TTL_MS, PAGE_TTL_MS,
+  type SearchResult, type FetchedPage, type SearchProvider, type SearchOutcome, type FetchOutcome, type ResearchConfig,
+} from "./research/index.js";
 // P2-STU-2: terminal manager — sesi shared user (SSE api) & agent (tool).
 export {
   ensureSession as ensureTerminalSession,
