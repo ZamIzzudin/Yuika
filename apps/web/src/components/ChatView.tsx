@@ -217,6 +217,7 @@ export function ChatView({
   approvalMode,
   onToggleApprovalMode,
   workflow,
+  onWatchScreen,
 }: {
   items: ChatItem[];
   personaState: PersonaState;
@@ -235,6 +236,8 @@ export function ChatView({
   onToggleApprovalMode?: () => void;
   /** Konteks workflow utk composer conductor (null = chat biasa). */
   workflow?: WorkflowChatCtx | null;
+  /** Buka floating live screen persona (kartu takeover — SCR-3 follow-up). */
+  onWatchScreen?: (personaId: string) => void;
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
@@ -685,6 +688,15 @@ export function ChatView({
                       </p>
                     ) : (
                       <div className="mt-3 flex flex-wrap gap-2">
+                        {onWatchScreen && (
+                          <Button
+                            size="sm"
+                            onClick={() => it.name && onWatchScreen(it.name)}
+                            title="Watch this screen in a floating window while you chat"
+                          >
+                            Watch live
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="primary"

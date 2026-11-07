@@ -5,8 +5,9 @@
 // Take control / Release (fence), chip pengendali. Frame via SSE khusus
 // (bukan event bus sesi — bandwidth); input via authFetch.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 import { Button } from "@/components/ui";
+import { useScreenStream } from "./useScreenStream";
 
 export interface ScreenInfo {
   key: string;
@@ -22,24 +23,23 @@ export interface ScreenInfo {
 export function ScreenLive({
   projectId,
   personas,
+  onFloat,
 }: {
   projectId: string;
   /** id persona yang tersedia utk tombol "+ Open screen" (dari roster project). */
   personas: { id: string; name: string }[];
+  /** Buka sesi ini sebagai floating window di atas semua tab (SCR-3 follow-up). */
+  onFloat?: (personaId: string) => void;
 }) {
   const [sessions, setSessions] = useState<ScreenInfo[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [state, setState] = useState<ScreenInfo | null>(null);
-  const [frame, setFrame] = useState<string | null>(null);
-  const [dim, setDim] = useState<{ w: number; h: number } | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const [starting, setStarting] = useState(false);
-  const [takeBusy, setTakeBusy] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const sel = sessions.find((s) => s.key === selected) ?? null;
   const personaId = sel?.personaId;
+  const { state, frame, dim, err, takeBusy, input, lease } = useScreenStream(projectId, personaId);
 
   // refresh daftar ringan (poll 5 dtk — sesi bisa datang dari agent)
   const onSelect = setSelected;
@@ -59,76 +59,17 @@ export function ScreenLive({
       }
     })();
   }, [projectId, selected, onSelect]);
+  const [openErr, setOpenErr] = useState<string | null>(null);
   useEffect(() => {
     reload();
     const t = setInterval(reload, 5_000);
     return () => clearInterval(t);
   }, [reload]);
 
-  // SSE stream frame+state utk sesi terpilih
-  useEffect(() => {
-    if (!personaId) {
-      setState(null);
-      setFrame(null);
-      return;
-    }
-    setErr(null);
-    let es: EventSource | null = null;
-    let stop = false;
-    let retry = 0;
-    const connect = (): void => {
-      if (stop) return;
-      es = new EventSource(apiUrl(`/api/projects/${projectId}/screens/${personaId}/stream?1=1${authTokenQuery()}`));
-      es.addEventListener("state", (e) => {
-        try { setState(JSON.parse((e as MessageEvent).data) as ScreenInfo); } catch { /* parse */ }
-      });
-      es.addEventListener("frame", (e) => {
-        try {
-          const f = JSON.parse((e as MessageEvent).data) as { data: string; width: number; height: number };
-          setFrame(f.data);
-          setDim({ w: f.width, h: f.height });
-        } catch { /* parse */ }
-      });
-      es.onerror = () => {
-        es?.close();
-        if (!stop && retry++ < 30) setTimeout(connect, Math.min(1000 * retry, 5000));
-      };
-    };
-    connect();
-    return () => {
-      stop = true;
-      es?.close();
-    };
-  }, [projectId, personaId]);
-
-  const input = useCallback(
-    async (body: Record<string, unknown>): Promise<boolean> => {
-      if (!personaId) return false;
-      try {
-        const r = await authFetch(apiUrl(`/api/projects/${projectId}/screens/${personaId}/input`), {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!r.ok) {
-          const b = (await r.json().catch(() => ({}))) as { error?: string };
-          setErr(b.error ?? `HTTP ${r.status}`);
-          return false;
-        }
-        setErr(null);
-        return true;
-      } catch (e) {
-        setErr(e instanceof Error ? e.message : String(e));
-        return false;
-      }
-    },
-    [projectId, personaId],
-  );
-
   const openSession = useCallback(
     async (pid: string) => {
       setStarting(true);
-      setErr(null);
+      setOpenErr(null);
       try {
         const r = await authFetch(apiUrl(`/api/projects/${projectId}/screens`), {
           method: "POST",
@@ -140,29 +81,12 @@ export function ScreenLive({
         onSelect(b.key);
         reload();
       } catch (e) {
-        setErr(e instanceof Error ? e.message : String(e));
+        setOpenErr(e instanceof Error ? e.message : String(e));
       } finally {
         setStarting(false);
       }
     },
     [projectId, onSelect, reload],
-  );
-
-  const lease = useCallback(
-    async (act: "take" | "yield") => {
-      if (!personaId) return;
-      setTakeBusy(true);
-      try {
-        const r = await authFetch(apiUrl(`/api/projects/${projectId}/screens/${personaId}/${act}`), { method: "POST" });
-        if (!r.ok) {
-          const b = (await r.json().catch(() => ({}))) as { error?: string };
-          setErr(b.error ?? `HTTP ${r.status}`);
-        } else setErr(null);
-      } finally {
-        setTakeBusy(false);
-      }
-    },
-    [projectId, personaId],
   );
 
   const owner = state?.leaseOwner ?? null;
@@ -236,9 +160,9 @@ export function ScreenLive({
         </label>
       </div>
 
-      {err && (
-        <p className="flex-none rounded-lg2 border border-line bg-surface px-3 py-2 text-caption text-rose-400" role="alert">{err}</p>
-      )}
+      {err || openErr ? (
+        <p className="flex-none rounded-lg2 border border-line bg-surface px-3 py-2 text-caption text-rose-400" role="alert">{err ?? openErr}</p>
+      ) : null}
 
       {!sel ? (
         <div className="flex flex-1 items-center justify-center rounded-lg2 border border-line bg-surface p-6 text-center text-caption text-muted">
@@ -272,6 +196,11 @@ export function ScreenLive({
             <Button size="sm" variant={iControl ? "primary" : "secondary"} disabled={takeBusy} onClick={() => void lease(iControl ? "yield" : "take")}>
               {iControl ? "Release" : "Take control"}
             </Button>
+            {onFloat && (
+              <Button size="sm" onClick={() => onFloat(sel.personaId)} title="Keep this screen floating while you work in other tabs">
+                Float
+              </Button>
+            )}
           </div>
 
           {/* kanvas frame */}

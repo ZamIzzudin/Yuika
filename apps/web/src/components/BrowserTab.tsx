@@ -21,7 +21,7 @@ interface Policy {
   allowAll: boolean;
 }
 
-export function BrowserTab({ projectId }: { projectId: string }) {
+export function BrowserTab({ projectId, onFloat }: { projectId: string; onFloat?: (personaId: string) => void }) {
   const [mode, setMode] = useState<"reader" | "live">("reader");
   const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
   const [input, setInput] = useState("");
@@ -142,7 +142,7 @@ export function BrowserTab({ projectId }: { projectId: string }) {
         ))}
       </div>
       {mode === "live" ? (
-        <ScreenLive projectId={projectId} personas={personas} />
+        <ScreenLive projectId={projectId} personas={personas} onFloat={onFloat} />
       ) : (
       <>
       <form

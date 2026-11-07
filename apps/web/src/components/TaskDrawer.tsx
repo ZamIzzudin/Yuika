@@ -169,6 +169,7 @@ export function ProjectTabs({
   rev,
   activeSessionId,
   live,
+  onFloatScreen,
 }: {
   project: ProjectInfo;
   personas: PersonaInfo[];
@@ -180,6 +181,8 @@ export function ProjectTabs({
     parentState: PersonaState;
     delegations: LiveDelegation[];
   };
+  /** Buka sesi screen persona sbg floating window (Batch 14a follow-up). */
+  onFloatScreen?: (personaId: string) => void;
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
@@ -672,7 +675,7 @@ export function ProjectTabs({
           utama; terminal = panel bawah ala VS Code (hide/open + resize) dgn
           view Shell (xterm) & Commands (log run_command — #7). */}
       {loaded && activeTab === "browser" && (
-        <BrowserToolsTab project={{ id: project.id, name: project.name }} />
+        <BrowserToolsTab project={{ id: project.id, name: project.name }} onFloatScreen={onFloatScreen} />
       )}
 
       {treeOpen && (

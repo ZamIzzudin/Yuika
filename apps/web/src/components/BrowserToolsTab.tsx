@@ -138,8 +138,10 @@ function CommandsView({ projectId }: { projectId: string }) {
 
 export function BrowserToolsTab({
   project,
+  onFloatScreen,
 }: {
   project: { id: string; name: string };
+  onFloatScreen?: (personaId: string) => void;
 }) {
   const [panel, setPanel] = useState(() =>
     typeof window === "undefined"
@@ -182,7 +184,7 @@ export function BrowserToolsTab({
     <div className="flex min-h-0 flex-1 flex-col">
       {/* tampilan utama: Browser */}
       <div className="flex min-h-0 flex-1 flex-col">
-        <BrowserTab projectId={project.id} />
+        <BrowserTab projectId={project.id} onFloat={onFloatScreen} />
       </div>
 
       {/* panel terminal ala VS Code */}

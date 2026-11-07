@@ -36,6 +36,7 @@ import {
   type WorkspaceTab,
 } from "@/components/TaskDrawer";
 import { Skeleton } from "@/components/Skeleton";
+import { ScreenPip } from "@/components/ScreenPip";
 import { Dot, StateChip, TabPills } from "@/components/ui";
 import { toastErr } from "@/components/ui/toast";
 import { useWorkflowRun } from "@/components/useWorkflowRun";
@@ -110,6 +111,8 @@ export default function Home() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
   const [mainTab, setMainTab] = useState<WorkspaceTab>("chat");
+  // Batch 14a follow-up: floating shared screen — melayang di atas SEMUA tab.
+  const [pip, setPip] = useState<{ projectId: string; personaId: string } | null>(null);
   const [projSessions, setProjSessions] = useState<ProjectSessionSummary[]>([]);
   const [booted, setBooted] = useState(false); // skeleton hanya selama fetch awal
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
@@ -1259,6 +1262,9 @@ export default function Home() {
                           personaId={active.id}
                           personaName={active.name}
                           workflow={wfCtx}
+                          onWatchScreen={(pid) => {
+                            if (activeProject) setPip({ projectId: activeProject.id, personaId: pid });
+                          }}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
@@ -1322,6 +1328,9 @@ export default function Home() {
                           personaId={active.id}
                           personaName={active.name}
                           workflow={wfCtx}
+                          onWatchScreen={(pid) => {
+                            if (activeProject) setPip({ projectId: activeProject.id, personaId: pid });
+                          }}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
@@ -1351,6 +1360,7 @@ export default function Home() {
                             personas={personas}
                             activeTab={mainTab}
                             rev={taskRev}
+                            onFloatScreen={(pid) => setPip({ projectId: activeProject.id, personaId: pid })}
                             live={{
                               parentPersonaId: active.id,
                               parentState: personaState,
@@ -1376,6 +1386,17 @@ export default function Home() {
           )}
         </main>
       </div>
+      {/* Batch 14a follow-up: floating shared screen — di atas SEMUA tab,
+          termasuk chat; nonton persona + take/hand over tanpa pindah tab. */}
+      {pip && activeProject?.id === pip.projectId && (
+        <ScreenPip
+          projectId={pip.projectId}
+          personaId={pip.personaId}
+          personaName={personas.find((p) => p.id === pip.personaId)?.name ?? pip.personaId}
+          onClose={() => setPip(null)}
+          onExpand={() => setMainTab("browser")}
+        />
+      )}
     </AuthGate>
   );
 }

@@ -35,3 +35,6 @@ auth.db-wal
 
 # Batch 12 vault master key (auto-gen <data>/vault.key — JANGAN commit)
 vault.key
+
+# Yuika runtime state (screen profiles, policies) — cookies/browser data
+.yuika/
