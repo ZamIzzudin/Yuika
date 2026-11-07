@@ -2,6 +2,7 @@ tools:
   - skills_list
   - skill_view
   - web_fetch
+  - web_search
   - read_file
   - search_files
   - write_file
