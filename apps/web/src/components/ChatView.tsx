@@ -51,6 +51,7 @@ export interface ChatItem {
     | "delegation"
     | "approval"
     | "vault"
+    | "takeover"
     | "error"
     | "noted"
     | "skill"
@@ -88,6 +89,8 @@ export interface ChatItem {
   originHint?: string;
   saved?: boolean;
   vresolved?: "filled" | "skipped" | "expired" | null;
+  // takeover (Batch 14a SCR-4): persona minta kontrol screen — non-blocking.
+  tresolved?: "granted" | "denied" | "expired" | null;
   // noted (P1-MEM-2: hasil learn nudge)
   scope?: "user" | "project";
   // compressed (P0-CORE-4: chip transparansi kompresi konteks)
@@ -653,6 +656,67 @@ export function ChatView({
                       </p>
                     ) : (
                       <VaultFillCard requestId={it.requestId!} />
+                    )}
+                  </div>
+                </div>
+              );
+            }
+            if (it.kind === "takeover") {
+              // Batch 14a (SCR-4): kartu non-blocking — persona minta kontrol
+              // shared screen. Turn TIDAK diblok UI; tombol memanggil REST
+              // resolve; deadline auto-expired di backend.
+              return (
+                <div
+                  key={`r${i}`}
+                  className="msg-in grid grid-cols-[36px_minmax(0,1fr)] gap-x-3"
+                >
+                  <div className="col-start-2 rounded-card border border-line-strong border-l-2 border-l-accent bg-inset px-4 py-3">
+                    <b className="text-body font-medium text-primary">
+                      {it.name} asks for screen control
+                    </b>
+                    <p className="mt-0.5 text-caption text-muted">{it.reason}</p>
+                    {it.tresolved ? (
+                      <p className="mt-2 text-caption text-muted">
+                        {it.tresolved === "granted"
+                          ? "Control handed over — the agent is driving now (watch it on the Browser tab, Live mode)"
+                          : it.tresolved === "denied"
+                            ? "Denied — the agent continues read-only"
+                            : "Expired with no answer — the agent continues read-only"}
+                      </p>
+                    ) : (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => {
+                            void authFetch(
+                              apiUrl(`/api/takeover/${encodeURIComponent(it.requestId!)}/resolve`),
+                              {
+                                method: "POST",
+                                headers: { "content-type": "application/json" },
+                                body: JSON.stringify({ grant: true }),
+                              },
+                            );
+                          }}
+                        >
+                          Hand over control
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            void authFetch(
+                              apiUrl(`/api/takeover/${encodeURIComponent(it.requestId!)}/resolve`),
+                              {
+                                method: "POST",
+                                headers: { "content-type": "application/json" },
+                                body: JSON.stringify({ grant: false }),
+                              },
+                            );
+                          }}
+                        >
+                          Keep control
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>

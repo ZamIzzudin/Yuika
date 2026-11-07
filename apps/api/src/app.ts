@@ -22,6 +22,7 @@ import { registerPortalRoutes } from "./routes/portal.js";
 import { registerWorkflowRoutes } from "./routes/workflows.js";
 import { registerBrowserRoutes } from "./routes/browser.js";
 import { registerTerminalRoutes } from "./routes/terminal.js";
+import { registerScreenRoutes } from "./routes/screen.js";
 import { getRuntime } from "./runtime.js";
 import { registerAuthRoutes, bearerToken } from "./routes/auth.js";
 import { registerAuthSsoRoutes } from "./routes/auth-sso.js"; // CP-3 SSO portal
@@ -78,6 +79,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   registerSkillRoutes(app, getRt);
   registerUsageRoutes(app, getRt);
   registerTerminalRoutes(app, getRt); // P2-STU-2: tab Terminal
+  registerScreenRoutes(app, getRt); // Batch 14a (P2-SCR): shared live screen + lease
   registerPortalRoutes(app, getRt);
   registerWorkflowRoutes(app, getRt); // P2-FLOW: runs + gate + template
   registerBrowserRoutes(app, getRt); // P2-STU-4: tab Browser read-only

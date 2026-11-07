@@ -2,6 +2,14 @@ tools:
   - vault_request
   - vault_list
   - secret_http
+  - browser_open
+  - browser_snapshot
+  - browser_click
+  - browser_type
+  - browser_press
+  - browser_scroll
+  - request_takeover
+  - screen_status
   - skills_list
   - skill_view
   - web_fetch

@@ -315,6 +315,35 @@ export const ContextCompressedEvent = EventMeta.extend({
 });
 
 /** Discriminated union — setiap event punya `type` literal; UI switch-case atas ini. */
+export const ScreenStateEvent = EventMeta.extend({
+  type: z.literal("screen.state"),
+  projectId: z.string(),
+  personaId: z.string(),
+  status: z.enum(["starting", "running", "stopped", "failed"]),
+  url: z.string(),
+  title: z.string(),
+  leaseOwner: z.string().nullable(),
+});
+
+/** Batch 14a (SCR-4): persona minta user ambil alih / serahkan kontrol —
+ *  kartu NON-BLOCKING (chat tetap hidup; deadline auto-expired). */
+export const TakeoverRequestedEvent = EventMeta.extend({
+  type: z.literal("takeover.requested"),
+  requestId: z.string(),
+  projectId: z.string(),
+  personaId: z.string(),
+  reason: z.string(),
+  deadlineMs: z.number().int().nonnegative(),
+});
+
+export const TakeoverResolvedEvent = EventMeta.extend({
+  type: z.literal("takeover.resolved"),
+  requestId: z.string(),
+  projectId: z.string(),
+  personaId: z.string(),
+  status: z.enum(["granted", "denied", "expired"]),
+});
+
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
   MessageDeltaEvent,
@@ -353,6 +382,9 @@ export const YuiEvent = z.discriminatedUnion("type", [
   VaultRequestedEvent,
   VaultResolvedEvent,
   VaultUsedEvent,
+  ScreenStateEvent,
+  TakeoverRequestedEvent,
+  TakeoverResolvedEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;
 export type YuiEventType = YuiEvent["type"];

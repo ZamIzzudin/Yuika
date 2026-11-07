@@ -388,6 +388,31 @@ export default function Home() {
           setBusy(false);
         }
         break;
+      case "takeover.requested":
+        setItems((prev) => [
+          ...prev,
+          {
+            kind: "takeover" as const,
+            requestId: e.requestId,
+            name: e.personaId,
+            reason: e.reason,
+            tresolved: null,
+          },
+        ]);
+        break;
+      case "takeover.resolved":
+        setItems((prev) =>
+          prev.map((it) =>
+            it.kind === "takeover" && it.requestId === e.requestId
+              ? { ...it, tresolved: e.status }
+              : it,
+          ),
+        );
+        break;
+      case "screen.state":
+        // metadata ringan — tak render item chat; dipakai BrowserTab (mode Live
+        // poll sendiri via REST). Cukup log aktivitas bila persona pertama buka.
+        break;
       case "vault.requested":
         setItems((prev) => [
           ...prev,

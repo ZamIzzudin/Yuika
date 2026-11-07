@@ -1,12 +1,12 @@
 "use client";
 
-// P2-STU-4: tab Browser read-only — user membuka URL riset lewat proxy
-// server-side (allowlist project + SSRF guard + sanitizer) dan melihat riwayat
-// kunjungan agent. Render di iframe sandbox KOSONG (tanpa allow-scripts /
-// allow-same-origin) — pertahanan terakhir setelah sanitizer server.
+// P2-STU-4 + Batch 14a (SCR-3): tab Browser dua mode —
+//   Reader: URL riset via proxy server-side (sanitized, read-only) — fallback
+//   Live:   shared screen persona (screencast + input dua arah, lease)
 import { useCallback, useEffect, useState } from "react";
 import { apiUrl, authFetch } from "@/lib/api";
 import { Button } from "@/components/ui";
+import { ScreenLive } from "./ScreenLive";
 
 interface Visit {
   id: number;
@@ -22,6 +22,8 @@ interface Policy {
 }
 
 export function BrowserTab({ projectId }: { projectId: string }) {
+  const [mode, setMode] = useState<"reader" | "live">("reader");
+  const [personas, setPersonas] = useState<{ id: string; name: string }[]>([]);
   const [input, setInput] = useState("");
   const [page, setPage] = useState<{ url: string; title: string; html: string } | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -56,6 +58,21 @@ export function BrowserTab({ projectId }: { projectId: string }) {
     void loadVisits();
     void loadPolicy();
   }, [loadVisits, loadPolicy]);
+
+  // Batch 14a (SCR-3): mode Live butuh daftar persona (pemilik sesi screen).
+  useEffect(() => {
+    if (mode !== "live") return;
+    void (async () => {
+      try {
+        const r = await authFetch(apiUrl("/api/personas"));
+        if (!r.ok) return;
+        const d = (await r.json()) as { personas?: { id: string; name: string; hidden?: boolean }[] };
+        setPersonas((d.personas ?? []).filter((p) => !p.hidden).map((p) => ({ id: p.id, name: p.name })));
+      } catch {
+        /* best-effort */
+      }
+    })();
+  }, [mode]);
 
   const toggleAllowAll = useCallback(async () => {
     if (!policy || policyBusy) return;
@@ -108,6 +125,26 @@ export function BrowserTab({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
+      {/* SCR-3: selector mode Reader (statis) | Live (shared screen) */}
+      <div className="flex flex-none items-center gap-1" role="tablist" aria-label="Browser mode">
+        {(["reader", "live"] as const).map((m) => (
+          <button
+            key={m}
+            role="tab"
+            aria-selected={mode === m}
+            onClick={() => setMode(m)}
+            className={`rounded-pill border px-3 py-1.5 text-caption capitalize transition-colors ${
+              mode === m ? "border-accent/60 bg-accent/10 text-accent" : "border-line bg-surface text-muted hover:text-primary"
+            }`}
+          >
+            {m === "reader" ? "Reader" : "Live screens"}
+          </button>
+        ))}
+      </div>
+      {mode === "live" ? (
+        <ScreenLive projectId={projectId} personas={personas} />
+      ) : (
+      <>
       <form
         className="flex flex-none flex-wrap items-center gap-2"
         onSubmit={(e) => {
@@ -217,6 +254,8 @@ export function BrowserTab({ projectId }: { projectId: string }) {
           )}
         </section>
       </div>
+      </>
+      )}
     </div>
   );
 }

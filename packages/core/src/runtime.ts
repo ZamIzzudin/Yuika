@@ -29,6 +29,8 @@ import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerVaultTools } from "./tools/vault-tools.js";
 import { getVault } from "./vault/manager.js";
 import { registerTerminalTool } from "./tools/terminal-tool.js";
+import { registerScreenTools } from "./tools/screen-tools.js";
+import { closeAllScreens } from "./screen/manager.js";
 import * as terminal from "./terminal/manager.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
 import { registerConsultTool } from "./tools/consult-tool.js";
@@ -187,6 +189,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const vault = getVault(path.dirname(paths.dbPath));
   registerVaultTools();
   registerTerminalTool(); // P2-STU-2: terminal shared user & agent
+  // Batch 14a (P2-SCR, D25): shared live screen — Chromium per project×persona,
+  // screencast ke tab Browser (mode Live), input dua arah dgn lease fence.
+  // dataDir dipakai untuk profil persist .yuika/browser/<project>/<persona>;
+  // takeover.resolved dipancarkan TOOL via ctx.emit (turn masih menunggu).
+  registerScreenTools({ dataDir: path.dirname(paths.dbPath) });
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({
     sessionStore: store,
@@ -660,6 +667,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getUsageRecent: (limit = 50, filter: { projectId?: string; sessionId?: string; personaId?: string; since?: number } = {}) =>
       usageLedger.recent(limit, filter),
     paths,
+    /** Batch 14a (P2-SCR): direktori data runtime — profil browser persist. */
+    dataDir: path.dirname(paths.dbPath),
     store,
     bus: EventBus,
     /** Batch 12 (P2-VLT): vault kredensial — utk REST metadata & fill. */
@@ -677,6 +686,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       mcpRetry.clear();
       // P2-STU-2: matikan sesi terminal (shell host / container sandbox).
       try { await terminal.closeAll(); } catch { /* shutdown best-effort */ }
+      // Batch 14a (P2-SCR-1): matikan semua Chromium shared-screen.
+      try { await closeAllScreens(); } catch { /* shutdown best-effort */ }
       // Batch 12 (P2-VLT-2): sisa run-only dari turn yang mati dibersihkan;
       // singleton vault (globalThis) TETAP hidup lintas HMR — db handle-nya
       // WAL-safe, sama seperti store sesi (DELIBERAT: tidak di-close).

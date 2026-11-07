@@ -68,3 +68,17 @@ export {
 } from "./terminal/manager.js";
 export { ProjectStore } from "./project/store.js";
 export { WorkflowEngine, type WorkflowEngineDeps, type StartRunOptions, type StartRunResult } from "./workflow/engine.js";
+
+// Batch 14a (P2-SCR, D25): shared live screen — lease fence (rokazo), CDP raw
+// (global WebSocket Node 22+), manager Chromium per project×persona, takeover.
+export { screenLeaseId, parseScreenLeaseId, canTakeScreenLease, canReleaseScreenLease } from "./screen/lease.js";
+export {
+  ensureScreen, stopScreen, closeAllScreens, listScreens, getScreenState,
+  subscribeScreen, takeLease, yieldLease, leaseOwner,
+  screenNavigate, screenClick, screenType, screenPress, screenScroll, screenSnapshot,
+  openTakeoverRequest, resolveTakeover, listPendingTakeovers, screenKey,
+  detectBrowserExec, takeoverTimeoutMs,
+  type ScreenState, type ScreenFrame, type Snapshot,
+} from "./screen/manager.js";
+export { parseDevToolsUrl, CdpError } from "./screen/cdp.js";
+export { registerScreenTools } from "./tools/screen-tools.js";

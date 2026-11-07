@@ -700,10 +700,10 @@
 - [ ] ~~P2-VLT-4~~ **fill_login — MENYUSUL (C)** setelah P2-SCR-3 + desain related-origins (SSO redirect chain) + scrub hidden field di SEMUA run scope (rokazo hanya per-bot)
 
 ### Batch 14a · Live Screen Scholar (P2-SCR — menyerap LB-1..3)
-- [ ] **P2-SCR-1** (=LB-1) Screen manager core: playwright-core Chromium headless CDP 127.0.0.1 (binary `YUI_BROWSER_EXEC` → cache playwright → Chrome/Edge), Page.startScreencast JPEG (idle ≤2fps `YUI_SCREEN_FPS_IDLE`, aktif ≤15fps), input relay mouse/key/scroll + setDeviceMetricsOverride, lazy start + idle-kill, WS screencast/input (auth pola terminal; projectId binding) · *A · 3d*
-- [ ] **P2-SCR-2** (=LB-2 inti) Agent shared-session: `browser_*` tools via connectOverCDP sesi yang sama dengan yang di-stream; **takeover lease tunggal pola fence** (adaptasi rokazo screen-lease.ts) — user takeover → tool persona yield ber-bound (max-wait + auto-release); chip "KAMU mengendalikan" · *A · 2d*
-- [ ] **P2-SCR-3** Profil browser persist per (project, persona) `.yuika/browser/<persona>/` + selector screen tab Browser (Preview | Scholar) + **EKSKLUSI `.yuika/browser/*` & `preview-profile/` dari tab Files/tree/artefak** · *B · 1.5d*
-- [ ] **P2-SCR-4** `request_takeover` persona: tool + kartu non-blocking "Needs you" (reason wajib sebut origin) + tombol Ambil alih/Lewati + deadline auto-skip + lease release · *A · 1.5d*
+- [x] **P2-SCR-1** (=LB-1) Screen manager core: playwright-core Chromium headless CDP 127.0.0.1 (binary `YUI_BROWSER_EXEC` → cache playwright → Chrome/Edge), Page.startScreencast JPEG (idle ≤2fps `YUI_SCREEN_FPS_IDLE`, aktif ≤15fps), input relay mouse/key/scroll + setDeviceMetricsOverride, lazy start + idle-kill, WS screencast/input (auth pola terminal; projectId binding) · *A · 3d*
+- [x] **P2-SCR-2** (=LB-2 inti) Agent shared-session: `browser_*` tools via connectOverCDP sesi yang sama dengan yang di-stream; **takeover lease tunggal pola fence** (adaptasi rokazo screen-lease.ts) — user takeover → tool persona yield ber-bound (max-wait + auto-release); chip "KAMU mengendalikan" · *A · 2d*
+- [x] **P2-SCR-3** Profil browser persist per (project, persona) `.yuika/browser/<persona>/` + selector screen tab Browser (Preview | Scholar) + **EKSKLUSI `.yuika/browser/*` & `preview-profile/` dari tab Files/tree/artefak** · *B · 1.5d*
+- [x] **P2-SCR-4** `request_takeover` persona: tool + kartu non-blocking "Needs you" (reason wajib sebut origin) + tombol Ambil alih/Lewati + deadline auto-skip + lease release · *A · 1.5d*
 - [ ] **MENYUSUL (C)**: SCR-5 DevTools embed · SCR-6 watch QA + event qa.check.* · SCR-7 remote watch 1fps via relay · P1-PER-8 persona Sherlock (roster ke-9) · P2-DUN-x dungeon QA · Batch 13 Workshop persisten (D24 — staging/VPS-first, fallback lokal kelas satu, `WorkshopHost` interface)
 
 ### Fix riset 2026-11-07 (laporan user project p_861f2edc — turn Scholar menggantung)
