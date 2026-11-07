@@ -1,5 +1,6 @@
 // @yuika/contracts — public entry
 export * from "./events.js";
+export * from "./vault.js";
 export * from "./remote.js";
 export * from "./rest.js";
 export * from "./persona.js";

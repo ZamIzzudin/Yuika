@@ -50,6 +50,7 @@ export interface ChatItem {
     | "activity"
     | "delegation"
     | "approval"
+    | "vault"
     | "error"
     | "noted"
     | "skill"
@@ -81,6 +82,12 @@ export interface ChatItem {
   requestId?: string;
   reason?: string;
   resolved?: "approved" | "denied" | "expired" | null;
+  // vault (Batch 12): kartu protected — nilai TIDAK pernah di item/event;
+  // user mengisi via REST fill langsung dari kartu.
+  vkind?: "api_key" | "command";
+  originHint?: string;
+  saved?: boolean;
+  vresolved?: "filled" | "skipped" | "expired" | null;
   // noted (P1-MEM-2: hasil learn nudge)
   scope?: "user" | "project";
   // compressed (P0-CORE-4: chip transparansi kompresi konteks)
@@ -90,6 +97,98 @@ export interface ChatItem {
 }
 
 export { STATE_LABEL };
+
+/** Batch 12 (D27): input nilai rahasia — uncontrolled (nilai hanya dibaca saat
+ *  submit lalu input di-clear) + toggle "Save to Vault" (off = run-only).
+ *  Nilai dikirim LANGSUNG ke POST /api/vault/fill/:id — tidak pernah masuk
+ *  state React / event / chat. */
+function VaultFillCard({ requestId }: { requestId: string }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [save, setSave] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const submit = async () => {
+    const v = ref.current?.value ?? "";
+    if (!v.trim() || busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await authFetch(
+        apiUrl(`/api/vault/fill/${encodeURIComponent(requestId)}`),
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ value: v, save }),
+        },
+      );
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(b.error ?? `HTTP ${res.status}`);
+      }
+      // resolved text datang via event vault.resolved; clear input segera
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      if (ref.current) ref.current.value = ""; // DOM-side clear (pola rokazo)
+      setBusy(false);
+    }
+  };
+
+  const skip = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await authFetch(
+        apiUrl(`/api/vault/fill/${encodeURIComponent(requestId)}/skip`),
+        { method: "POST" },
+      );
+    } catch {
+      /* race dengan deadline — biarkan event resolved yang mengakhiri */
+    } finally {
+      if (ref.current) ref.current.value = "";
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      <input
+        ref={ref}
+        type="password"
+        autoComplete="off"
+        spellCheck={false}
+        placeholder="Paste the secret value"
+        className="w-full rounded-md2 border border-line bg-surface px-2.5 py-1.5 font-mono text-caption text-primary placeholder:text-dim focus:border-accent focus:outline-none"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void submit();
+        }}
+      />
+      <label className="flex cursor-pointer items-center gap-2 text-caption text-muted select-none">
+        <input
+          type="checkbox"
+          checked={save}
+          onChange={(e) => setSave(e.target.checked)}
+          className="accent-[var(--c-accent)]"
+        />
+        Save to Vault (uncheck = use once for this run, deleted when the turn ends)
+      </label>
+      {err && <p className="text-caption text-danger">{err}</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="primary" onClick={() => void submit()} disabled={busy}>
+          {busy ? "Sending…" : "Send securely"}
+        </Button>
+        <Button size="sm" onClick={() => void skip()} disabled={busy}>
+          Skip
+        </Button>
+      </div>
+      <p className="text-caption text-dim">
+        The value is encrypted and never appears in this chat, the trace, or the
+        model context.
+      </p>
+    </div>
+  );
+}
 
 function Chevron({ size = 12 }: { size?: number }) {
   return (
@@ -518,6 +617,42 @@ export function ChatView({
                           Reject
                         </Button>
                       </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+            if (it.kind === "vault") {
+              // Batch 12 (D27): kartu protected — nilai dikirim LANGSUNG ke REST
+              // fill (bukan lewat chat/event); input di-clear DOM-side saat submit.
+              return (
+                <div
+                  key={`r${i}`}
+                  className="msg-in grid grid-cols-[36px_minmax(0,1fr)] gap-x-3"
+                >
+                  <div className="col-start-2 rounded-card border border-line-strong border-l-2 border-l-accent bg-inset px-4 py-3">
+                    <b className="text-body font-medium text-primary">
+                      Credential needed ·{" "}
+                      <code className="font-mono text-caption">{it.name}</code>
+                    </b>
+                    <p className="mt-0.5 text-caption text-muted">{it.reason}</p>
+                    {it.originHint && (
+                      <p className="mt-0.5 text-caption text-dim">
+                        for {it.originHint}
+                      </p>
+                    )}
+                    {it.vresolved ? (
+                      <p className="mt-2 text-caption text-muted">
+                        {it.vresolved === "filled"
+                          ? it.saved
+                            ? "Stored encrypted in the vault"
+                            : "Used for this run only (deleted when the turn ends)"
+                          : it.vresolved === "skipped"
+                            ? "Skipped"
+                            : "Expired — no value was provided"}
+                      </p>
+                    ) : (
+                      <VaultFillCard requestId={it.requestId!} />
                     )}
                   </div>
                 </div>

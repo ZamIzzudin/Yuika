@@ -388,6 +388,42 @@ export default function Home() {
           setBusy(false);
         }
         break;
+      case "vault.requested":
+        setItems((prev) => [
+          ...prev,
+          {
+            kind: "vault" as const,
+            requestId: e.requestId,
+            name: e.name,
+            vkind: e.kind,
+            reason: e.reason,
+            ...(e.originHint ? { originHint: e.originHint } : {}),
+            vresolved: null,
+          },
+        ]);
+        break;
+      case "vault.resolved":
+        setItems((prev) =>
+          prev.map((it) =>
+            it.kind === "vault" && it.requestId === e.requestId
+              ? { ...it, vresolved: e.status, saved: e.saved }
+              : it,
+          ),
+        );
+        if (e.status !== "filled") setBusy(false);
+        break;
+      case "vault.used":
+        // transparansi audit: metadata saja (nama, kanal, target)
+        setItems((prev) => [
+          ...prev,
+          {
+            kind: "activity" as const,
+            name: "vault",
+            detail: `used ${e.name} via ${e.channel} → ${e.target}`,
+            done: true,
+          },
+        ]);
+        break;
       case "approval.requested":
         setItems((prev) => [
           ...prev,

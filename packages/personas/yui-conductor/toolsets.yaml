@@ -1,4 +1,8 @@
 tools:
+  - vault_request
+  - vault_list
+  - vault_forget
+  - secret_http
   - skills_list
   - skill_view
   - delegate_task

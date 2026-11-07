@@ -37,6 +37,20 @@ export {
   DEFAULT_PROVIDERS, SEARCH_TTL_MS, PAGE_TTL_MS,
   type SearchResult, type FetchedPage, type SearchProvider, type SearchOutcome, type FetchOutcome, type ResearchConfig,
 } from "./research/index.js";
+// Batch 12 (P2-VLT, D27): vault kredensial — AES-256-GCM per record, nilai tak
+// pernah lewat jalur model/API/event; redaksi nilai aktif proses-wide.
+export {
+  VaultStore, loadVaultMasterKey, type VaultRecord, type VaultPutInput,
+} from "./vault/store.js";
+export {
+  VaultManager, getVault, setVaultForTests, VAULT_FILL_TIMEOUT_MS,
+  type VaultFillOutcome,
+} from "./vault/manager.js";
+export {
+  registerActiveSecret, releaseActiveSecret, redactActive,
+  activeSecretCount, resetActiveSecretsForTests, VAULT_REDACTED,
+} from "./vault/redact.js";
+export { registerVaultTools } from "./tools/vault-tools.js";
 // P2-STU-2: terminal manager — sesi shared user (SSE api) & agent (tool).
 export {
   ensureSession as ensureTerminalSession,

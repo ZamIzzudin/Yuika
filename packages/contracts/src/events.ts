@@ -242,6 +242,36 @@ export const WorkflowResumedEvent = EventMeta.extend({
   runId: z.string(),
 });
 
+// ── Vault (Batch 12 / D27) — nilai TIDAK PERNAH ada di event; hasValue saja. ─
+
+export const VaultRequestedEvent = EventMeta.extend({
+  type: z.literal("vault.requested"),
+  requestId: z.string(),
+  name: z.string(),
+  kind: z.enum(["api_key", "command"]),
+  reason: z.string(),
+  /** Origin tujuan secret_http (utk label kartu) — opsional. */
+  originHint: z.string().optional(),
+});
+
+export const VaultResolvedEvent = EventMeta.extend({
+  type: z.literal("vault.resolved"),
+  requestId: z.string(),
+  name: z.string(),
+  status: z.enum(["filled", "skipped", "expired"]),
+  hasValue: z.boolean(),
+  saved: z.boolean(),
+});
+
+/** Audit pemakaian — metadata saja (nama, kanal, target), tanpa nilai. */
+export const VaultUsedEvent = EventMeta.extend({
+  type: z.literal("vault.used"),
+  name: z.string(),
+  kind: z.enum(["api_key", "command"]),
+  channel: z.enum(["http", "command"]),
+  target: z.string(),
+});
+
 export const StepReassignedEvent = EventMeta.extend({
   type: z.literal("workflow.step.reassigned"),
   runId: z.string(),
@@ -320,6 +350,9 @@ export const YuiEvent = z.discriminatedUnion("type", [
   WorkflowPausedEvent,
   WorkflowResumedEvent,
   StepReassignedEvent,
+  VaultRequestedEvent,
+  VaultResolvedEvent,
+  VaultUsedEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;
 export type YuiEventType = YuiEvent["type"];

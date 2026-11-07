@@ -288,6 +288,8 @@ export class AgentLoop {
                 sessionId,
                 turnId,
                 workspacePath: this.deps.workspacePath,
+                personaId: session.personaId,
+                projectId: session.projectId,
                 emit,
                 requestApproval: (tool, args, reason) => {
                   emit({ type: "persona.state", personaId: session.personaId, state: "awaiting_input" });

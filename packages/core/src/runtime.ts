@@ -26,6 +26,8 @@ import { registerWebTools } from "./tools/web-tools.js";
 import { newResearchCache } from "./research/cache.js";
 import { registerSkillTools } from "./tools/skill-tools.js";
 import { registerRunCommandTool } from "./tools/run-command.js";
+import { registerVaultTools } from "./tools/vault-tools.js";
+import { getVault } from "./vault/manager.js";
 import { registerTerminalTool } from "./tools/terminal-tool.js";
 import * as terminal from "./terminal/manager.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
@@ -180,6 +182,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerSessionSearchTools(store); // P1-MEM-5: riwayat sesi bisa ditelusuri agent
   registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)
   registerRunCommandTool();
+  // Batch 12 (P2-VLT): vault kredensial — store terenkripsi terpisah dari demo.db
+  // (vault.db + vault.key di direktori data). Nilai tak pernah lewat jalur model.
+  const vault = getVault(path.dirname(paths.dbPath));
+  registerVaultTools();
   registerTerminalTool(); // P2-STU-2: terminal shared user & agent
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({
@@ -656,6 +662,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     paths,
     store,
     bus: EventBus,
+    /** Batch 12 (P2-VLT): vault kredensial — utk REST metadata & fill. */
+    vault,
     /** Matikan runtime dengan rapi — dipanggil saat runtime DI-REPLACE (HMR dev:
      *  module lib/runtime di-reval → runtime baru; yang lama harus mati total,
      *  kalau tidak proses MCP stdio lama jadi ZOMBIE yang menumpuk tiap recompile
@@ -669,6 +677,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       mcpRetry.clear();
       // P2-STU-2: matikan sesi terminal (shell host / container sandbox).
       try { await terminal.closeAll(); } catch { /* shutdown best-effort */ }
+      // Batch 12 (P2-VLT-2): sisa run-only dari turn yang mati dibersihkan;
+      // singleton vault (globalThis) TETAP hidup lintas HMR — db handle-nya
+      // WAL-safe, sama seperti store sesi (DELIBERAT: tidak di-close).
       // DELIBERAT: koneksi sqlite TIDAK ditutup — turn yang masih berjalan di
       // loop lama memakai objek store ini (WAL aman multi-handle; kebocoran
       // handle per HMR jauh lebih ringan daripada mematikan turn in-flight).

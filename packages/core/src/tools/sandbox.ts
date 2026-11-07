@@ -32,6 +32,9 @@ export interface SandboxOptions {
   mountMode?: "rw" | "ro";
   /** sisipkan `-i` (stdin terbuka) — MCP worker stdio / terminal. */
   interactive?: boolean;
+  /** P2-VLT-3: env proses anak (nilai vault sudah di-resolve backend-side) —
+   *  dioper sbg `-e KEY=VAL`. */
+  env?: NodeJS.ProcessEnv;
 }
 
 export const SANDBOX_DEFAULTS: Readonly<SandboxOptions> = {
@@ -116,6 +119,9 @@ export function sandboxArgv(
     "-v", `${mountPath(workspacePath)}:/workspace:${o.mountMode === "ro" ? "ro" : "rw"}`,
     "-w", "/workspace",
   ];
+  if (opts.env) {
+    for (const [k, v] of Object.entries(opts.env)) argv.push("-e", `${k}=${v}`);
+  }
   if (egress) {
     // npm/node menghormati env proxy standar; NO_PROXY utk localhost.
     const proxy = `http://host.docker.internal:${proxyPort}`;

@@ -1,4 +1,7 @@
 tools:
+  - vault_request
+  - vault_list
+  - secret_http
   - skills_list
   - skill_view
   - web_fetch

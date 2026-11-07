@@ -10,6 +10,10 @@ export interface ToolContext {
   sessionId: string;
   turnId: string;
   workspacePath: string;
+  /** P2-VLT: persona/project pemanggil — utk scope visibility vault (D27).
+   *  Opsional (tool lama tak peduli; test bisa omit). */
+  personaId?: string;
+  projectId?: string | null;
   emit: (draft: EventDraft) => void;
   requestApproval: (tool: string, args: Record<string, unknown>, reason: string) => Promise<boolean>;
 }

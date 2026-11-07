@@ -9,6 +9,8 @@ import path from "node:path";
 import { z } from "zod";
 import { registry } from "../registry.js";
 import { redactSecrets } from "../redact.js";
+import { redactActive } from "../vault/redact.js";
+import { getVault } from "../vault/manager.js";
 import { logCommand } from "../terminal/manager.js";
 // namespace import: test meng-ganti dockerAvailable/runInSandbox via vi.spyOn
 import * as sandbox from "./sandbox.js";
@@ -23,6 +25,10 @@ const NPM_SUB = new Set(["install", "ci", "run", "run-script", "exec", "test", "
 const schema = z.object({
   command: z.enum(["node", "npm", "npx", "ls", "echo"]),
   args: z.array(z.string()).default([]),
+  /** P2-VLT-3 command variables: env utk proses anak. NILAI WAJIB referensi
+   *  vault (`vault:<name>`) — nilai polos TIDAK diterima supaya rahasia tak
+   *  pernah lewat konteks model. Nama reserved ditolak. */
+  env: z.record(z.string(), z.string()).optional(),
 }).superRefine((v, ctx) => {
   if (v.command === "npm") {
     const sub = v.args[0];
@@ -30,7 +36,26 @@ const schema = z.object({
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: `subperintah npm tidak diizinkan: ${sub ?? "(kosong)"} — pakai salah satu: ${[...NPM_SUB].join(", ")}` });
     }
   }
+  for (const [k, val] of Object.entries(v.env ?? {})) {
+    if (!/^[A-Z][A-Z0-9_]{0,63}$/.test(k)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env name "${k}" invalid — UPPER_SNAKE_CASE only` });
+      continue;
+    }
+    if (RESERVED_ENV.has(k) || RESERVED_ENV_PREFIX.some((p) => k.startsWith(p))) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env name "${k}" is reserved and cannot be set via run_command` });
+    }
+    if (!val.startsWith("vault:")) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env "${k}" value must be a vault reference (vault:<name>) — plain secrets are rejected so values never pass through the model` });
+    }
+  }
 });
+
+/** Nama env berbahaya utk proses anak (loader/proxy/konfigurasi runtime). */
+const RESERVED_ENV = new Set([
+  "PATH", "HOME", "USER", "SHELL", "PWD", "TMPDIR", "TERM", "HOSTNAME", "IFS", "PS1",
+  "NODE_OPTIONS", "NODE_PATH", "NODE_ENV", "NODE_EXTRA_CA_CERTS",
+]);
+const RESERVED_ENV_PREFIX = ["LD_", "GIT_", "NPM_CONFIG_", "YUI_"];
 
 /** `ls` internal: daftar direktori (nama + tanda d/f) — tidak spawn proses. */
 function lsInternal(dir: string, args: string[]): unknown {
@@ -43,16 +68,38 @@ function lsInternal(dir: string, args: string[]): unknown {
 }
 
 /** Eksekusi lokal (mode off / auto-tanpa-docker) — JALAN DI HOST TANPA ISOLASI. */
-function runLocal(command: string, args: string[], cwd: string): Promise<{ stdout: string; stderr: string; err: string }> {
+function runLocal(command: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv): Promise<{ stdout: string; stderr: string; err: string }> {
   return new Promise((resolve) => {
-    execFile(command, args, { cwd, timeout: TIMEOUT_MS, maxBuffer: 1_000_000 }, (err, stdout, stderr) => {
+    execFile(command, args, { cwd, timeout: TIMEOUT_MS, maxBuffer: 1_000_000, ...(env ? { env } : {}) }, (err, stdout, stderr) => {
       resolve({
-        stdout: redactSecrets(String(stdout).slice(0, 8_000)),
-        stderr: redactSecrets(String(stderr).slice(0, 2_000)),
-        err: redactSecrets(err?.message ?? ""),
+        stdout: redactActive(redactSecrets(String(stdout).slice(0, 8_000))),
+        stderr: redactActive(redactSecrets(String(stderr).slice(0, 2_000))),
+        err: redactActive(redactSecrets(err?.message ?? "")),
       });
     });
   });
+}
+
+/** P2-VLT-3: resolve `vault:<name>` refs → nilai env asli (backend-only).
+ *  Return { env, releases } — caller WAJIB memanggil semua releases setelah
+ *  proses selesai (nilai keluar dari registry redaksi aktif). */
+function resolveVaultEnv(
+  env: Record<string, string> | undefined,
+  viewer: { personaId?: string; projectId?: string | null },
+): { env: NodeJS.ProcessEnv | undefined; releases: Array<() => void>; names: string[] } {
+  if (!env || Object.keys(env).length === 0) return { env: undefined, releases: [], names: [] };
+  const out: Record<string, string> = {};
+  const releases: Array<() => void> = [];
+  const names: string[] = [];
+  for (const [k, ref] of Object.entries(env)) {
+    const name = ref.slice("vault:".length);
+    const s = getVault().resolveForUse(name, viewer);
+    if (!s) throw new Error(`vault credential "${name}" not found — call vault_request first`);
+    out[k] = s.value;
+    names.push(name);
+    releases.push(s.release);
+  }
+  return { env: { ...process.env, ...out }, releases, names };
 }
 
 export function registerRunCommandTool(): void {
@@ -77,14 +124,30 @@ export function registerRunCommandTool(): void {
         (args.command === "npm" && (args.args[0] === "install" || args.args[0] === "ci"));
       const egress = needsNet ? egressMod.readEgressAllow(ctx.workspacePath) : [];
 
+      // P2-VLT-3: resolve refs vault → env asli (nilai tak pernah masuk args/ctx)
+      let vEnv: { env: NodeJS.ProcessEnv | undefined; releases: Array<() => void>; names: string[] };
+      try {
+        vEnv = resolveVaultEnv(args.env, { personaId: ctx.personaId, projectId: ctx.projectId });
+      } catch (e) {
+        return { result: { error: "vault_not_found", message: (e as Error).message }, isError: true };
+      }
+      for (const n of vEnv.names) {
+        ctx.emit({ type: "vault.used", name: n, kind: "command", channel: "command", target: `${args.command} ${vEnv.names.join(",")}`.slice(0, 80) });
+      }
+      const envNote = vEnv.names.length ? ` env=[${Object.keys(args.env ?? {}).join(",")} via vault]` : "";
+
+      try {
       if (useSandbox) {
-        const r = await sandbox.runInSandbox(args.command, args.args, ctx.workspacePath, egress.length ? { egress } : {});
+        const r = await sandbox.runInSandbox(args.command, args.args, ctx.workspacePath, {
+          ...(egress.length ? { egress } : {}),
+          ...(vEnv.env ? { env: vEnv.env } : {}),
+        });
         // exit 125 = docker daemon error (image tak ada dsb.) — pesan jelas utk agent
         const dockerErr = r.exitCode === 125 || r.exitCode === null;
-        const out = redactSecrets(r.stdout.slice(0, 8_000));
-        const errOut = redactSecrets(
+        const out = redactActive(redactSecrets(r.stdout.slice(0, 8_000)));
+        const errOut = redactActive(redactSecrets(
           (r.timedOut ? "[sandbox] timeout — container dimatikan\n" : "") + r.stderr.slice(0, 2_000),
-        );
+        ));
         // FLOW #7: eksekusi terlihat di panel terminal (view "Commands")
         logCommand(ctx.workspacePath, {
           command: args.command,
@@ -92,7 +155,7 @@ export function registerRunCommandTool(): void {
           exitCode: r.exitCode,
           stdout: out,
           stderr: errOut,
-          note: r.timedOut ? "sandbox timeout" : "sandbox",
+          note: (`sandbox` + envNote).trim(),
         });
         return {
           result: {
@@ -110,14 +173,14 @@ export function registerRunCommandTool(): void {
       // fail-open hanya di mode auto: Docker tak ada → jalankan lokal + catatan
       // eksplisit agar agent & user tahu eksekusi TIDAK terisolasi (egress pun
       // TIDAK ditegakkan — proxy hanya jalan di dalam container).
-      const out = await runLocal(args.command, args.args, ctx.workspacePath);
+      const out = await runLocal(args.command, args.args, ctx.workspacePath, vEnv.env);
       logCommand(ctx.workspacePath, {
         command: args.command,
         args: args.args,
         exitCode: out.err ? 1 : 0,
         stdout: out.stdout,
         stderr: out.stderr,
-        note: "local (tanpa isolasi)",
+        note: (`local (tanpa isolasi)` + envNote).trim(),
       });
       return {
         result: {
@@ -126,6 +189,9 @@ export function registerRunCommandTool(): void {
           ...out,
         },
       };
+      } finally {
+        for (const rel of vEnv.releases) rel(); // nilai keluar dari redaksi aktif
+      }
     },
     // node/npm/npx = eksekusi kode / unduh paket → butuh approval (defense-in-
     // depth: sandbox mengurangi dampak, tapi user tetap tahu & mengizinkan).

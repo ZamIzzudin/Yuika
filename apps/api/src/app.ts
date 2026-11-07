@@ -9,6 +9,7 @@ import type { YuiRuntime } from "@yuika/core";
 import { registerSessionRoutes } from "./routes/sessions.js";
 import { registerDelegationRoutes } from "./routes/delegations.js";
 import { registerApprovalRoutes } from "./routes/approvals.js";
+import { registerVaultRoutes } from "./routes/vault.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerDungeonRoutes } from "./routes/dungeons.js";
 import { registerMcpRoutes } from "./routes/mcp.js";
@@ -67,6 +68,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   registerSessionRoutes(app, getRt);
   registerDelegationRoutes(app, getRt);
   registerApprovalRoutes(app, getRt);
+  registerVaultRoutes(app, getRt); // Batch 12 (P2-VLT): metadata-only + fill
   registerProjectRoutes(app, getRt);
   registerDungeonRoutes(app, getRt);
   registerMcpRoutes(app, getRt);

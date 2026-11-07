@@ -687,15 +687,16 @@
 - [ ] **LB-3** DevTools embedded (artefak pinned + WS proxy auth) · *M · ±2d*
 
 ## Batch 12 · Vault v0 + Batch 14a · Live Screen (DISETUJUI 2026-11 — keputusan D24–D27)
+> **Batch 12 SELESAI (2026-11)** — detail di BATCHES.md.
 > Sumber: docs/PLAN-WORKSHOP-LIVESCREEN-VAULT.md (benchmark `rokazo`, dipangkas).
 > User: **A (Vault) & B (Screen) setuju eksekusi; C menyusul; D tolak semua.**
 > Urutan eksekusi: Batch 12 duluan (independen), menyusul 14a.
 
 ### Batch 12 · Vault v0 (P2-VLT — supersede P2-AGT-5)
-- [ ] **P2-VLT-1** Store terenkripsi + kontrak vault: AES-256-GCM per record (AAD id+name+scope, nonce per tulis; primitif reuse packages/crypto), master key `YUI_VAULT_KEY`/`<data>/vault.key` (0600, warning backup), tabel `vault_secrets`, REST metadata-only (nilai tak pernah keluar API) · *A · 2d*
-- [ ] **P2-VLT-2** Kartu protected + tools `vault_request`/`vault_list`/`vault_forget`: varian kartu approval (nilai dibersihkan DOM-side saat submit; event hanya `hasValue`), scope workspace/project/persona + grant, switch "Save to Vault" (off = run-only, dihapus saat run berakhir — adaptasi rokazo) · *A+B · 2d*
-- [ ] **P2-VLT-3** Jalur pakai backend-injected: `secret_http` (origin persis+port, redirect ditolak, HTTPS wajib, 30 dtk deadline, 1MB/20k char, response di-redact) + command variables (env export `UPPER_SNAKE`, nama reserved `LD_*|GIT_*|NPM_CONFIG_*|YUI_*|PATH`, redact plain/base64/urlencode dari semua output) · *A · 2d*
-- [ ] **P2-VLT-5** Redaksi nilai aktif per-run (perluasan redact.ts) + audit `vault.used` (metadata saja) + **e2e negatif wajib**: nilai menyamar TIDAK pernah muncul di trace/SSE/listCommandLog/konteks model · *A · 1.5d*
+- [x] **P2-VLT-1** Store terenkripsi + kontrak vault: AES-256-GCM per record (AAD id+name+scope, nonce per tulis; primitif reuse packages/crypto), master key `YUI_VAULT_KEY`/`<data>/vault.key` (0600, warning backup), tabel `vault_secrets`, REST metadata-only (nilai tak pernah keluar API) · *A · 2d*
+- [x] **P2-VLT-2** Kartu protected + tools `vault_request`/`vault_list`/`vault_forget`: varian kartu approval (nilai dibersihkan DOM-side saat submit; event hanya `hasValue`), scope workspace/project/persona + grant, switch "Save to Vault" (off = run-only, dihapus saat run berakhir — adaptasi rokazo) · *A+B · 2d*
+- [x] **P2-VLT-3** Jalur pakai backend-injected: `secret_http` (origin persis+port, redirect ditolak, HTTPS wajib, 30 dtk deadline, 1MB/20k char, response di-redact) + command variables (env export `UPPER_SNAKE`, nama reserved `LD_*|GIT_*|NPM_CONFIG_*|YUI_*|PATH`, redact plain/base64/urlencode dari semua output) · *A · 2d*
+- [x] **P2-VLT-5** Redaksi nilai aktif per-run (perluasan redact.ts) + audit `vault.used` (metadata saja) + **e2e negatif wajib**: nilai menyamar TIDAK pernah muncul di trace/SSE/listCommandLog/konteks model · *A · 1.5d*
 - [ ] ~~P2-VLT-4~~ **fill_login — MENYUSUL (C)** setelah P2-SCR-3 + desain related-origins (SSO redirect chain) + scrub hidden field di SEMUA run scope (rokazo hanya per-bot)
 
 ### Batch 14a · Live Screen Scholar (P2-SCR — menyerap LB-1..3)
