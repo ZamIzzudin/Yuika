@@ -23,6 +23,7 @@ import { setShapeOverrides } from "@/components/orinShapes";
 import { TracePanel } from "@/components/TracePanel";
 import { LogsTab } from "@/components/LogsTab";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
+import { useMenuAutoClose } from "@/components/ui/menu";
 import {
   ChatView,
   type ChatItem,
@@ -112,6 +113,9 @@ export default function Home() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
   const [mainTab, setMainTab] = useState<WorkspaceTab>("chat");
+  // Menu auto-close (fix test user #6): dropdown header persona + Sessions.
+  const personaMenu = useMenuAutoClose<HTMLDetailsElement>();
+  const sessionsMenu = useMenuAutoClose<HTMLDetailsElement>();
   // Batch 14a follow-up: floating shared screen — melayang di atas SEMUA tab.
   const [pip, setPip] = useState<{ projectId: string; personaId: string } | null>(null);
   const [projSessions, setProjSessions] = useState<ProjectSessionSummary[]>([]);
@@ -1175,7 +1179,7 @@ export default function Home() {
                       }
                     >
                       <header className="relative flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
-                        <details className="group relative">
+                        <details className="group relative" ref={personaMenu.ref}>
                           <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill pl-3 pr-6 py-3 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
                             <PersonaPortrait
                               name={active.name}
@@ -1204,7 +1208,10 @@ export default function Home() {
                                     ? "bg-hover text-primary"
                                     : "text-secondary hover:bg-hover"
                                 }`}
-                                onClick={() => void switchPersona(p)}
+                                onClick={() => {
+                                  void switchPersona(p);
+                                  personaMenu.close();
+                                }}
                               >
                                 <PersonaFace personaId={p.id} size={20} />
                                 <span className="flex-1">{p.name}</span>
@@ -1226,7 +1233,7 @@ export default function Home() {
                             status persona; tab Team sudah ada di tablist atas.) */}
                         {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama) */}
                         {activeProject && (
-                          <details className="group relative ml-auto">
+                          <details className="group relative ml-auto" ref={sessionsMenu.ref}>
                             <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary select-none transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary [&::-webkit-details-marker]:hidden">
                               <CaretDown size={12} aria-hidden /> Sessions
                             </summary>
@@ -1235,9 +1242,7 @@ export default function Home() {
                                 className="flex cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2 py-1.5 text-left text-body text-secondary transition-colors hover:bg-hover hover:text-primary"
                                 onClick={() => {
                                   void newProjectSession();
-                                  (
-                                    document.activeElement as HTMLElement | null
-                                  )?.blur();
+                                  sessionsMenu.close();
                                 }}
                               >
                                 <Plus
@@ -1268,9 +1273,7 @@ export default function Home() {
                                     }`}
                                     onClick={() => {
                                       openSession(ps);
-                                      (
-                                        document.activeElement as HTMLElement | null
-                                      )?.blur();
+                                      sessionsMenu.close();
                                     }}
                                   >
                                     <PersonaFace

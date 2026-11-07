@@ -379,6 +379,8 @@ export const DeleteProjectResult = z.object({
     revisions: z.number().int(),
     auditRows: z.number().int(),
     workspaceDir: z.string(),
+    /** Batch 13e: workshop (container+volume+row) ikut dihapus. */
+    workshop: z.boolean(),
   }),
   keptUsage: z.literal(true),
   keptSkills: z.literal(true),

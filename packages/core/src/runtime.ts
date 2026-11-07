@@ -842,9 +842,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
      *  & uploads), revisi file, baris audit MCP, ruangan+dungeon run (kalau kind
      *  dungeon). YANG DIPERTAHANKAN: skill persona (milik persona — keputusan user)
      *  & usage ledger (akuntansi metering jujur; baris tinggal historis). */
-    deleteProject: (id: string): DeleteProjectResult => {
+    deleteProject: async (id: string): Promise<DeleteProjectResult> => {
       const project = projectStore.getProject(id);
       if (!project) throw new Error(`project tidak ditemukan: ${id}`);
+      // 0. Batch 13e: workshop project (container+volume+row) IKUT dihapus —
+      //    tanpa ini container yuika-ws-* menumpuk di docker host.
+      const hadWorkshop = workshopManager.info(id).state !== "absent";
+      if (hadWorkshop) await workshopManager.destroy(id);
       // 1. Batalkan turn in-flight sesi project ini (turnAborts → loop batal;
       //    loopCache dibuang agar turn finalizer tak menulis setelah baris dihapus).
       const sessions = store.listProjectSessions(id).map((s) => s.id);
@@ -877,6 +881,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
           revisions,
           auditRows,
           workspaceDir: root,
+          workshop: hadWorkshop,
         },
         keptUsage: true,
         keptSkills: true,

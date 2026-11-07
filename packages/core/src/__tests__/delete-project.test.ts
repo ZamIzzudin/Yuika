@@ -103,6 +103,7 @@ describe("hapus project + artefak (P1-PRJ-8)", () => {
         projectEvents: delProject.projectEvents,
         revisions: nRev,
         auditRows,
+        workshop: false, // replika tanpa workshop manager (runtime asli: destroy)
         workspaceDir: rootA,
       },
       keptUsage: true,
