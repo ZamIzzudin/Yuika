@@ -86,6 +86,28 @@ describe("TerminalManager", () => {
   });
 });
 
+// ── integrasi Docker ASLI — regresi 13d: sesi docker TANPA -i mati instan ──
+async function dockerUp(): Promise<boolean> {
+  const { execFile } = await import("node:child_process");
+  return await new Promise((resolve) => {
+    execFile("docker", ["info", "--format", "1"], { timeout: 4_000 }, (err) => resolve(!err));
+  });
+}
+
+describe.skipIf(!(await dockerUp()))("terminal docker sandbox (regresi -i, 13d)", () => {
+  it("sesi docker HIDUP + output kembali (bukan exit-0 instan)", async () => {
+    delete process.env.YUI_TERMINAL_CMD;
+    process.env.YUI_TERMINAL_MODE = "docker";
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), "yui-term-dkr-"));
+    const info = await tm.ensureSession(d);
+    expect(info.backend).toBe("docker");
+    const r = await tm.runInSession(d, "pwd", { timeoutMs: 20_000 });
+    expect(r.output).toContain("/workspace");
+    expect(r.timedOut).toBe(false);
+    await tm.closeAll();
+  }, 60_000);
+});
+
 describe("tool terminal", () => {
   it("perintah aman (node -v) langsung jalan, output ter-redact & terlihat", async () => {
     const requestApproval = vi.fn(async () => true);

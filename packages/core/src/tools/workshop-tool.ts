@@ -17,7 +17,7 @@ export function registerWorkshopTool(deps: { manager: () => WorkshopManager }): 
   registry.register({
     name: "run_in_workshop",
     description:
-      "Run a command in this project's persistent workshop container — the preferred place for installs and builds (npm install / npm init -y / npm run). cwd is the project root and it edits the SAME files shown in the Files tab; installed packages and the npm cache stay warm across sleep/wake, unlike the one-shot sandbox. Egress is limited to the project's allowlist. The workshop must be opened by the user first (Workshop panel); if it is asleep it is woken automatically.",
+      "Run a command in this project's persistent workshop container — the preferred place for installs and builds (npm install / npm init -y / npm run). cwd is the project root and it edits the SAME files shown in the Files tab; installed packages and the npm cache stay warm across sleep/wake, unlike the one-shot sandbox. Egress is limited to the project's allowlist. If the workshop is not open yet, the user gets an approval card to open it right here; if it is asleep it is woken automatically.",
     parameters: z.object({
       cmd: z.string().min(1).max(60),
       args: z.array(z.string().max(500)).max(32).default([]),
@@ -34,19 +34,29 @@ export function registerWorkshopTool(deps: { manager: () => WorkshopManager }): 
     },
     handler: async (
       args: { cmd: string; args: string[]; cwd?: string; timeoutMs?: number },
-      ctx: { projectId?: string | null; personaId?: string },
+      ctx: {
+        projectId?: string | null;
+        personaId?: string;
+        requestApproval?: (tool: string, args2: Record<string, unknown>, reason: string) => Promise<boolean>;
+      },
     ): Promise<{ isError?: boolean; result: unknown }> => {
       if (!ctx.projectId) return { isError: true, result: { error: "run_in_workshop requires a project" } };
       const m = deps.manager();
       const info = m.info(ctx.projectId);
       if (info.state === "absent") {
-        return {
-          isError: true,
-          result: {
-            error: "workshop belum dibuka untuk project ini",
-            hint: "Ask the user to open it once from the Workshop panel (project Config tab) — then use run_in_workshop freely.",
-          },
-        };
+        // WKS-2: pembukaan workshop = KEPUTUSAN USER — tapi lewat KARTU
+        // APPROVAL di chat (bukan suruh user pindah tab ke panel). Egress
+        // yang akan dipasang dicantumkan supaya keputusan informed.
+        const egress = m.readConfig(ctx.projectId).egressAllow;
+        const ok = await ctx.requestApproval?.(
+          "run_in_workshop",
+          { cmd: args.cmd, args: args.args },
+          `Open the persistent workshop container for this project (Docker; egress allowlist: ${egress.join(", ") || "none"})`,
+        );
+        if (ok === false) {
+          return { isError: true, result: { error: "user menolak membuka workshop — install dihentikan" } };
+        }
+        await m.start(ctx.projectId, { by: `persona:${ctx.personaId ?? "unknown"}` });
       }
       const res = await m.exec(ctx.projectId, args.cmd, args.args, {
         by: `persona:${ctx.personaId ?? "unknown"}`,

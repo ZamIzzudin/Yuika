@@ -245,7 +245,9 @@ export async function startSandboxSession(
     ...opts,
   };
   const name = `yui-ses-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  const base = sandboxArgv(name, cmd, args, workspacePath, { ...opts, timeoutMs: 0 }, undefined);
+  // FIX (13d): sesi interaktif WAJIB `-i` — tanpa itu sh membaca EOF dan
+  // mati instan (exit 0, tanpa output): terminal selalu "exited".
+  const base = sandboxArgv(name, cmd, args, workspacePath, { ...opts, interactive: true, timeoutMs: 0 }, undefined);
   // sesi: tanpa --rm eksplisit di argv (sandboxArgv sudah --rm) — keep; kill
   // pakai `docker kill` sehingga container pasti bersih.
   let proxyPort: number | undefined;
@@ -254,7 +256,7 @@ export async function startSandboxSession(
     proxyPort = proxy.port;
   }
   const argv = proxyPort !== undefined
-    ? sandboxArgv(name, cmd, args, workspacePath, { ...opts, timeoutMs: 0 }, proxyPort)
+    ? sandboxArgv(name, cmd, args, workspacePath, { ...opts, interactive: true, timeoutMs: 0 }, proxyPort)
     : base;
 
   const child = spawn("docker", argv, { windowsHide: true }) as ChildProcessWithoutNullStreams;
