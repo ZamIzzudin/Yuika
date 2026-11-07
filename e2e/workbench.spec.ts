@@ -116,11 +116,17 @@ test("FLOW gate: pintu Workflow dari chat conductor (keputusan user: flow = alat
   await page.goto("/");
   await page.getByRole("button", { name, exact: false }).first().click();
 
-  // persona default = conductor → bar kendali workflow di chat (di atas composer)
+  // persona default = conductor → toggle Workflow Mode di sebelah Hardcore Mode
+  const toggle = page.getByRole("button", { name: "Ad-hoc Mode" });
+  await expect(toggle).toBeVisible({ timeout: 15_000 });
+  await toggle.click(); // → Workflow Mode: bar armed + composer = brief
+  await expect(page.getByRole("button", { name: "Workflow Mode" })).toBeVisible();
   const bar = page.getByLabel("Workflow run bar");
-  await expect(bar).toBeVisible({ timeout: 15_000 });
-  await expect(bar.getByLabel("Run brief")).toBeVisible();
-  await expect(bar.getByRole("button", { name: "Start run" })).toBeVisible();
+  await expect(bar).toBeVisible();
+  await expect(bar.getByText("Workflow armed", { exact: false })).toBeVisible();
+  await expect(
+    page.getByPlaceholder("Describe the goal — this message starts a workflow run"),
+  ).toBeVisible();
 
   // tombol header conductor → view alur di tab Team (canvas delegasi)
   await page.getByRole("button", { name: "Open workflow view" }).click();

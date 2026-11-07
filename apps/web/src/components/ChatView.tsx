@@ -19,6 +19,7 @@ import {
   PlayCircle,
   PencilSimple,
   Prohibit,
+  Steps,
   Stop,
   ArrowsInLineVertical,
   Wrench,
@@ -28,6 +29,20 @@ import { toastErr } from "./ui/toast";
 import { Markdown } from "./Markdown";
 import { Button, StateChip, STATE_LABEL } from "./ui";
 import { WorkflowRunBar } from "./WorkflowRunBar";
+import type { RunDetail, RunSummary } from "./useWorkflowRun";
+
+/** Satu composer, makna menurut konteks (keputusan user 2026-11-08 tahap 2):
+ *  run hidup → steer · toggle Workflow Mode nyala → brief · selain itu chat biasa. */
+export interface WorkflowChatCtx {
+  armed: boolean;
+  activeRun: RunSummary | null;
+  lastRun: RunSummary | null;
+  run: RunDetail | null;
+  onToggleArmed: () => void;
+  onAction: (path: string, body?: unknown) => Promise<boolean>;
+  /** Kirim pesan sbg brief run baru / instruksi steer run aktif. */
+  onSendWorkflow: (text: string, mode: "brief" | "steer") => Promise<void>;
+}
 
 export interface ChatItem {
   kind:
@@ -91,8 +106,6 @@ export function ChatView({
   personaState,
   personaId,
   personaName,
-  projectId,
-  sessionId,
   onSend,
   onCancel,
   onApprove,
@@ -101,14 +114,12 @@ export function ChatView({
   emptySlot,
   approvalMode,
   onToggleApprovalMode,
+  workflow,
 }: {
   items: ChatItem[];
   personaState: PersonaState;
   personaId: string;
   personaName: string;
-  /** Project aktif — utk WorkflowRunBar (kendali workflow di chat, 2026-11-08). */
-  projectId: string | null;
-  sessionId: string | null;
   onSend: (text: string) => void;
   /** P0-CORE-1: tombol Stop — batalkan turn aktif (progres tersimpan). */
   onCancel?: () => void;
@@ -120,6 +131,8 @@ export function ChatView({
   /** Fix dev-10: mode cepat — "auto" = write_file & run_command bebas-approval. */
   approvalMode?: "ask" | "auto";
   onToggleApprovalMode?: () => void;
+  /** Konteks workflow utk composer conductor (null = chat biasa). */
+  workflow?: WorkflowChatCtx | null;
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
@@ -204,8 +217,23 @@ export function ChatView({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || busy) return;
-    onSend(input.trim());
+    const text = input.trim();
+    if (!text || busy) return;
+    // satu composer, makna menurut konteks: run hidup → steer; toggle
+    // Workflow Mode nyala → brief; selain itu turn chat biasa.
+    if (workflow) {
+      if (workflow.activeRun) {
+        void workflow.onSendWorkflow(text, "steer");
+        setInput("");
+        return;
+      }
+      if (workflow.armed) {
+        void workflow.onSendWorkflow(text, "brief");
+        setInput("");
+        return;
+      }
+    }
+    onSend(text);
     setInput("");
   }
 
@@ -627,30 +655,63 @@ export function ChatView({
 
       <div className="flex flex-none flex-col px-0 pb-4 sm:px-6">
         <div className="mx-auto flex w-full flex-col">
-          {onToggleApprovalMode ? (
-            <button
-              type="button"
-              className={`mb-2 flex items-center gap-2 self-start rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] ${
-                approvalMode === "auto"
-                  ? "border-accent bg-accent/12 text-accent"
-                  : "border-line-strong text-muted hover:text-secondary"
-              }`}
-              onClick={onToggleApprovalMode}
-              title="Fast mode: write_file & run_command are auto-approved (no approval cards). Click to switch."
-            >
-              <Lightning
-                size={12}
-                weight="fill"
-                aria-hidden
-                className={approvalMode === "auto" ? "text-accent" : ""}
-              />
-              {approvalMode === "auto" ? "Hardcore Mode" : "Safety Mode"}
-            </button>
-          ) : null}
-          {/* Kendali workflow hidup di CHAT (keputusan user 2026-11-08):
-              brief/steer/gate/pause — hanya utk conductor di project. */}
-          {personaId === "yui-conductor" && projectId && (
-            <WorkflowRunBar projectId={projectId} sessionId={sessionId} />
+          <div className="mb-2 flex flex-wrap items-center gap-2 self-start">
+            {onToggleApprovalMode ? (
+              <button
+                type="button"
+                className={`flex items-center gap-2 rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] ${
+                  approvalMode === "auto"
+                    ? "border-accent bg-accent/12 text-accent"
+                    : "border-line-strong text-muted hover:text-secondary"
+                }`}
+                onClick={onToggleApprovalMode}
+                title="Fast mode: write_file & run_command are auto-approved (no approval cards). Click to switch."
+              >
+                <Lightning
+                  size={12}
+                  weight="fill"
+                  aria-hidden
+                  className={approvalMode === "auto" ? "text-accent" : ""}
+                />
+                {approvalMode === "auto" ? "Hardcore Mode" : "Safety Mode"}
+              </button>
+            ) : null}
+            {/* Toggle Workflow Mode — sejajar Hardcore Mode (user 2026-11-08):
+                nyala = pesan berikutnya jadi brief run; saat run hidup, pesan
+                selalu steer apa pun toggle. Hanya utk conductor di project. */}
+            {workflow && (
+              <button
+                type="button"
+                className={`flex items-center gap-2 rounded-md2 border px-3 py-1 text-caption transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] ${
+                  workflow.armed
+                    ? "border-accent bg-accent/12 text-accent"
+                    : "border-line-strong text-muted hover:text-secondary"
+                }`}
+                onClick={workflow.onToggleArmed}
+                aria-pressed={workflow.armed}
+                title="Workflow mode: your next message starts a structured run (7 phases, gate after each). While a run is active, messages steer it regardless of this toggle."
+              >
+                <Steps
+                  size={12}
+                  weight={workflow.armed ? "fill" : "regular"}
+                  aria-hidden
+                  className={workflow.armed ? "text-accent" : ""}
+                />
+                {workflow.armed ? "Workflow Mode" : "Ad-hoc Mode"}
+              </button>
+            )}
+          </div>
+          {/* Strip status workflow (chip/progres/gate/pause) — input brief &
+              steer kini SATU dengan composer. */}
+          {workflow && (
+            <WorkflowRunBar
+              armed={workflow.armed}
+              activeRun={workflow.activeRun}
+              lastRun={workflow.lastRun}
+              run={workflow.run}
+              busy={busy}
+              onAction={workflow.onAction}
+            />
           )}
           <form
             className="flex items-end gap-2 rounded-lg2 border border-line bg-surface p-2 transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-normal)] focus-within:border-line-strong"
@@ -664,7 +725,11 @@ export function ChatView({
               placeholder={
                 busy
                   ? `${personaName} is working…`
-                  : `Describe a task for ${personaName}…`
+                  : workflow?.activeRun
+                    ? "Steer the running workflow — e.g. keep scope minimal"
+                    : workflow?.armed
+                      ? "Describe the goal — this message starts a workflow run"
+                      : `Describe a task for ${personaName}…`
               }
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {

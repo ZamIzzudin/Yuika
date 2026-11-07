@@ -85,7 +85,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             onClick={() => void logout()}
             aria-label={`Sign out (${status.user?.email})`}
             title="Sign out"
-            className="fixed right-3 bottom-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
+            className="fixed right-3 top-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
           >
             <Key size={12} aria-hidden /> {status.user.email}
           </button>
@@ -97,7 +97,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             disabled={busy}
             aria-label="Sign in"
             title="Sign in via your Yuika Portal account"
-            className="fixed right-3 bottom-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
+            className="fixed right-3 top-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
           >
             {busy ? (
               <SignIn size={12} aria-hidden />

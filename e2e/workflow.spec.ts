@@ -1,7 +1,9 @@
-// P2-FLOW-5/6 e2e — arsitektur kendali-di-chat (keputusan user 2026-11-08):
-// brief/steer/gate/pause = WorkflowRunBar di CHAT conductor; observasi alur =
-// tab TEAM (canvas delegasi, run = root conductor, fase implisit); reassign
-// step = tab TASK. Provider = mock lokal (fallback "ok" — step selesai instan).
+// P2-FLOW-5/6 e2e — SATU COMPOSER (keputusan user 2026-11-08 tahap 2):
+// toggle Workflow Mode (sejajar Hardcore Mode) ON → pesan chat = brief run;
+// run hidup → pesan chat = steer; OFF & tanpa run → chat biasa. Strip status
+// (chip/gate/pause) tetap di bar; observasi alur = tab TEAM (canvas delegasi,
+// run = root conductor, fase implisit); reassign step = tab TASK. Provider =
+// mock lokal (fallback "ok" — step selesai instan).
 import { expect, test } from "@playwright/test";
 
 const API = "http://127.0.0.1:3291";
@@ -18,13 +20,20 @@ test("FLOW-5: start via chat → gate approve ×6 → done; alur terlihat di Tea
   // UI: buka app → pilih project → CHAT (persona default conductor)
   await page.goto("/");
   await page.getByRole("button", { name, exact: false }).first().click();
-  const bar = page.getByLabel("Workflow run bar");
-  await expect(bar).toBeVisible({ timeout: 15_000 });
 
-  // start run dari chat (brief opsional) — run aktif (mock cepat: chip bisa
-  // langsung "awaiting approval" melewati "running")
-  await bar.getByLabel("Run brief").fill("Build a small landing page from scratch.");
-  await bar.getByRole("button", { name: "Start run" }).click();
+  // nyalakan Workflow Mode (sejajar Hardcore Mode) → bar armed muncul
+  const toggle = page.getByRole("button", { name: "Ad-hoc Mode" });
+  await expect(toggle).toBeVisible({ timeout: 15_000 });
+  await toggle.click();
+  const bar = page.getByLabel("Workflow run bar");
+  await expect(bar).toBeVisible({ timeout: 10_000 });
+
+  // SATU COMPOSER: pesan pertama = brief run (mock cepat: chip bisa langsung
+  // "awaiting approval" melewati "running")
+  await page
+    .getByPlaceholder("Describe the goal — this message starts a workflow run")
+    .fill("Build a small landing page from scratch.");
+  await page.getByLabel("Send").click();
   await expect(bar.getByText(/^(running|awaiting approval)$/)).toBeVisible({ timeout: 20_000 });
 
   // observasi: tab Team — run tampil sbg root delegasi (fase implisit)
@@ -55,16 +64,22 @@ test("FLOW-6: steer + reassign (Task) + pause/resume mid-run — semua via chat"
 
   await page.goto("/");
   await page.getByRole("button", { name, exact: false }).first().click();
+  await page.getByRole("button", { name: "Ad-hoc Mode" }).click(); // Workflow Mode
   const bar = page.getByLabel("Workflow run bar");
-  await expect(bar).toBeVisible({ timeout: 15_000 });
-  await bar.getByRole("button", { name: "Start run" }).click();
+  await expect(bar).toBeVisible({ timeout: 10_000 });
+  await page
+    .getByPlaceholder("Describe the goal — this message starts a workflow run")
+    .fill("Build a product landing page.");
+  await page.getByLabel("Send").click();
   await expect(bar.getByRole("button", { name: "Approve", exact: true })).toBeVisible({ timeout: 30_000 }); // gate planning
 
-  // 1) steer mid-run (chat) — instruksi masuk, input ter-clear
-  const steer = bar.getByLabel("Steer instruction");
-  await steer.fill("Keep the scope minimal for v1.");
-  await bar.getByRole("button", { name: "Steer", exact: true }).click();
-  await expect(steer).toHaveValue("");
+  // 1) steer mid-run lewat COMPOSER (run hidup → pesan = steer) — instruksi
+  //    tercatat sbg bubble user di thread
+  const steerBox = page.getByPlaceholder("Steer the running workflow — e.g. keep scope minimal");
+  await steerBox.fill("Keep the scope minimal for v1.");
+  await page.getByLabel("Send").click();
+  await expect(steerBox).toHaveValue("");
+  await expect(page.getByText("Keep the scope minimal for v1.").last()).toBeVisible();
 
   // 2) reassign step pending fase research → analyst — di TAB TASK (fokus assign)
   await page.getByRole("tab", { name: "Task" }).click();

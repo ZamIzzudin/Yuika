@@ -22,7 +22,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { setShapeOverrides } from "@/components/orinShapes";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
-import { ChatView, type ChatItem } from "@/components/ChatView";
+import { ChatView, type ChatItem, type WorkflowChatCtx } from "@/components/ChatView";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { RemoteBadge } from "@/components/RemoteBadge";
@@ -33,6 +33,8 @@ import {
 } from "@/components/TaskDrawer";
 import { Skeleton } from "@/components/Skeleton";
 import { Dot, StateChip, TabPills } from "@/components/ui";
+import { toastErr } from "@/components/ui/toast";
+import { useWorkflowRun } from "@/components/useWorkflowRun";
 import type {
   PersonaInfo,
   PersonaState,
@@ -706,6 +708,84 @@ export default function Home() {
     }).catch(() => setApprovalMode(approvalMode));
   }, [approvalMode]);
 
+  // ── Workflow via composer (user 2026-11-08 tahap 2) ─────────────────────
+  // Toggle Workflow Mode (sejajar Hardcore Mode, hanya conductor + project):
+  // ON & tanpa run → pesan = brief run baru; run hidup → pesan = steer
+  // (apa pun toggle); OFF & tanpa run → chat biasa. Persist di localStorage.
+  const wfRun = useWorkflowRun(activeProject?.id ?? null);
+  const [wfArmed, setWfArmed] = useState(false);
+  useEffect(() => {
+    try {
+      setWfArmed(window.localStorage.getItem("yui.workflowArmed") === "1");
+    } catch {
+      /* private mode — default off */
+    }
+  }, []);
+  const toggleWorkflowArmed = useCallback(() => {
+    setWfArmed((v) => {
+      const next = !v;
+      try {
+        window.localStorage.setItem("yui.workflowArmed", next ? "1" : "0");
+      } catch {
+        /* abaikan */
+      }
+      return next;
+    });
+  }, []);
+  const wfAction = useCallback(
+    async (path: string, body?: unknown) => {
+      const ok = await wfRun.postAction(path, body);
+      if (!ok) toastErr("Workflow action failed");
+      return ok;
+    },
+    [wfRun],
+  );
+  const wfSend = useCallback(
+    async (text: string, mode: "brief" | "steer") => {
+      if (!activeProject) return;
+      if (mode === "steer") {
+        const ok = await wfRun.postAction("/steer", { instruction: text });
+        if (!ok) {
+          toastErr("Failed to steer the run");
+          return;
+        }
+      } else {
+        try {
+          const r = await authFetch(apiUrl(`/api/projects/${activeProject.id}/workflows/runs`), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              brief: text,
+              ...(sessionId ? { leadSessionId: sessionId } : {}), // chat ini = lead
+            }),
+          });
+          const body = (await r.json()) as { runId?: string; error?: string };
+          if (!r.ok || !body.runId) throw new Error(body.error ?? "failed to start run");
+        } catch (e) {
+          toastErr(e instanceof Error ? e.message : "Failed to start run");
+          return;
+        }
+      }
+      // pesan user tetap tercatat di thread (brief/steer masuk konteks lead)
+      setItems((prev) => [...prev, { kind: "msg", role: "user", text }]);
+      void wfRun.loadActive();
+    },
+    [activeProject, sessionId, wfRun],
+  );
+  /** Konteks workflow utk ChatView conductor di project (null = chat biasa). */
+  const wfCtx: WorkflowChatCtx | null =
+    active?.id === "yui-conductor" && activeProject
+      ? {
+          armed: wfArmed,
+          activeRun: wfRun.activeRun,
+          lastRun: wfRun.lastRun,
+          run: wfRun.run,
+          onToggleArmed: toggleWorkflowArmed,
+          onAction: wfAction,
+          onSendWorkflow: wfSend,
+        }
+      : null;
+
   async function approve(
     requestId: string,
     approved: boolean,
@@ -1117,8 +1197,7 @@ export default function Home() {
                           personaState={personaState}
                           personaId={active.id}
                           personaName={active.name}
-                          projectId={activeProject?.id ?? null}
-                          sessionId={sessionId}
+                          workflow={wfCtx}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
@@ -1149,8 +1228,9 @@ export default function Home() {
                               {active.id === "yui-conductor" && activeProject && (
                                 <span className="flex items-center gap-1.5 rounded-lg2 border border-accent/40 bg-accent/5 px-4 py-2.5 text-caption text-muted">
                                   <Steps size={14} weight="bold" aria-hidden className="shrink-0 text-accent" />
-                                  Need the full team pipeline? Use the Workflow bar above the
-                                  composer — or watch progress in the Team tab.
+                                  Need the full team pipeline? Toggle Workflow Mode
+                                  beside Hardcore Mode — your next message starts a
+                                  structured run. Watch progress in the Team tab.
                                 </span>
                               )}
                               <div className="mt-2 flex max-w-[560px] flex-wrap justify-center gap-2">
@@ -1173,8 +1253,7 @@ export default function Home() {
                           personaState={personaState}
                           personaId={active.id}
                           personaName={active.name}
-                          projectId={activeProject?.id ?? null}
-                          sessionId={sessionId}
+                          workflow={wfCtx}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}

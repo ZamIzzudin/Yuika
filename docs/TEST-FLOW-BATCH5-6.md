@@ -31,10 +31,12 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 ### A1. Start run + board live (FLOW-1/2/5)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Buka project → tetap di tab **Chat** (persona conductor) | **Workflow run bar** di atas composer: input brief + tombol Start run | |
-| 2 | Isi brief: `Build a product landing page for a coffee brand.` → **Start run** | Bar berubah jadi strip kontrol: chip status (running/awaiting approval), progres fase, tombol Pause/Stop | |
-| 3 | Tunggu fase planning selesai | Banner gate muncul DI BAR (di atas composer): Phase "Planning" complete + Approve/Reject | |
+| 1 | Buka project → tab **Chat** (persona conductor) | Tombol **Ad-hoc Mode** di sebelah Hardcore Mode (belum ada run = tanpa bar) | |
+| 2 | Klik **Ad-hoc Mode** → jadi **Workflow Mode** (accent) | Bar "Workflow armed" muncul; placeholder composer berubah jadi "Describe the goal — this message starts a workflow run" | |
+| 3 | Ketik brief: `Build a product landing page for a coffee brand.` → kirim (Enter/Send) | Pesan terkirim = BRIEF run; bar jadi strip kontrol: chip status (running/awaiting approval), progres fase, Pause/Stop | |
 | 4 | Klik kembali tab **Chat** → **Flow** | Board tetap ada (state tak hilang) | |
+
+| 5 | Buka tab **Team** | Canvas delegasi: root baru "Workflow · <nama> · running" (conductor) + cabang step per persona — fase implisit di belakang | |
 
 ### A2. Gate approve (FLOW-3 — banner di Workflow run bar, chat)
 | # | Langkah | Ekspektasi | Hasil |
@@ -53,7 +55,7 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 ### A4. Steering mid-run (FLOW-6 — Steer input & Pause/Resume/Stop di bar chat)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Run baru → saat gate planning tampil, isi **Steer** di bar chat: `Use a warm brown palette.` → **Steer** | Input ter-reset; instruksi dipakai fase BERIKUTNYA | |
+| 1 | Run baru (Workflow Mode ON) → saat run hidup, KETIK di composer: `Use a warm brown palette.` → kirim | Pesan = STEER (bubble user muncul di thread); placeholder composer "Steer the running workflow…"; instruksi dipakai fase BERIKUTNYA | |
 | 2 | Klik **Pause** (saat gate) | Chip status paused LANGSUNG | |
 | 3 | Approve gate sambil paused | Tetap paused; banner gate hilang | |
 | 4 | **Resume** | Fase berikut jalan | |
@@ -106,10 +108,10 @@ bersih dari stack error, semua tombol memberi feedback ≤ 2 dtk.
 ### C4. Kendali workflow di chat conductor (keputusan 2026-11-08 final)
 | # | Langkah | Ekspektasi | Hasil |
 |---|---------|-----------|-------|
-| 1 | Persona aktif = **Conductor** (default) | Bar workflow di atas composer; persona lain (mis. scholar) TIDAK punya bar | |
+| 1 | Persona aktif = **Conductor** (default) | Tombol Ad-hoc/Workflow Mode muncul sebelah Hardcore Mode; persona lain (mis. scholar) TIDAK punya | |
 | 2 | Header chat | Tombol **Workflow** (ikon tangga, hanya conductor) → buka tab Team utk lihat canvas alur | |
-| 3 | Lihat atas composer chat | **Workflow run bar**: input brief + Start run (run aktif: chip status, Approve/Reject saat gate, Steer, Pause/Stop) | |
-| 4 | Ganti persona ke scholar | Bar & tombol Workflow hilang (chat = pekerjaan serabutan) | |
+| 3 | Klik tombol **Ad-hoc Mode** (sebelah Hardcore Mode) | Jadi **Workflow Mode** (accent, aria-pressed); bar "Workflow armed" muncul; placeholder composer berubah | |
+| 4 | Ganti persona ke scholar | Toggle & bar hilang (chat = pekerjaan serabutan); toggle mati → composer = chat biasa walau conductor | |
 
 ---
 
