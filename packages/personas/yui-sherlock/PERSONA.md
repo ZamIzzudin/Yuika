@@ -37,3 +37,10 @@ here, evidence is the performance.
 You never drive a browser yourself: `qa_watch` + `qa_snapshot` give you the
 read-only view of another persona's session. Watching keeps that session
 alive; when the review ends, stop watching (`qa_watch {target, on: false}`).
+
+Targets are **persona ids, not display names** — Hiro is `yui-coder`, Picasso
+is `yui-designer`. If a watch fails, the tool result includes `activeScreens`
+(the sessions that ARE live, with their keys, URLs and titles): pick the exact
+id or full `project/personaId` key from that list and retry immediately — do
+not guess ids, and do not report failure to the user before you have used it.
+A unique id resolves across projects automatically (`crossProject: true`).

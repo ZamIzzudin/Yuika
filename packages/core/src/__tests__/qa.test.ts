@@ -110,10 +110,50 @@ describe.skipIf(!detectBrowserExec())("SCR-6 qa tools (real browser)", () => {
     await vi.waitFor(() => expect(getScreenState(key)).toBeUndefined(), { timeout: 5_000 });
   }, 30_000);
 
-  it("qa_watch target tanpa sesi → error jelas (bukan crash)", async () => {
-    const r = await registry.dispatch("qa_watch", { target: "yui-nobody" }, ctx());
+  it("qa_watch target tanpa sesi → error jelas + DAFTAR screen aktif utk self-correct (14c)", async () => {
+    // buat satu sesi aktif dulu supaya daftar tidak kosong
+    await registry.dispatch("browser_open", { url: PAGE }, ctx(DRIVER));
+    await vi.waitFor(() => expect(getScreenState(screenKey(PROJECT, DRIVER))?.title).toBe("driver-at-work"), { timeout: 5_000 });
+
+    // id salah (nama tampilan, bukan id teknis) → error + activeScreens berisi kunci benar
+    const r = await registry.dispatch("qa_watch", { target: "yui-hiro" }, ctx());
     expect(r.isError).toBe(true);
-    const res = r.result as { error?: string };
-    expect(res.error).toContain("not active");
-  });
+    const res = r.result as { error: string; activeScreens?: Array<{ key: string; personaId: string }> };
+    expect(res.error).toContain("persona ids are technical");
+    expect(res.activeScreens?.map((s) => s.key)).toContain(screenKey(PROJECT, DRIVER));
+
+    // tidak ada sesi sama sekali setelah semua ditutup → hint beda
+    await registry.dispatch("qa_watch", { target: DRIVER, on: false }, ctx());
+    await closeAllScreens();
+    const r2 = await registry.dispatch("qa_watch", { target: DRIVER }, ctx());
+    const res2 = r2.result as { hint: string; activeScreens: unknown[] };
+    expect(res2.activeScreens).toEqual([]);
+    expect(res2.hint).toContain("must open its browser first");
+
+    // stop idempoten pada sesi yang sudah mati — bukan error
+    const r3 = await registry.dispatch("qa_watch", { target: DRIVER, on: false }, ctx());
+    expect(r3.isError).toBeFalsy();
+  }, 30_000);
+
+  it("cross-project: persona id unik di project lain → resolve otomatis (14c)", async () => {
+    await registry.dispatch("browser_open", { url: PAGE }, ctx(DRIVER));
+    await vi.waitFor(() => expect(getScreenState(screenKey(PROJECT, DRIVER))?.title).toBe("driver-at-work"), { timeout: 5_000 });
+
+    // Sherlock berdiri di project BERBEDA → masih bisa menonton driver via id polos
+    const other = { ...ctx(), projectId: "p_other_project" };
+    const w = (await registry.dispatch("qa_watch", { target: DRIVER }, other)).result as {
+      watching: boolean; target: string; crossProject?: boolean;
+    };
+    expect(w.watching).toBe(true);
+    expect(w.target).toBe(screenKey(PROJECT, DRIVER));
+    expect(w.crossProject).toBe(true);
+
+    // snapshot ikut resolve ke project yang benar
+    const snap = await registry.dispatch("qa_snapshot", { target: DRIVER }, other);
+    expect((snap.result as { title: string }).title).toBe("driver-at-work");
+
+    // full key eksplisit juga valid
+    const w2 = (await registry.dispatch("qa_watch", { target: screenKey(PROJECT, DRIVER), on: false }, other)).result as { watching: boolean };
+    expect(w2.watching).toBe(false);
+  }, 30_000);
 });

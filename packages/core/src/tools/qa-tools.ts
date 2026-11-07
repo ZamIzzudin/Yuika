@@ -8,10 +8,50 @@ import type { ToolResult } from "../registry.js";
 import type { ToolContext } from "../registry.js";
 import { registry } from "../registry.js";
 import { moduleLogger } from "../logger.js";
-import { screenKey, qaWatch, screenSnapshot } from "../screen/manager.js";
+import { qaWatch, screenSnapshot, listScreens } from "../screen/manager.js";
 import { redactActive } from "../vault/redact.js";
 
 const log = moduleLogger("qa");
+
+// SCR-6/14c: resolusi target pintar — persona id BUKAN nama tampilan (Hiro
+// = yui-coder) dan sesi target bisa hidup di project lain. Pola:
+//   "project/personaId" → key penuh apa adanya
+//   "personaId"         → cari di seluruh sesi aktif; unik → pakai (cross-project OK,
+//                         baca read-only); ambigu → daftar pilihan; tidak ada →
+//                         daftar semua screen aktif supaya pemanggil self-correct.
+type ScreenBrief = { key: string; personaId: string; url: string; title: string; status: string };
+
+type Resolved =
+  | { key: string; crossProject?: boolean }
+  | { error: string; hint: string; activeScreens: ScreenBrief[] };
+
+function brief(s: { key: string; personaId: string; url: string; title: string; status: string }): ScreenBrief {
+  return { key: s.key, personaId: s.personaId, url: s.url, title: s.title, status: s.status };
+}
+
+function resolveScreenTarget(projectId: string, target: string): Resolved {
+  if (target.includes("/")) return { key: target };
+  const matches = listScreens().filter((s) => s.personaId === target);
+  if (matches.length === 1) {
+    const m = matches[0]!;
+    return { key: m.key, crossProject: m.projectId !== projectId };
+  }
+  if (matches.length > 1) {
+    return {
+      error: `persona '${target}' has ${matches.length} active screens across projects`,
+      hint: "Pass the full key 'project/personaId' of the one you mean.",
+      activeScreens: matches.map(brief),
+    };
+  }
+  const all = listScreens().map(brief);
+  return {
+    error: `no active screen for '${target}' (persona ids are technical, e.g. Hiro is 'yui-coder', not the display name)`,
+    hint: all.length
+      ? "No session for that persona id. Active screens are listed — retry with the exact persona id or a full 'project/personaId' key."
+      : "There are no active screen sessions at all right now — the target must open its browser first, then retry.",
+    activeScreens: all,
+  };
+}
 
 function registerQaTools(): void {
   registry.register({
@@ -24,13 +64,19 @@ function registerQaTools(): void {
     }),
     handler: async (args: { target: string; on?: boolean }, ctx: ToolContext): Promise<ToolResult> => {
       if (!ctx.projectId) return { isError: true, result: { error: "qa tools require a project context" } };
-      const key = screenKey(ctx.projectId, args.target);
+      const resolved = resolveScreenTarget(ctx.projectId, args.target);
+      if ("error" in resolved) {
+        // stop (on=false) pada sesi yang sudah mati → idempoten, bukan error
+        if (args.on === false) return { result: { watching: false, target: args.target, note: "no active session — nothing to stop" } };
+        return { isError: true, result: resolved };
+      }
       try {
-        const state = qaWatch(key, ctx.personaId ?? "user", args.on ?? true);
+        const state = qaWatch(resolved.key, ctx.personaId ?? "user", args.on ?? true);
         return {
           result: {
             watching: args.on ?? true,
-            target: args.target,
+            target: resolved.key,
+            ...(resolved.crossProject ? { crossProject: true } : {}),
             state: { url: state.url, title: state.title, status: state.status, watchers: state.watchers },
           },
         };
@@ -55,9 +101,10 @@ function registerQaTools(): void {
     }),
     handler: async (args: { target: string }, ctx: ToolContext): Promise<ToolResult> => {
       if (!ctx.projectId) return { isError: true, result: { error: "qa tools require a project context" } };
-      const key = screenKey(ctx.projectId, args.target);
+      const resolved = resolveScreenTarget(ctx.projectId, args.target);
+      if ("error" in resolved) return { isError: true, result: resolved };
       try {
-        const snap = await screenSnapshot(key);
+        const snap = await screenSnapshot(resolved.key);
         // defense-in-depth (pola browser_snapshot): scrub active secret
         return { result: JSON.parse(redactActive(JSON.stringify(snap))) };
       } catch (e) {
