@@ -33,6 +33,9 @@ const fake = {
   resumeDelegation: (id: string) => id !== "s_missing",
   resolveApproval: () => true,
   getProject: (id: string) => (id === "p_ok" ? { id, name: "demo" } : null),
+  getProjectActivity: () => [
+    { at: 2, sessionId: "s1", personaId: "yui-scholar", kind: "tool", label: "web_fetch https://example.com", isError: false },
+  ],
   writeProjectUpload: async (_id: string, rel: string, _buf: Buffer) => rel,
   listProjectTasks: () => [
     { id: "t_a", projectId: "p_ok", title: "A", status: "todo", assignee: "yui-coder", refs: [], description: null, acceptance: ["done a"], dependsOn: ["t_hantu"], estimate: "1d", phase: "planning", createdAt: 0, updatedAt: 0 },
@@ -51,6 +54,19 @@ const fake = {
 const app = buildApp(fake);
 
 describe("apps/api REST contract", () => {
+  it("GET /api/projects/:id/activity — 200 shape {activity:[…]} (Batch 14a++ Logs)", async () => {
+    const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/activity?limit=50" });
+    expect(r.statusCode).toBe(200);
+    const d = r.json() as { activity: { personaId: string; kind: string; label: string }[] };
+    expect(Array.isArray(d.activity)).toBe(true);
+    // browsing history ikut tergabung (kind visit)
+    expect(d.activity.some((a) => a.kind === "visit" && a.label.includes("example.com"))).toBe(true);
+  });
+  it("GET /api/projects/:id/activity — project tak dikenal → 404 {error}", async () => {
+    const r = await app.inject({ method: "GET", url: "/api/projects/p_hantu/activity" });
+    expect(r.statusCode).toBe(404);
+    expect(r.json()).toMatchObject({ error: "project not found" });
+  });
   it("POST /api/sessions — valid → 200 shape {sessionId,persona,projectId}", async () => {
     const r = await app.inject({ method: "POST", url: "/api/sessions", payload: { personaId: "yui-scholar" } });
     expect(r.statusCode).toBe(200);

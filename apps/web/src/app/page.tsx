@@ -414,21 +414,19 @@ export default function Home() {
         );
         break;
       case "screen.state":
-        // Batch 14a++: persona baru membuka browser → bubble "Open Browser"
-        // (satu per persona; dedupe — sesi lanjutan tak menumpuk bubble).
+        // Batch 14a++: persona membuka browser → bubble "Open Browser".
+        // Satu bubble per persona yang DIPAKAI ULANG: sesi baru (mis. user
+        // menutup floating window lalu persona buka lagi) memperbarui bubble
+        // lama (URL baru) — bukan ditumpuk, dan tidak hilang diam-diam.
         if (e.status === "running" || e.status === "starting") {
-          setItems((prev) =>
-            prev.some((it) => it.kind === "screen" && it.name === e.personaId)
-              ? prev
-              : [
-                  ...prev,
-                  {
-                    kind: "screen" as const,
-                    name: e.personaId,
-                    screenUrl: e.url,
-                  },
-                ],
-          );
+          setItems((prev) => {
+            const i = prev.findIndex((it) => it.kind === "screen" && it.name === e.personaId);
+            if (i === -1)
+              return [...prev, { kind: "screen" as const, name: e.personaId, screenUrl: e.url }];
+            const next = [...prev];
+            next[i] = { ...next[i]!, screenUrl: e.url };
+            return next;
+          });
         }
         break;
       case "vault.requested":
@@ -1373,7 +1371,8 @@ export default function Home() {
                             activeSessionId={sessionId}
                             personas={personas}
                             activeTab={mainTab}
-                            rev={taskRev}
+                            rev={taskRev}
+
                             live={{
                               parentPersonaId: active.id,
                               parentState: personaState,
