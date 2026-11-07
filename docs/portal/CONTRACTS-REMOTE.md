@@ -82,6 +82,19 @@ export const RemoteAction = z.discriminatedUnion("act", [
     rid: z.string(),
     sessions: z.array(z.string()),
   }),
+  // ── v1.1 (SCR-7, 2026-11): remote watch live screen — aditif, penerima lama aman ──
+  z.object({
+    proto: z.literal(1),
+    act: z.literal("watch_screen"),
+    rid: z.string(),
+    /** screen key \"projectId/personaId\" */
+    key: z.string(),
+  }),
+  z.object({
+    proto: z.literal(1),
+    act: z.literal("unwatch_screen"),
+    rid: z.string(),
+  }),
   z.object({
     proto: z.literal(1),
     act: z.literal("ping_host"),
@@ -105,6 +118,16 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
       personaId: z.string(),
       updatedAt: z.number().int(),
     })),
+    /** v1.1 (SCR-7): live screen aktif di host — opsional, remote lama abaikan. */
+    screens: z.array(z.object({
+      key: z.string(),
+      personaId: z.string(),
+      url: z.string(),
+      title: z.string(),
+      status: z.enum(["starting", "running", "stopped", "failed"]),
+      viewers: z.number().int(),
+      watchers: z.number().int(),
+    })).optional(),
   }),
   z.object({
     proto: z.literal(1),
@@ -175,6 +198,29 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
     code: z.string(),
     message: z.string(),
   }),
+  // ── v1.1 (SCR-7, 2026-11): remote watch live screen (~1fps JPEG, read-only v0) ──
+  z.object({
+    proto: z.literal(1),
+    ev: z.literal("screen.state"),
+    rid: z.string().optional(),
+    key: z.string(),
+    url: z.string(),
+    title: z.string(),
+    status: z.enum(["starting", "running", "stopped", "failed"]),
+    viewers: z.number().int(),
+    watchers: z.number().int(),
+    leaseOwner: z.string().nullable(),
+  }),
+  z.object({
+    proto: z.literal(1),
+    ev: z.literal("screen.frame"),
+    key: z.string(),
+    /** base64 JPEG — di-throttle 1fps + dedupe frame identik di host. */
+    data: z.string(),
+    width: z.number().int(),
+    height: z.number().int(),
+    ts: z.number().int(),
+  }),
   z.object({
     proto: z.literal(1),
     ev: z.literal("pong_host"),
@@ -205,6 +251,7 @@ export type RemoteEvent = z.infer<typeof RemoteEvent>;
 | `list_sessions` | daftar sesi runtime |
 | `subscribe`/`unsubscribe` + `sinceSeq` | daftar topik bus → envelope; replay delta dari buffer seq |
 | `ping_host` | balas `pong_host` |
+| `watch_screen` / `unwatch_screen` | (v1.1) langganan screen manager viewer → pump frame `screen.frame` ~1fps (`YUI_REMOTE_SCREEN_MS`) + dedupe + cap 200KB; ack/state via `screen.state` |
 
 Event host = proyeksi `YuiEvent` bus yang sudah ada (message.delta ←
 `message.delta`, approval.request ← `approval.requested`, dst.) + `seq` counter
