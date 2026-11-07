@@ -688,7 +688,7 @@
 
 ## Batch 12 · Vault v0 + Batch 14a · Live Screen (DISETUJUI 2026-11 — keputusan D24–D27)
 > **Batch 12 SELESAI (2026-11)** — detail di BATCHES.md.
-> **Batch 14a SELESAI (2026-11)** — SCR-0..4 + follow-up floating screen (ScreenPip + useScreenStream; tombol Float & Watch live). Detail di BATCHES.md. RESTRUKTURISASI lanjutan (hari kedua): bug header PiP fix, resize tepi, close=stop sesi, auto-shutdown YUI_SCREEN_TOOL_IDLE_MS, bubble chat Open Browser (event screen.state), tab Browser→Terminal penuh (reader dihapus; policy→Config), Logs=project-wide activity feed (/api/projects/:id/activity).
+> **Batch 14a SELESAI (2026-11)** — SCR-0..4 + follow-up floating screen (ScreenPip + useScreenStream; tombol Float & Watch live). Detail di BATCHES.md. RESTRUKTURISASI lanjutan (hari kedua): bug header PiP fix, resize tepi, close=stop sesi, auto-shutdown YUI_SCREEN_TOOL_IDLE_MS, bubble chat Open Browser (event screen.state), tab Browser→Terminal penuh (reader dihapus; policy→Config), Logs=project-wide activity feed (/api/projects/:id/activity). Natural-language browser intent: PERSONA Scholar+Coder — sebut "browser" di prompt user → persona pakai browser_* (bukan web_fetch).
 > Sumber: docs/PLAN-WORKSHOP-LIVESCREEN-VAULT.md (benchmark `rokazo`, dipangkas).
 > User: **A (Vault) & B (Screen) setuju eksekusi; C menyusul; D tolak semua.**
 > Urutan eksekusi: Batch 12 duluan (independen), menyusul 14a.
