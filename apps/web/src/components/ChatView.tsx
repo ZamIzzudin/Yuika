@@ -52,6 +52,7 @@ export interface ChatItem {
     | "approval"
     | "vault"
     | "takeover"
+    | "screen"
     | "error"
     | "noted"
     | "skill"
@@ -91,6 +92,9 @@ export interface ChatItem {
   vresolved?: "filled" | "skipped" | "expired" | null;
   // takeover (Batch 14a SCR-4): persona minta kontrol screen — non-blocking.
   tresolved?: "granted" | "denied" | "expired" | null;
+  // screen (Batch 14a++): bubble "persona membuka browser" → Open Browser.
+  screenUrl?: string;
+  screenOpen?: boolean | null;
   // noted (P1-MEM-2: hasil learn nudge)
   scope?: "user" | "project";
   // compressed (P0-CORE-4: chip transparansi kompresi konteks)
@@ -217,7 +221,7 @@ export function ChatView({
   approvalMode,
   onToggleApprovalMode,
   workflow,
-  onWatchScreen,
+  onOpenScreen,
 }: {
   items: ChatItem[];
   personaState: PersonaState;
@@ -236,8 +240,8 @@ export function ChatView({
   onToggleApprovalMode?: () => void;
   /** Konteks workflow utk composer conductor (null = chat biasa). */
   workflow?: WorkflowChatCtx | null;
-  /** Buka floating live screen persona (kartu takeover — SCR-3 follow-up). */
-  onWatchScreen?: (personaId: string) => void;
+  /** Buka floating live screen persona (bubble "Open Browser" + kartu takeover). */
+  onOpenScreen?: (personaId: string) => void;
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
@@ -688,10 +692,10 @@ export function ChatView({
                       </p>
                     ) : (
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {onWatchScreen && (
+                        {onOpenScreen && (
                           <Button
                             size="sm"
-                            onClick={() => it.name && onWatchScreen(it.name)}
+                            onClick={() => it.name && onOpenScreen(it.name)}
                             title="Watch this screen in a floating window while you chat"
                           >
                             Watch live
@@ -730,6 +734,32 @@ export function ChatView({
                         </Button>
                       </div>
                     )}
+                  </div>
+                </div>
+              );
+            }
+            if (it.kind === "screen") {
+              // Batch 14a++: persona menjalankan browser_open → bubble dengan
+              // tombol membuka floating window (satu bubble per persona).
+              return (
+                <div
+                  key={`r${i}`}
+                  className="msg-in grid grid-cols-[36px_minmax(0,1fr)] gap-x-3"
+                >
+                  <div className="col-start-2 rounded-card border border-line bg-inset px-4 py-3">
+                    <b className="text-body font-medium text-primary">
+                      {it.name} is working in a browser
+                    </b>
+                    <p className="mt-0.5 truncate text-caption text-dim">{it.screenUrl}</p>
+                    <div className="mt-3">
+                      <Button
+                        size="sm"
+                        onClick={() => it.name && onOpenScreen?.(it.name)}
+                        title="Open this screen in a floating window"
+                      >
+                        Open Browser
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );

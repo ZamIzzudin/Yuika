@@ -1,36 +1,39 @@
 "use client";
 
-// Batch 14a follow-up (SCR-3): floating shared screen — melayang di ATAS
-// semua tab (dirender page-level, bukan di dalam tab) supaya user bisa
-// menonton persona bekerja sambil mengetik di chat, dan ambil alih /
-// kembalikan kendali tanpa pindah tab. Bukan PiP browser-native — panel
-// draggable dalam halaman.
+// Batch 14a++ (user 2026-11): floating shared screen — melayang di atas semua
+// tab. Perubahan dari versi pertama:
+//   - header drag TIDAK lagi menelan klik tombol (pointer-capture hanya mulai
+//     di background header, bukan di atas button);
+//   - shrink/grow button DIHAPUS — resize via tarik tepi kanan / bawah / pojok;
+//   - close = MENGHENTIKAN sesi screen (persona buka lagi → sesi baru,
+//     tidak menumpuk); collapse hanya menutup window visual.
 import { useRef, useState } from "react";
+import { apiUrl, authFetch } from "@/lib/api";
 import { Button } from "@/components/ui";
 import { useScreenStream } from "./useScreenStream";
 
-const SIZES = { sm: 340, lg: 520 } as const;
+const MIN_W = 280;
+const MIN_H = 180;
+const DEF_W = 420;
 
 export function ScreenPip({
   projectId,
   personaId,
   personaName,
   onClose,
-  onExpand,
 }: {
   projectId: string;
   personaId: string;
   personaName: string;
+  /** Dipanggil setelah sesi dihentikan (close = stop browser). */
   onClose: () => void;
-  /** Buka tab Browser (mode Live) utk tampilan penuh. */
-  onExpand: () => void;
 }) {
   const { state, frame, dim, err, takeBusy, input, lease } = useScreenStream(projectId, personaId);
-  const [big, setBig] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  // pos null = jangkar kanan-bawah; setelah di-drag jadi koordinat eksplisit
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
+  const resize = useRef<{ mode: "e" | "s" | "se"; sx: number; sy: number; w: number; h: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -38,20 +41,22 @@ export function ScreenPip({
   const iControl = owner === "user";
   const ownerName = owner === null ? "free" : owner === "user" ? "you" : personaName;
 
-  const w = SIZES[big ? "lg" : "sm"];
-  const aspect = dim ? dim.h / dim.w : 800 / 1280;
+  const w = size?.w ?? DEF_W;
+  const h = size?.h ?? (dim ? Math.round(DEF_W * (dim.h / dim.w)) : Math.round(DEF_W * (800 / 1280)));
 
+  // ── drag window (header background saja — tombol tetap bisa diklik) ──────
   const onHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
+    if ((e.target as HTMLElement).closest("button")) return; // FIX: jangan tangkap pointer di atas tombol
     const root = rootRef.current;
     if (!root) return;
     const r = root.getBoundingClientRect();
-    if (!pos) setPos({ x: r.left, y: r.top }); // bekukan posisi jangkar → koordinat
+    if (!pos) setPos({ x: r.left, y: r.top });
     drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onHeaderPointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
     if (!drag.current) return;
-    const x = Math.min(Math.max(e.clientX - drag.current.dx, 8), window.innerWidth - w - 8);
+    const x = Math.min(Math.max(e.clientX - drag.current.dx, 8), window.innerWidth - 120);
     const y = Math.min(Math.max(e.clientY - drag.current.dy, 8), window.innerHeight - 60);
     setPos({ x, y });
   };
@@ -60,6 +65,51 @@ export function ScreenPip({
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
+  // ── resize via tepi (kanan / bawah / pojok kanan-bawah) ──────────────────
+  const onEdgePointerDown = (mode: "e" | "s" | "se") => (e: React.PointerEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    const root = rootRef.current;
+    if (!root) return;
+    const r = root.getBoundingClientRect();
+    if (!pos) setPos({ x: r.left, y: r.top }); // bekukan jangkar sebelum resize
+    resize.current = { mode, sx: e.clientX, sy: e.clientY, w: r.width, h: r.height };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onEdgePointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
+    const rz = resize.current;
+    if (!rz) return;
+    const root = rootRef.current;
+    if (!root) return;
+    const vw = window.innerWidth - (pos?.x ?? root.getBoundingClientRect().left) - 8;
+    const vh = window.innerHeight - (pos?.y ?? root.getBoundingClientRect().top) - 8;
+    setSize({
+      w: rz.mode === "s" ? rz.w : Math.min(Math.max(rz.w + e.clientX - rz.sx, MIN_W), Math.max(vw, MIN_W)),
+      h: rz.mode === "e" ? rz.h : Math.min(Math.max(rz.h + e.clientY - rz.sy, MIN_H), Math.max(vh, MIN_H)),
+    });
+  };
+  const onEdgePointerUp = (e: React.PointerEvent<HTMLDivElement>): void => {
+    resize.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+  const edgeCls = "absolute z-10 touch-none";
+  const edgeE = `${edgeCls} top-2 right-0 bottom-4 w-1.5 cursor-ew-resize`;
+  const edgeS = `${edgeCls} left-2 right-4 bottom-0 h-1.5 cursor-ns-resize`;
+  const edgeSE = `${edgeCls} right-0 bottom-0 h-4 w-4 cursor-nwse-resize`;
+
+  // ── close = STOP sesi (bukan sekadar sembunyikan) ────────────────────────
+  const stopAndClose = (): void => {
+    void (async () => {
+      try {
+        await authFetch(apiUrl(`/api/projects/${projectId}/screens/${personaId}`), { method: "DELETE" });
+      } catch {
+        /* best-effort — tetap tutup window */
+      }
+      onClose();
+    })();
+  };
+
+  // ── relay input (scale-aware) ─────────────────────────────────────────────
   const onCanvasClick = (e: React.MouseEvent<HTMLDivElement>): void => {
     if (!iControl || !dim || !canvasRef.current) return;
     const r = canvasRef.current.getBoundingClientRect();
@@ -94,16 +144,20 @@ export function ScreenPip({
     <div
       ref={rootRef}
       className="fixed z-[70] flex flex-col overflow-hidden rounded-lg2 border border-line-strong bg-surface shadow-2xl shadow-black/40"
-      style={
-        pos
-          ? { left: pos.x, top: pos.y, width: w }
-          : { right: "1rem", bottom: "1rem", width: w }
-      }
+      style={pos ? { left: pos.x, top: pos.y, width: w } : { right: "1rem", bottom: "1rem", width: w }}
       data-testid="screen-pip"
       role="complementary"
       aria-label={`Live screen: ${personaName}`}
     >
-      {/* header = drag handle */}
+      {!collapsed && (
+        <>
+          <div onPointerDown={onEdgePointerDown("e")} onPointerMove={onEdgePointerMove} onPointerUp={onEdgePointerUp} className={edgeE} role="separator" aria-label="Resize width" />
+          <div onPointerDown={onEdgePointerDown("s")} onPointerMove={onEdgePointerMove} onPointerUp={onEdgePointerUp} className={edgeS} role="separator" aria-label="Resize height" />
+          <div onPointerDown={onEdgePointerDown("se")} onPointerMove={onEdgePointerMove} onPointerUp={onEdgePointerUp} className={edgeSE} role="separator" aria-label="Resize" />
+        </>
+      )}
+
+      {/* header = drag handle (background saja) */}
       <div
         className="flex flex-none cursor-grab touch-none select-none items-center gap-2 border-b border-line bg-inset px-2.5 py-1.5 active:cursor-grabbing"
         onPointerDown={onHeaderPointerDown}
@@ -119,6 +173,7 @@ export function ScreenPip({
           {iControl ? "you" : owner ? ownerName : "free"}
         </span>
         <button
+          type="button"
           className="rounded-pill px-1.5 text-caption text-muted hover:text-primary"
           title={collapsed ? "Expand window" : "Collapse"}
           aria-label={collapsed ? "Expand window" : "Collapse"}
@@ -127,26 +182,11 @@ export function ScreenPip({
           {collapsed ? "▸" : "▾"}
         </button>
         <button
-          className="rounded-pill px-1.5 text-caption text-muted hover:text-primary"
-          title="Grow / shrink"
-          aria-label="Grow or shrink"
-          onClick={() => setBig((b) => !b)}
-        >
-          {big ? "▭" : "▯"}
-        </button>
-        <button
-          className="rounded-pill px-1.5 text-caption text-muted hover:text-primary"
-          title="Open in Browser tab"
-          aria-label="Open in Browser tab"
-          onClick={onExpand}
-        >
-          ⧉
-        </button>
-        <button
+          type="button"
           className="rounded-pill px-1.5 text-caption text-muted hover:text-rose-400"
-          title="Close"
-          aria-label="Close floating screen"
-          onClick={onClose}
+          title="Stop this browser session"
+          aria-label="Stop this browser session"
+          onClick={stopAndClose}
         >
           ✕
         </button>
@@ -161,7 +201,7 @@ export function ScreenPip({
             onKeyDown={onCanvasKey}
             onWheel={onCanvasWheel}
             className={`relative flex-none overflow-hidden bg-black/85 outline-none ${iControl ? "cursor-pointer" : "cursor-not-allowed"}`}
-            style={{ height: Math.round(w * aspect), display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{ height: h, display: "flex", alignItems: "center", justifyContent: "center" }}
             role="img"
             aria-label={`Shared screen: ${state?.title || state?.url || ""}`}
           >

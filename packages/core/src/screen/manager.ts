@@ -131,6 +131,14 @@ G.__yuikaScreenSessions = sessions;
 function fpsIdle(): number { return Math.max(1, Number(process.env.YUI_SCREEN_FPS_IDLE ?? 2) || 2); }
 function fpsActive(): number { return Math.min(30, Math.max(1, Number(process.env.YUI_SCREEN_FPS_ACTIVE ?? 15) || 15)); }
 function idleMs(): number { return Math.max(0, Number(process.env.YUI_SCREEN_IDLE_MS ?? 15 * 60_000) || 0); }
+/** Tool-idle close (default 120s): sesi tanpa viewer DAN tanpa aktivitas tool
+ *  persona ditutup — persona "selesai memakai browser" → shutdown otomatis
+ *  (0 = off). YUI_SCREEN_IDLE_MS tetap hard cap. */
+function toolIdleMs(): number { return Math.max(0, Number(process.env.YUI_SCREEN_TOOL_IDLE_MS ?? 120_000) || 0); }
+function effectiveIdleMs(): number {
+  const c = [idleMs(), toolIdleMs()].filter((n) => n > 0);
+  return c.length ? Math.min(...c) : 0;
+}
 
 function stateOf(s: ScreenSession): ScreenState {
   return {
@@ -159,11 +167,11 @@ function touch(s: ScreenSession): void {
 
 function scheduleIdleCheck(s: ScreenSession): void {
   if (s.idleTimer) clearTimeout(s.idleTimer);
-  const ms = idleMs();
+  const ms = effectiveIdleMs();
   if (!ms) return;
   s.idleTimer = setTimeout(() => {
     if (s.viewers <= 0 && Date.now() - s.lastActivity >= ms) {
-      log.info({ key: s.key }, "screen idle → close");
+      log.info({ key: s.key }, "screen idle (no viewer, no tool activity) → close");
       void stopScreen(s.key, "idle");
     } else {
       scheduleIdleCheck(s);

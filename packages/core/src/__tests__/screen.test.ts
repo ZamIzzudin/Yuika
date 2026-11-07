@@ -16,6 +16,7 @@ import {
   ensureScreen, stopScreen, screenKey, takeLease, yieldLease, leaseOwner,
   subscribeScreen, screenNavigate, screenSnapshot, screenClick, screenType,
   openTakeoverRequest, resolveTakeover, listPendingTakeovers, closeAllScreens,
+  getScreenState,
 } from "../screen/manager.js";
 import { registry, resetRegistryForTests, type ToolContext } from "../registry.js";
 import { registerScreenTools } from "../tools/screen-tools.js";
@@ -193,6 +194,24 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
     const p2 = registry.dispatch("request_takeover", { reason: "r2" }, ctx());
     const r2 = await p2;
     expect((r2.result as { error: string }).error).toBe("takeover_expired");
+  }, 30_000);
+
+  it("browser_open sesi BARU → emit screen.state (bubble chat); sesi lama → tidak", async () => {
+    const events: { type: string }[] = [];
+    const c: ToolContext = { ...ctx(), emit: (d) => events.push(d as { type: string }) };
+    await registry.dispatch("browser_open", { url: PAGE }, c);
+    expect(events.some((e) => e.type === "screen.state")).toBe(true);
+    events.length = 0;
+    await registry.dispatch("browser_open", { url: PAGE }, c);
+    expect(events.filter((e) => e.type === "screen.state")).toHaveLength(0);
+  }, 30_000);
+
+  it("tool-idle auto-close: tanpa viewer & tanpa aktivitas → sesi berhenti sendiri", async () => {
+    vi.stubEnv("YUI_SCREEN_TOOL_IDLE_MS", "100");
+    await ensureScreen(dir, PROJECT, PERSONA);
+    const key = screenKey(PROJECT, PERSONA);
+    expect(getScreenState(key)).toBeDefined();
+    await vi.waitFor(() => expect(getScreenState(key)).toBeUndefined(), { timeout: 5_000 });
   }, 30_000);
 
   it("tools browser_open/snapshot/click via registry (persona path)", async () => {

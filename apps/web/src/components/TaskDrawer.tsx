@@ -28,7 +28,7 @@ import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
 import { WorkflowStepsCard } from "./WorkflowStepsCard";
-import { BrowserToolsTab } from "./BrowserToolsTab";
+import { TerminalFullTab } from "./TerminalFullTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
@@ -52,7 +52,7 @@ export type WorkspaceTab =
   | "team"
   | "files"
   | "board"
-  | "browser"
+  | "terminal"
   | "config";
 
 /** Delegasi live untuk org-chart Tim (dari event delegation.* sesi aktif). */
@@ -77,6 +77,102 @@ const PERSONA_NAME: Record<string, string> = {
 };
 
 /** Ikon status simpul pohon (○ ◐ ◑ ● → Phosphor). */
+/** Config → Browser (Batch 14a++): policy reader pindah ke Config — toggle
+ *  allowAll per project (SSRF guard IP-private TETAP jalan di backend). */
+function BrowserPolicySection({ projectId }: { projectId: string }) {
+  const [policy, setPolicy] = useState<{ allow: string[]; allowAll: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const r = await authFetch(apiUrl(`/api/projects/${projectId}/browser/policy`));
+      if (r.ok) setPolicy(await r.json());
+    } catch {
+      /* best-effort */
+    }
+  }, [projectId]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const toggle = useCallback(
+    async (allowAll: boolean) => {
+      setBusy(true);
+      setErr(null);
+      try {
+        const r = await authFetch(apiUrl(`/api/projects/${projectId}/browser/policy`), {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ allowAll }),
+        });
+        if (r.ok) setPolicy(await r.json());
+        else {
+          const b = (await r.json().catch(() => ({}))) as { error?: string };
+          setErr(b.error ?? `HTTP ${r.status}`);
+        }
+      } finally {
+        setBusy(false);
+      }
+    },
+    [projectId],
+  );
+
+  return (
+    <section aria-label="Browser policy" className="flex max-w-[560px] flex-col gap-3">
+      <header>
+        <b className="text-body font-semibold text-primary">Browser policy</b>
+        <p className="mt-1 text-caption leading-5 text-dim">
+          Controls what the agent&apos;s web tools (web_fetch / research) may
+          open for this project. Live screen browsing is not affected — this
+          policy gates server-side page fetching only.
+        </p>
+      </header>
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-lg2 border border-line bg-surface px-3 py-2.5">
+        <input
+          type="checkbox"
+          className="mt-0.5 accent-current"
+          checked={policy?.allowAll ?? false}
+          disabled={!policy || busy}
+          onChange={() => void toggle(!policy?.allowAll)}
+        />
+        <span className="flex flex-col gap-0.5">
+          <b className="text-body font-medium text-primary">Allow all public domains</b>
+          <span className="text-caption text-muted">
+            When on, every public domain can be fetched without adding it to
+            the allowlist. Private/loopback hosts stay blocked (SSRF guard).
+          </span>
+        </span>
+      </label>
+      {err && (
+        <p className="rounded-lg2 border border-line bg-surface px-3 py-2 text-caption text-rose-400" role="alert">
+          {err}
+        </p>
+      )}
+      {policy && !policy.allowAll && (
+        <div className="rounded-lg2 border border-line bg-surface px-3 py-2.5">
+          <b className="text-caption font-semibold uppercase tracking-wide text-dim">Allowlist</b>
+          {policy.allow.length === 0 ? (
+            <p className="mt-1 text-caption text-muted">
+              Empty — only the default domain and explicit additions are
+              allowed. Turn on &quot;Allow all&quot; above or extend the list
+              via project config.
+            </p>
+          ) : (
+            <ul className="mt-1 flex flex-wrap gap-1.5">
+              {policy.allow.map((d) => (
+                <li key={d} className="rounded-pill border border-line bg-inset px-2 py-0.5 font-mono text-caption text-secondary">
+                  {d}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function TaskStatusIcon({ s, size = 10 }: { s: TaskStatus; size?: number }) {
   if (s === "doing")
     return (
@@ -169,7 +265,6 @@ export function ProjectTabs({
   rev,
   activeSessionId,
   live,
-  onFloatScreen,
 }: {
   project: ProjectInfo;
   personas: PersonaInfo[];
@@ -181,13 +276,11 @@ export function ProjectTabs({
     parentState: PersonaState;
     delegations: LiveDelegation[];
   };
-  /** Buka sesi screen persona sbg floating window (Batch 14a follow-up). */
-  onFloatScreen?: (personaId: string) => void;
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
   // Tab Konfigurasi: menu internal (roster/memori/skill) — ala SettingsModal, non-modal.
-  const [cfgMenu, setCfgMenu] = useState<"roster" | "memory" | "skills">("roster");
+  const [cfgMenu, setCfgMenu] = useState<"roster" | "memory" | "skills" | "browser">("roster");
   // Drawer "Log Task" (bekas tab Pohon) — dibuka dari tab Task.
   const [treeOpen, setTreeOpen] = useState(false);
   // Jam live untuk durasi "sudah berjalan Xm" (tab Pohon & Tim)
@@ -384,6 +477,7 @@ export function ProjectTabs({
                 ["roster", "Roster"],
                 ["memory", "Memory"],
                 ["skills", "Skill"],
+                ["browser", "Browser"],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -581,6 +675,9 @@ export function ProjectTabs({
         </section>
       )}
         {loaded && cfgMenu === "skills" && <SkillsTab />}
+        {loaded && cfgMenu === "browser" && (
+          <BrowserPolicySection projectId={project.id} />
+        )}
           </div>
         </div>
       )}
@@ -671,11 +768,9 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
-      {/* Browser + Terminal digabung (user 2026-11 #5): browser = tampilan
-          utama; terminal = panel bawah ala VS Code (hide/open + resize) dgn
-          view Shell (xterm) & Commands (log run_command — #7). */}
-      {loaded && activeTab === "browser" && (
-        <BrowserToolsTab project={{ id: project.id, name: project.name }} onFloatScreen={onFloatScreen} />
+      {/* Batch 14a++ (user 2026-11): tab Browser dibongkar — reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
+      {loaded && activeTab === "terminal" && (
+        <TerminalFullTab project={{ id: project.id, name: project.name }} />
       )}
 
       {treeOpen && (

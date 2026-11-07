@@ -21,6 +21,7 @@ import { PersonaStudioView } from "@/components/PersonaStudioView";
 import { AuthGate, AuthPill } from "@/components/AuthGate";
 import { setShapeOverrides } from "@/components/orinShapes";
 import { TracePanel } from "@/components/TracePanel";
+import { LogsTab } from "@/components/LogsTab";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import {
   ChatView,
@@ -413,8 +414,22 @@ export default function Home() {
         );
         break;
       case "screen.state":
-        // metadata ringan — tak render item chat; dipakai BrowserTab (mode Live
-        // poll sendiri via REST). Cukup log aktivitas bila persona pertama buka.
+        // Batch 14a++: persona baru membuka browser → bubble "Open Browser"
+        // (satu per persona; dedupe — sesi lanjutan tak menumpuk bubble).
+        if (e.status === "running" || e.status === "starting") {
+          setItems((prev) =>
+            prev.some((it) => it.kind === "screen" && it.name === e.personaId)
+              ? prev
+              : [
+                  ...prev,
+                  {
+                    kind: "screen" as const,
+                    name: e.personaId,
+                    screenUrl: e.url,
+                  },
+                ],
+          );
+        }
         break;
       case "vault.requested":
         setItems((prev) => [
@@ -1106,7 +1121,7 @@ export default function Home() {
                               },
                               { id: "files", label: "Files" },
                               { id: "board", label: "Task" },
-                              { id: "browser", label: "Browser" },
+                              { id: "terminal", label: "Terminal" },
                               { id: "config", label: "Config" },
                             ] as const)
                           : []),
@@ -1262,7 +1277,7 @@ export default function Home() {
                           personaId={active.id}
                           personaName={active.name}
                           workflow={wfCtx}
-                          onWatchScreen={(pid) => {
+                          onOpenScreen={(pid) => {
                             if (activeProject) setPip({ projectId: activeProject.id, personaId: pid });
                           }}
                           onSend={send}
@@ -1328,7 +1343,7 @@ export default function Home() {
                           personaId={active.id}
                           personaName={active.name}
                           workflow={wfCtx}
-                          onWatchScreen={(pid) => {
+                          onOpenScreen={(pid) => {
                             if (activeProject) setPip({ projectId: activeProject.id, personaId: pid });
                           }}
                           onSend={send}
@@ -1341,14 +1356,13 @@ export default function Home() {
                         />
                       )}
                     </div>
-                    {mainTab === "trace" && (
-                      <div className="flex min-h-0 flex-1 flex-col">
-                        <TracePanel
-                          sessionId={sessionId}
-                          live={traceTick}
-                          onBack={() => setMainTab("chat")}
-                        />
-                      </div>
+                    {mainTab === "trace" && activeProject && (
+                      <LogsTab
+                        projectId={activeProject.id}
+                        sessionId={sessionId}
+                        live={traceTick}
+                        onBack={() => setMainTab("chat")}
+                      />
                     )}
                     {activeProject &&
                       mainTab !== "chat" &&
@@ -1359,8 +1373,7 @@ export default function Home() {
                             activeSessionId={sessionId}
                             personas={personas}
                             activeTab={mainTab}
-                            rev={taskRev}
-                            onFloatScreen={(pid) => setPip({ projectId: activeProject.id, personaId: pid })}
+                            rev={taskRev}
                             live={{
                               parentPersonaId: active.id,
                               parentState: personaState,
@@ -1394,7 +1407,6 @@ export default function Home() {
           personaId={pip.personaId}
           personaName={personas.find((p) => p.id === pip.personaId)?.name ?? pip.personaId}
           onClose={() => setPip(null)}
-          onExpand={() => setMainTab("browser")}
         />
       )}
     </AuthGate>

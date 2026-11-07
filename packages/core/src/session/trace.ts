@@ -117,3 +117,72 @@ function summarizeArgs(args: Record<string, unknown>): string {
   const val = typeof v === "string" ? `"${v.slice(0, 40)}"` : typeof v === "object" ? "{…}" : String(v);
   return `(${first}: ${val}${keys.length > 1 ? `, +${keys.length - 1}` : ""})`;
 }
+
+// ── Project activity feed (Batch 14a++, user 2026-11) ────────────────────────
+// Logs tab = observability PROJECT-WIDE: semua langkah persona di semua sesi
+// project (tool calls, screen, vault, delegasi, approval) — bukan hanya sesi
+// chat aktif. Digabung dengan browser visits di layer route.
+export interface ProjectActivityItem {
+  at: number;
+  sessionId: string;
+  personaId: string;
+  kind: "tool" | "screen" | "vault" | "delegation" | "approval";
+  label: string;
+  isError?: boolean;
+}
+
+export function buildProjectActivity(
+  store: ISessionStore,
+  projectId: string,
+  limit = 200,
+): ProjectActivityItem[] {
+  const out: ProjectActivityItem[] = [];
+  const sessions = store.listProjectSessions(projectId);
+  for (const sess of sessions) {
+    // ambil ekor event saja (sesi panjang tak perlu dibaca penuh)
+    const evs = store.getEvents(sess.id, 0).slice(-500);
+    const nameByCall = new Map<string, string>();
+    for (const e of evs) {
+      if (e.type === "tool.call") {
+        const ev = e as Extract<YuiEvent, { type: "tool.call" }>;
+        nameByCall.set(ev.callId, ev.name);
+      }
+    }
+    for (const e of evs) {
+      const base = { at: e.ts, sessionId: sess.id, personaId: sess.personaId };
+      switch (e.type) {
+        case "tool.call": {
+          const ev = e as Extract<YuiEvent, { type: "tool.call" }>;
+          out.push({ ...base, kind: "tool", label: `${ev.name}${summarizeArgs(ev.args)}` });
+          break;
+        }
+        case "tool.result": {
+          const ev = e as Extract<YuiEvent, { type: "tool.result" }>;
+          if (ev.isError) out.push({ ...base, kind: "tool", label: `${nameByCall.get(ev.callId) ?? "tool"} failed`, isError: true });
+          break;
+        }
+        case "screen.state": {
+          const ev = e as Extract<YuiEvent, { type: "screen.state" }>;
+          out.push({ ...base, kind: "screen", label: `browser → ${ev.url}` });
+          break;
+        }
+        case "vault.used":
+          out.push({ ...base, kind: "vault", label: `vault used (${(e as { name: string }).name})` });
+          break;
+        case "vault.requested":
+          out.push({ ...base, kind: "vault", label: `credential needed (${(e as { name: string }).name})` });
+          break;
+        case "delegation.started": {
+          const ev = e as Extract<YuiEvent, { type: "delegation.started" }>;
+          out.push({ ...base, kind: "delegation", label: `delegated → ${ev.personaId}` });
+          break;
+        }
+        case "approval.requested":
+          out.push({ ...base, kind: "approval", label: `approval: ${(e as { tool: string }).tool}` });
+          break;
+      }
+    }
+  }
+  out.sort((a, b) => b.at - a.at);
+  return out.slice(0, limit);
+}

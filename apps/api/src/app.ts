@@ -21,6 +21,7 @@ import { registerUsageRoutes } from "./routes/usage.js";
 import { registerPortalRoutes } from "./routes/portal.js";
 import { registerWorkflowRoutes } from "./routes/workflows.js";
 import { registerBrowserRoutes } from "./routes/browser.js";
+import { registerActivityRoutes } from "./routes/activity.js";
 import { registerTerminalRoutes } from "./routes/terminal.js";
 import { registerScreenRoutes } from "./routes/screen.js";
 import { getRuntime } from "./runtime.js";
@@ -80,6 +81,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   registerUsageRoutes(app, getRt);
   registerTerminalRoutes(app, getRt); // P2-STU-2: tab Terminal
   registerScreenRoutes(app, getRt); // Batch 14a (P2-SCR): shared live screen + lease
+  registerActivityRoutes(app, getRt); // Batch 14a++: project-wide activity feed (tab Logs)
   registerPortalRoutes(app, getRt);
   registerWorkflowRoutes(app, getRt); // P2-FLOW: runs + gate + template
   registerBrowserRoutes(app, getRt); // P2-STU-4: tab Browser read-only

@@ -1,11 +1,20 @@
 "use client";
 
 // Batch 14a follow-up: hook SSE screen share (frame+state) + relay input +
-// lease — dipakai ScreenLive (tab Browser) DAN ScreenPip (floating di atas
-// chat). Satu sumber logika supaya dua permukaan tidak berbeda perilaku.
+// lease — dipakai ScreenPip (floating). Satu sumber logika.
 import { useCallback, useEffect, useState } from "react";
 import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
-import type { ScreenInfo } from "./ScreenLive";
+
+export interface ScreenInfo {
+  key: string;
+  projectId: string;
+  personaId: string;
+  status: "starting" | "running" | "stopped" | "failed";
+  url: string;
+  title: string;
+  leaseOwner: string | null;
+  viewers: number;
+}
 
 export interface ScreenStream {
   state: ScreenInfo | null;

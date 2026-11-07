@@ -66,9 +66,11 @@ test("STU-7 (merge ke Files): upload md → Files tab ter-render markdown + seks
   await expect(page.getByText("Run reports")).toBeVisible();
 });
 
-test("STU-4: Browser tab — halaman allowlist terbaca read-only, script distrip", async ({ page, request }) => {
-  // server halaman lokal (loopback; API e2e di-set YUI_BROWSER_ALLOW=127.0.0.1
-  // + YUI_BROWSER_ALLOW_PRIVATE=1 — prod TIDAK memakai env ini)
+test("STU-4 (Batch 14a++): policy browser di Config + fetch reader via REST", async ({ page, request }) => {
+  // Reader UI dihapus dari tab (user 2026-11) — policy kini di Config →
+  // Browser; halaman tetap bisa di-fetch via REST (sanitasi jalan). Server
+  // lokal loopback; API e2e di-set YUI_BROWSER_ALLOW=127.0.0.1 +
+  // YUI_BROWSER_ALLOW_PRIVATE=1 (prod TIDAK memakai env ini).
   const server: Server = http.createServer((_req, res) => {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     res.end(
@@ -84,32 +86,38 @@ test("STU-4: Browser tab — halaman allowlist terbaca read-only, script distrip
     const name = `Browser E2E ${Date.now()}`;
     const r = await request.post(`${API}/api/projects`, { data: { name, description: "browser e2e" } });
     expect(r.ok()).toBeTruthy();
+    const pid = ((await r.json()) as { project: { id: string } }).project.id;
 
     await page.goto("/");
     await page.getByRole("button", { name, exact: false }).first().click();
-    await page.getByRole("tab", { name: "Browser" }).click();
 
-    await page.getByLabel("Browser URL").fill(url);
-    await page.getByRole("button", { name: "Open", exact: true }).click();
+    // toggle policy di Config → Browser (persist .yuika/browser.json)
+    await page.getByRole("tab", { name: "Config" }).click();
+    await page.getByRole("button", { name: "Browser", exact: true }).click();
+    await page.getByRole("checkbox", { name: /Allow all public domains/ }).click();
+    await expect
+      .poll(async () => {
+        const p = (await (
+          await request.get(`${API}/api/projects/${pid}/browser/policy`)
+        ).json()) as { allowAll?: boolean };
+        return p.allowAll === true;
+      })
+      .toBeTruthy();
 
-    // halaman ter-render di iframe sandbox (read-only)
-    const frame = page.frameLocator("iframe");
-    await expect(frame.getByRole("heading", { name: "Research Page" })).toBeVisible({ timeout: 20_000 });
+    // host di luar allowlist ditolak sebelum allowAll… kini ON → fetch OK +
+    // script distrip oleh sanitizer (pertahanan server tetap jalan).
+    const fr = await request.get(`${API}/api/projects/${pid}/browser/fetch?url=${encodeURIComponent(url)}`);
+    expect(fr.ok()).toBeTruthy();
+    const body = (await fr.json()) as { html: string };
+    expect(body.html).not.toContain("window.__pwn");
+    expect(body.html).toContain("Research Page");
 
-    // kunjungan tercatat di History
-    await expect(page.getByText(url).first()).toBeVisible({ timeout: 10_000 });
-
-    // domain di luar allowlist → error rapi (tidak crash tab)
-    await page.getByLabel("Browser URL").fill("https://not-allowed.example/x");
-    await page.getByRole("button", { name: "Open", exact: true }).click();
-    await expect(page.getByRole("alert").filter({ hasText: /allowlist|not-allowed/ })).toBeVisible({ timeout: 15_000 });
-
-    // policy allowAll (user 2026-11 #4): toggle → host di luar allowlist
-    // (localhost) bisa dibuka — private guard lolos karena env e2e eksplisit.
-    await page.getByRole("checkbox", { name: "Allow all domains" }).check();
-    await page.getByLabel("Browser URL").fill(`http://localhost:${port}/page`);
-    await page.getByRole("button", { name: "Open", exact: true }).click();
-    await expect(frame.getByRole("heading", { name: "Research Page" })).toBeVisible({ timeout: 20_000 });
+    // allowAll OFF kembali → host luar allowlist ditolak rapi
+    await page.getByRole("checkbox", { name: /Allow all public domains/ }).click();
+    const denied = await request.get(
+      `${API}/api/projects/${pid}/browser/fetch?url=${encodeURIComponent("https://not-allowed.example/x")}`,
+    );
+    expect(denied.status()).toBe(403);
   } finally {
     server.close();
   }

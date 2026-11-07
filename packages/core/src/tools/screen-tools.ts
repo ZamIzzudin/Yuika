@@ -28,10 +28,22 @@ export function registerScreenTools(opts: { dataDir: string }): void {
   const needScreen = async (ctx: ToolContext): Promise<string> => {
     if (!ctx.projectId) throw new Error("screen tools need an active project");
     const key = screenKey(ctx.projectId, actorOf(ctx));
-    if (!getScreenState(key)) {
+    const created = !getScreenState(key);
+    if (created) {
       const st = await ensureScreen(dataDir, ctx.projectId, actorOf(ctx));
       // sesi baru → agent otomatis pegang lease (pelopor pembuka)
       if (st.leaseOwner === null) takeLease(key, actorOf(ctx));
+      // Bubble chat (SCR-3 follow-up): beri tahu user browser hidup —
+      // tombol "Open Browser" membuka floating window.
+      ctx.emit({
+        type: "screen.state",
+        projectId: ctx.projectId,
+        personaId: actorOf(ctx),
+        status: st.status,
+        url: st.url,
+        title: st.title,
+        leaseOwner: st.leaseOwner ?? actorOf(ctx),
+      });
     }
     return key;
   };
