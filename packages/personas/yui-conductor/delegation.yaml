@@ -2,5 +2,5 @@
 # Maestro: 3 front sekaligus (riset + susun + develop). Final cap juga
 # di-min() dengan cap budget workspace (Settings → Metering).
 max_concurrent: 3
-can_spawn: [yui-scholar, yui-scribe, yui-coder, yui-designer, yui-analyst, yui-operator, yui-planner]
+can_spawn: [yui-scholar, yui-scribe, yui-coder, yui-designer, yui-analyst, yui-operator, yui-planner, yui-sherlock]
 spawnable_by: [user]

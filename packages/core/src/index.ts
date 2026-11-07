@@ -78,9 +78,10 @@ export {
   screenNavigate, screenClick, screenType, screenPress, screenScroll, screenSnapshot,
   openTakeoverRequest, resolveTakeover, listPendingTakeovers, screenKey,
   openLoginRequest, resolveLogin, listPendingLogins, screenFillLogin, screenEvalJson,
-  loginTimeoutMs, type LoginFillResult,
+  loginTimeoutMs, qaWatch, type LoginFillResult,
   detectBrowserExec, takeoverTimeoutMs,
   type ScreenState, type ScreenFrame, type Snapshot,
 } from "./screen/manager.js";
 export { parseDevToolsUrl, CdpError } from "./screen/cdp.js";
 export { registerScreenTools } from "./tools/screen-tools.js";
+export { registerQaTools } from "./tools/qa-tools.js";

@@ -69,6 +69,8 @@ export interface ScreenState {
   title: string;
   leaseOwner: string | null; // "user" | personaId | null (bebas)
   viewers: number;
+  /** SCR-6: jumlah persona QA yang sedang menonton sesi ini. */
+  watchers: number;
   startedAt: number;
   error?: string;
 }
@@ -102,6 +104,8 @@ interface ScreenSession {
   frameListeners: Set<(f: ScreenFrame) => void>;
   stateListeners: Set<(s: ScreenState) => void>;
   viewers: number;
+  /** SCR-6: persona QA yang sedang menonton (keep-alive + transparansi). */
+  watchers: Set<string>;
   lease: string | null; // leaseId "owner:fence"
   fence: number;
   url: string;
@@ -150,6 +154,7 @@ function stateOf(s: ScreenSession): ScreenState {
     title: s.title,
     leaseOwner: s.lease ? parseScreenLeaseId(s.lease).ownerId : null,
     viewers: s.viewers,
+    watchers: s.watchers.size,
     startedAt: s.startedAt,
     ...(s.error ? { error: s.error } : {}),
   };
@@ -165,12 +170,27 @@ function touch(s: ScreenSession): void {
   scheduleIdleCheck(s);
 }
 
+/** SCR-6: persona QA (watcher read-only) menonton sesi screen persona lain.
+ *  Watcher TIDAK punya lease/viewer FPS — hanya (a) keep-alive sesi,
+ *  (b) terlihat di state (transparansi siapa sedang QA). */
+export function qaWatch(targetKey: string, watcher: string, on: boolean): ScreenState {
+  const s = sessions.get(targetKey);
+  if (!s) throw new Error("target screen session not active");
+  if (on) s.watchers.add(watcher);
+  else s.watchers.delete(watcher);
+  touch(s);
+  fireState(s);
+  return stateOf(s);
+}
+
 function scheduleIdleCheck(s: ScreenSession): void {
   if (s.idleTimer) clearTimeout(s.idleTimer);
   const ms = effectiveIdleMs();
   if (!ms) return;
   s.idleTimer = setTimeout(() => {
-    if (s.viewers <= 0 && Date.now() - s.lastActivity >= ms) {
+    // SCR-6: QA watcher dihitung sebagai penonton — selama persona QA masih
+    // menonton, sesi TIDAK di-auto-close meski tanpa viewer/tool activity.
+    if (s.viewers <= 0 && s.watchers.size === 0 && Date.now() - s.lastActivity >= ms) {
       log.info({ key: s.key }, "screen idle (no viewer, no tool activity) → close");
       void stopScreen(s.key, "idle");
     } else {
@@ -210,6 +230,7 @@ export async function ensureScreen(
     frameListeners: new Set(),
     stateListeners: new Set(),
     viewers: 0,
+    watchers: new Set(),
     lease: null,
     fence: 0,
     url: "about:blank",

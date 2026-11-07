@@ -1,10 +1,11 @@
-// P1-PER-6 + P2-PM-1: roster D9+D22 = 8 persona — manifest valid, delegation
-// rules koheren (semua id yang dirujuk ada — mencegah typo seperti `yui_designer`),
-// dan toolset persona baru ekspos tool yang terdaftar.
+// P1-PER-6 + P2-PM-1 + P1-PER-8: roster D9+D22+D26 = 9 persona — manifest
+// valid, delegation rules koheren (semua id yang dirujuk ada — mencegah typo
+// seperti `yui_designer`), dan toolset persona baru ekspos tool yang terdaftar.
 import { describe, expect, it } from "vitest";
 import path from "node:path";
 import { listPersonas } from "../personas/loader.js";
 import { registry } from "../registry.js";
+import { registerQaTools } from "../tools/qa-tools.js";
 
 const personasDir = path.resolve(__dirname, "../../../../packages/personas");
 
@@ -12,8 +13,8 @@ describe("persona roster D9 (P1-PER-6)", () => {
   const personas = listPersonas(personasDir);
   const ids = personas.map((p) => p.manifest.id);
 
-  it("8 persona ter-load: conductor + 6 spesialis + planner (P2-PM-1, D22)", () => {
-    expect(ids.sort()).toEqual(["yui-analyst", "yui-coder", "yui-conductor", "yui-designer", "yui-operator", "yui-planner", "yui-scholar", "yui-scribe"]);
+  it("9 persona ter-load: conductor + 7 spesialis + planner (P2-PM-1 D22 + P1-PER-8 D26)", () => {
+    expect(ids.sort()).toEqual(["yui-analyst", "yui-coder", "yui-conductor", "yui-designer", "yui-operator", "yui-planner", "yui-scholar", "yui-scribe", "yui-sherlock"]);
     expect(personas.every((p) => p.manifest.description.length <= 120)).toBe(true); // kontrak zod memaksa, guard tipologi
   });
 
@@ -52,5 +53,29 @@ describe("persona roster D9 (P1-PER-6)", () => {
     expect(planner.manifest.delegation.spawnable_by).toContain("yui-conductor");
     // PM discipline ada di PERSONA.md
     expect(planner.personaMd).toContain("acceptance");
+  });
+
+  it("P1-PER-8 (D26): Sherlock — QA watcher read-only; QA tools + tanpa tool eksekusi browser", () => {
+    const sherlock = personas.find((p) => p.manifest.id === "yui-sherlock")!;
+    // SCR-6 tools ekspos
+    for (const t of ["qa_watch", "qa_snapshot", "qa_check"]) {
+      expect(sherlock.manifest.tools, `sherlock toolset → ${t}`).toContain(t);
+    }
+    // Dia TIDAK menyetir browser (bukan driver — watcher): tanpa lease tools
+    for (const t of ["browser_open", "browser_click", "browser_type", "request_login", "request_takeover"]) {
+      expect(sherlock.manifest.tools).not.toContain(t);
+    }
+    // Verifikasi = baca artefak + reproduce via command
+    expect(sherlock.manifest.tools).toContain("run_command");
+    // Leaf executor: dipanggil user atau Conductor; tak men-spawn siapa pun
+    expect(sherlock.manifest.delegation.can_spawn).toEqual([]);
+    expect(sherlock.manifest.delegation.spawnable_by.sort()).toEqual(["user", "yui-conductor"]);
+    // Disiplin detektif ada di PERSONA.md
+    expect(sherlock.personaMd).toContain("Reproduce, isolate, verify");
+    // QA tools terdaftar di registry (terpasang runtime)
+    registerQaTools();
+    for (const t of ["qa_watch", "qa_snapshot", "qa_check"]) {
+      expect(registry.has(t), `registry → ${t}`).toBe(true);
+    }
   });
 });

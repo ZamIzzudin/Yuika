@@ -24,7 +24,8 @@ import { Button, StateChip } from "./ui";
 const PERSONA_NAME: Record<string, string> = {
   "yui-conductor": "Maestro Yui",
   "yui-planner": "Liebert Yui",
-  "yui-analyst": "Sherlock Yui",
+  "yui-analyst": "Nightingale Yui",
+  "yui-sherlock": "Sherlock Yui",
   "yui-scholar": "Einstein Yui",
   "yui-scribe": "Poe Yui",
   "yui-coder": "Hiro Yui",

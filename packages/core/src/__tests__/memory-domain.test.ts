@@ -50,7 +50,7 @@ describe("memory per-domain (P1-MEM-6)", () => {
 
   it("memoryPromptSection menyuntikkan domain + tetap frozen-ish (dipanggil sekali per sesi)", () => {
     appendCurated(ws, "user", "jawab singkat", "Maestro Yui");
-    appendCurated(ws, "domain", "user suka tabel perbandingan biaya", "Sherlock Yui", null, "analysis");
+    appendCurated(ws, "domain", "user suka tabel perbandingan biaya", "Nightingale Yui", null, "analysis");
     const section = memoryPromptSection(ws, null, "analysis");
     expect(section).toContain("jawab singkat");
     expect(section).toContain('Memori bidang kamu: "analysis"');

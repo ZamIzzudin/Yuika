@@ -1,0 +1,17 @@
+tools:
+  - skills_list
+  - skill_view
+  - read_file
+  - search_files
+  - list_files
+  - doc_read
+  - write_file
+  - run_command
+  - todo_list
+  - todo_update
+  - memory_append
+  - session_search
+  # SCR-6 — QA watch (read-only, tanpa lease/eksekusi browser):
+  - qa_watch
+  - qa_snapshot
+  - qa_check

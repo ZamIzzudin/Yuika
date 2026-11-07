@@ -13,17 +13,18 @@ import { Chip } from "./ui";
 interface ActivityItem {
   at: number;
   personaId: string;
-  kind: "tool" | "screen" | "vault" | "delegation" | "approval" | "visit";
+  kind: "tool" | "screen" | "vault" | "delegation" | "approval" | "qa" | "visit";
   label: string;
   isError: boolean;
 }
 
-const KIND_TONE: Record<ActivityItem["kind"], "accent" | "info" | "muted" | "warn" | "danger"> = {
+const KIND_TONE: Record<ActivityItem["kind"], "accent" | "ok" | "info" | "muted" | "warn" | "danger"> = {
   tool: "accent",
   screen: "info",
   vault: "warn",
   delegation: "info",
   approval: "warn",
+  qa: "ok", // SCR-6: QA check — fail di-render danger via isError
   visit: "muted",
 };
 

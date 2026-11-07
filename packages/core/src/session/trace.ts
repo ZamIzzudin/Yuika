@@ -126,7 +126,7 @@ export interface ProjectActivityItem {
   at: number;
   sessionId: string;
   personaId: string;
-  kind: "tool" | "screen" | "vault" | "delegation" | "approval";
+  kind: "tool" | "screen" | "vault" | "delegation" | "approval" | "qa";
   label: string;
   isError?: boolean;
 }
@@ -172,6 +172,16 @@ export function buildProjectActivity(
         case "vault.requested":
           out.push({ ...base, kind: "vault", label: `credential needed (${(e as { name: string }).name})` });
           break;
+        case "qa.check": {
+          const ev = e as Extract<YuiEvent, { type: "qa.check" }>;
+          out.push({
+            ...base,
+            kind: "qa",
+            label: `QA ${ev.status} · ${ev.item}${ev.targetPersonaId ? ` (watching ${ev.targetPersonaId.replace("yui-", "")})` : ""}`,
+            isError: ev.status === "fail",
+          });
+          break;
+        }
         case "delegation.started": {
           const ev = e as Extract<YuiEvent, { type: "delegation.started" }>;
           out.push({ ...base, kind: "delegation", label: `delegated → ${ev.personaId}` });

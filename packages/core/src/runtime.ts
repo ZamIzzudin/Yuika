@@ -30,6 +30,7 @@ import { registerVaultTools } from "./tools/vault-tools.js";
 import { getVault } from "./vault/manager.js";
 import { registerTerminalTool } from "./tools/terminal-tool.js";
 import { registerScreenTools } from "./tools/screen-tools.js";
+import { registerQaTools } from "./tools/qa-tools.js";
 import { closeAllScreens } from "./screen/manager.js";
 import * as terminal from "./terminal/manager.js";
 import { registerDelegateTool } from "./tools/delegate-tool.js";
@@ -194,6 +195,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // dataDir dipakai untuk profil persist .yuika/browser/<project>/<persona>;
   // takeover.resolved dipancarkan TOOL via ctx.emit (turn masih menunggu).
   registerScreenTools({ dataDir: path.dirname(paths.dbPath) });
+  registerQaTools(); // SCR-6: persona QA menonton screen persona lain (read-only)
   registerTodoTools({ sessionStore: store, projects: projectStore });
   registerMemoryTools({
     sessionStore: store,

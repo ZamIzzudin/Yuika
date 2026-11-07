@@ -365,6 +365,20 @@ export const LoginResolvedEvent = EventMeta.extend({
   saved: z.boolean(),
 });
 
+// ── SCR-6 (Batch 14b): persona QA (Sherlock) menonton live screen persona lain
+// dan mencatat hasil verifikasi — NON-BLOCKING (tak ada gate/kartu), murni
+// observability: muncul di activity feed (tab Logs) sebagai sinyal kualitas.
+export const QACheckEvent = EventMeta.extend({
+  type: z.literal("qa.check"),
+  projectId: z.string(),
+  personaId: z.string(),
+  /** Persona yang screen-nya diamati (opsional — QA check bisa juga utk artefak file). */
+  targetPersonaId: z.string().optional(),
+  item: z.string().min(1).max(120),
+  status: z.enum(["pass", "fail", "warn"]),
+  note: z.string().max(500).optional(),
+});
+
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
   MessageDeltaEvent,
@@ -408,6 +422,7 @@ export const YuiEvent = z.discriminatedUnion("type", [
   TakeoverResolvedEvent,
   LoginRequestedEvent,
   LoginResolvedEvent,
+  QACheckEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;
 export type YuiEventType = YuiEvent["type"];

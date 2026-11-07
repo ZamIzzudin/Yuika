@@ -18,7 +18,7 @@
    kind login, related-origins per registrable domain); scrub nilai aktif di SEMUA
    run scope. Desain v0 disepakati user: gabungan pola kartu Batch 12 + takeover
    Batch 14a.
-3. [ ] **Batch 14b — Sherlock QA + SCR-6 watch QA** (~4d) — P1-PER-8 persona ke-9
+3. [x] **Batch 14b — Sherlock QA + SCR-6 watch QA** (~4d) — P1-PER-8 persona ke-9
    (roster) + SCR-6: persona menonton live screen persona lain, event
    `qa.check.*`, laporan QA non-blocking. Dep: live screen ✅.
 4. [ ] **SCR-7 remote watch via relay** (~2d) — live screen 1fps diteruskan lewat
