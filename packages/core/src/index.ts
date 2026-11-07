@@ -77,6 +77,8 @@ export {
   subscribeScreen, takeLease, yieldLease, leaseOwner,
   screenNavigate, screenClick, screenType, screenPress, screenScroll, screenSnapshot,
   openTakeoverRequest, resolveTakeover, listPendingTakeovers, screenKey,
+  openLoginRequest, resolveLogin, listPendingLogins, screenFillLogin, screenEvalJson,
+  loginTimeoutMs, type LoginFillResult,
   detectBrowserExec, takeoverTimeoutMs,
   type ScreenState, type ScreenFrame, type Snapshot,
 } from "./screen/manager.js";

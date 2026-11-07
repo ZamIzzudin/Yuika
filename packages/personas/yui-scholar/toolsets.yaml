@@ -9,6 +9,7 @@ tools:
   - browser_press
   - browser_scroll
   - request_takeover
+  - request_login
   - screen_status
   - skills_list
   - skill_view

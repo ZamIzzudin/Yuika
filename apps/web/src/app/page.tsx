@@ -413,6 +413,28 @@ export default function Home() {
           ),
         );
         break;
+      case "login.requested":
+        // VLT-4: kartu kredensial — nilai TIDAK PERNAH di event (origin saja).
+        setItems((prev) => [
+          ...prev,
+          {
+            kind: "login" as const,
+            name: e.personaId,
+            loginRequestId: e.requestId,
+            loginOrigin: e.origin,
+            lresolved: null,
+          },
+        ]);
+        break;
+      case "login.resolved":
+        setItems((prev) =>
+          prev.map((it) =>
+            it.kind === "login" && it.loginRequestId === e.requestId
+              ? { ...it, lresolved: e.status, lsaved: e.saved }
+              : it,
+          ),
+        );
+        break;
       case "screen.state":
         // Batch 14a++: persona membuka browser → bubble "Open Browser".
         // Satu bubble per persona yang DIPAKAI ULANG: sesi baru (mis. user

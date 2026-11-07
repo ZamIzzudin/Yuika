@@ -12,7 +12,7 @@
 1. [x] **Docs reconciliation** (0.5d) — seksi P2-FLOW & P2-SCR di TASKS/PLAN
    yang usang dicocokkan dengan realitas kode (engine workflow, board, steering
    teruji e2e). Selesai bersama pembuatan dokumen ini.
-2. [ ] **VLT-4 fill_login** (~2-3d) — menutup Vault v0: persona di halaman login
+2. [x] **VLT-4 fill_login** (~2-3d) — menutup Vault v0: persona di halaman login
    minta kredensial via kartu protected (nilai tak pernah masuk konteks model),
    di-inject lewat CDP ke live browser; opsi Save to Vault (scope project+persona,
    kind login, related-origins per registrable domain); scrub nilai aktif di SEMUA

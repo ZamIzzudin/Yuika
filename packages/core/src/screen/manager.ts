@@ -683,3 +683,148 @@ export function listPendingTakeovers(key?: string): { requestId: string; key: st
     .filter((p) => !key || p.key === key)
     .map(({ requestId, key: k, personaId, reason, deadline }) => ({ requestId, key: k, personaId, reason, deadline }));
 }
+
+// ── VLT-4: fill_login pending + CDP fill — nilai TIDAK pernah masuk event ──
+
+export interface LoginFillResult {
+  ok: boolean;
+  submitted: boolean;
+  userFieldFound: boolean;
+  error?: string;
+}
+
+interface PendingLogin {
+  requestId: string;
+  key: string;
+  personaId: string;
+  origin: string;
+  deadline: number; // 0 = tanpa deadline
+  resolve: (v: { status: "filled" | "skipped" | "expired" | "failed"; saved: boolean; fill?: LoginFillResult }) => void;
+  timer?: NodeJS.Timeout;
+}
+
+interface LoginRegistry {
+  pending: Map<string, PendingLogin>;
+  seq: number;
+}
+
+const LG = globalThis as unknown as { __yuikaLoginRegistry?: LoginRegistry };
+const loginReq: LoginRegistry = (LG.__yuikaLoginRegistry ??= { pending: new Map(), seq: 0 });
+
+export function loginTimeoutMs(): number {
+  return Math.max(0, Number(process.env.YUI_LOGIN_TIMEOUT_MS ?? 120_000) || 0);
+}
+
+/** Eval generik read-only (returnByValue) — dipakai test & QA utk membaca
+ *  state DOM (mis. document.title setelah submit form). */
+export async function screenEvalJson<T>(key: string, expr: string): Promise<T | undefined> {
+  const s = sessions.get(key);
+  if (!s || !s.page) throw new Error("screen session not active");
+  const r = (await s.page.call("Runtime.evaluate", { expression: expr, returnByValue: true })) as {
+    result?: { value?: T };
+  };
+  return r.result?.value;
+}
+
+/** Isi form login di halaman aktif via CDP. TANPA lease check — aksi ini
+ *  di-otorisasi user lewat REST fill (padanannya user mengetik sendiri).
+ *  Heuristik: input[type=password] PERTAMA + input text/email terdekat
+ *  sebelumnya dalam form yang sama (fallback: document). */
+export async function screenFillLogin(
+  key: string,
+  creds: { user: string; pass: string; submit: boolean },
+): Promise<LoginFillResult> {
+  const s = sessions.get(key);
+  if (!s || !s.page) return { ok: false, submitted: false, userFieldFound: false, error: "screen session not active" };
+  const expr = `(() => {
+    const pw = document.querySelector("input[type=password]");
+    if (!pw) return { ok: false, userFieldFound: false, error: "no password field on this page" };
+    const form = pw.closest("form") || document;
+    const inputs = Array.from(form.querySelectorAll("input"));
+    const before = inputs.slice(0, inputs.indexOf(pw));
+    const uf = before.reverse().find((i) => { const t = (i.type || "text").toLowerCase(); return t === "text" || t === "email" || t === "tel"; });
+    const set = (el, v) => {
+      const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), "value");
+      d.set.call(el, v);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    if (uf) set(uf, ${JSON.stringify(creds.user)});
+    set(pw, ${JSON.stringify(creds.pass)});
+    let submitted = false;
+    if (${JSON.stringify(creds.submit)}) {
+      const f = pw.closest("form");
+      if (f) { try { f.requestSubmit ? f.requestSubmit() : f.submit(); submitted = true; } catch { submitted = false; } }
+    }
+    return { ok: true, submitted, userFieldFound: !!uf };
+  })()`;
+  const r = (await s.page.call("Runtime.evaluate", { expression: expr, returnByValue: true })) as {
+    result?: { value?: LoginFillResult };
+  };
+  const out = r.result?.value ?? { ok: false, submitted: false, userFieldFound: false, error: "evaluate failed" };
+  touch(s);
+  return out;
+}
+
+/** Buka permintaan login — PEMANGGIL (tool request_login) menunggu result.
+ *  Kartu UI dibuat dari event login.requested yang dipancarkan tool. */
+export function openLoginRequest(
+  key: string,
+  personaId: string,
+  origin: string,
+): { requestId: string; deadline: number; result: Promise<{ status: "filled" | "skipped" | "expired" | "failed"; saved: boolean; fill?: LoginFillResult }> } {
+  const s = sessions.get(key);
+  if (!s) throw new Error("screen session not active");
+  const requestId = `lg_${Date.now().toString(36)}_${++loginReq.seq}`;
+  const dl = loginTimeoutMs();
+  const result = new Promise<{ status: "filled" | "skipped" | "expired" | "failed"; saved: boolean; fill?: LoginFillResult }>((resolve) => {
+    loginReq.pending.set(requestId, {
+      requestId,
+      key,
+      personaId,
+      origin,
+      deadline: dl ? Date.now() + dl : 0,
+      resolve,
+    });
+    if (dl) {
+      const t = setTimeout(() => {
+        const rec = loginReq.pending.get(requestId);
+        if (!rec) return;
+        loginReq.pending.delete(requestId);
+        rec.resolve({ status: "expired", saved: false });
+      }, dl);
+      t.unref?.();
+      loginReq.pending.get(requestId)!.timer = t;
+    }
+  });
+  return { requestId, deadline: dl, result };
+}
+
+/** Jawab dari REST: skip (creds=null) atau fill (+optional vault save).
+ *  Return false bila requestId tak dikenal (sudah expired/terjawab). */
+export async function resolveLogin(
+  requestId: string,
+  creds: { user: string; pass: string; save: boolean; submit: boolean } | null,
+): Promise<boolean> {
+  const rec = loginReq.pending.get(requestId);
+  if (!rec) return false;
+  loginReq.pending.delete(requestId);
+  if (rec.timer) clearTimeout(rec.timer);
+  if (!creds) {
+    rec.resolve({ status: "skipped", saved: false });
+    return true;
+  }
+  const fill = await screenFillLogin(rec.key, creds);
+  if (!fill.ok) {
+    rec.resolve({ status: "failed", saved: false, fill });
+    return true;
+  }
+  rec.resolve({ status: "filled", saved: creds.save, fill });
+  return true;
+}
+
+export function listPendingLogins(key?: string): { requestId: string; key: string; personaId: string; origin: string; deadline: number }[] {
+  return [...loginReq.pending.values()]
+    .filter((p) => !key || p.key === key)
+    .map(({ requestId, key: k, personaId, origin, deadline }) => ({ requestId, key: k, personaId, origin, deadline }));
+}

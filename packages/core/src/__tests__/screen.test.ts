@@ -21,6 +21,10 @@ import {
 import { registry, resetRegistryForTests, type ToolContext } from "../registry.js";
 import { registerScreenTools } from "../tools/screen-tools.js";
 import { buildFileTree } from "../project/files.js";
+import { VaultManager, getVault, setVaultForTests } from "../vault/manager.js";
+import { VaultStore } from "../vault/store.js";
+import { loadVaultMasterKey } from "../vault/store.js";
+import { openLoginRequest, resolveLogin, listPendingLogins, screenEvalJson } from "../screen/manager.js";
 
 let dir: string;
 
@@ -212,6 +216,79 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
     const key = screenKey(PROJECT, PERSONA);
     expect(getScreenState(key)).toBeDefined();
     await vi.waitFor(() => expect(getScreenState(key)).toBeUndefined(), { timeout: 5_000 });
+  }, 30_000);
+
+  // ── VLT-4 fill_login ─────────────────────────────────────────────
+  // Halaman login deterministik (data: URL — tanpa network): form
+  // username+password; submit dicegah default → title berubah jadi marker
+  // supaya isi form TERBUKTI tanpa membocorkan nilai ke assertion.
+  const LOGIN_HTML = `<title>Sign in</title><form onsubmit="event.preventDefault();document.title='LOGGED-IN:'+document.getElementById('u').value"><input id=u type=text><input id=p type=password><button type=submit>Sign in</button></form>`;
+  const LOGIN_PAGE = `data:text/html,${encodeURIComponent(LOGIN_HTML)}`;
+  const ORIGIN = "data-local-test"; // origin fiktif utk nama record vault
+
+  it("request_login → kartu → REST fill mengisi form + submit (nilai tak pernah di event)", async () => {
+    await registry.dispatch("browser_open", { url: LOGIN_PAGE }, ctx());
+    const events: { type: string }[] = [];
+    const c: ToolContext = { ...ctx(), emit: (d) => events.push(d as { type: string }) };
+    const p = registry.dispatch("request_login", { origin: ORIGIN }, c);
+    // kartu aktif → jawab seperti REST (fill + submit)
+    await vi.waitFor(() => expect(listPendingLogins()).toHaveLength(1), { timeout: 3_000 });
+    const req = listPendingLogins()[0]!;
+    expect(req.origin).toBe(ORIGIN);
+    expect(await resolveLogin(req.requestId, { user: "tester", pass: "s3cret-value", save: false, submit: true })).toBe(true);
+    const r = await p;
+    expect(r.isError).toBeFalsy();
+    expect(r.result).toMatchObject({ status: "filled", source: "user" });
+    // form benar-benar terisi + submit → title marker (tanpa nilai pass)
+    const key = screenKey(PROJECT, PERSONA);
+    await vi.waitFor(
+      async () => expect(await screenEvalJson<string>(key, "document.title")).toBe("LOGGED-IN:tester"),
+      { timeout: 5_000 },
+    );
+    // INVARIAN: nilai tidak pernah muncul di event
+    expect(JSON.stringify(events)).not.toContain("s3cret-value");
+  }, 30_000);
+
+  it("request_login auto-pakai vault record login:<origin> tanpa kartu", async () => {
+    // siapkan vault dgn record login (seperti disimpan kartu save=true)
+    const { key: vk } = loadVaultMasterKey(dir);
+    setVaultForTests(new VaultManager(new VaultStore(path.join(dir, "vault.db"), vk)));
+    try {
+      const vm = getVault();
+      vm.store.put({
+        name: `login:${ORIGIN}`,
+        kind: "login",
+        scope: "persona",
+        projectId: PROJECT,
+        personaId: PERSONA,
+        runId: null,
+        value: JSON.stringify({ user: "vaultuser", pass: "vault-pass-9" }),
+      });
+      await registry.dispatch("browser_open", { url: LOGIN_PAGE }, ctx());
+      const events: { type: string }[] = [];
+      const c: ToolContext = { ...ctx(), emit: (d) => events.push(d as { type: string }) };
+      const r = await registry.dispatch("request_login", { origin: ORIGIN }, c);
+      expect(r.isError).toBeFalsy();
+      expect(r.result).toMatchObject({ status: "filled", source: "vault" });
+      expect(listPendingLogins()).toHaveLength(0); // tanpa kartu
+      expect(events.filter((e) => e.type === "login.requested")).toHaveLength(0);
+      const key = screenKey(PROJECT, PERSONA);
+      await vi.waitFor(
+        async () => expect(await screenEvalJson<string>(key, "document.title")).toBe("LOGGED-IN:vaultuser"),
+        { timeout: 5_000 },
+      );
+    } finally {
+      setVaultForTests(null);
+    }
+  }, 30_000);
+
+  it("request_login deadline habis → login_expired (error jelas)", async () => {
+    vi.stubEnv("YUI_LOGIN_TIMEOUT_MS", "60");
+    await registry.dispatch("browser_open", { url: LOGIN_PAGE }, ctx());
+    const r = await registry.dispatch("request_login", { origin: ORIGIN }, ctx());
+    expect(r.isError).toBe(true);
+    const res = r.result as { error?: string };
+    expect(res.error).toBe("login_expired");
   }, 30_000);
 
   it("tools browser_open/snapshot/click via registry (persona path)", async () => {

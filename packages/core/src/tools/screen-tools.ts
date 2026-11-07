@@ -13,7 +13,9 @@ import {
   ensureScreen, screenKey, screenNavigate, screenSnapshot, screenClick,
   screenType, screenPress, screenScroll, takeLease, leaseOwner,
   openTakeoverRequest, listScreens, getScreenState,
+  openLoginRequest, screenFillLogin,
 } from "../screen/manager.js";
+import { getVault } from "../vault/manager.js";
 
 const log = moduleLogger("tools:screen");
 
@@ -208,6 +210,92 @@ export function registerScreenTools(opts: { dataDir: string }): void {
                       r.status === "expired"
                         ? "deadline passed with no answer — you may ask again or continue read-only via browser_snapshot"
                         : "user denied — continue read-only via browser_snapshot",
+                  },
+                },
+          );
+        })();
+      }),
+  });
+
+  registry.register({
+    name: "request_login",
+    description:
+      "Ask the user for login credentials for a site and fill the login form on the shared screen. Values go straight from the user's card into the form (never into your context). If the vault already has saved credentials for this origin they are used silently. Navigate to the login page first.",
+    parameters: z.object({
+      origin: z.string().min(1).describe("Site origin the login belongs to, e.g. https://accounts.google.com"),
+      submit: z.boolean().optional().describe("Submit the form after filling (default true)"),
+    }),
+    handler: (args: { origin: string; submit?: boolean }, ctx) =>
+      new Promise<ToolResult>((resolve) => {
+        void (async () => {
+          let key: string;
+          try {
+            key = await needScreen(ctx);
+          } catch (e) {
+            resolve({ isError: true, result: { error: e instanceof Error ? e.message : String(e) } });
+            return;
+          }
+          const origin = args.origin.replace(/\/+$/, "");
+          const name = `login:${origin}`;
+          // 1) Vault auto-use (VLT-4): kredensial tersimpan → pakai diam-diam.
+          //    Nilai tetap di proses ini (resolveForUse → registerActiveSecret).
+          try {
+            const used = getVault().resolveForUse(name, { personaId: actorOf(ctx), projectId: ctx.projectId });
+            if (used) {
+              try {
+                const parsed = JSON.parse(used.value) as { user?: string; pass?: string };
+                if (parsed.user && parsed.pass) {
+                  const fill = await screenFillLogin(key, {
+                    user: parsed.user,
+                    pass: parsed.pass,
+                    submit: args.submit ?? true,
+                  });
+                  if (fill.ok) {
+                    resolve({ result: { status: "filled", source: "vault", submitted: fill.submitted } });
+                    return;
+                  }
+                }
+              } finally {
+                used.release();
+              }
+            }
+          } catch {
+            /* vault tak siap / record rusak → minta user */
+          }
+          // 2) Kartu login (non-blocking, deadline YUI_LOGIN_TIMEOUT_MS).
+          const { requestId, deadline, result } = openLoginRequest(key, actorOf(ctx), origin);
+          ctx.emit({
+            type: "login.requested",
+            requestId,
+            projectId: ctx.projectId!,
+            personaId: actorOf(ctx),
+            origin,
+            deadlineMs: deadline,
+          });
+          log.info({ requestId, origin }, "login requested (waiting)");
+          const r = await result;
+          ctx.emit({
+            type: "login.resolved",
+            requestId,
+            projectId: ctx.projectId!,
+            personaId: actorOf(ctx),
+            status: r.status,
+            saved: r.saved,
+          });
+          resolve(
+            r.status === "filled"
+              ? { result: { status: "filled", source: "user", saved: r.saved, submitted: r.fill?.submitted } }
+              : {
+                  isError: true,
+                  result: {
+                    error: `login_${r.status}`,
+                    status: r.status,
+                    hint:
+                      r.status === "skipped"
+                        ? "user skipped — ask for an alternative or continue read-only via browser_snapshot"
+                        : r.status === "expired"
+                          ? "deadline passed with no answer — you may ask again"
+                          : "no password field found — navigate to the login form first, then ask again",
                   },
                 },
           );

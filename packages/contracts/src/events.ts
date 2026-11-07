@@ -248,7 +248,7 @@ export const VaultRequestedEvent = EventMeta.extend({
   type: z.literal("vault.requested"),
   requestId: z.string(),
   name: z.string(),
-  kind: z.enum(["api_key", "command"]),
+  kind: z.enum(["api_key", "command", "login"]),
   reason: z.string(),
   /** Origin tujuan secret_http (utk label kartu) — opsional. */
   originHint: z.string().optional(),
@@ -344,6 +344,27 @@ export const TakeoverResolvedEvent = EventMeta.extend({
   status: z.enum(["granted", "denied", "expired"]),
 });
 
+// ── VLT-4 (blok C): fill_login — kartu permintaan kredensial login. ──────
+// INVARIAN (sama dgn vault Batch 12): nilai user/password TIDAK PERNAH ada
+// di event — hanya origin + deadline. Nilai masuk lewat REST fill saja.
+export const LoginRequestedEvent = EventMeta.extend({
+  type: z.literal("login.requested"),
+  requestId: z.string(),
+  projectId: z.string(),
+  personaId: z.string(),
+  origin: z.string(),
+  deadlineMs: z.number().int().nonnegative(),
+});
+
+export const LoginResolvedEvent = EventMeta.extend({
+  type: z.literal("login.resolved"),
+  requestId: z.string(),
+  projectId: z.string(),
+  personaId: z.string(),
+  status: z.enum(["filled", "skipped", "expired", "failed"]),
+  saved: z.boolean(),
+});
+
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
   MessageDeltaEvent,
@@ -385,6 +406,8 @@ export const YuiEvent = z.discriminatedUnion("type", [
   ScreenStateEvent,
   TakeoverRequestedEvent,
   TakeoverResolvedEvent,
+  LoginRequestedEvent,
+  LoginResolvedEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;
 export type YuiEventType = YuiEvent["type"];

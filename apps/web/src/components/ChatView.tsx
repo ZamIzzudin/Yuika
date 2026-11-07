@@ -52,6 +52,7 @@ export interface ChatItem {
     | "approval"
     | "vault"
     | "takeover"
+    | "login"
     | "screen"
     | "error"
     | "noted"
@@ -86,12 +87,17 @@ export interface ChatItem {
   resolved?: "approved" | "denied" | "expired" | null;
   // vault (Batch 12): kartu protected — nilai TIDAK pernah di item/event;
   // user mengisi via REST fill langsung dari kartu.
-  vkind?: "api_key" | "command";
+  vkind?: "api_key" | "command" | "login";
   originHint?: string;
   saved?: boolean;
   vresolved?: "filled" | "skipped" | "expired" | null;
   // takeover (Batch 14a SCR-4): persona minta kontrol screen — non-blocking.
   tresolved?: "granted" | "denied" | "expired" | null;
+  // login (VLT-4): kartu kredensial — nilai via REST fill saja, TIDAK di item.
+  loginRequestId?: string;
+  loginOrigin?: string;
+  lresolved?: "filled" | "skipped" | "expired" | "failed" | null;
+  lsaved?: boolean;
   // screen (Batch 14a++): bubble "persona membuka browser" → Open Browser.
   screenUrl?: string;
   screenOpen?: boolean | null;
@@ -109,6 +115,115 @@ export { STATE_LABEL };
  *  submit lalu input di-clear) + toggle "Save to Vault" (off = run-only).
  *  Nilai dikirim LANGSUNG ke POST /api/vault/fill/:id — tidak pernah masuk
  *  state React / event / chat. */
+/** VLT-4: kartu login — dua field (username/password, uncontrolled; dibaca
+ *  HANYA saat submit lalu di-clear DOM-side) + Save to Vault + Auto submit.
+ *  Nilai dikirim LANGSUNG ke POST /api/login/:id/fill — tidak pernah masuk
+ *  state React / event / chat. */
+function LoginFillCard({ requestId, origin }: { requestId: string; origin: string }) {
+  const userRef = useRef<HTMLInputElement>(null);
+  const passRef = useRef<HTMLInputElement>(null);
+  const [save, setSave] = useState(true);
+  const [submit, setSubmit] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const clear = () => {
+    if (userRef.current) userRef.current.value = "";
+    if (passRef.current) passRef.current.value = "";
+  };
+
+  const fill = async () => {
+    const u = userRef.current?.value ?? "";
+    const p = passRef.current?.value ?? "";
+    if (!u.trim() || !p || busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await authFetch(
+        apiUrl(`/api/login/${encodeURIComponent(requestId)}/fill`),
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ user: u, pass: p, save, submit }),
+        },
+      );
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(b.error ?? `HTTP ${res.status}`);
+      }
+      // resolved text datang via event login.resolved
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      clear(); // DOM-side clear — nilai tidak tinggal di UI
+      setBusy(false);
+    }
+  };
+
+  const skip = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await authFetch(
+        apiUrl(`/api/login/${encodeURIComponent(requestId)}/skip`),
+        { method: "POST" },
+      );
+    } catch {
+      /* race dengan deadline — biarkan event resolved yang mengakhiri */
+    } finally {
+      clear();
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      <input
+        ref={userRef}
+        type="text"
+        autoComplete="off"
+        spellCheck={false}
+        placeholder="Username or email"
+        className="w-full rounded-md2 border border-line bg-surface px-2.5 py-1.5 text-caption text-primary placeholder:text-dim focus:border-accent focus:outline-none"
+      />
+      <input
+        ref={passRef}
+        type="password"
+        autoComplete="new-password"
+        spellCheck={false}
+        placeholder={`Password for ${origin}`}
+        className="w-full rounded-md2 border border-line bg-surface px-2.5 py-1.5 text-caption text-primary placeholder:text-dim focus:border-accent focus:outline-none"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void fill();
+        }}
+      />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <label className="flex cursor-pointer items-center gap-1.5 text-caption text-secondary select-none">
+          <input type="checkbox" checked={save} onChange={() => setSave(!save)} className="accent-current" />
+          Save to Vault
+        </label>
+        <label className="flex cursor-pointer items-center gap-1.5 text-caption text-secondary select-none">
+          <input type="checkbox" checked={submit} onChange={() => setSubmit(!submit)} className="accent-current" />
+          Submit form
+        </label>
+      </div>
+      {err && (
+        <p role="alert" className="text-caption text-danger">
+          {err}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <Button size="sm" disabled={busy} onClick={() => void fill()}>
+          Fill login
+        </Button>
+        <Button size="sm" variant="ghost" disabled={busy} onClick={() => void skip()}>
+          Skip
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function VaultFillCard({ requestId }: { requestId: string }) {
   const ref = useRef<HTMLInputElement>(null);
   const [save, setSave] = useState(true);
@@ -663,6 +778,42 @@ export function ChatView({
                       </p>
                     ) : (
                       <VaultFillCard requestId={it.requestId!} />
+                    )}
+                  </div>
+                </div>
+              );
+            }
+            if (it.kind === "login") {
+              // VLT-4: kartu login — dua field; nilai LANGSUNG ke REST fill,
+              // tidak pernah lewat state/event chat. resolved via SSE.
+              return (
+                <div
+                  key={`r${i}`}
+                  className="msg-in grid grid-cols-[36px_minmax(0,1fr)] gap-x-3"
+                >
+                  <div className="col-start-2 rounded-card border border-line-strong border-l-2 border-l-accent bg-inset px-4 py-3">
+                    <b className="text-body font-medium text-primary">
+                      Login needed ·{" "}
+                      <code className="font-mono text-caption">{it.loginOrigin}</code>
+                    </b>
+                    <p className="mt-0.5 text-caption text-muted">
+                      {it.name} needs credentials to sign in — values go
+                      straight into the browser form, never into the chat.
+                    </p>
+                    {it.lresolved ? (
+                      <p className="mt-2 text-caption text-muted">
+                        {it.lresolved === "filled"
+                          ? it.lsaved
+                            ? "Filled — saved encrypted in the vault"
+                            : "Filled for this run only"
+                          : it.lresolved === "skipped"
+                            ? "Skipped"
+                            : it.lresolved === "expired"
+                              ? "Expired — no credentials were provided"
+                              : "No password field found — navigate to the sign-in form and ask again"}
+                      </p>
+                    ) : (
+                      <LoginFillCard requestId={it.loginRequestId!} origin={it.loginOrigin ?? ""} />
                     )}
                   </div>
                 </div>

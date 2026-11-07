@@ -5,8 +5,10 @@
 import { z } from "zod";
 
 /** Kind rahasia v0 (D27): api_key = utk secret_http (bearer/header);
- *  command = utk env export run_command (fill_login menyusul — blok C). */
-export const VAULT_KINDS = ["api_key", "command"] as const;
+ *  command = utk env export run_command; login = fill_login (VLT-4 blok C —
+ *  value = JSON {user,pass}, dipakai CDP fill ke live browser, tak pernah
+ *  kembali ke konteks model). */
+export const VAULT_KINDS = ["api_key", "command", "login"] as const;
 export const VaultKind = z.enum(VAULT_KINDS);
 export type VaultKind = z.infer<typeof VaultKind>;
 
