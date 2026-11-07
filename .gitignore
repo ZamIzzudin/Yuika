@@ -32,3 +32,6 @@ auth.db-wal
 # Runtime portal device credentials (SQLite WAL/SHM) — jangan di-commit
 *.db-shm
 *.db-wal
+
+# Batch 12 vault master key (auto-gen <data>/vault.key — JANGAN commit)
+vault.key
