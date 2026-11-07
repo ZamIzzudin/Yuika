@@ -48,7 +48,11 @@ export function ProjectPanel({
       toastOk(
         `“${p.name}” deleted — ${body.deleted.sessions} sessions, ${body.deleted.tasks} tasks cleaned up. Persona skills & metering are kept.`,
       );
-      onDeleted(p.id, DeleteProjectResult.parse(body));
+      // Project SUDAH terhapus server-side — kalau server API versi lama
+      // belum mengirim field aditif (mis. deleted.workshop), jangan gagalkan
+      // refresh UI hanya karena schema client lebih baru: pakai body apa adanya.
+      const parsed = DeleteProjectResult.safeParse(body);
+      onDeleted(p.id, (parsed.success ? parsed.data : body) as DeleteProjectResult);
     } catch (e) {
       toastErr(e instanceof Error ? e.message : String(e));
     } finally {
