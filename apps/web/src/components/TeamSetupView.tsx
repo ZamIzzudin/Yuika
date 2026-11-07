@@ -22,7 +22,7 @@ import { Button } from "./ui";
 import { useMenuAutoClose } from "./ui/menu";
 
 const MPX = 56; // ukuran OrinPortrait playground
-const R = 24; // radius collision (± 0.43 × MPX)
+const R = 20; // radius collision — cukup kecil agar menyentuh "skin to skin"
 
 type Mode = "air" | "crouch" | "idle" | "held" | "stun";
 
@@ -47,6 +47,7 @@ type M = {
   fresh: boolean; // baru spawn → landing pertama = senang
   thrown: boolean;
   cool: number; // cooldown reaksi tabrakan
+  support: boolean; // sedang BERDIRI DI ATAS teman (boleh think/friction)
   drag?: {
     ox: number; // offset pointer→posisi maskot
     oy: number;
@@ -79,7 +80,10 @@ export function TeamSetupView({
   const startMenu = useMenuAutoClose<HTMLDetailsElement>();
   /** Detail overlay: persona terakhir + flag tampil → fade OUT dengan scale
    *  mengecil (bukan unmount mendadak). */
-  const [detail, setDetail] = useState<{ p: PersonaInfo; show: boolean } | null>(null);
+  const [detail, setDetail] = useState<{
+    p: PersonaInfo;
+    show: boolean;
+  } | null>(null);
   const [startSel, setStartSel] = useState<string | null>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   /** Mount list — SATU-SATUNYA alasan maskot muncul/hilang (assignment). */
@@ -121,13 +125,17 @@ export function TeamSetupView({
             fresh: true,
             thrown: false,
             cool: 0,
+            support: false,
           });
         }
       }
-      for (const pid of cur) if (!assignedIds.includes(pid)) bodies.current.delete(pid);
+      for (const pid of cur)
+        if (!assignedIds.includes(pid)) bodies.current.delete(pid);
       return assignedIds;
     });
-    setStartSel((cur) => (cur && assignedIds.includes(cur) ? cur : assignedIds[0] ?? null));
+    setStartSel((cur) =>
+      cur && assignedIds.includes(cur) ? cur : (assignedIds[0] ?? null),
+    );
   }, [assignedIds]);
 
   useEffect(() => {
@@ -154,22 +162,56 @@ export function TeamSetupView({
       const r = Math.random();
       const dw = m.x < h ? 1 : m.x > h * 4 ? -1 : Math.random() < 0.5 ? 1 : -1;
       m.tm = 0;
-      m.nt = rnd(1.2, 3.2);
-      if (r < 0.5) {
+      m.nt = rnd(0.9, 2.4); // jeda lebih pendek → lebih hidup
+      if (r < 0.58) {
         m.hops = Math.floor(rnd(0, 3));
         hop(m, dw * rnd(0.25, 0.55) * h, rnd(0.85, 1.1));
-      } else if (r < 0.66) {
-        hop(m, 0, rnd(0.5, 0.7)); // hop senang di tempat
-      } else if (r < 0.8) {
+      } else if (r < 0.76) {
+        hop(m, 0, rnd(0.5, 0.75)); // hop senang di tempat
+      } else if (r < 0.9) {
         m.hum = rnd(1.8, 2.8); // dengung: sway pelan
       }
       // sisanya: diam santai (nt di atas)
+    }
+
+    /** INTERAKSI ANTAR MASKOT: dua yang idle saling melompat mendekat lalu
+     *  senang bersama (hop ♥ ala updInter 'greet' di referensi). */
+    let greetT = 2.2;
+    let greetAt = 0;
+    let greetPair: [M, M] | null = null;
+
+    function tryGreet(list: M[], h: number) {
+      if (list.length < 2) return;
+      const idles = list.filter((m) => m.mode === "idle" && !m.drag);
+      if (idles.length < 2) return;
+      const a = idles[Math.floor(Math.random() * idles.length)]!;
+      let b: M | null = null;
+      let bd = Infinity;
+      for (const m of idles) {
+        if (m === a) continue;
+        const d = Math.abs(m.x - a.x);
+        if (d < bd) {
+          bd = d;
+          b = m;
+        }
+      }
+      if (!b) return;
+      const dx = (b as M).x - a.x;
+      const dist = Math.abs(dx);
+      if (dist < R * 2 + 26 || dist > 3.2 * h) return;
+      const dir = Math.sign(dx) || 1;
+      const each = dist / 2 - 14;
+      hop(a, dir * each, 1);
+      hop((b as M), -dir * each, 1);
+      greetPair = [a, b as M];
+      greetAt = T + 1.5; // setelah saling mendarat dekat → lompat senang
     }
 
     function upd(m: M, dt: number, w: number, h: number) {
       m.tm += dt;
       m.cool -= dt;
       if (m.hum > 0) m.hum -= dt;
+      m.support = false; // di-set ulang oleh collide() bila menimpa teman
       const G = 3.6 * h;
       const floor = h - MPX;
       let grounded = false;
@@ -205,6 +247,13 @@ export function TeamSetupView({
                     m.tm = 0;
                   }
                 }
+                // DARAT → idle (tanpa ini maskot terjebak mode "air" dan
+                // scheduler think() tidak pernah jalan → terasa mati)
+                if (m.mode === "air" || m.mode === "stun") {
+                  m.mode = "idle";
+                  m.tm = 0;
+                  m.nt = rnd(0.5, 1.4);
+                }
               }
             }
           }
@@ -218,12 +267,12 @@ export function TeamSetupView({
           m.x = hi;
           m.vx = -Math.abs(m.vx) * 0.5;
         }
-        if (grounded && m.mode !== "air") m.vx *= Math.exp(-9 * dt);
+        if ((grounded || m.support) && m.mode !== "air") m.vx *= Math.exp(-9 * dt);
         if (m.mode === "crouch") {
           if (m.tm >= 0.18) {
             const vy = -(1.35 + rnd(0, 0.25)) * h * m.hpow;
             m.vy = vy;
-            m.vx = m.hdx / (2 * -vy / G);
+            m.vx = m.hdx / ((2 * -vy) / G);
             m.mode = "air";
             m.tm = 0;
           }
@@ -232,7 +281,7 @@ export function TeamSetupView({
             m.mode = "idle";
             m.tm = 0;
           }
-        } else if (m.mode === "idle" && grounded) {
+        } else if (m.mode === "idle" && (grounded || m.support)) {
           if (m.hops > 0) {
             m.hops--;
             hop(m, m.hdx, 0.9);
@@ -243,15 +292,19 @@ export function TeamSetupView({
       }
       // squash spring
       const sqT =
-        m.mode === "crouch" ? -0.2 : m.mode === "air" ? cl(Math.abs(m.vy) / h * 0.28, 0, 0.17) : 0;
+        m.mode === "crouch"
+          ? -0.2
+          : m.mode === "air"
+            ? cl((Math.abs(m.vy) / h) * 0.28, 0, 0.17)
+            : 0;
       m.sqv += ((sqT - m.sq) * 260 - m.sqv * 22) * dt;
       m.sq += m.sqv * dt;
       // rotasi: held → ikut kecepatan lempar; udara → miring by vx; dengung → sway
       m.lean *= Math.exp(-6 * dt);
       const rt =
         m.mode === "held"
-          ? cl(m.vx / h * 0.9, -0.45, 0.45)
-          : (m.mode === "air" ? cl(m.vx / h * 0.9, -0.25, 0.25) : 0) +
+          ? cl((m.vx / h) * 0.9, -0.45, 0.45)
+          : (m.mode === "air" ? cl((m.vx / h) * 0.9, -0.25, 0.25) : 0) +
             (m.hum > 0 ? Math.sin(T * 6) * 0.1 : 0) +
             m.lean;
       m.rot += (rt - m.rot) * Math.min(1, dt * 12);
@@ -302,6 +355,7 @@ export function TeamSetupView({
         const lw = up === a ? b : a;
         if (up.mode !== "held") {
           up.x += (up.x >= lw.x ? 1 : -1) * 0.35;
+          up.support = true; // berdiri di atas teman → tetap bisa diam/think
           if (Math.abs(up.vy) < 0.5 * h) {
             up.vy = Math.min(up.vy, 0);
             up.vx *= 0.92;
@@ -323,10 +377,27 @@ export function TeamSetupView({
       if (el && el.clientWidth > 0) {
         const w = el.clientWidth;
         const h = el.clientHeight;
-        const list = mounted.map((pid) => bodies.current.get(pid)!).filter(Boolean);
+        const list = mounted
+          .map((pid) => bodies.current.get(pid)!)
+          .filter(Boolean);
         for (const m of list) upd(m, dt, w, h);
         for (let i = 0; i < list.length; i++)
-          for (let j = i + 1; j < list.length; j++) collide(list[i]!, list[j]!, h);
+          for (let j = i + 1; j < list.length; j++)
+            collide(list[i]!, list[j]!, h);
+        // interaksi greet berkala antar maskot
+        greetT -= dt;
+        if (greetT <= 0) {
+          greetT = rnd(3.5, 8);
+          tryGreet(list, h);
+        }
+        if (greetPair && T >= greetAt) {
+          for (const m of greetPair)
+            if (m.mode === "idle" && !m.drag) {
+              hop(m, 0, 0.6);
+              m.hum = 1.6;
+            }
+          greetPair = null;
+        }
         // render imperatif — React tidak ikut 60fps
         el.querySelectorAll<HTMLElement>("[data-mascot]").forEach((n) => {
           const m = bodies.current.get(n.dataset.mascot!);
@@ -357,73 +428,98 @@ export function TeamSetupView({
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }, []);
 
-  const onGrabStart = useCallback((pid: string, e: React.PointerEvent) => {
-    const m = bodies.current.get(pid);
-    if (!m) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    const p = zonePoint(e);
-    pointer.current = p;
-    m.mode = "held";
-    m.hops = 0;
-    m.drag = { ox: p.x - m.x, oy: p.y - m.y, samples: [{ ...p, t: performance.now() }], moved: false, t0: performance.now() };
-  }, [zonePoint]);
+  const onGrabStart = useCallback(
+    (pid: string, e: React.PointerEvent) => {
+      const m = bodies.current.get(pid);
+      if (!m) return;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const p = zonePoint(e);
+      pointer.current = p;
+      m.mode = "held";
+      m.hops = 0;
+      m.drag = {
+        ox: p.x - m.x,
+        oy: p.y - m.y,
+        samples: [{ ...p, t: performance.now() }],
+        moved: false,
+        t0: performance.now(),
+      };
+    },
+    [zonePoint],
+  );
 
-  const onGrabMove = useCallback((pid: string, e: React.PointerEvent) => {
-    const m = bodies.current.get(pid);
-    if (!m || !m.drag) return;
-    const p = zonePoint(e);
-    pointer.current = p;
-    const n = performance.now();
-    m.drag.samples.push({ ...p, t: n });
-    while (m.drag.samples.length > 2 && n - m.drag.samples[0]!.t > 110) m.drag.samples.shift();
-    if (Math.hypot(m.drag.samples[0]!.x - p.x, m.drag.samples[0]!.y - p.y) > 8 || n - m.drag.t0 > 350)
-      m.drag.moved = true;
-  }, [zonePoint]);
+  const onGrabMove = useCallback(
+    (pid: string, e: React.PointerEvent) => {
+      const m = bodies.current.get(pid);
+      if (!m || !m.drag) return;
+      const p = zonePoint(e);
+      pointer.current = p;
+      const n = performance.now();
+      m.drag.samples.push({ ...p, t: n });
+      while (m.drag.samples.length > 2 && n - m.drag.samples[0]!.t > 110)
+        m.drag.samples.shift();
+      if (
+        Math.hypot(m.drag.samples[0]!.x - p.x, m.drag.samples[0]!.y - p.y) >
+          8 ||
+        n - m.drag.t0 > 350
+      )
+        m.drag.moved = true;
+    },
+    [zonePoint],
+  );
 
-  const onGrabEnd = useCallback((pid: string, e: React.PointerEvent, h: number) => {
-    const m = bodies.current.get(pid);
-    if (!m || !m.drag) return;
-    const s = m.drag.samples;
-    const tap = !m.drag.moved && performance.now() - m.drag.t0 < 350;
-    m.drag = undefined;
-    if (tap) {
-      // TAP = sapa: hop kecil senang di tempat
-      m.mode = "air";
-      m.vy = -1.1 * h;
-      m.vx = (Math.random() - 0.5) * 0.3 * h;
-      m.sqv += 2.2;
-    } else {
-      // THROW: kecepatan dari sampel ≤110ms terakhir
-      const f = s[0]!;
-      const l = s[s.length - 1]!;
-      const dtm = (l.t - f.t) / 1000 || 0.016;
-      m.mode = "air";
-      m.thrown = true;
-      m.vx = Math.max(-4.5 * h, Math.min(4.5 * h, (l.x - f.x) / dtm));
-      m.vy = Math.max(-4.5 * h, Math.min(3 * h, (l.y - f.y) / dtm));
-      m.sqv -= 1.4;
-    }
-    void e;
-  }, []);
+  const onGrabEnd = useCallback(
+    (pid: string, e: React.PointerEvent, h: number) => {
+      const m = bodies.current.get(pid);
+      if (!m || !m.drag) return;
+      const s = m.drag.samples;
+      const tap = !m.drag.moved && performance.now() - m.drag.t0 < 350;
+      m.drag = undefined;
+      if (tap) {
+        // TAP = sapa: hop kecil senang di tempat
+        m.mode = "air";
+        m.vy = -1.1 * h;
+        m.vx = (Math.random() - 0.5) * 0.3 * h;
+        m.sqv += 2.2;
+      } else {
+        // THROW: kecepatan dari sampel ≤110ms terakhir
+        const f = s[0]!;
+        const l = s[s.length - 1]!;
+        const dtm = (l.t - f.t) / 1000 || 0.016;
+        m.mode = "air";
+        m.thrown = true;
+        m.vx = Math.max(-4.5 * h, Math.min(4.5 * h, (l.x - f.x) / dtm));
+        m.vy = Math.max(-4.5 * h, Math.min(3 * h, (l.y - f.y) / dtm));
+        m.sqv -= 1.4;
+      }
+      void e;
+    },
+    [],
+  );
 
   const n = Math.max(personas.length, 1);
   const ringCards = useMemo(
     () =>
       personas.map((p, i) => {
         const a = (-90 + (360 / n) * i) * (Math.PI / 180);
-        return { p, left: `${50 + 46 * Math.cos(a)}%`, top: `${50 + 40 * Math.sin(a)}%` };
+        return {
+          p,
+          left: `${50 + 46 * Math.cos(a)}%`,
+          top: `${50 + 40 * Math.sin(a)}%`,
+        };
       }),
     [personas, n],
   );
 
   const assignedPersonas = personas.filter((p) => assignedIds.includes(p.id));
-  const startLead = personas.find((x) => x.id === startSel) ?? assignedPersonas[0] ?? null;
+  const startLead =
+    personas.find((x) => x.id === startSel) ?? assignedPersonas[0] ?? null;
   const zoneH = 170; // perkiraan tinggi zona (utk release-throw scaling)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-8">
-      <div className="mb-1 text-center">
-        <h1 className="text-display font-semibold text-primary">Build your own team</h1>
+    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-8 justify-center">
+      <div className="mb-10 text-center">
+        <h1 className="text-4xl font-semibold text-primary">Build Your Team</h1>
       </div>
 
       {/* ── Panggung ala orbit lama ─────────────────────────────────────── */}
@@ -435,14 +531,14 @@ export function TeamSetupView({
           <div className="absolute top-1/2 left-1/2 h-[35%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
         </div>
 
-        {/* DETAIL hover (z-10) — radial transparan→canvas, fade+scale; ada di
-            BELAKANG maskot playground supaya maskot tak pernah tertutup
-            (kecil kemungkinan terlihat "respawn"). */}
+        {/* DETAIL hover (z-30, DI ATAS playground — bring to front): radial
+            transparan→canvas, fade+scale; pointer-events-none sehingga kartu
+            di tepi tetap bisa di-hover/klik. Maskot tetap hidup di belakang. */}
         {detail && (
           <div
             key={detail.p.id}
             aria-live="polite"
-            className={`pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 px-16 text-center transition-all ease-[var(--ease-out-yui)] duration-300 sm:px-20 ${
+            className={`pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 px-16 text-center transition-all ease-[var(--ease-out-yui)] duration-300 sm:px-20 ${
               detail.show ? "opacity-100 scale-100" : "opacity-0 scale-75"
             }`}
             style={{
@@ -451,7 +547,9 @@ export function TeamSetupView({
             }}
           >
             <OrinPortrait state="idle" personaId={detail.p.id} size={170} />
-            <b className="text-title font-semibold text-primary">{detail.p.name}</b>
+            <b className="text-title font-semibold text-primary">
+              {detail.p.name}
+            </b>
             <p className="max-w-[320px] text-body leading-6 text-muted">
               {detail.p.description}
             </p>
@@ -510,7 +608,11 @@ export function TeamSetupView({
                 onClick={() => (assigned ? onUnassign(p.id) : onAssign(p.id))}
                 aria-pressed={assigned}
                 aria-label={p.name}
-                title={assigned ? `${p.name} is on the team — click to remove` : `Assign ${p.name} to this project`}
+                title={
+                  assigned
+                    ? `${p.name} is on the team — click to remove`
+                    : `Assign ${p.name} to this project`
+                }
                 style={{ animationDelay: `${(i * 1.1).toFixed(1)}s` }}
                 className={`relative flex w-[130px] cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui ${
                   assigned
@@ -519,7 +621,9 @@ export function TeamSetupView({
                 }`}
               >
                 <PersonaFace personaId={p.id} size={40} />
-                <b className="text-caption font-semibold text-secondary">{p.name}</b>
+                <b className="text-caption font-semibold text-secondary">
+                  {p.name}
+                </b>
                 {assigned && (
                   <i
                     className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-white"
@@ -535,15 +639,19 @@ export function TeamSetupView({
       </div>
 
       {/* ── Start session: dropdown persona + tombol (≥1 assigned) ───────── */}
-      <div className="mt-3 flex min-h-[40px] items-center gap-2" aria-live="polite">
+      <div
+        className="mt-3 flex min-h-[40px] items-center gap-2"
+        aria-live="polite"
+      >
         {assignedPersonas.length > 0 && startLead ? (
           <>
             <details className="group relative" ref={startMenu.ref}>
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary select-none transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary [&::-webkit-details-marker]:hidden">
                 <PersonaFace personaId={startLead.id} size={18} />
                 <span className="flex min-w-0 flex-col text-left">
-                  <b className="text-body font-semibold text-primary">{startLead.name}</b>
-                  <span className="text-caption text-dim">{startLead.expertise}</span>
+                  <b className="text-body font-semibold text-primary">
+                    {startLead.name}
+                  </b>
                 </span>
                 <CaretDown size={12} aria-hidden />
               </summary>
@@ -565,10 +673,18 @@ export function TeamSetupView({
                   >
                     <PersonaFace personaId={p.id} size={20} />
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-body text-secondary">{p.name}</span>
-                      <small className="truncate text-caption text-dim">{p.expertise}</small>
+                      <span className="truncate text-body text-secondary">
+                        {p.name}
+                      </span>
+                      <small className="truncate text-caption text-dim">
+                        {p.expertise}
+                      </small>
                     </span>
-                    {p.id === startLead.id && <i className="text-accent" aria-hidden>✓</i>}
+                    {p.id === startLead.id && (
+                      <i className="text-accent" aria-hidden>
+                        ✓
+                      </i>
+                    )}
                   </button>
                 ))}
               </div>
@@ -583,7 +699,7 @@ export function TeamSetupView({
           </>
         ) : (
           <span className="text-caption text-dim">
-            The stage is set — assign your first partner above.
+            Assign at least one persona as your partner
           </span>
         )}
       </div>
