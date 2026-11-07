@@ -298,6 +298,69 @@ export const PhaseReadiness = z.object({
 });
 export type PhaseReadiness = z.infer<typeof PhaseReadiness>;
 
+// ── P2-PM-4/5: dashboard progres terukur — dihitung server (read-only) ─────
+/** RACI ringan per fase (P2-PM-4): owner dari roster + metrik live. */
+export const DashboardPhase = z.object({
+  phase: z.enum(WORKFLOW_PHASES),
+  /** Persona owner fase ini (roster `phases[]`) — bisa kosong (belum diisi). */
+  owners: z.array(z.string()),
+  /** Task yang me-cover fase ini (TaskItem.phase). */
+  tasks: z.object({
+    total: z.number().int(),
+    todo: z.number().int(),
+    doing: z.number().int(),
+    review: z.number().int(),
+    done: z.number().int(),
+    /** % task fase ini yang punya acceptance criteria (0–100). */
+    withAcceptancePct: z.number().int(),
+  }),
+  /** Gate fase dari run aktif terbaru. none = tidak relevan/tak ada run. */
+  gate: z.enum(["none", "pending", "passed"]),
+  /** Verdict QA project-wide (dipasang di fase testing; null bila belum ada). */
+  qa: z.object({ pass: z.number().int(), fail: z.number().int(), warn: z.number().int() }).nullable(),
+});
+export type DashboardPhase = z.infer<typeof DashboardPhase>;
+
+/** Ringkasan iterasi (P2-PM-5): run ke-N, selesai/total, delta vs run sebelumnya. */
+export const DashboardRun = z.object({
+  /** Urutan run di project (1 = pertama). */
+  index: z.number().int().min(1),
+  runId: z.string(),
+  name: z.string(),
+  status: z.string(),
+  stepsDone: z.number().int(),
+  stepsTotal: z.number().int(),
+  /** Selisih stepsDone vs run sebelumnya — null utk run pertama. */
+  delta: z.number().int().nullable(),
+  startedAt: z.number().int(),
+  updatedAt: z.number().int(),
+});
+export type DashboardRun = z.infer<typeof DashboardRun>;
+
+export const ProjectDashboard = z.object({
+  tasks: z.object({
+    total: z.number().int(),
+    todo: z.number().int(),
+    doing: z.number().int(),
+    review: z.number().int(),
+    done: z.number().int(),
+    unassigned: z.number().int(),
+    /** Task dibuka ULANG setelah done (transisi done → todo/doing/review). */
+    reopened: z.number().int(),
+    withAcceptancePct: z.number().int(),
+  }),
+  /** Health project (P2-PM-5): blocker aktif + hold. */
+  health: z.object({
+    pendingApprovals: z.number().int(),
+    qaFail: z.number().int(),
+    delegationErrors: z.number().int(),
+  }),
+  phases: z.array(DashboardPhase),
+  runs: z.array(DashboardRun),
+  updatedAt: z.number().int(),
+});
+export type ProjectDashboard = z.infer<typeof ProjectDashboard>;
+
 /** Hasil hapus project + artefak terkait (P1-PRJ-8, request user).
  *  Skill persona yang lahir dari project INI TIDAK ikut dihapus (milik persona,
  *  hidup di packages/skills — keputusan user). Metering (usage ledger) juga

@@ -44,6 +44,7 @@ import { UsageLedger } from "./usage/ledger.js";
 import { loadPriceBook, saveModelPrice } from "./model-prices.js";
 import { AdmissionControl, usageMatrixWithCost } from "./budget.js";
 import { buildTrace, buildProjectActivity } from "./session/trace.js";
+import { buildProjectDashboard, scanProjectSignals } from "./project/dashboard.js";
 import type { ModelPrice } from "@yuika/contracts";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
@@ -1057,6 +1058,20 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getTrace: (sessionId: string) => buildTrace(store, usageLedger, sessionId),
     /** Batch 14a++: activity feed project-wide (Logs tab — semua sesi persona). */
     getProjectActivity: (projectId: string, limit?: number) => buildProjectActivity(store, projectId, limit),
+    /** P2-PM-4/5: dashboard progres terukur — agregasi server (task/run/roster/
+     *  sinyal QA+approval). null bila project tak ada. */
+    getProjectDashboard: (projectId: string) => {
+      const p = projectStore.getProject(projectId);
+      if (!p) return null;
+      return buildProjectDashboard({
+        tasks: projectStore.listTasks(projectId),
+        events: projectStore.listEvents(projectId),
+        roster: loadRoster(p.rootPath),
+        runs: projectStore.listWorkflowRuns(projectId),
+        signals: scanProjectSignals(store, projectId),
+        delegationErrors: store.listDelegationJobs(projectId).filter((j) => j.status === "error").length,
+      });
+    },
     getModelRoutes: () => ({
       defaultModel: model,
       defaultFallback: process.env.YUI_MODEL_FALLBACK ?? "",

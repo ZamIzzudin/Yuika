@@ -83,6 +83,11 @@ test("FLOW-6: steer + reassign (Task) + pause/resume mid-run — semua via chat"
 
   // 2) reassign step pending fase research → analyst — di TAB TASK (fokus assign)
   await page.getByRole("tab", { name: "Task" }).click();
+  // P2-PM-4/5: dashboard progres tampil di atas board (run hidup → iterasi #1)
+  const dash = page.getByLabel("Project dashboard");
+  await expect(dash).toBeVisible({ timeout: 10_000 });
+  await expect(dash.getByText("Iterations")).toBeVisible();
+  await expect(dash.getByText("#1", { exact: true })).toBeVisible();
   const research = page.locator('[data-phase="research"]');
   await expect(research).toBeVisible({ timeout: 15_000 });
   await research.getByLabel("Reassign tech-notes").selectOption("yui-analyst");

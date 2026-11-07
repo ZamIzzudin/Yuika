@@ -123,6 +123,17 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return { tasks: rt.listProjectTasks(id) };
   });
 
+  /** P2-PM-4/5: dashboard progres terukur — burndown task, RACI fase +
+   *  metrik live, health (blocker/revisi/hold), ringkasan iterasi run. */
+  app.get("/api/projects/:id/dashboard", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const rt = getRt();
+    if (!rt.getProject(id)) return reply.code(404).send({ error: "project tidak ditemukan" });
+    const dashboard = rt.getProjectDashboard(id);
+    if (!dashboard) return reply.code(404).send({ error: "project tidak ditemukan" });
+    return { dashboard };
+  });
+
   app.post("/api/projects/:id/tasks", async (req, reply) => {
     const { id } = req.params as { id: string };
     const rt = getRt();

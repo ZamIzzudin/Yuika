@@ -28,6 +28,7 @@ import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
 import { WorkflowStepsCard } from "./WorkflowStepsCard";
+import { ProjectDashboardView } from "./ProjectDashboard";
 import { TerminalFullTab } from "./TerminalFullTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
@@ -685,6 +686,9 @@ export function ProjectTabs({
 
       {loaded && activeTab === "board" && (
         <section aria-label="Task kanban board" className="flex flex-col gap-4">
+          {/* P2-PM-4/5: dashboard progres & health di paling atas — dibaca
+              sekali lihat sebelum masuk board/detail. */}
+          <ProjectDashboardView projectId={project.id} personas={personas} rev={rev} />
           {/* assign/reassign step workflow hidup di sini (keputusan user
               2026-11-08: Task = fokus penataan siapa-kerja-apa) */}
           <WorkflowStepsCard projectId={project.id} />

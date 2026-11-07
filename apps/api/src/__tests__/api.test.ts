@@ -36,6 +36,16 @@ const fake = {
   getProjectActivity: () => [
     { at: 2, sessionId: "s1", personaId: "yui-scholar", kind: "tool", label: "web_fetch https://example.com", isError: false },
   ],
+  getProjectDashboard: (id: string) =>
+    id === "p_ok"
+      ? {
+          tasks: { total: 2, todo: 1, doing: 1, review: 0, done: 0, unassigned: 1, reopened: 0, withAcceptancePct: 50 },
+          health: { pendingApprovals: 0, qaFail: 0, delegationErrors: 0 },
+          phases: [],
+          runs: [],
+          updatedAt: 1,
+        }
+      : null,
   writeProjectUpload: async (_id: string, rel: string, _buf: Buffer) => rel,
   listProjectTasks: () => [
     { id: "t_a", projectId: "p_ok", title: "A", status: "todo", assignee: "yui-coder", refs: [], description: null, acceptance: ["done a"], dependsOn: ["t_hantu"], estimate: "1d", phase: "planning", createdAt: 0, updatedAt: 0 },
@@ -66,6 +76,16 @@ describe("apps/api REST contract", () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_hantu/activity" });
     expect(r.statusCode).toBe(404);
     expect(r.json()).toMatchObject({ error: "project not found" });
+  });
+  it("GET /api/projects/:id/dashboard — 200 shape {dashboard} (P2-PM-4/5); tak dikenal → 404", async () => {
+    const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/dashboard" });
+    expect(r.statusCode).toBe(200);
+    const d = r.json() as { dashboard: { tasks: { total: number }; phases: unknown[] } };
+    expect(d.dashboard.tasks.total).toBe(2);
+    expect(Array.isArray(d.dashboard.phases)).toBe(true);
+    const nf = await app.inject({ method: "GET", url: "/api/projects/p_hantu/dashboard" });
+    expect(nf.statusCode).toBe(404);
+    expect(nf.json()).toMatchObject({ error: "project tidak ditemukan" });
   });
   it("POST /api/sessions — valid → 200 shape {sessionId,persona,projectId}", async () => {
     const r = await app.inject({ method: "POST", url: "/api/sessions", payload: { personaId: "yui-scholar" } });
