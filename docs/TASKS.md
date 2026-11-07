@@ -671,3 +671,14 @@
   - Task lanjutan menyesuaikan: P2-MOB-2/3/4/5 (mobile remote via relay),
     P2-DTL-1/2 (desktop host/remote switch + device relay worker) — detail
     roadmap §7 ARCH-PORTAL. Rive RN di P2-MOB-4 sudah dicancel sebelumnya.
+
+## Batch 7 · Research Engine + Batch 8 · Live Browser (RANCANGAN 2026-11 — adaptasi brief "Remote Browser & Research Tool")
+> Dokumen lengkap: docs/PLAN-RESEARCH-LIVE-BROWSER.md. Akar pain user: (a) websearch Yui Scholar sering kena block — sistem bahkan belum punya tool web_search (hanya web_fetch fetch-polos, UA non-browser, tanpa SSRF guard); (b) tab Browser reader read-only kurang cocok untuk mencoba hasil build agent. Embed mapping + keputusan terbuka di dokumen. Menunggu persetujuan scope & est.
+- [ ] **RS-1** Provider layer search (wikipedia/github/hn/stackex/docsites + ddg-html fallback + searxng opsional) + fallback chain hasil parsial · *M · 2–3d total RS* — rancangan
+- [ ] **RS-2** Upgrade web_fetch: SSRF guard (menutup celah existing) + Readability→markdown + robots + jeda domain · *S*
+- [ ] **RS-3** Tool web_search + toolset scholar/conductor + skill web-research & PERSONA update · *S*
+- [ ] **RS-4** Cache research (SQLite, TTL 12h/72h) + budget per task · *S*
+- [ ] **RS-5** Config (YUI_SEARXNG_URL, YUI_RESEARCH_OFF) · *S*
+- [ ] **LB-1** Process manager (spawn dev server + deteksi port) + Chromium headless CDP + screencast WS + input relay; tab Browser mode Live/Static · *M · ±3d*
+- [ ] **LB-2** Agent shared-session via connectOverCDP + tools browser_* + takeover indicator · *M · ±2d*
+- [ ] **LB-3** DevTools embedded (artefak pinned + WS proxy auth) · *M · ±2d*

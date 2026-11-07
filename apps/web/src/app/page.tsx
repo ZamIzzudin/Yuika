@@ -22,7 +22,11 @@ import { AuthGate, AuthPill } from "@/components/AuthGate";
 import { setShapeOverrides } from "@/components/orinShapes";
 import { TracePanel } from "@/components/TracePanel";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
-import { ChatView, type ChatItem, type WorkflowChatCtx } from "@/components/ChatView";
+import {
+  ChatView,
+  type ChatItem,
+  type WorkflowChatCtx,
+} from "@/components/ChatView";
 import { ProjectPanel } from "@/components/ProjectPanel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { RemoteBadge } from "@/components/RemoteBadge";
@@ -751,16 +755,20 @@ export default function Home() {
         }
       } else {
         try {
-          const r = await authFetch(apiUrl(`/api/projects/${activeProject.id}/workflows/runs`), {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              brief: text,
-              ...(sessionId ? { leadSessionId: sessionId } : {}), // chat ini = lead
-            }),
-          });
+          const r = await authFetch(
+            apiUrl(`/api/projects/${activeProject.id}/workflows/runs`),
+            {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                brief: text,
+                ...(sessionId ? { leadSessionId: sessionId } : {}), // chat ini = lead
+              }),
+            },
+          );
           const body = (await r.json()) as { runId?: string; error?: string };
-          if (!r.ok || !body.runId) throw new Error(body.error ?? "failed to start run");
+          if (!r.ok || !body.runId)
+            throw new Error(body.error ?? "failed to start run");
         } catch (e) {
           toastErr(e instanceof Error ? e.message : "Failed to start run");
           return;
@@ -823,247 +831,250 @@ export default function Home() {
 
   return (
     <AuthGate>
-    <div className="flex h-screen bg-canvas text-body text-secondary">
-      <aside
-        className={`flex shrink-0 flex-col border-r border-line bg-sidebar py-3 transition-[width] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-          sidebarOpen
-            ? "w-[272px] overflow-y-auto px-2"
-            : "w-14 items-center overflow-hidden px-1"
-        }`}
-      >
-        {sidebarOpen ? (
-          <>
-            <div className="flex items-center gap-2.5 px-2 pb-4">
-              {/* Logo maskot Orin (favicon_io) + wordmark Yuika */}
-              <img
-                src="/android-chrome-192x192.png"
-                alt=""
-                aria-hidden
-                className="size-7 shrink-0 rounded-full"
+      <div className="flex h-screen bg-canvas text-body text-secondary">
+        <aside
+          className={`flex shrink-0 flex-col border-r border-line bg-sidebar py-3 transition-[width] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+            sidebarOpen
+              ? "w-[272px] overflow-y-auto px-2"
+              : "w-14 items-center overflow-hidden px-1"
+          }`}
+        >
+          {sidebarOpen ? (
+            <>
+              <div className="flex items-center gap-2.5 px-2 pb-4">
+                {/* Logo maskot Orin (favicon_io) + wordmark Yuika */}
+                <img
+                  src="/android-chrome-192x192.png"
+                  alt=""
+                  aria-hidden
+                  className="size-7 shrink-0 rounded-full"
+                />
+                <span className="flex min-w-0 flex-col">
+                  <b className="text-body font-semibold tracking-tight text-primary">
+                    Yuika
+                  </b>
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleSidebar}
+                  title="Collapse sidebar (Ctrl+B)"
+                  aria-label="Collapse sidebar"
+                  className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                >
+                  <SidebarSimple size={16} aria-hidden />
+                </button>
+              </div>
+              <ProjectPanel
+                projects={projects.filter((p) => p.kind !== "dungeon")}
+                booted={booted}
+                activeId={activeProjectId}
+                onPick={pickProject}
+                onCreated={loadProjects}
+                onDeleted={(pid) => {
+                  // Scope yang aktif terhapus → kembali ke workspace global (reset sesi);
+                  // selain itu cukup refresh daftar project + sesi project aktif.
+                  void loadProjects();
+                  if (activeProjectId === pid) {
+                    void pickProject(null);
+                  } else if (activeProjectId) {
+                    void loadProjectSessions(activeProjectId);
+                  }
+                }}
               />
-              <span className="flex min-w-0 flex-col">
-                <b className="text-body font-semibold tracking-tight text-primary">
-                  Yuika
-                </b>
-              </span>
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                title="Collapse sidebar (Ctrl+B)"
-                aria-label="Collapse sidebar"
-                className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
-              >
-                <SidebarSimple size={16} aria-hidden />
-              </button>
-            </div>
-            <ProjectPanel
-              projects={projects.filter((p) => p.kind !== "dungeon")}
-              booted={booted}
-              activeId={activeProjectId}
-              onPick={pickProject}
-              onCreated={loadProjects}
-              onDeleted={(pid) => {
-                // Scope yang aktif terhapus → kembali ke workspace global (reset sesi);
-                // selain itu cukup refresh daftar project + sesi project aktif.
-                void loadProjects();
-                if (activeProjectId === pid) {
-                  void pickProject(null);
-                } else if (activeProjectId) {
-                  void loadProjectSessions(activeProjectId);
-                }
+              <div className="mt-auto flex flex-col gap-1 border-t border-line pt-3">
+                <button
+                  className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                    studioOpen
+                      ? "bg-hover text-primary"
+                      : "text-dim hover:bg-hover hover:text-primary"
+                  }`}
+                  aria-current={studioOpen ? "page" : undefined}
+                  onClick={() => setStudioOpen((v) => !v)}
+                >
+                  <Users size={20} aria-hidden /> Persona
+                </button>
+                <div className="px-2.5 pb-1">
+                  <RemoteBadge />
+                </div>
+                {/* akun portal — footer sidebar (selalu terlihat di semua state;
+                FIX overlap tombol oleh overlay fixed 2026-11-08) */}
+                <AuthPill />
+                <button
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                  onClick={() => setSettingsOpen(true)}
+                >
+                  <Gear size={20} /> Settings
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col items-center gap-1">
+                <img
+                  src="/android-chrome-192x192.png"
+                  alt="Yuika"
+                  className="size-7 rounded-full"
+                />
+                <button
+                  type="button"
+                  onClick={toggleSidebar}
+                  title="Expand sidebar (Ctrl+B)"
+                  aria-label="Expand sidebar"
+                  className="flex size-9 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                >
+                  <SidebarSimple size={16} aria-hidden />
+                </button>
+              </div>
+              <div className="mt-auto flex flex-col gap-1">
+                <button
+                  type="button"
+                  title="Persona"
+                  aria-label="Persona"
+                  aria-current={studioOpen ? "page" : undefined}
+                  onClick={() => setStudioOpen((v) => !v)}
+                  className={`flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                    studioOpen
+                      ? "bg-hover text-primary"
+                      : "text-dim hover:bg-hover hover:text-primary"
+                  }`}
+                >
+                  <Users size={20} aria-hidden />
+                </button>
+                <RemoteBadge compact />
+                <AuthPill compact />
+                <button
+                  type="button"
+                  title="Settings"
+                  aria-label="Settings"
+                  onClick={() => setSettingsOpen(true)}
+                  className="flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                >
+                  <Gear size={20} aria-hidden />
+                </button>
+              </div>
+            </>
+          )}
+        </aside>
+        {settingsOpen && (
+          <SettingsModal onClose={() => setSettingsOpen(false)} />
+        )}
+        {/* badge compact sidebar kolaps → buka tab Portal */}
+        <main className="flex min-w-0 flex-1 flex-col">
+          {studioOpen ? (
+            <PersonaStudioView
+              personas={personas}
+              onBack={() => setStudioOpen(false)}
+              onOpenProject={(pid) => {
+                setActiveProjectId(pid); // buka ruangan latihan seperti project
+                setStudioOpen(false);
               }}
             />
-            <div className="mt-auto flex flex-col gap-1 border-t border-line pt-3">
-              <button
-                className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-                  studioOpen
-                    ? "bg-hover text-primary"
-                    : "text-dim hover:bg-hover hover:text-primary"
-                }`}
-                aria-current={studioOpen ? "page" : undefined}
-                onClick={() => setStudioOpen((v) => !v)}
-              >
-                <Users size={20} aria-hidden /> Persona
-              </button>
-              <div className="px-2.5 pb-1">
-                <RemoteBadge />
-              </div>
-              {/* akun portal — footer sidebar (selalu terlihat di semua state;
-                FIX overlap tombol oleh overlay fixed 2026-11-08) */}
-              <AuthPill />
-              <button
-                className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
-                onClick={() => setSettingsOpen(true)}
-              >
-                <Gear size={20} /> Settings
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex flex-col items-center gap-1">
-              <img
-                src="/android-chrome-192x192.png"
-                alt="Yuika"
-                className="size-7 rounded-full"
-              />
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                title="Expand sidebar (Ctrl+B)"
-                aria-label="Expand sidebar"
-                className="flex size-9 cursor-pointer items-center justify-center rounded-md2 text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
-              >
-                <SidebarSimple size={16} aria-hidden />
-              </button>
-            </div>
-            <div className="mt-auto flex flex-col gap-1">
-              <button
-                type="button"
-                title="Persona"
-                aria-label="Persona"
-                aria-current={studioOpen ? "page" : undefined}
-                onClick={() => setStudioOpen((v) => !v)}
-                className={`flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-                  studioOpen
-                    ? "bg-hover text-primary"
-                    : "text-dim hover:bg-hover hover:text-primary"
-                }`}
-              >
-                <Users size={20} aria-hidden />
-              </button>
-              <RemoteBadge compact />
-              <AuthPill compact />
-              <button
-                type="button"
-                title="Settings"
-                aria-label="Settings"
-                onClick={() => setSettingsOpen(true)}
-                className="flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
-              >
-                <Gear size={20} aria-hidden />
-              </button>
-            </div>
-          </>
-        )}
-      </aside>
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
-      {/* badge compact sidebar kolaps → buka tab Portal */}
-      <main className="flex min-w-0 flex-1 flex-col">
-        {studioOpen ? (
-          <PersonaStudioView
-            personas={personas}
-            onBack={() => setStudioOpen(false)}
-            onOpenProject={(pid) => {
-              setActiveProjectId(pid); // buka ruangan latihan seperti project
-              setStudioOpen(false);
-            }}
-          />
-        ) : (
-          <>
-            {!active ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-                {activeProject ? (
-                  <>
-                    <h1 className="mt-4 text-display font-semibold text-primary">
-                      Setting up {activeProject.name}…
-                    </h1>
-                    <p className="max-w-[420px] text-body text-muted">
-                      Opening Conductor as the project lead.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h1 className="sr-only">
-                      Choose a partner for the Workspace session
-                    </h1>
-                    {personas.length === 0 ? (
-                      <div className="mt-4 grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
-                        {Array.from({ length: 4 }, (_, i) => (
-                          <Skeleton key={i} lines={3} />
-                        ))}
-                      </div>
-                    ) : (
-                      <PersonaOrbit
-                        personas={personas}
-                        onPick={(p) => void pick(p)}
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="flex min-h-0 flex-1 flex-col">
-                {/* pills terpusat ala page Persona — grid [1fr_auto_1fr]
-                    (kolom tengah pills, kiri/kanan 1fr sama → center sejati). */}
-                <div className="grid flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 pt-3">
-                  <span aria-hidden />
-                  <TabPills
-                    ariaLabel="Workspace views"
-                    value={mainTab}
-                    onChange={(id) => setMainTab(id as WorkspaceTab)}
-                    tabs={[
-                      {
-                        id: "chat",
-                        label: (
-                          <span className="inline-flex items-center gap-1.5">
-                            <PersonaFace personaId={active.id} size={16} /> Chat
-                            {items.some(
-                              (it) => it.kind === "approval" && !it.resolved,
-                            ) && <Dot tone="warn" pulse />}
-                            {busy && <Dot tone="accent" pulse />}
-                          </span>
-                        ),
-                      },
-                      ...(activeProject
-                        ? ([
-                            {
-                              id: "team",
-                              label: (
-                                <span className="inline-flex items-center gap-1.5">
-                                  Team
-                                  {items.some(
-                                    (it) =>
-                                      it.kind === "delegation" && !it.text,
-                                  ) && <Dot pulse />}
-                                </span>
-                              ),
-                            },
-                            { id: "files", label: "Files" },
-                            { id: "board", label: "Task" },
-                            { id: "browser", label: "Browser" },
-                            { id: "config", label: "Config" },
-                          ] as const)
-                        : []),
-                      {
-                        id: "trace",
-                        label: (
-                          <span className="inline-flex items-center gap-1.5">
-                            Logs
-                            {sessionId && busy && <Dot pulse />}
-                          </span>
-                        ),
-                        title: sessionId
-                          ? "Step-by-step trace per turn of this session (tool steps live here — kept out of chat)"
-                          : "Start a session to see the trace",
-                      },
-                    ]}
-                  />
+          ) : (
+            <>
+              {!active ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+                  {activeProject ? (
+                    <>
+                      <h1 className="mt-4 text-display font-semibold text-primary">
+                        Setting up {activeProject.name}…
+                      </h1>
+                      <p className="max-w-[420px] text-body text-muted">
+                        Opening Conductor as the project lead.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h1 className="sr-only">
+                        Choose a partner for the Workspace session
+                      </h1>
+                      {personas.length === 0 ? (
+                        <div className="mt-4 grid w-full max-w-[720px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+                          {Array.from({ length: 4 }, (_, i) => (
+                            <Skeleton key={i} lines={3} />
+                          ))}
+                        </div>
+                      ) : (
+                        <PersonaOrbit
+                          personas={personas}
+                          onPick={(p) => void pick(p)}
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
-                {/* Satu tab = satu halaman (keputusan user 2026-11-08,
+              ) : (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {/* pills terpusat ala page Persona — grid [1fr_auto_1fr]
+                    (kolom tengah pills, kiri/kanan 1fr sama → center sejati). */}
+                  <div className="grid flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 pt-3">
+                    <span aria-hidden />
+                    <TabPills
+                      ariaLabel="Workspace views"
+                      value={mainTab}
+                      onChange={(id) => setMainTab(id as WorkspaceTab)}
+                      tabs={[
+                        {
+                          id: "chat",
+                          label: (
+                            <span className="flex items-center gap-1.5">
+                              <PersonaFace personaId={active.id} size={16} />{" "}
+                              Chat
+                              {items.some(
+                                (it) => it.kind === "approval" && !it.resolved,
+                              ) && <Dot tone="warn" pulse />}
+                              {busy && <Dot tone="accent" pulse />}
+                            </span>
+                          ),
+                        },
+                        ...(activeProject
+                          ? ([
+                              {
+                                id: "team",
+                                label: (
+                                  <span className="flex items-center gap-1.5">
+                                    Team
+                                    {items.some(
+                                      (it) =>
+                                        it.kind === "delegation" && !it.text,
+                                    ) && <Dot pulse />}
+                                  </span>
+                                ),
+                              },
+                              { id: "files", label: "Files" },
+                              { id: "board", label: "Task" },
+                              { id: "browser", label: "Browser" },
+                              { id: "config", label: "Config" },
+                            ] as const)
+                          : []),
+                        {
+                          id: "trace",
+                          label: (
+                            <span className="flex items-center gap-1.5">
+                              Logs
+                              {sessionId && busy && <Dot pulse />}
+                            </span>
+                          ),
+                          title: sessionId
+                            ? "Step-by-step trace per turn of this session (tool steps live here — kept out of chat)"
+                            : "Start a session to see the trace",
+                        },
+                      ]}
+                    />
+                  </div>
+                  {/* Satu tab = satu halaman (keputusan user 2026-11-08,
                     revisi STU-1): saat tab lain aktif, chat TERTUTUP penuh dan
                     tab aktif mendapat lebar penuh. Kolom chat tetap ter-mount
                     (disembunyikan CSS, bukan unmount) supaya draft/scroll/
                     streaming tetap valid saat kembali. Penggabungan tab
                     (Board/Tools) menyusul. */}
-                <div className="flex min-h-0 flex-1 flex-col">
-                  <div
-                    className={
-                      mainTab === "chat"
-                        ? "flex min-h-0 min-w-0 flex-1 flex-col"
-                        : "hidden min-h-0 min-w-0 flex-1 flex-col"
-                    }
-                  >
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <div
+                      className={
+                        mainTab === "chat"
+                          ? "flex min-h-0 min-w-0 flex-1 flex-col"
+                          : "hidden min-h-0 min-w-0 flex-1 flex-col"
+                      }
+                    >
                       <header className="relative flex flex-none items-center gap-3 px-4 py-2.5 sm:px-6">
                         <details className="group relative">
                           <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-pill pl-3 pr-6 py-3 select-none hover:bg-hover [&::-webkit-details-marker]:hidden">
@@ -1214,14 +1225,21 @@ export default function Home() {
                                   ? `Describe the task — ${active.name} will work on it or delegate to the right specialists. All files & tasks stay bound to this project.`
                                   : active.description}
                               </p>
-                              {active.id === "yui-conductor" && activeProject && (
-                                <span className="flex items-center gap-1.5 rounded-lg2 border border-accent/40 bg-accent/5 px-4 py-2.5 text-caption text-muted">
-                                  <Steps size={14} weight="bold" aria-hidden className="shrink-0 text-accent" />
-                                  Need the full team pipeline? Toggle Workflow Mode
-                                  beside Hardcore Mode — your next message starts a
-                                  structured run. Watch progress in the Team tab.
-                                </span>
-                              )}
+                              {active.id === "yui-conductor" &&
+                                activeProject && (
+                                  <span className="flex items-center gap-1.5 rounded-lg2 border border-accent/40 bg-accent/5 px-4 py-2.5 text-caption text-muted">
+                                    <Steps
+                                      size={14}
+                                      weight="bold"
+                                      aria-hidden
+                                      className="shrink-0 text-accent"
+                                    />
+                                    Need the full team pipeline? Toggle Workflow
+                                    Mode beside Hardcore Mode — your next
+                                    message starts a structured run. Watch
+                                    progress in the Team tab.
+                                  </span>
+                                )}
                               <div className="mt-2 flex max-w-[560px] flex-wrap justify-center gap-2">
                                 {(SUGGESTIONS[active.id] ?? []).map((s) => (
                                   <button
@@ -1252,51 +1270,51 @@ export default function Home() {
                           busy={busy}
                         />
                       )}
-                  </div>
-                  {mainTab === "trace" && (
-                    <div className="flex min-h-0 flex-1 flex-col">
-                      <TracePanel
-                        sessionId={sessionId}
-                        live={traceTick}
-                        onBack={() => setMainTab("chat")}
-                      />
                     </div>
-                  )}
-                  {activeProject &&
-                    mainTab !== "chat" &&
-                    mainTab !== "trace" && (
+                    {mainTab === "trace" && (
                       <div className="flex min-h-0 flex-1 flex-col">
-                        <ProjectTabs
-                          project={activeProject}
-                          activeSessionId={sessionId}
-                          personas={personas}
-                          activeTab={mainTab}
-                          rev={taskRev}
-                          live={{
-                            parentPersonaId: active.id,
-                            parentState: personaState,
-                            delegations: items
-                              .filter((it) => it.kind === "delegation")
-                              .map(
-                                (it): LiveDelegation => ({
-                                  personaId: it.personaId ?? "yui-scholar",
-                                  childSessionId: it.childSessionId ?? "",
-                                  goal: it.goal ?? "",
-                                  childState: it.childState,
-                                  summary: it.text,
-                                }),
-                              ),
-                          }}
+                        <TracePanel
+                          sessionId={sessionId}
+                          live={traceTick}
+                          onBack={() => setMainTab("chat")}
                         />
                       </div>
                     )}
+                    {activeProject &&
+                      mainTab !== "chat" &&
+                      mainTab !== "trace" && (
+                        <div className="flex min-h-0 flex-1 flex-col">
+                          <ProjectTabs
+                            project={activeProject}
+                            activeSessionId={sessionId}
+                            personas={personas}
+                            activeTab={mainTab}
+                            rev={taskRev}
+                            live={{
+                              parentPersonaId: active.id,
+                              parentState: personaState,
+                              delegations: items
+                                .filter((it) => it.kind === "delegation")
+                                .map(
+                                  (it): LiveDelegation => ({
+                                    personaId: it.personaId ?? "yui-scholar",
+                                    childSessionId: it.childSessionId ?? "",
+                                    goal: it.goal ?? "",
+                                    childState: it.childState,
+                                    summary: it.text,
+                                  }),
+                                ),
+                            }}
+                          />
+                        </div>
+                      )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
-        )}
-      </main>
-    </div>
+              )}
+            </>
+          )}
+        </main>
+      </div>
     </AuthGate>
   );
 }
