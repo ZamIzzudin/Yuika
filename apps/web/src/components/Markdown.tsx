@@ -1,7 +1,9 @@
 // Markdown minimal & aman untuk bubble chat (dev-10 UX): tanpa raw HTML,
-// di-parse jadi React nodes. Cakupan: fenced code ```…```, heading #–###,
-// list -/* dan 1., blockquote >, inline `code`, **bold**, *italic*,
-// ~~strike~~, [teks](url), autolink http(s). Sisanya teks polos.
+// di-parse jadi React nodes. Cakupan: fenced code ```…```, heading #–####,
+// list -/* dan 1. (termasuk task list - [ ]/- [x]), blockquote >, inline
+// `code`, **bold**, *italic*, ~~strike~~, [teks](url), autolink http(s),
+// hr, dan TABEL GFM | a | b | (fix 2026-11: riset Scholar mengeluarkan tabel —
+// sebelumnya dirender mentah sebagai baris pipe). Sisanya teks polos.
 // DS-1: gaya via utility Tailwind semantik (docs/DESIGN-SYSTEM.md) — komponen
 // ini self-contained, tidak lagi bergantung pada kelas `.md` di globals.css.
 import React from "react";
@@ -58,11 +60,67 @@ function inline(text: string, keyPrefix = ""): Inline[] {
   return out;
 }
 
+// ── Tabel GFM ────────────────────────────────────────────────────────────────
+
+/** Baris delimiter `| :--- | ---: |` — WAJIB mengandung `|` (hindari salah tangkap
+ *  hr `---` / underline setext setelah paragraf ber-pipe). */
+function isDelimRow(s: string): boolean {
+  return s.includes("|") && s.includes("-") && /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(s);
+}
+
+/** Split baris tabel pada `|` yang tidak di-escape (`\|`). Pipe tepi opsional dibuang. */
+function splitRow(s: string): string[] {
+  const t = s.trim();
+  const cells: string[] = [];
+  let cur = "";
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i]!;
+    if (ch === "\\" && t[i + 1] === "|") {
+      cur += "|";
+      i++;
+    } else if (ch === "|") {
+      cells.push(cur.trim());
+      cur = "";
+    } else cur += ch;
+  }
+  cells.push(cur.trim());
+  if (cells.length && cells[0] === "") cells.shift();
+  if (cells.length && cells[cells.length - 1] === "") cells.pop();
+  return cells;
+}
+
+function alignOf(d: string | undefined): "left" | "center" | "right" {
+  if (!d) return "left";
+  const c = d.startsWith(":") && d.endsWith(":") && d.length > 1;
+  if (c) return "center";
+  if (d.endsWith(":")) return "right";
+  return "left";
+}
+
+function TaskBox({ done }: { done: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 16 16"
+      aria-hidden
+      className={`mb-px mr-1.5 inline-block shrink-0 ${done ? "text-accent" : "text-dim"}`}
+      fill="none"
+    >
+      <rect x="1.25" y="1.25" width="13.5" height="13.5" rx="3" stroke="currentColor" strokeWidth="1.5" />
+      {done && (
+        <path d="M4.5 8.5l2.5 2.5 4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
+  );
+}
+
 export function Markdown({ text }: { text: string }) {
   const lines = text.split(/\r?\n/);
   const blocks: React.ReactNode[] = [];
   let para: string[] = [];
-  let list: { ordered: boolean; items: string[] } | null = null;
+  type Li = { t: string; task: 0 | 1 | 2 }; // 0=bukan task, 1=open, 2=done
+  let list: { ordered: boolean; items: Li[] } | null = null;
   let code: { lang: string; lines: string[] } | null = null;
   let quote: string[] = [];
   let bi = 0;
@@ -85,16 +143,18 @@ export function Markdown({ text }: { text: string }) {
         L.ordered ? (
           <ol key={key()} className="ml-5 list-decimal">
             {L.items.map((it, j) => (
-              <li key={j} className="my-0.5">
-                {inline(it, `${j}`)}
+              <li key={j} className={`my-0.5 ${it.task === 2 ? "text-dim" : ""}`}>
+                {it.task !== 0 && <TaskBox done={it.task === 2} />}
+                {inline(it.t, `${j}`)}
               </li>
             ))}
           </ol>
         ) : (
           <ul key={key()} className="ml-5 list-disc">
             {L.items.map((it, j) => (
-              <li key={j} className="my-0.5">
-                {inline(it, `${j}`)}
+              <li key={j} className={`my-0.5 ${it.task === 2 ? "text-dim" : ""}`}>
+                {it.task !== 0 && <TaskBox done={it.task === 2} />}
+                {inline(it.t, `${j}`)}
               </li>
             ))}
           </ul>
@@ -119,7 +179,8 @@ export function Markdown({ text }: { text: string }) {
     flushQuote();
   };
 
-  for (const raw of lines) {
+  for (let li = 0; li < lines.length; li++) {
+    const raw = lines[li]!;
     const line = raw.replace(/\s+$/, "");
     // fenced code
     const fence = /^\s*```(\w*)\s*$/.exec(line);
@@ -143,6 +204,48 @@ export function Markdown({ text }: { text: string }) {
       flushAll();
       continue;
     }
+    // ── tabel GFM: baris ber-| diikuti baris delimiter `|---|---|` ──
+    if (line.includes("|") && li + 1 < lines.length && isDelimRow(lines[li + 1]!)) {
+      flushAll();
+      const head = splitRow(line);
+      const aligns = splitRow(lines[li + 1]!).map(alignOf);
+      li += 2;
+      const rows: string[][] = [];
+      while (li < lines.length && lines[li]!.includes("|") && lines[li]!.trim()) {
+        rows.push(splitRow(lines[li]!));
+        li++;
+      }
+      li--; // kompensasi increment loop
+      const alignCls = (a: "left" | "center" | "right") =>
+        a === "center" ? "text-center" : a === "right" ? "text-right" : "text-left";
+      blocks.push(
+        <div key={key()} className="my-1 max-w-full overflow-x-auto">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-inset">
+                {head.map((c, j) => (
+                  <th key={j} className={`border-b border-line px-2 py-1.5 font-semibold text-primary ${alignCls(aligns[j] ?? "left")}`}>
+                    {inline(c, `h${j}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i2) => (
+                <tr key={i2} className="border-b border-line/60 last:border-0">
+                  {head.map((_, j) => (
+                    <td key={j} className={`px-2 py-1.5 align-top ${alignCls(aligns[j] ?? "left")}`}>
+                      {inline(r[j] ?? "", `c${i2}-${j}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
     const h = /^(#{1,4})\s+(.*)$/.exec(line);
     if (h) {
       flushAll();
@@ -161,17 +264,21 @@ export function Markdown({ text }: { text: string }) {
       quote.push(q[1]!);
       continue;
     }
+    // task list `- [ ]` / `- [x]` sebelum list biasa
+    const tl = /^\s*[-*+]\s+\[([ xX])\]\s+(.*)$/.exec(line);
     const ul = /^\s*[-*+]\s+(.*)$/.exec(line);
     const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
-    if (ul || ol) {
+    if (tl || ul || ol) {
       flushPara();
       flushQuote();
-      const ordered = !!ol;
+      const ordered = !!ol && !tl && !ul;
       if (!list || list.ordered !== ordered) {
         flushList();
         list = { ordered, items: [] };
       }
-      list.items.push((ul ?? ol)![1]!);
+      if (tl)
+        list.items.push({ t: tl[2]!, task: tl[1] === " " ? 1 : 2 });
+      else list.items.push({ t: (ul ?? ol)![1]!, task: 0 });
       continue;
     }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) {

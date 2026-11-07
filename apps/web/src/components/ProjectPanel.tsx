@@ -67,7 +67,7 @@ export function ProjectPanel({
     if (deleting) return;
     setDeleting(p.id);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         apiUrl(`/api/projects/${encodeURIComponent(p.id)}`),
         {
           method: "DELETE",

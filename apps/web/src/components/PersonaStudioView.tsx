@@ -208,7 +208,7 @@ export function PersonaStudioView({
     setUploading(slug);
     try {
       for (const f of Array.from(files)) {
-        const r = await fetch(
+        const r = await authFetch(
           apiUrl(
             `/api/dungeons/${encodeURIComponent(slug)}/materials?name=${encodeURIComponent(f.name)}`,
           ),
@@ -231,7 +231,7 @@ export function PersonaStudioView({
 
   async function remove(missionId: string) {
     try {
-      const r = await fetch(
+      const r = await authFetch(
         apiUrl(`/api/dungeons/${encodeURIComponent(missionId)}`),
         { method: "DELETE" },
       );

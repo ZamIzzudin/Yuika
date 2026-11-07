@@ -482,7 +482,7 @@ export default function Home() {
       // tanpa efek streaming ulang) — baru buka SSE live dari seq terakhir.
       if (lastEventId.current === 0) {
         try {
-          const r = await fetch(
+          const r = await authFetch(
             apiUrl(`/api/sessions/${sessionId}/stream?since=0&snapshot=1`),
           );
           if (r.ok) {
@@ -547,7 +547,7 @@ export default function Home() {
     const resync = async () => {
       if (!sessionId) return;
       try {
-        const r = await fetch(
+        const r = await authFetch(
           apiUrl(
             `/api/sessions/${sessionId}/stream?since=${lastEventId.current}&snapshot=1`,
           ),
