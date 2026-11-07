@@ -725,6 +725,7 @@
   (5) TAB TERMINAL hidden kecuali Hiro/Neo ter-assign (gating live via event yui:roster-changed dari Config Roster & assign/unassign playground).
   (6) Config → menu PROJECT: edit nama+deskripsi (PATCH) + toast + refresh sidebar/header.
   Tests: roster-assign 2/2 (ensureFullRoster dipanggil startRun; onChildSpawn dg projectId) · turbo 5/5 · typecheck 6/6 · e2e 15/15 (helper openProjectWithLead; smoke/terminal/workbench/workflow/orin ke alur baru; timeout 240s orin-NaN & FLOW-gate anti-flake paralel).
+- [x] **D27 — RENAME PERSONA + playground tenang** ✅: display name persona diganti (ID teknis yui-* TIDAK berubah): Sherlock Yui→**Watson Yui** · Einstein Yui→**Pierre Yui** · Liebert Yui→**Rommel Yui** (names.ts alias + persona.yaml + PERSONA.md + map web TaskDrawer/TeamTree + literal test + sebutan proses QA). Playground: intensitas lompat dikurangi (jeda think 1.8-4.2s, hop-chain p=0.34 max 2 lompat, hop senang p=0.12, greet tiap 7-15s) — tetap hidup tapi tidak hiperaktif. Turbo 5/5 · typecheck 6/6 · e2e 15/15.
 - [ ] **MENYUSUL (C)**: SCR-5 DevTools embed · P2-DUN-x dungeon QA
 
 ### Fix riset 2026-11-07 (laporan user project p_861f2edc — turn Scholar menggantung)

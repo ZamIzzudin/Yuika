@@ -84,10 +84,10 @@ describe("USER.md stub (W5-C2)", () => {
     // user mengedit isi — harus terjaga
     fs.appendFileSync(userMdPath(dir), "- preferensi manual user: suka bullet point.\n", "utf-8");
 
-    appendUserPreferenceNote(dir, "Einstein Yui");
+    appendUserPreferenceNote(dir, "Pierre Yui");
     const second = fs.readFileSync(userMdPath(dir), "utf-8");
     expect(second).toContain("preferensi manual user");
-    expect(second).toContain("Einstein Yui");
+    expect(second).toContain("Pierre Yui");
     expect(second.match(/\(preview\)/g)).toHaveLength(2); // +1 per sesi
   });
 });

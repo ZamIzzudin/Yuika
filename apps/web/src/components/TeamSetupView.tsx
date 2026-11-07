@@ -162,13 +162,14 @@ export function TeamSetupView({
       const r = Math.random();
       const dw = m.x < h ? 1 : m.x > h * 4 ? -1 : Math.random() < 0.5 ? 1 : -1;
       m.tm = 0;
-      m.nt = rnd(0.9, 2.4); // jeda lebih pendek → lebih hidup
-      if (r < 0.58) {
-        m.hops = Math.floor(rnd(0, 3));
-        hop(m, dw * rnd(0.25, 0.55) * h, rnd(0.85, 1.1));
-      } else if (r < 0.76) {
-        hop(m, 0, rnd(0.5, 0.75)); // hop senang di tempat
-      } else if (r < 0.9) {
+      // jeda lebih panjang + lompatan lebih jarang → tenang, tidak hiperaktif
+      m.nt = rnd(1.8, 4.2);
+      if (r < 0.34) {
+        m.hops = Math.floor(rnd(0, 2));
+        hop(m, dw * rnd(0.25, 0.5) * h, rnd(0.85, 1.05));
+      } else if (r < 0.46) {
+        hop(m, 0, rnd(0.5, 0.65)); // hop senang di tempat (jarang)
+      } else if (r < 0.62) {
         m.hum = rnd(1.8, 2.8); // dengung: sway pelan
       }
       // sisanya: diam santai (nt di atas)
@@ -176,7 +177,7 @@ export function TeamSetupView({
 
     /** INTERAKSI ANTAR MASKOT: dua yang idle saling melompat mendekat lalu
      *  senang bersama (hop ♥ ala updInter 'greet' di referensi). */
-    let greetT = 2.2;
+    let greetT = 5;
     let greetAt = 0;
     let greetPair: [M, M] | null = null;
 
@@ -202,7 +203,7 @@ export function TeamSetupView({
       const dir = Math.sign(dx) || 1;
       const each = dist / 2 - 14;
       hop(a, dir * each, 1);
-      hop((b as M), -dir * each, 1);
+      hop(b as M, -dir * each, 1);
       greetPair = [a, b as M];
       greetAt = T + 1.5; // setelah saling mendarat dekat → lompat senang
     }
@@ -267,7 +268,8 @@ export function TeamSetupView({
           m.x = hi;
           m.vx = -Math.abs(m.vx) * 0.5;
         }
-        if ((grounded || m.support) && m.mode !== "air") m.vx *= Math.exp(-9 * dt);
+        if ((grounded || m.support) && m.mode !== "air")
+          m.vx *= Math.exp(-9 * dt);
         if (m.mode === "crouch") {
           if (m.tm >= 0.18) {
             const vy = -(1.35 + rnd(0, 0.25)) * h * m.hpow;
@@ -387,7 +389,7 @@ export function TeamSetupView({
         // interaksi greet berkala antar maskot
         greetT -= dt;
         if (greetT <= 0) {
-          greetT = rnd(3.5, 8);
+          greetT = rnd(7, 15);
           tryGreet(list, h);
         }
         if (greetPair && T >= greetAt) {
@@ -640,7 +642,7 @@ export function TeamSetupView({
 
       {/* ── Start session: dropdown persona + tombol (≥1 assigned) ───────── */}
       <div
-        className="mt-3 flex min-h-[40px] items-center gap-2"
+        className="mt-3 flex min-h-[40px] items-center gap-5"
         aria-live="polite"
       >
         {assignedPersonas.length > 0 && startLead ? (

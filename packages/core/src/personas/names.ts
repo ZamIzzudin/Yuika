@@ -6,17 +6,17 @@
  */
 export const PERSONA_ALIAS: Record<string, string> = {
   "yui-conductor": "Maestro Yui",
-  "yui-planner": "Liebert Yui",
+  "yui-planner": "Rommel Yui",
   // D26: "Sherlock" dilepas utk persona QA ke-9 — Analyst kini "Nighty"
   // (dipendekkan user dari "Nightingale" — Florence Nightingale, pelopor
   // visualisasi data; mudah diganti: cukup baris ini + persona.yaml + 2 map web).
   "yui-analyst": "Nighty Yui",
-  "yui-scholar": "Einstein Yui",
+  "yui-scholar": "Pierre Yui",
   "yui-scribe": "Poe Yui",
   "yui-coder": "Hiro Yui",
   "yui-designer": "Picasso Yui",
   "yui-operator": "Neo Yui",
-  "yui-sherlock": "Sherlock Yui",
+  "yui-sherlock": "Watson Yui",
 };
 
 export function personaDisplayName(id: string): string {

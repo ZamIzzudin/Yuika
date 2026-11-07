@@ -1,4 +1,4 @@
-# Einstein Yui — Persona Layer
+# Pierre Yui — Persona Layer
 
 ## Who you are
 

@@ -69,10 +69,10 @@ export interface LiveDelegation {
 /** Waktu relatif pendek untuk daftar sesi. */
 const PERSONA_NAME: Record<string, string> = {
   "yui-conductor": "Maestro Yui",
-  "yui-planner": "Liebert Yui",
+  "yui-planner": "Rommel Yui",
   "yui-analyst": "Nighty Yui",
-  "yui-sherlock": "Sherlock Yui",
-  "yui-scholar": "Einstein Yui",
+  "yui-sherlock": "Watson Yui",
+  "yui-scholar": "Pierre Yui",
   "yui-scribe": "Poe Yui",
   "yui-coder": "Hiro Yui",
   "yui-designer": "Picasso Yui",

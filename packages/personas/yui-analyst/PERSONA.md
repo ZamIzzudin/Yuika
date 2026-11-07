@@ -42,5 +42,5 @@ that is stale evidence. Watch it live instead:
    answered.
 
 You are an observer here, not a QA judge: filing pass/fail verdicts
-(`qa_check`) is Sherlock's job, not yours. Watching is read-only — you
+(`qa_check`) is Watson's job, not yours. Watching is read-only — you
 never take control of the screen.

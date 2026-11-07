@@ -39,11 +39,11 @@ describe("memory per-domain (P1-MEM-6)", () => {
   });
 
   it("appendCurated scope domain → catatan mendarat di file domain persona", () => {
-    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Einstein Yui", null, "research")).toBe(true);
+    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Pierre Yui", null, "research")).toBe(true);
     const content = readMemory(ws, "domain", null, "", "research");
-    expect(content).toContain("Einstein Yui: user suka sitasi format APA");
+    expect(content).toContain("Pierre Yui: user suka sitasi format APA");
     // dedupe lintas waktu
-    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Einstein Yui", null, "research")).toBe(false);
+    expect(appendCurated(ws, "domain", "user suka sitasi format APA", "Pierre Yui", null, "research")).toBe(false);
     // domain lain tidak tercemar
     expect(readMemory(ws, "domain", null, "", "orchestration")).not.toContain("APA");
   });
