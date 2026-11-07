@@ -208,15 +208,21 @@ export function OrinPortrait({
         lpy = e.clientY;
         mouseMoved(performance.now());
       }
+      // FIX NaN translate: portret di kolom tersembunyi (satu tab = satu
+      // halaman) punya rect 0 → pembagian 0/0 = NaN saat clientX/clientY 0,
+      // dan NaN menempel permanen di smx/smy (lerp). Rect degenerate →
+      // abaikan (tatapan menyimpan nilai terakhir yang valid).
       const r = svg.getBoundingClientRect();
-      mx = Math.max(
-        -1,
-        Math.min(1, (e.clientX - r.left - r.width / 2) / (r.width * 0.7)),
-      );
-      my = Math.max(
-        -1,
-        Math.min(1, (e.clientY - r.top - r.height / 2) / (r.height * 0.7)),
-      );
+      if (r.width > 1 && r.height > 1) {
+        mx = Math.max(
+          -1,
+          Math.min(1, (e.clientX - r.left - r.width / 2) / (r.width * 0.7)),
+        );
+        my = Math.max(
+          -1,
+          Math.min(1, (e.clientY - r.top - r.height / 2) / (r.height * 0.7)),
+        );
+      }
     };
     const onDown = () => wakeUp(performance.now());
     window.addEventListener("pointermove", onPointer);
@@ -224,6 +230,9 @@ export function OrinPortrait({
     window.addEventListener("keydown", onDown);
 
     const frame = (now: number) => {
+      // FIX NaN translate (lapis 2): nilai apapun yang tak hingga → 0 —
+      // transform SVG tak pernah menerima NaN (spam console user 2026-11).
+      const fin = (v: number) => (Number.isFinite(v) ? v : 0);
       const dt = Math.min(0.033, (now - last) / 1e3);
       last = now;
       const t = (now - t0) / 1e3,
@@ -370,8 +379,9 @@ export function OrinPortrait({
         ov[q as keyof typeof ov] += (A[q as keyof typeof ov] - ov[q as keyof typeof ov]) * kk;
 
       // tatapan: parallax cursor dihaluskan (v8: smx/smy → tak menyentak)
-      smx += (mx - smx) * (1 - Math.exp(-dt * 5.5));
-      smy += (my - smy) * (1 - Math.exp(-dt * 5.5));
+      // (fin: NaN tak pernah menempel di state smoothing)
+      smx = fin(smx + (mx - smx) * (1 - Math.exp(-dt * 5.5)));
+      smy = fin(smy + (my - smy) * (1 - Math.exp(-dt * 5.5)));
       let gx = cur.gx,
         gy = cur.gy;
       if (name === "thinking") {
@@ -400,13 +410,13 @@ export function OrinPortrait({
         (name === "speaking" ? Math.sin(t * 4.6) * L * 1.65 : 0);
       bodyRef.current?.setAttribute(
         "transform",
-        `translate(200 ${200 + by}) rotate(${rot}) scale(${sx} ${sy})`,
+        `translate(200 ${fin(200 + by)}) rotate(${fin(rot)}) scale(${fin(sx)} ${fin(sy)})`,
       );
 
       // wajah: tatapan parallax + offset per bentuk
       faceRef.current?.setAttribute(
         "transform",
-        `translate(${gx * 34 * sc.gr} ${gy * 26 * sc.gr + cur.ey + ov.ey + sc.fy})`,
+        `translate(${fin(gx * 34 * sc.gr)} ${fin(gy * 26 * sc.gr + cur.ey + ov.ey + sc.fy)})`,
       );
 
       // mata kapsul ↔ arc "^" (happy/giggle) cross-fade + kilau v8
@@ -428,13 +438,13 @@ export function OrinPortrait({
         if (!g || !c || !a) continue;
         g.setAttribute(
           "transform",
-          `translate(${d * (cur.gap + ov.gap) * sc.gs} 0) rotate(${d * (cur.tilt + ov.tilt)})`,
+          `translate(${fin(d * (cur.gap + ov.gap) * sc.gs)} 0) rotate(${fin(d * (cur.tilt + ov.tilt))})`,
         );
-        c.setAttribute("x", String(-w / 2));
-        c.setAttribute("y", String(-h / 2));
-        c.setAttribute("width", String(w));
-        c.setAttribute("height", String(h));
-        c.setAttribute("rx", String(w / 2));
+        c.setAttribute("x", String(fin(-w / 2)));
+        c.setAttribute("y", String(fin(-h / 2)));
+        c.setAttribute("width", String(fin(w)));
+        c.setAttribute("height", String(fin(h)));
+        c.setAttribute("rx", String(fin(w / 2)));
         c.style.opacity = String(1 - hp);
         const aw = w * 0.88;
         a.setAttribute("stroke-width", String(w * 0.82));
