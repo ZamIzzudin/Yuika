@@ -305,6 +305,20 @@ export function TeamTree({
   const leadState = (
     rootState === "thinking" || rootState === "working" ? "working" : "idle"
   ) as "working" | "idle";
+  // FIX duplikasi tree (user 2026-11-08): lead run = sesi chat → root run &
+  // root chat merender Branch utk SESI YANG SAMA → dua tree kembar. Run
+  // yang lead-nya = sesi root digabung ke kartu root (subtitle Workflow ·,
+  // state working); hanya run dgn lead sesi LAIN jadi root terpisah.
+  const mergedRuns = runs.filter(
+    (r) => r.leadSessionId && r.leadSessionId === rootSessionId,
+  );
+  const separateRuns = runs.filter(
+    (r) => !(r.leadSessionId && r.leadSessionId === rootSessionId),
+  );
+  const mergedRun = mergedRuns[0];
+  const mergedActive =
+    mergedRun &&
+    (mergedRun.status === "running" || mergedRun.status === "awaiting_gate");
   return (
     <div
       ref={canvasRef}
@@ -363,9 +377,10 @@ export function TeamTree({
       >
         <div className="mx-auto flex min-w-max justify-center px-6 pt-2 pb-4">
           <div className="flex flex-col items-center gap-14">
-            {/* ROOT 1..n: run workflow aktif (conductor lead) — fase implisit,
-                tampil sebagai tree of delegation biasa */}
-            {runs.map((r) => (
+            {/* ROOT terpisah: run workflow aktif yang lead-nya BUKAN sesi
+                root (run dari sesi lain / engine) — fase implisit, cabang step
+                milik sesi lead-nya masing-masing */}
+            {separateRuns.map((r) => (
               <div key={r.id} className="flex flex-col items-center">
                 <Card
                   personaId="yui-conductor"
@@ -378,13 +393,19 @@ export function TeamTree({
                 )}
               </div>
             ))}
-            {/* ROOT chat: sesi aktif */}
+            {/* ROOT chat: sesi aktif — run yang di-lead sesi ini DIGABUNG ke
+                kartu (satu tree, tanpa kembar) */}
             <div className="flex flex-col items-center">
             {rootPersonaId ? (
               <Card
                 personaId={rootPersonaId}
-                state={leadState}
-                subtitle="Lead This Session"
+                state={mergedActive ? "working" : leadState}
+                subtitle={
+                  mergedRun
+                    ? `Workflow · ${mergedRun.name} · ${mergedRun.status.replace("_", " ")}` +
+                      (mergedRuns.length > 1 ? ` (+${mergedRuns.length - 1})` : "")
+                    : "Lead This Session"
+                }
                 root
               />
             ) : (

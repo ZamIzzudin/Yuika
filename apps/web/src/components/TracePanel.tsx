@@ -134,7 +134,7 @@ export function TracePanel({
       ) : trace.turns.length === 0 ? (
         <p className={`${hint} flex items-center justify-center flex-col`}>
           <Barricade className="text-dim" size={48} />
-          <p className="text-lg text-dim">No Logs.</p>
+          <span className="text-lg text-dim">No Logs.</span>
         </p>
       ) : (
         <div className="flex flex-col gap-2 overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full">

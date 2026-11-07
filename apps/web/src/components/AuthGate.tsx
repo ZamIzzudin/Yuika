@@ -10,6 +10,106 @@ import type { AuthStatusT } from "@yuika/contracts";
 import { apiUrl, authFetch, clearAuthToken } from "@/lib/api";
 import { OrinPortrait } from "./OrinPortrait";
 
+/** Baris sign in/out portal — di FOOTER SIDEBAR (selalu terlihat di semua
+ *  state workspace/studio; bukan fixed overlay: versi fixed menutupi
+ *  tombol Send composer saat logged-out lalu tombol header saat dipindah
+ *  — FIX 2026-11-08). Selector e2e dipertahankan: aria-label "Sign in",
+ *  title "Sign out" + teks email. compact = ikon saja (sidebar kolaps). */
+export function AuthPill({ compact = false }: { compact?: boolean }) {
+  const [status, setStatus] = useState<AuthStatusT | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const r = await authFetch(apiUrl("/api/auth/me"));
+        const s = (await r.json()) as AuthStatusT;
+        if (alive) setStatus(s);
+      } catch {
+        /* offline — pill disembunyikan */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function logout() {
+    clearAuthToken();
+    await authFetch(apiUrl("/api/auth/logout"), { method: "POST" }).catch(
+      () => undefined,
+    );
+    // reload → AuthGate menilai ulang: ada user terdaftar → gerbang portal-only
+    window.location.reload();
+  }
+
+  /** CP-3 SSO: minta URL authorize lalu arahkan browser ke portal. */
+  async function startPortal() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await authFetch(apiUrl("/api/auth/portal/start"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          redirectUri: `${window.location.origin}/auth/callback`,
+        }),
+      });
+      const body = (await r.json().catch(() => ({}))) as {
+        authorizeUrl?: string;
+        error?: string;
+      };
+      if (!r.ok || !body.authorizeUrl)
+        throw new Error(body.error ?? "portal sign-in unavailable");
+      window.location.href = body.authorizeUrl;
+    } catch (err) {
+      const { toastErr } = await import("./ui/toast");
+      toastErr(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
+  }
+
+  if (!status) return null;
+  const user = status.user; // capture utk narrowing (signedIn flag tak mengecilkan tipe)
+  const signedIn = !!user;
+  const rowCls =
+    "flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary";
+  const iconCls = "flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent text-dim transition-colors ease-[var(--ease-inout-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary";
+  if (compact)
+    return (
+      <button
+        onClick={() => (signedIn ? void logout() : void startPortal())}
+        disabled={busy}
+        aria-label={signedIn ? `Sign out (${user?.email})` : "Sign in"}
+        title={signedIn ? "Sign out" : "Sign in via your Yuika Portal account"}
+        className={iconCls}
+      >
+        {signedIn ? <Key size={20} aria-hidden /> : <Globe size={20} aria-hidden />}
+      </button>
+    );
+  if (signedIn)
+    return (
+      <button
+        onClick={() => void logout()}
+        aria-label={`Sign out (${user?.email})`}
+        title="Sign out"
+        className={`${rowCls} truncate`}
+      >
+        <Key size={20} aria-hidden className="shrink-0" />
+        <span className="truncate">{user?.email}</span>
+      </button>
+    );
+  // Mode terbuka: bisa dipakai langsung tanpa login; portal sign-in opsional
+  // (user pertama menutup mode terbuka untuk orang lain).
+  return (
+    <button onClick={() => void startPortal()} disabled={busy} aria-label="Sign in" title="Sign in via your Yuika Portal account" className={rowCls}>
+      {busy ? <SignIn size={20} aria-hidden /> : <Globe size={20} aria-hidden />}{" "}
+      Sign in
+    </button>
+  );
+}
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatusT | null>(null);
   const [busy, setBusy] = useState(false);
@@ -34,14 +134,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       alive = false;
     };
   }, []);
-
-  async function logout() {
-    clearAuthToken();
-    await authFetch(apiUrl("/api/auth/logout"), { method: "POST" }).catch(
-      () => undefined,
-    );
-    setStatus((s) => (s ? { ...s, user: null, authRequired: true } : s));
-  }
 
   /** CP-3 SSO: minta URL authorize lalu arahkan browser ke portal
    *  (user tinggal Accept di portal — tanpa salin token). */
@@ -76,40 +168,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const gate = status.authRequired && !status.user;
 
   // Mode terbuka (belum ada user) / sudah valid → lepas children.
-  if (!gate) {
-    return (
-      <>
-        {children}
-        {status.user ? (
-          <button
-            onClick={() => void logout()}
-            aria-label={`Sign out (${status.user?.email})`}
-            title="Sign out"
-            className="fixed right-3 top-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
-          >
-            <Key size={12} aria-hidden /> {status.user.email}
-          </button>
-        ) : (
-          // Mode terbuka: bisa dipakai langsung tanpa login; portal sign-in
-          // opsional (user pertama menutup mode terbuka untuk orang lain).
-          <button
-            onClick={() => void startPortal()}
-            disabled={busy}
-            aria-label="Sign in"
-            title="Sign in via your Yuika Portal account"
-            className="fixed right-3 top-3 z-40 flex cursor-pointer items-center gap-1.5 rounded-pill border border-line bg-surface/80 px-3 py-1.5 text-caption text-dim shadow-[0_10px_30px_-18px_rgb(0_0_0/.5)] backdrop-blur-md transition-colors hover:text-primary"
-          >
-            {busy ? (
-              <SignIn size={12} aria-hidden />
-            ) : (
-              <Globe size={12} aria-hidden />
-            )}{" "}
-            Sign in
-          </button>
-        )}
-      </>
-    );
-  }
+  // (Pill sign in/out TIDAK lagi fixed overlay — versi fixed menutupi tombol
+  // UI (Send composer / tombol header); kini AuthPill inline di baris tab.)
+  if (!gate) return <>{children}</>;
 
   // Gerbang sign-in: portal-only.
   return (
