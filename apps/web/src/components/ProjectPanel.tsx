@@ -52,7 +52,10 @@ export function ProjectPanel({
       // belum mengirim field aditif (mis. deleted.workshop), jangan gagalkan
       // refresh UI hanya karena schema client lebih baru: pakai body apa adanya.
       const parsed = DeleteProjectResult.safeParse(body);
-      onDeleted(p.id, (parsed.success ? parsed.data : body) as DeleteProjectResult);
+      onDeleted(
+        p.id,
+        (parsed.success ? parsed.data : body) as DeleteProjectResult,
+      );
     } catch (e) {
       toastErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -70,9 +73,7 @@ export function ProjectPanel({
       <div className="flex flex-col gap-3">
         {!booted && <SkeletonRows rows={3} />}
         {booted && projects.length === 0 && (
-          <p className="px-2.5 text-caption text-dim">
-            No projects yet — create one from the home screen.
-          </p>
+          <p className="px-2.5 text-caption text-dim">No projects yet.</p>
         )}
         {projects.map((p) => (
           <div
@@ -85,7 +86,9 @@ export function ProjectPanel({
           >
             <button
               className={`flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-md2 px-2.5 py-2 text-left ${
-                p.id === activeId ? "text-primary" : "text-secondary hover:text-primary"
+                p.id === activeId
+                  ? "text-primary"
+                  : "text-secondary hover:text-primary"
               }`}
               onClick={() => onPick(p.id)}
             >

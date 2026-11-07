@@ -549,6 +549,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       persona.manifest.memory?.domain ?? null,
     );
     createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null, memExtra, skillBindingsFile()[persona.manifest.id]);
+    // D28: sesi baru = aktivitas project (kartu Home "… Ago")
+    if (projectId) projectStore.touchProject(projectId);
     // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru — learning-loop P1
     appendUserPreferenceNote(paths.workspacePath, persona.manifest.name);
     const info = listPersonaInfos().find((p) => p.id === personaId)!;
@@ -714,7 +716,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       if (!p) throw new Error(`persona tidak ditemukan: ${pid}`);
       next = [...next, { personaId: pid, role: p.manifest.expertise, phases: [], mcp: [] }];
     }
-    if (next !== cur) saveRoster(root, next);
+    if (next !== cur) {
+      saveRoster(root, next);
+      projectStore.touchProject(projectId); // D28: perubahan roster = aktivitas
+    }
     return loadRoster(root);
   }
 
@@ -1010,8 +1015,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       assignee?: string | null,
       parentId?: string | null,
       detail?: { description?: string | null; acceptance?: string[]; dependsOn?: string[]; estimate?: string | null; phase?: TaskItem["phase"] },
-    ) =>
-      projectStore.createTask({
+    ) => {
+      const t = projectStore.createTask({
         id: `t_${randomUUID().slice(0, 8)}`,
         projectId,
         title,
@@ -1022,7 +1027,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         dependsOn: detail?.dependsOn ?? [],
         estimate: detail?.estimate ?? null,
         phase: detail?.phase ?? null,
-      }),
+      });
+      projectStore.touchProject(projectId); // D28: task baru = aktivitas project
+      return t;
+    },
     updateProjectTask: (
       taskId: string,
       patch: {
@@ -1308,6 +1316,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         seen.add(r.personaId);
       }
       saveRoster(projectRoot(projectId), roster);
+      projectStore.touchProject(projectId); // D28
       return loadRoster(projectRoot(projectId));
     },
     // ---- Batch 16 (Team Assembly): assign persona ke roster (merge) ----

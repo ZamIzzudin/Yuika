@@ -22,6 +22,24 @@ describe("ProjectStore", () => {
     expect(a.rootPath).toBe("projects/p_a");
   });
 
+  it("D28: touchProject menandai aktivitas — updatedAt naik (kartu Home \u201c\u2026 Ago\u201d)", () => {
+    const store = makeStore();
+    store.createProject({ id: "p_a", name: "A", rootPath: "projects/p_a" });
+    const before = store.getProject("p_a")!.updatedAt;
+
+    // dorong updatedAt masa depan ala aktivitas — pastikan touch benar-benar menulis
+    store.updateProject("p_a", { description: "seed" });
+    const t0 = store.getProject("p_a")!.updatedAt;
+    store.touchProject("p_a");
+    expect(store.getProject("p_a")!.updatedAt).toBeGreaterThanOrEqual(t0);
+    expect(store.getProject("p_a")!.updatedAt).toBeGreaterThan(before - 1);
+
+    // task update ikut menyentuh project ( aktivitas )
+    store.createTask({ id: "t_1", projectId: "p_a", title: "T", assignee: null, parentId: null, description: null, acceptance: [], dependsOn: [], estimate: null, phase: null });
+    store.updateTask("t_1", { status: "done" });
+    expect(store.getProject("p_a")!.updatedAt).toBeGreaterThanOrEqual(t0);
+  });
+
   it("update parsial: nama berubah, field lain utuh; unknown id → undefined", () => {
     const store = makeStore();
     store.createProject({ id: "p_a", name: "Lama", description: "d", rootPath: "projects/p_a" });

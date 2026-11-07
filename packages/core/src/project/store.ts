@@ -142,6 +142,14 @@ export class ProjectStore {
     return { ...cur, ...next };
   }
 
+  /** D28 (kartu Home "… Ago"): tandai aktivitas terbaru project — sesi baru,
+   *  perubahan roster, task. Edit metadata sudah lewat updateProjectData. */
+  touchProject(id: string): void {
+    this.db
+      .prepare("UPDATE projects SET updated_at = ? WHERE id = ?")
+      .run(Date.now(), id);
+  }
+
   // ---- P2-FLOW-2: workflow runs (engine = satu-satunya penulis status) ----
 
   createWorkflowRun(input: { id: string; projectId: string; leadSessionId: string; workflow: unknown }): void {
@@ -306,6 +314,8 @@ export class ProjectStore {
         )
         .run(next.title, next.status, next.assignee, JSON.stringify(next.refs), next.description, JSON.stringify(next.acceptance), JSON.stringify(next.dependsOn), next.estimate, next.phase, next.updatedAt, id);
       const ev: Record<string, unknown> = { projectId: cur.projectId, taskId: id };
+      // D28: perubahan task = aktivitas project (kartu Home "… Ago")
+      this.touchProject(cur.projectId);
       if (patch.title !== undefined) ev.title = patch.title;
       if (patch.status !== undefined) ev.status = patch.status;
       if (patch.assignee !== undefined) ev.assignee = patch.assignee;
