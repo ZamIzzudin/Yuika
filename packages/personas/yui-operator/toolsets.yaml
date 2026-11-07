@@ -6,6 +6,7 @@ tools:
   - write_file
   - list_files
   - run_command
+  - run_in_workshop # P2-WKS-4: container persist (home hangat lintas sleep/wake)
   - terminal
   - "mcp__*"
   - todo_list

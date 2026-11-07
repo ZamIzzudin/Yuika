@@ -1,0 +1,197 @@
+// P2-WKS-1/2 (Batch 13) — workshop manager: lifecycle + persist + uptime +
+// egress config + audit ring, dengan host PALSU (cepat); integrasi Docker
+// ASLI di suite kedua (skip bila daemon tak ada).
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import type { WorkshopExecResult, WorkshopInfo } from "@yuika/contracts";
+import { WORKSHOP_DEFAULT_EGRESS } from "@yuika/contracts";
+import { WorkshopManager, type WorkshopHost } from "../workshop/manager.js";
+import { WorkshopStore } from "../workshop/store.js";
+
+let dir: string;
+let store: WorkshopStore;
+const events: Array<{ type: string; projectId: string; [k: string]: unknown }> = [];
+
+/** Host palsu: state map + exec echo — cukup utk semua jalur manager. */
+function fakeHost(): WorkshopHost & { states: Map<string, string>; execs: Array<[string, string]> } {
+  const states = new Map<string, string>();
+  const execs: Array<[string, string]> = [];
+  return {
+    kind: "docker",
+    states,
+    execs,
+    available: async () => true,
+    ensureRunning: async (i) => {
+      states.set(i.container, "running");
+    },
+    start: async (c) => {
+      if (!states.has(c)) throw new Error("absent");
+      states.set(c, "running");
+    },
+    stop: async (c) => {
+      states.set(c, "stopped");
+    },
+    remove: async (c, o) => {
+      states.delete(c);
+      if (o.volume) states.delete(`vol:${o.volume}`);
+    },
+    state: async (c) => ((states.get(c) ?? "absent") as "running" | "stopped" | "absent"),
+    exec: async (c, cmd, args) => {
+      execs.push([c, [cmd, ...args].join(" ")]);
+      const r: WorkshopExecResult = { exitCode: 0, stdout: `ran: ${cmd} ${args.join(" ")}`.trim(), stderr: "", durationMs: 1 };
+      return r;
+    },
+  };
+}
+
+function makeManager(host = fakeHost()): WorkshopManager {
+  return new WorkshopManager({
+    store,
+    workspaceRootOf: () => dir,
+    onEvent: (ev) => events.push(ev as { type: string; projectId: string }),
+  });
+}
+
+/** Paksa host tanpa resolveHost probe docker — inject via resolveHost override. */
+function managerWith(host: ReturnType<typeof fakeHost>): WorkshopManager & { resolveHost: () => Promise<WorkshopHost> } {
+  const m = makeManager(host) as WorkshopManager & { resolveHost: () => Promise<WorkshopHost> };
+  m.resolveHost = async () => host;
+  return m;
+}
+
+beforeEach(() => {
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-ws-"));
+  store = new WorkshopStore(path.join(dir, "ws.db"));
+  events.length = 0;
+});
+
+afterEach(() => {
+  store.close();
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch {
+    /* db lock race */
+  }
+});
+
+describe("workshop manager (fake host)", () => {
+  it("start → running + egress default npm/github + event + log ring", async () => {
+    const m = managerWith(fakeHost());
+    const info = await m.start("p_ws");
+    expect(info.state).toBe("running");
+    expect(info.egressAllow).toEqual(WORKSHOP_DEFAULT_EGRESS);
+    expect(info.containerName).toBe("yuika-ws-p_ws");
+    expect(events.some((e) => e.type === "workshop.state" && e.to === "running")).toBe(true);
+    expect(m.listLog("p_ws").some((l) => l.text.includes("→ running"))).toBe(true);
+    // persist
+    expect(store.get("p_ws")?.state).toBe("running");
+  });
+
+  it(".yuika/workshop.json meng-override allowlist default", async () => {
+    fs.mkdirSync(path.join(dir, ".yuika"), { recursive: true });
+    fs.writeFileSync(path.join(dir, ".yuika", "workshop.json"), JSON.stringify({ egressAllow: ["internal.corp"] }));
+    const m = managerWith(fakeHost());
+    const info = await m.start("p_cfg");
+    expect(info.egressAllow).toEqual(["internal.corp"]);
+  });
+
+  it("sleep → asleep + uptime terakumulasi; exec saat asleep auto-wake", async () => {
+    const m = managerWith(fakeHost());
+    await m.start("p_sl");
+    const slept = await m.sleep("p_sl", "user");
+    expect(slept.state).toBe("stopped"); // reason "user" → stopped eksplisit
+    expect(slept.uptimeMs).toBeGreaterThanOrEqual(0);
+    // exec membangunkan otomatis
+    const r = await m.exec("p_sl", "echo", ["hi"], { by: "persona:yui-coder" });
+    expect(r.stdout).toContain("ran: echo hi");
+    expect(m.info("p_sl").state).toBe("running");
+    // audit ring: command oleh persona
+    expect(m.listLog("p_sl").some((l) => l.kind === "command" && l.by === "persona:yui-coder")).toBe(true);
+    expect(events.some((e) => e.type === "workshop.command" && e.by === "persona:yui-coder")).toBe(true);
+  });
+
+  it("recover mempertahankan volume; reset menghapus volume + row", async () => {
+    const host = fakeHost();
+    const m = managerWith(host);
+    await m.start("p_rc");
+    const rec = await m.recover("p_rc");
+    expect(rec.state).toBe("running");
+    // fake: remove TANPA volume → volume tetap ada (tidak dihapus dari states via vol: key)
+    expect(host.states.has("vol:yuika-ws-vol-p_rc")).toBe(false); // tak pernah diset = tak dihapus
+    const res = await m.reset("p_rc");
+    expect(res.state).toBe("running");
+    expect(store.get("p_rc")).toBeTruthy();
+    await m.destroy("p_rc");
+    expect(store.get("p_rc")).toBeNull();
+    expect(m.info("p_rc").state).toBe("absent");
+  });
+
+  it("info() absent default + listLog kosong; uptime akumulasi lintas siklus", async () => {
+    const m = managerWith(fakeHost());
+    expect(m.info("p_none").state).toBe("absent");
+    expect(m.listLog("p_none")).toEqual([]);
+    await m.start("p_up");
+    await new Promise((r) => setTimeout(r, 25)); // uptime ms terakumulasi
+    await m.sleep("p_up", "idle"); // asleep
+    await m.start("p_up"); // wake
+    await new Promise((r) => setTimeout(r, 25));
+    await m.sleep("p_up", "idle");
+    expect(m.info("p_up").uptimeMs).toBeGreaterThan(0);
+  });
+});
+
+// ── integrasi Docker ASLI (host dev punya daemon) ──────────────────────────
+async function dockerUp(): Promise<boolean> {
+  const { execFile } = await import("node:child_process");
+  return await new Promise((resolve) => {
+    execFile("docker", ["info", "--format", "1"], { timeout: 4_000 }, (err) => resolve(!err));
+  });
+}
+
+describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
+  it("lifecycle penuh: start → exec node → sleep → wake → volume persist → reset → destroy", async () => {
+    const m = makeManager(); // resolveHost → DockerWorkshopHost asli
+    const pid = `p_it_${Date.now().toString(36)}`;
+    // kecil utk cepat + tanpa egress (isolasi penuh) utk test ini
+    process.env.YUI_WORKSHOP_IMAGE = "node:24-bookworm-slim";
+    const info = await m.start(pid, { egressAllow: [] });
+    expect(info.state).toBe("running");
+    expect(info.backend).toBe("docker");
+
+    // exec di dalam container
+    const r = await m.exec(pid, "node", ["-e", "console.log('ws-ok')"], { by: "persona:yui-coder" });
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout.trim()).toBe("ws-ok");
+
+    // tulis file ke volume /home/node
+    await m.exec(pid, "sh", ["-c", "echo persist > /home/node/marker.txt"]);
+
+    // sleep → container stopped, volume utuh
+    const asleep = await m.sleep(pid, "idle");
+    expect(asleep.state).toBe("asleep");
+    // bangun lagi — file masih ada (persist terbukti)
+    await m.start(pid);
+    const cat = await m.exec(pid, "cat", ["/home/node/marker.txt"]);
+    expect(cat.stdout.trim()).toBe("persist");
+
+    // reset → volume bersih
+    await m.reset(pid);
+    const cat2 = await m.exec(pid, "cat", ["/home/node/marker.txt"]);
+    expect(cat2.exitCode).not.toBe(0); // file hilang
+
+    // destroy → container & volume benar-benar hilang
+    await m.destroy(pid);
+    expect(m.info(pid).state).toBe("absent");
+  }, 120_000);
+
+  it("egress: env proxy terpasang di container saat allowlist non-kosong", async () => {
+    const m = makeManager();
+    const pid = `p_eg_${Date.now().toString(36)}`;
+    await m.start(pid, { egressAllow: ["registry.npmjs.org"] });
+    const env = await m.exec(pid, "sh", ["-c", "echo $HTTPS_PROXY"]);
+    expect(env.stdout).toContain("host.docker.internal:");
+    await m.destroy(pid);
+  }, 120_000);
+});

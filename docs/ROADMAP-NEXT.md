@@ -25,7 +25,7 @@
    relay portal; nonton dari device lain. Dep: relay-client ✅; butuh host relay.
 5. [x] **P2-PM-4/5 — dashboard progres terukur** (~4d) — RACI ringan per fase +
    burndown + health fase (blocker, revisi, hold approval). Dep: board FLOW ✅.
-6. [ ] **Batch 13 — Workshop persisten** (P2-WKS-1..6, ~10d) — container menetap
+6. [x] **Batch 13 — Workshop persisten** (P2-WKS-1..6, ~10d) — container menetap
    per project (volume, wake/sleep, egress allowlist, `run_in_workshop`, UI,
    metering). **Staging/VPS-first** (Docker absen di host dev); `WorkshopHost`
    interface + fallback lokal.

@@ -29,7 +29,16 @@ export function registerTerminalRoutes(app: FastifyInstance, getRt: () => YuiRun
     } catch {
       return reply.code(404).send({ error: "project tidak ditemukan" });
     }
-    const info = await ensureTerminalSession(ws);
+    // WKS-3: workshop hidup → terminal jalan DI DALAM container workshop
+    // (home persist); else perilaku lama (sandbox disposable / local).
+    let workshopContainer: string | undefined;
+    try {
+      const w = rt.workshop.info(projectId);
+      if (w.state === "running") workshopContainer = w.containerName;
+    } catch {
+      /* tanpa workshop → jalur lama */
+    }
+    const info = await ensureTerminalSession(ws, { workshopContainer });
     log.info({ projectId, terminalId: info.id, backend: info.backend }, "sesi terminal siap");
     return info;
   });

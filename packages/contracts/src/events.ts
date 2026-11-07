@@ -379,6 +379,24 @@ export const QACheckEvent = EventMeta.extend({
   note: z.string().max(500).optional(),
 });
 
+// ── P2-WKS (Batch 13): workshop persisten — transisi lifecycle + audit cmd ──
+export const WorkshopStateEvent = EventMeta.extend({
+  type: z.literal("workshop.state"),
+  projectId: z.string(),
+  from: z.string(),
+  to: z.string(),
+  reason: z.string().max(200),
+});
+
+export const WorkshopCommandEvent = EventMeta.extend({
+  type: z.literal("workshop.command"),
+  projectId: z.string(),
+  /** "user" | "persona:<id>" — persona-first audit. */
+  by: z.string().max(64),
+  cmd: z.string().max(2_000),
+  exitCode: z.number().int().optional(),
+});
+
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
   MessageDeltaEvent,
@@ -423,6 +441,8 @@ export const YuiEvent = z.discriminatedUnion("type", [
   LoginRequestedEvent,
   LoginResolvedEvent,
   QACheckEvent,
+  WorkshopStateEvent,
+  WorkshopCommandEvent,
 ]);
 export type YuiEvent = z.infer<typeof YuiEvent>;
 export type YuiEventType = YuiEvent["type"];

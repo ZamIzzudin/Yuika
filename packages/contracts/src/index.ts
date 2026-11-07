@@ -5,6 +5,7 @@ export * from "./remote.js";
 export * from "./rest.js";
 export * from "./persona.js";
 export * from "./project.js";
+export * from "./workshop.js";
 export * from "./mcp.js";
 export * from "./memory.js";
 export * from "./settings.js";

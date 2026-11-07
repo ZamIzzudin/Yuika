@@ -115,7 +115,15 @@ function fireExit(s: Session, code: number | null): void {
 
 /** Mulai (atau ambil) sesi terminal utk sebuah workspace — satu sesi aktif per
  * workspace (user & agent selalu bertemu di sesi yang sama). */
-export async function ensureSession(workspacePath: string): Promise<TerminalSessionInfo> {
+export interface EnsureSessionOptions {
+  /** Batch 13 (WKS-3): container workshop hidup → shell di dalamnya. */
+  workshopContainer?: string;
+}
+
+export async function ensureSession(
+  workspacePath: string,
+  opts: EnsureSessionOptions = {},
+): Promise<TerminalSessionInfo> {
   const resolved = path.resolve(workspacePath);
   const existing = [...sessions.values()].find((s) => s.info.workspacePath === resolved && !s.info.exited);
   if (existing) return existing.info;
@@ -137,6 +145,19 @@ export async function ensureSession(workspacePath: string): Promise<TerminalSess
     exitCbs: new Set(),
   };
   sessions.set(s.info.id, s);
+
+  if (useDocker && opts.workshopContainer) {
+    // WKS-3: shell DI DALAM container workshop — env egress melekat di container
+    // (dibuat saat start workshop), stdin/stdout pipe murni (tanpa -t).
+    const child = spawn("docker", ["exec", "-i", opts.workshopContainer, "sh"], { windowsHide: true });
+    s.proc = child;
+    child.stdout?.on("data", (d: Buffer) => push(s, d.toString("utf8")));
+    child.stderr?.on("data", (d: Buffer) => push(s, d.toString("utf8")));
+    child.on("close", (code) => fireExit(s, code));
+    child.on("error", (err) => push(s, `\r\n[terminal] workshop exec gagal: ${err.message}\r\n`));
+    log.info({ id: s.info.id, backend: "docker", workshop: opts.workshopContainer }, "sesi terminal (workshop) siap");
+    return s.info;
+  }
 
   if (useDocker) {
     // Egress npm registry supaya `npm install` di terminal bisa jalan

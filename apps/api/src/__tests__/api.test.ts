@@ -46,6 +46,14 @@ const fake = {
           updatedAt: 1,
         }
       : null,
+  workshop: {
+    info: (id: string) => ({
+      projectId: id, state: "absent", containerName: `yuika-ws-${id}`, volumeName: `yuika-ws-vol-${id}`,
+      backend: "docker", createdAt: 0, lastWakeAt: null, lastSleepAt: null, uptimeMs: 0,
+      egressAllow: [], resourceCap: { memory: "2g", cpus: "2", pidsLimit: 512 },
+    }),
+    listLog: () => [],
+  },
   writeProjectUpload: async (_id: string, rel: string, _buf: Buffer) => rel,
   listProjectTasks: () => [
     { id: "t_a", projectId: "p_ok", title: "A", status: "todo", assignee: "yui-coder", refs: [], description: null, acceptance: ["done a"], dependsOn: ["t_hantu"], estimate: "1d", phase: "planning", createdAt: 0, updatedAt: 0 },
@@ -86,6 +94,16 @@ describe("apps/api REST contract", () => {
     const nf = await app.inject({ method: "GET", url: "/api/projects/p_hantu/dashboard" });
     expect(nf.statusCode).toBe(404);
     expect(nf.json()).toMatchObject({ error: "project tidak ditemukan" });
+  });
+  it("GET /api/projects/:id/workshop(+log) — 200 shape (P2-WKS); project asing → 404", async () => {
+    const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/workshop" });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({ workshop: { projectId: "p_ok", state: "absent" } });
+    const l = await app.inject({ method: "GET", url: "/api/projects/p_ok/workshop/log" });
+    expect(l.statusCode).toBe(200);
+    expect((l.json() as { log: unknown[] }).log).toEqual([]);
+    const nf = await app.inject({ method: "GET", url: "/api/projects/p_hantu/workshop" });
+    expect(nf.statusCode).toBe(404);
   });
   it("POST /api/sessions — valid → 200 shape {sessionId,persona,projectId}", async () => {
     const r = await app.inject({ method: "POST", url: "/api/sessions", payload: { personaId: "yui-scholar" } });

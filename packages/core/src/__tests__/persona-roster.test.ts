@@ -40,6 +40,15 @@ describe("persona roster D9 (P1-PER-6)", () => {
     expect(operator.manifest.tools).toContain("mcp__*");
   });
 
+  it("WKS-4: coder + operator punya run_in_workshop (container persist); persona lain TIDAK", () => {
+    for (const id of ["yui-coder", "yui-operator"]) {
+      const p = personas.find((x) => x.manifest.id === id)!;
+      expect(p.manifest.tools).toContain("run_in_workshop");
+    }
+    const conductor = personas.find((p) => p.manifest.id === "yui-conductor")!;
+    expect(conductor.manifest.tools).not.toContain("run_in_workshop");
+  });
+
   it("SCR-6 amandemen user: Analyst bisa MENONTON live screen (bukan hanya rekonstruksi riwayat) — verdict tetap milik Sherlock", () => {
     const analyst = personas.find((p) => p.manifest.id === "yui-analyst")!;
     expect(analyst.manifest.tools).toContain("qa_watch");

@@ -29,6 +29,7 @@ import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
 import { WorkflowStepsCard } from "./WorkflowStepsCard";
 import { ProjectDashboardView } from "./ProjectDashboard";
+import { WorkshopPanel } from "./WorkshopPanel";
 import { TerminalFullTab } from "./TerminalFullTab";
 import { Button, Card, Chip, Select, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
@@ -282,7 +283,7 @@ export function ProjectTabs({
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
   // Tab Konfigurasi: menu internal (roster/memori/skill) — ala SettingsModal, non-modal.
-  const [cfgMenu, setCfgMenu] = useState<"roster" | "memory" | "skills" | "browser">("roster");
+  const [cfgMenu, setCfgMenu] = useState<"roster" | "memory" | "skills" | "browser" | "workshop">("roster");
   // Drawer "Log Task" (bekas tab Pohon) — dibuka dari tab Task.
   const [treeOpen, setTreeOpen] = useState(false);
   // Jam live untuk durasi "sudah berjalan Xm" (tab Pohon & Tim)
@@ -480,6 +481,7 @@ export function ProjectTabs({
                 ["memory", "Memory"],
                 ["skills", "Skill"],
                 ["browser", "Browser"],
+                ["workshop", "Workshop"],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -679,6 +681,10 @@ export function ProjectTabs({
         {loaded && cfgMenu === "skills" && <SkillsTab />}
         {loaded && cfgMenu === "browser" && (
           <BrowserPolicySection projectId={project.id} />
+        )}
+        {/* Batch 13 (P2-WKS-6): workshop persisten — status/lifecycle/log/egress */}
+        {loaded && cfgMenu === "workshop" && (
+          <WorkshopPanel projectId={project.id} rev={rev} />
         )}
           </div>
         </div>

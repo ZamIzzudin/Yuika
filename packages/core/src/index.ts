@@ -54,6 +54,7 @@ export { registerVaultTools } from "./tools/vault-tools.js";
 // P2-STU-2: terminal manager — sesi shared user (SSE api) & agent (tool).
 export {
   ensureSession as ensureTerminalSession,
+  type EnsureSessionOptions,
   writeInput as writeTerminalInput,
   subscribe as subscribeTerminal,
   listSessions as listTerminalSessions,
@@ -67,6 +68,10 @@ export {
   type TerminalSessionInfo,
 } from "./terminal/manager.js";
 export { ProjectStore } from "./project/store.js";
+// Batch 13 (P2-WKS): workshop persisten per project.
+export { WorkshopManager, DockerWorkshopHost, LocalWorkshopHost, type WorkshopHost } from "./workshop/manager.js";
+export { WorkshopStore } from "./workshop/store.js";
+export { registerWorkshopTool } from "./tools/workshop-tool.js";
 export { WorkflowEngine, type WorkflowEngineDeps, type StartRunOptions, type StartRunResult } from "./workflow/engine.js";
 
 // Batch 14a (P2-SCR, D25): shared live screen — lease fence (rokazo), CDP raw

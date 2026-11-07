@@ -20,6 +20,7 @@ import { registerSkillRoutes } from "./routes/skills.js";
 import { registerUsageRoutes } from "./routes/usage.js";
 import { registerPortalRoutes } from "./routes/portal.js";
 import { registerWorkflowRoutes } from "./routes/workflows.js";
+import { registerWorkshopRoutes } from "./routes/workshop.js";
 import { registerBrowserRoutes } from "./routes/browser.js";
 import { registerActivityRoutes } from "./routes/activity.js";
 import { registerLoginRoutes } from "./routes/login.js";
@@ -86,6 +87,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   registerLoginRoutes(app, getRt); // VLT-4: fill_login card resolve
   registerPortalRoutes(app, getRt);
   registerWorkflowRoutes(app, getRt); // P2-FLOW: runs + gate + template
+  registerWorkshopRoutes(app, getRt); // Batch 13 (P2-WKS): workshop persisten
   registerBrowserRoutes(app, getRt); // P2-STU-4: tab Browser read-only
   return app;
 }

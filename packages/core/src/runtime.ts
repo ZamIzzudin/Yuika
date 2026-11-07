@@ -29,6 +29,7 @@ import { registerRunCommandTool } from "./tools/run-command.js";
 import { registerVaultTools } from "./tools/vault-tools.js";
 import { getVault } from "./vault/manager.js";
 import { registerTerminalTool } from "./tools/terminal-tool.js";
+import { registerWorkshopTool } from "./tools/workshop-tool.js";
 import { registerScreenTools } from "./tools/screen-tools.js";
 import { registerQaTools } from "./tools/qa-tools.js";
 import { closeAllScreens } from "./screen/manager.js";
@@ -45,6 +46,8 @@ import { loadPriceBook, saveModelPrice } from "./model-prices.js";
 import { AdmissionControl, usageMatrixWithCost } from "./budget.js";
 import { buildTrace, buildProjectActivity } from "./session/trace.js";
 import { buildProjectDashboard, scanProjectSignals } from "./project/dashboard.js";
+import { WorkshopManager } from "./workshop/manager.js";
+import { WorkshopStore } from "./workshop/store.js";
 import type { ModelPrice } from "@yuika/contracts";
 import { loadTrust, trustOf, upsertTrust } from "./mcp/trust.js";
 import { appendUserPreferenceNote } from "./memory/usermd.js";
@@ -141,6 +144,20 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     promote: (skillName) => setSkillStatus(paths.skillsDir, skillName, "ready"),
   });
   const projectStore = new ProjectStore(paths.dbPath);
+  // Batch 13 (P2-WKS): workshop persisten — registry SQLite lokal sendiri
+  // (koneksi kedua file sama, WAL) karena workshop = artefak host-local.
+  const workshopStore = new WorkshopStore(paths.dbPath);
+  const workshopManager = new WorkshopManager({
+    store: workshopStore,
+    workspaceRootOf: (pid) => {
+      try {
+        return projectRoot(pid);
+      } catch {
+        return paths.workspacePath; // project terhapus → fallback aman
+      }
+    },
+  });
+  workshopManager.startIdleWatchdog();
   // Settings: provider & model bisa di-swap panas (updateProviderSettings) —
   // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
   // sama dimutasi propertinya agar delegasi ikut provider baru.
@@ -191,6 +208,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const vault = getVault(path.dirname(paths.dbPath));
   registerVaultTools();
   registerTerminalTool(); // P2-STU-2: terminal shared user & agent
+  registerWorkshopTool({ manager: () => workshopManager }); // Batch 13 (P2-WKS-4)
   // Batch 14a (P2-SCR, D25): shared live screen — Chromium per project×persona,
   // screencast ke tab Browser (mode Live), input dua arah dgn lease fence.
   // dataDir dipakai untuk profil persist .yuika/browser/<project>/<persona>;
@@ -689,6 +707,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       mcpRetry.clear();
       // P2-STU-2: matikan sesi terminal (shell host / container sandbox).
       try { await terminal.closeAll(); } catch { /* shutdown best-effort */ }
+      // Batch 13 (P2-WKS): watchdog idle sleep + koneksi registry workshop.
+      try { await workshopManager.close(); } catch { /* shutdown best-effort */ }
+      try { workshopStore.close(); } catch { /* shutdown best-effort */ }
       // Batch 14a (P2-SCR-1): matikan semua Chromium shared-screen.
       try { await closeAllScreens(); } catch { /* shutdown best-effort */ }
       // Batch 12 (P2-VLT-2): sisa run-only dari turn yang mati dibersihkan;
@@ -1058,6 +1079,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getTrace: (sessionId: string) => buildTrace(store, usageLedger, sessionId),
     /** Batch 14a++: activity feed project-wide (Logs tab — semua sesi persona). */
     getProjectActivity: (projectId: string, limit?: number) => buildProjectActivity(store, projectId, limit),
+    /** Batch 13 (P2-WKS): workshop persisten per project — manager singleton. */
+    workshop: workshopManager,
     /** P2-PM-4/5: dashboard progres terukur — agregasi server (task/run/roster/
      *  sinyal QA+approval). null bila project tak ada. */
     getProjectDashboard: (projectId: string) => {
