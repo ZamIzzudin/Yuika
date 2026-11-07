@@ -207,7 +207,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // (vault.db + vault.key di direktori data). Nilai tak pernah lewat jalur model.
   const vault = getVault(path.dirname(paths.dbPath));
   registerVaultTools();
-  registerTerminalTool(); // P2-STU-2: terminal shared user & agent
+  registerTerminalTool({
+    // P2-STU-2: terminal shared user & agent — Batch 13: agent ikut masuk
+    // container workshop bila hidup + kerja di PROJECT workspace.
+    workshop: () => workshopManager,
+    projectRoot,
+  });
   registerWorkshopTool({ manager: () => workshopManager }); // Batch 13 (P2-WKS-4)
   // Batch 14a (P2-SCR, D25): shared live screen — Chromium per project×persona,
   // screencast ke tab Browser (mode Live), input dua arah dgn lease fence.

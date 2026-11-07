@@ -118,6 +118,12 @@ export function sandboxArgv(
     "--tmpfs", `/tmp:rw,size=${o.tmpfsSize},noexec`,
     "-v", `${mountPath(workspacePath)}:/workspace:${o.mountMode === "ro" ? "ro" : "rw"}`,
     "-w", "/workspace",
+    // HOME read-only-safe: rootfs RO (hanya /workspace & /tmp writable) —
+    // npm/node menulis cache+log ke HOME → arahkan ke tmpfs; tanpa ini
+    // `npm install/init` gagal EACCES diam-diam di rootfs RO.
+    "-e", "HOME=/tmp",
+    "-e", "npm_config_cache=/tmp/.npm",
+    "-e", "npm_config_update_notifier=false",
   ];
   if (opts.env) {
     for (const [k, v] of Object.entries(opts.env)) argv.push("-e", `${k}=${v}`);

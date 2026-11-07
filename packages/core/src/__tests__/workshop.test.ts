@@ -165,7 +165,12 @@ describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
     expect(r.exitCode).toBe(0);
     expect(r.stdout.trim()).toBe("ws-ok");
 
-    // tulis file ke volume /home/node
+    // bind workspace: exec TANPA cwd → /home/node/project = workspace host —
+    // file project = satu dunia dengan tab Files (fix test-user #3).
+    await m.exec(pid, "sh", ["-c", "echo bind > bindmark.txt"]);
+    expect(fs.readFileSync(path.join(dir, "bindmark.txt"), "utf8").trim()).toBe("bind");
+
+    // tulis file ke volume /home/node (cache hangat — di luar project bind)
     await m.exec(pid, "sh", ["-c", "echo persist > /home/node/marker.txt"]);
 
     // sleep → container stopped, volume utuh
@@ -176,10 +181,11 @@ describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
     const cat = await m.exec(pid, "cat", ["/home/node/marker.txt"]);
     expect(cat.stdout.trim()).toBe("persist");
 
-    // reset → volume bersih
+    // reset → volume bersih (cache); FILE PROJECT (bind) tetap utuh
     await m.reset(pid);
     const cat2 = await m.exec(pid, "cat", ["/home/node/marker.txt"]);
     expect(cat2.exitCode).not.toBe(0); // file hilang
+    expect(fs.readFileSync(path.join(dir, "bindmark.txt"), "utf8").trim()).toBe("bind");
 
     // destroy → container & volume benar-benar hilang
     await m.destroy(pid);

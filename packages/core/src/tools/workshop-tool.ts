@@ -17,7 +17,7 @@ export function registerWorkshopTool(deps: { manager: () => WorkshopManager }): 
   registry.register({
     name: "run_in_workshop",
     description:
-      "Run a command in this project's persistent workshop container (a warm environment: installed packages, caches and files in /home/node survive sleep/wake — unlike the one-shot sandbox). Egress is limited to the project's allowlist. The workshop must be opened by the user first (Workshop panel); if it is asleep it is woken automatically.",
+      "Run a command in this project's persistent workshop container — the preferred place for installs and builds (npm install / npm init -y / npm run). cwd is the project root and it edits the SAME files shown in the Files tab; installed packages and the npm cache stay warm across sleep/wake, unlike the one-shot sandbox. Egress is limited to the project's allowlist. The workshop must be opened by the user first (Workshop panel); if it is asleep it is woken automatically.",
     parameters: z.object({
       cmd: z.string().min(1).max(60),
       args: z.array(z.string().max(500)).max(32).default([]),

@@ -34,6 +34,10 @@ export interface HostEnsureInput {
   egressProxyPort?: number;
   /** Allowlist (utk log/audit host). */
   egressAllow: string[];
+  /** Workspace project di HOST — di-bind ke /home/node/project (nested di
+   *  atas volume): file project = satu dunia dengan tab Files & write_file;
+   *  volume tetap menampung cache hangat (~/.npm, ~/.cache). */
+  workspacePath: string;
 }
 
 export interface WorkshopHost {
@@ -48,6 +52,11 @@ export interface WorkshopHost {
   /** "running" | "stopped" | "absent". */
   state(container: string): Promise<"running" | "stopped" | "absent">;
   exec(container: string, cmd: string, args: string[], opts: { timeoutMs: number; cwd?: string }): Promise<WorkshopExecResult>;
+}
+
+/** Path docker-friendly (Windows backslash → slash) — sama pola sandbox.mountPath. */
+function mountPath(ws: string): string {
+  return ws.replace(/\\/g, "/");
 }
 
 function run(cmd: string, args: string[], timeoutMs = 30_000): Promise<{ code: number; out: string; err: string }> {
@@ -98,9 +107,12 @@ export class DockerWorkshopHost implements WorkshopHost {
         "--user", "1000:1000",
         // /home/node = home uid 1000 di image node — volume baru mewarisi
         // kepemilikan (mount di path baru yang tak ada di image = owned root
-        // → user 1000 tak bisa menulis).
+        // → user 1000 tak bisa menulis). Cache hangat (~/.npm) hidup di sini.
         "-v", `${input.volume}:/home/node`,
-        "-w", "/home/node",
+        // Nested bind: FILES PROJECT = workspace host (rw) — satu dunia
+        // dengan tab Files / write_file / run_command sandbox (/workspace).
+        "-v", `${mountPath(input.workspacePath)}:/home/node/project:rw`,
+        "-w", "/home/node/project",
       ];
       if (egressOn) {
         const proxy = `http://host.docker.internal:${input.egressProxyPort}`;
@@ -398,6 +410,7 @@ export class WorkshopManager {
         image: process.env.YUI_WORKSHOP_IMAGE ?? process.env.YUI_SANDBOX_IMAGE ?? "node:24-bookworm-slim",
         egressProxyPort: proxyPort,
         egressAllow,
+        workspacePath: this.deps.workspaceRootOf(projectId),
       });
       const withEgress: WorkshopInfo = { ...info, egressAllow, backend: host.kind, createdAt: info.createdAt || Date.now() };
       this.deps.store.upsert(withEgress, null);
@@ -470,7 +483,8 @@ export class WorkshopManager {
     this.lastActivity.set(projectId, Date.now());
     const res = await host.exec(info.containerName, cmd, args, {
       timeoutMs: opts.timeoutMs ?? Number(process.env.YUI_WORKSHOP_EXEC_TIMEOUT_MS ?? 120_000),
-      cwd: opts.cwd,
+      // default = project workspace di dalam container (docker) / project root (local)
+      cwd: opts.cwd ?? (host.kind === "docker" ? "/home/node/project" : undefined),
     });
     this.lastActivity.set(projectId, Date.now());
     this.deps.onEvent?.({ type: "workshop.command", projectId, by, cmd: cmdline, exitCode: res.exitCode, ts: Date.now() });

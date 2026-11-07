@@ -149,7 +149,8 @@ export async function ensureSession(
   if (useDocker && opts.workshopContainer) {
     // WKS-3: shell DI DALAM container workshop — env egress melekat di container
     // (dibuat saat start workshop), stdin/stdout pipe murni (tanpa -t).
-    const child = spawn("docker", ["exec", "-i", opts.workshopContainer, "sh"], { windowsHide: true });
+    // cwd = /home/node/project (bind workspace — SAMA dunia dengan Files).
+    const child = spawn("docker", ["exec", "-i", "-w", "/home/node/project", opts.workshopContainer, "sh"], { windowsHide: true });
     s.proc = child;
     child.stdout?.on("data", (d: Buffer) => push(s, d.toString("utf8")));
     child.stderr?.on("data", (d: Buffer) => push(s, d.toString("utf8")));
@@ -240,11 +241,11 @@ export async function closeAll(): Promise<void> {
 export async function runInSession(
   workspacePath: string,
   command: string,
-  opts: { timeoutMs?: number; quietMs?: number } = {},
+  opts: { timeoutMs?: number; quietMs?: number; workshopContainer?: string } = {},
 ): Promise<{ terminalId: string; backend: "docker" | "local"; output: string; timedOut: boolean }> {
   const timeoutMs = opts.timeoutMs ?? 30_000;
   const quietMs = opts.quietMs ?? 1_200;
-  const info = await ensureSession(workspacePath);
+  const info = await ensureSession(workspacePath, { workshopContainer: opts.workshopContainer });
   const s = sessions.get(info.id)!;
 
   const chunks: string[] = [];

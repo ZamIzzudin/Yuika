@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { registry } from "../registry.js";
 import { runInSession, ensureSession } from "../terminal/manager.js";
+import type { WorkshopManager } from "../workshop/manager.js";
 
 /** Awalan perintah bebas-approval: read/build/run yang sudah di-gerbangi
  * sandbox terminal (docker) atau setidaknya visible di tab user. npm HANYA
@@ -30,20 +31,36 @@ const schema = z.object({
   timeoutMs: z.number().int().min(1_000).max(180_000).optional(),
 });
 
-export function registerTerminalTool(): void {
+export function registerTerminalTool(
+  deps: { workshop?: () => WorkshopManager; projectRoot?: (projectId: string) => string } = {},
+): void {
   registry.register({
     name: "terminal",
     description:
-      "Jalankan perintah di TERMINAL PROYEK — sesi yang SAMA dengan tab Terminal yang user lihat (output tampil live di UI; user bisa mengetik balik). Pakai untuk CLI interaktif/dev-server/npm. Output baru dikembalikan (tail 4000 char) setelah command senyap. Bebas approval: node, npm install|ci|run|test, tsc/vitest/jest, git status|log|diff|add|commit|branch|checkout, ls/cat/echo/pwd/cd/mkdir. Lainnya (npm publish, git push, curl, rm, …) butuh approval user.",
+      "Jalankan perintah di TERMINAL PROYEK — sesi yang SAMA dengan tab Terminal yang user lihat (output tampil live di UI; user bisa mengetik balik). Bila workshop project hidup, shell jalan DI DALAM container workshop (cwd = root proyek, file = file proyek yang sama dengan tab Files; install/paket menetap). Pakai untuk CLI interaktif/dev-server/npm. Output baru dikembalikan (tail 4000 char) setelah command senyap. Bebas approval: node, npm install|ci|run|test, tsc/vitest/jest, git status|log|diff|add|commit|branch|checkout, ls/cat/echo/pwd/cd/mkdir. Lainnya (npm publish, git push, curl, rm, …) butuh approval user.",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
+      // Batch 13 follow-up: agent bekerja di PROJECT workspace (bukan dir
+      // workspace global) supaya sesi = sesi yang user lihat, dan bila
+      // workshop hidup → shell-nya container workshop (file persist).
+      const ws = ctx.projectId && deps.projectRoot ? deps.projectRoot(ctx.projectId) : ctx.workspacePath;
+      let workshopContainer: string | undefined;
+      if (ctx.projectId && deps.workshop) {
+        try {
+          const w = deps.workshop().info(ctx.projectId);
+          if (w.state === "running") workshopContainer = w.containerName;
+        } catch {
+          /* tanpa workshop → jalur lama */
+        }
+      }
       // sesi dibuat bila belum ada — user melihatnya muncul di tab Terminal
-      await ensureSession(ctx.workspacePath);
-      const r = await runInSession(ctx.workspacePath, args.command, { timeoutMs: args.timeoutMs });
+      await ensureSession(ws, { workshopContainer });
+      const r = await runInSession(ws, args.command, { timeoutMs: args.timeoutMs, workshopContainer });
       return {
         result: {
           terminalId: r.terminalId,
           backend: r.backend,
+          ...(workshopContainer ? { workshop: true } : {}),
           note: r.backend === "local" ? "terminal lokal tanpa isolasi (Docker tak tersedia)" : undefined,
           output: r.output,
           ...(r.timedOut ? { timedOut: true, hint: "output diambil sampai timeout — perintah mungkin masih jalan; panggil terminal lagi dengan command kosong string tidak diizinkan, gunakan timeoutMs lebih besar" } : {}),
