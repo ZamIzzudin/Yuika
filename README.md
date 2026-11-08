@@ -111,6 +111,12 @@ Yuika/
 └── mcp.json            MCP server registry
 ```
 
+The desktop shell (Tauri) lives in its own repository,
+[ZamIzzudin/Yuika-Desktop](https://github.com/ZamIzzudin/Yuika-Desktop):
+it is a thin client that onboards into a local studio stack or a hosted
+one. Releases there are desktop installers only; releases here are server
+releases and drive the in-app update indicator (`GET /api/meta`).
+
 ## Development
 
 ```bash
