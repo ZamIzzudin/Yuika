@@ -37,6 +37,7 @@ import {
   TabPills,
   EmptyState,
   SectionTitle,
+  Chip,
 } from "./ui";
 
 /** Baris GET /api/dungeons. */
@@ -417,8 +418,8 @@ export function PersonaStudioView({
                 hint="Run a mission first, every training run is recorded here."
               />
             ) : (
-              <div className="flex flex-col gap-2">
-                <header className="flex flex-col gap-1">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <header className="col-span-full flex flex-col gap-1">
                   <b className="text-body font-semibold text-primary">
                     Training history
                   </b>
@@ -428,58 +429,58 @@ export function PersonaStudioView({
                   </p>
                 </header>
                 {allRuns.map((r) => (
-                  <Card key={r.id} className="flex items-center gap-3 p-3">
-                    <PersonaFace personaId={r.persona} size={28} />
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <b className="min-w-0 truncate text-body font-semibold text-primary">
-                          {r.title}
-                        </b>
-                        {r.status === "running" ? (
-                          <span className="flex shrink-0 items-center gap-1 text-caption text-warn">
-                            <CircleNotch
-                              size={11}
-                              aria-hidden
-                              className="animate-spin"
-                            />{" "}
-                            running
-                          </span>
-                        ) : r.status === "done" ? (
-                          <span className="flex shrink-0 items-center gap-1 text-caption text-success">
-                            <Check size={11} weight="bold" aria-hidden /> done
-                          </span>
-                        ) : (
-                          <span className="flex shrink-0 items-center gap-1 text-caption text-danger">
-                            <X size={11} weight="bold" aria-hidden /> failed
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex min-w-0 items-baseline gap-2 text-caption text-dim">
-                        <span className="shrink-0 tabular-nums">
-                          {new Date(r.startedAt).toLocaleString("en-US", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                        </span>
-                        {r.summary && (
-                          <span
-                            className="min-w-0 flex-1 truncate"
-                            title={r.summary}
-                          >
-                            {r.summary}
-                          </span>
-                        )}
-                      </div>
+                  <Card key={r.id} className="flex h-full flex-col gap-2 p-3">
+                    <div className="flex items-center gap-2.5">
+                      <PersonaFace personaId={r.persona} size={28} />
+                      <b className="min-w-0 flex-1 truncate text-body font-semibold text-primary">
+                        {r.title}
+                      </b>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={!onOpenProject || !r.projectId}
-                      onClick={() => onOpenProject?.(r.projectId ?? "")}
-                      title="Open the training room (chat + artifacts)"
-                    >
-                      Open
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {r.status === "running" ? (
+                        <span className="flex shrink-0 items-center gap-1 text-caption text-warn">
+                          <CircleNotch
+                            size={11}
+                            aria-hidden
+                            className="animate-spin"
+                          />{" "}
+                          running
+                        </span>
+                      ) : r.status === "done" ? (
+                        <Chip size="sm" tone="ok">
+                          Done
+                        </Chip>
+                      ) : (
+                        <Chip size="sm" tone="danger">
+                          Failed
+                        </Chip>
+                      )}
+                      <span className="shrink-0 tabular-nums text-caption text-dim">
+                        {new Date(r.startedAt).toLocaleString("en-US", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    </div>
+                    {r.summary && (
+                      <p
+                        className="line-clamp-2 text-caption leading-5 text-muted"
+                        title={r.summary}
+                      >
+                        {r.summary}
+                      </p>
+                    )}
+                    <div className="mt-auto flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={!onOpenProject || !r.projectId}
+                        onClick={() => onOpenProject?.(r.projectId ?? "")}
+                        title="Open the training room (chat + artifacts)"
+                      >
+                        Open
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </div>

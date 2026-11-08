@@ -112,7 +112,7 @@ export function PersonaModelModal({
   }
 
   return (
-    <Modal open onClose={onClose} title={`Model (${personaName})`}>
+    <Modal open onClose={onClose} title={`${personaName}`}>
       {!routes ? (
         <Skeleton lines={3} />
       ) : (
@@ -166,19 +166,17 @@ export function PersonaModelModal({
           )}
           <div className="flex flex-wrap items-center gap-2 justify-end">
             <Button
+              onClick={() => void checkConnection()}
+              disabled={smoke?.running}
+            >
+              {smoke?.running ? "Checking…" : "Check Connection"}
+            </Button>
+            <Button
               variant="primary"
               onClick={() => void save()}
               disabled={saving}
-              className="flex-1"
             >
               {saving ? "Saving…" : "Save"}
-            </Button>
-            <Button
-              onClick={() => void checkConnection()}
-              disabled={smoke?.running}
-              className="flex-1"
-            >
-              {smoke?.running ? "Checking…" : "Check Connection"}
             </Button>
           </div>
         </div>
