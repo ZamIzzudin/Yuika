@@ -789,3 +789,9 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] URL portal fix masuk README/.env.example/DEPLOY.md/compose comments: https://yuika.notu.dev + wss://yuika-relay.notu.dev (domain studio user tetap placeholder example)
 - [x] README: tabel "Which compose file to use"
 
+
+### D54 — Split repo desktop & scaffold mobile (SELESAI)
+- [x] ZamIzzudin/Yuika-Desktop: apps/desktop + PLAN-DESKTOP.md + build-desktop-web.mjs keluar monorepo; coupling 3 titik dipatch (tauri.conf frontendDist→dist/web repo desktop, beforeDevCommand→scripts/dev-web.mjs, lib.rs repo_root→YUIKA_STUDIO_DIR/sibling). Alasan: clone self-hoster bersih + feed Release server (dibaca /api/meta) tidak tercampur installer desktop.
+- [x] ZamIzzudin/Yuika-Mobile: scaffold Expo SDK 58 blank-TS, identitas dark Yuika, placeholder pairing; LICENSE template Expo dihapus (keputusan lisensi menunggu user).
+- [x] Studio repo: apps/desktop & script dihapus, README link repo desktop + penjelasan split release; api 49 test & web tsc hijau.
+
