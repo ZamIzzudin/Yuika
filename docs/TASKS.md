@@ -816,7 +816,7 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] welcome.html: kartu remote kini "Open the full web app of a Yuika host in this window" + catatan eksplisit bahwa koneksi host = direct link tanpa Portal; remote control dari HP/browser kedua dipair di Portal.
 - [x] /dev/remote di-rename "Remote (dev)" → "Remote console" + subjudul menjelaskan Web token & relay blind.
 - [x] PortalSettings: langkah pairing memperjelas Desktop token = host yang DIKENDALIKAN; Web token = remote controller di /dev/remote.
-- [ ] TAHAP BERIKUT (antrian): promosikan Remote console keluar /dev (mis. /remote) agar tidak ikut disembunyikan YUI_HIDE_DEV_PAGES di build Docker prod; portal Devices page beri tombol buka console.
+- [x] ~~TAHAP BERIKUT: promosikan Remote console keluar /dev~~ DIBATALKAN D59: remote console dihapus seluruhnya (remote-control pindah ke mobile, desktop = webview host).
 
 
 ### D59 — Konsep pairing final: auto-link SSO + owner-lock, remote console dihapus (SELESAI)
