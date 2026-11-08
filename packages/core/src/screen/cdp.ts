@@ -5,6 +5,7 @@
 //
 // Envelope: { id?, method, params, sessionId? }, balasan { id, result? , error? },
 // event { method, params, sessionId? }.
+import { lookup } from "node:dns/promises";
 import { moduleLogger } from "../logger.js";
 
 const log = moduleLogger("screen:cdp");
@@ -178,13 +179,34 @@ export async function attachFirstPage(conn: CdpConnection): Promise<CdpPage> {
 /** Resolve endpoint CDP. ws://wss:// dipakai langsung; http(s):// di-fetch
  *  /json/version (browser ws URL memuat UUID yang berubah tiap boot sidecar,
  *  endpoint http stabil adalah konfigurasi yang benar untuk sidecar). */
+/** Host literal (IP / localhost) — lolos pemeriksaan Host DevTools. */
+function isLiteralHost(h: string): boolean {
+  return h === "localhost" || /^\d{1,3}(\.\d{1,3}){3}$/.test(h) || (h.startsWith("[") && h.endsWith("]"));
+}
+
 export async function resolveCdpEndpoint(url: string): Promise<string> {
   const u = url.trim();
   if (u.startsWith("ws://") || u.startsWith("wss://")) return u;
-  const r = await fetch(`${u.replace(/\/+$/, "")}/json/version`, { signal: AbortSignal.timeout(5_000) });
-  if (!r.ok) throw new Error(`CDP endpoint ${u} /json/version returned HTTP ${r.status}`);
+  // Chrome 66+ DevTools HTTP endpoint menolak Host selain IP/localhost
+  // (proteksi DNS rebinding): lewat hostname docker (mis. chromium:9222)
+  // dibalas HTTP 500 walau browsernya sehat. Resolve hostname → IP untuk
+  // probe HTTP; webSocketDebuggerUrl balasan sudah memuat IP itu dan
+  // langsung reachable dari container ini.
+  let probe = u.replace(/\/+$/, "");
+  try {
+    const p = new URL(probe);
+    if (!isLiteralHost(p.hostname)) {
+      const { address } = await lookup(p.hostname);
+      p.hostname = address.includes(":") ? `[${address}]` : address;
+      probe = p.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    // URL invalid / DNS gagal: lanjut dengan URL asli, fetch yang bicara
+  }
+  const r = await fetch(`${probe}/json/version`, { signal: AbortSignal.timeout(5_000) });
+  if (!r.ok) throw new Error(`CDP endpoint ${probe} /json/version returned HTTP ${r.status}`);
   const v = (await r.json()) as { webSocketDebuggerUrl?: string };
-  if (!v.webSocketDebuggerUrl) throw new Error(`CDP endpoint ${u} did not return webSocketDebuggerUrl`);
+  if (!v.webSocketDebuggerUrl) throw new Error(`CDP endpoint ${probe} did not return webSocketDebuggerUrl`);
   return v.webSocketDebuggerUrl;
 }
 

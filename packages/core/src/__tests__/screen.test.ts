@@ -9,6 +9,17 @@ import os from "node:os";
 import path from "node:path";
 import { WebSocketServer } from "ws";
 
+// : Chrome DevTools menolak Host non-IP (HTTP 500, Chrome 66+). Test
+// resolver butuh hostname yang resolve ke loopback; mock lookup file-wide
+// (hanya resolver CDP yang memanggilnya — host literal tidak kena).
+vi.mock("node:dns/promises", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("node:dns/promises")>();
+  return {
+    ...orig,
+    lookup: (async () => ({ address: "127.0.0.1", family: 4 })) as unknown as typeof orig.lookup,
+  };
+});
+
 import {
   screenLeaseId, parseScreenLeaseId, canTakeScreenLease, canReleaseScreenLease,
 } from "../screen/lease.js";
@@ -439,4 +450,33 @@ describe("screen sidecar (YUI_SCREEN_CDP_URL)", () => {
     await fake2.close();
     await new Promise<void>((res) => httpSrv.close(() => res()));
   }, 30_000);
+
+  it("resolver: hostname (chromium:9222) → DNS → IP, lolos proteksi Host DevTools (Chrome 66+)", async () => {
+    // Chrome menolak Host non-IP/localhost dgn HTTP 500 (DNS rebinding
+    // protection) — persis yang terjadi di deployment: sidecar sehat tapi
+    // probe http://chromium:9222 dibalas 500. Fake server meniru itu;
+    // resolver harus resolve hostname → IP (mock DNS) dan sukses.
+    let sawHost = "";
+    const chromeSrv = http
+      .createServer((req, res) => {
+        sawHost = req.headers.host ?? "";
+        if (!/^(\d{1,3}\.){3}\d{1,3}:\d+$/.test(sawHost)) {
+          res.writeHead(500);
+          res.end("Host header is specified and is not an IP address or localhost");
+          return;
+        }
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ webSocketDebuggerUrl: `ws://${sawHost}/devtools/browser/fake` }));
+      })
+      .listen(0);
+    await new Promise<void>((res) => chromeSrv.once("listening", res));
+    const port = (chromeSrv.address() as { port: number }).port;
+    try {
+      const ws = await resolveCdpEndpoint(`http://chromium:${port}`);
+      expect(sawHost).toBe(`127.0.0.1:${port}`); // request datang dengan Host IP
+      expect(ws).toBe(`ws://127.0.0.1:${port}/devtools/browser/fake`); // ws balasan pakai IP (reachable)
+    } finally {
+      await new Promise<void>((res) => chromeSrv.close(() => res()));
+    }
+  });
 });
