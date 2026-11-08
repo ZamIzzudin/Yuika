@@ -71,7 +71,9 @@ function CommandsView({ projectId }: { projectId: string }) {
             <details className="rounded-md2 hover:bg-hover">
               <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-md2 px-2 py-1.5 select-none [&::-webkit-details-marker]:hidden">
                 <small className="flex-none font-mono text-[11px] text-dim">
-                  {new Date(c.ts).toLocaleTimeString("en-US", { hour12: false })}
+                  {new Date(c.ts).toLocaleTimeString("en-US", {
+                    hour12: false,
+                  })}
                 </small>
                 <span
                   className={`flex-none rounded-pill border px-1.5 py-px text-[10px] font-semibold ${
@@ -99,9 +101,7 @@ function CommandsView({ projectId }: { projectId: string }) {
               {(c.stdout || c.stderr) && (
                 <pre className="max-h-48 overflow-auto border-t border-line px-2 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-secondary">
                   {c.stdout}
-                  {c.stderr && (
-                    <span className="text-danger">{c.stderr}</span>
-                  )}
+                  {c.stderr && <span className="text-danger">{c.stderr}</span>}
                 </pre>
               )}
             </details>
@@ -122,7 +122,11 @@ function ViewSwitcher({
   onPick: (v: PanelView) => void;
 }) {
   return (
-    <div className="ml-auto flex shrink-0 items-center gap-1" role="group" aria-label="Terminal view">
+    <div
+      className="ml-auto flex shrink-0 items-center gap-1"
+      role="group"
+      aria-label="Terminal view"
+    >
       {(["shell", "commands"] as const).map((v) => (
         <button
           key={v}
@@ -170,11 +174,14 @@ export function TerminalFullTab({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {view === "shell" ? (
-        <TerminalTabLazy project={project} toolbar={<ViewSwitcher view={view} onPick={pick} />} />
+        <TerminalTabLazy
+          project={project}
+          toolbar={<ViewSwitcher view={view} onPick={pick} />}
+        />
       ) : (
         <div className="flex h-full min-h-0 flex-col gap-2.5 py-4">
           <div className="flex items-center gap-2 text-sm text-dim">
-            <span>Command log</span>
+            <span>Command Log</span>
             <ViewSwitcher view={view} onPick={pick} />
           </div>
           <CommandsView projectId={project.id} />

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiUrl, authFetch } from "@/lib/api";
 import { TracePanel } from "./TracePanel";
 import { Chip } from "./ui";
+import { Barricade } from "@phosphor-icons/react";
 
 interface ActivityItem {
   at: number;
@@ -65,14 +66,17 @@ function ActivityFeed({ projectId }: { projectId: string }) {
   const fmt = (ts: number) =>
     new Date(ts).toLocaleTimeString("en-US", { hour12: false });
 
+  const hint =
+    "overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full";
+
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto rounded-lg2 border border-line bg-inset p-2">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-3">
       {items === null ? (
         <p className="p-3 text-caption text-muted">Loading activity…</p>
       ) : items.length === 0 ? (
-        <p className="flex h-full items-center justify-center p-6 text-center text-caption text-muted">
-          No activity yet — every step your personas take (commands, tools,
-          browsing, vault) shows up here live.
+        <p className={`${hint} flex items-center justify-center flex-col`}>
+          <Barricade className="text-dim" size={48} />
+          <span className="text-lg text-dim">No Activity.</span>
         </p>
       ) : (
         <ul className="m-0 flex list-none flex-col gap-1 p-0">
@@ -122,20 +126,20 @@ export function LogsTab({
   const [view, setView] = useState<"activity" | "trace">("activity");
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3 sm:px-6">
+    <div className="flex min-h-0 flex-1 flex-col mt-3 px-4 py-6 sm:px-6">
       <header className="flex flex-wrap items-center gap-2 justify-between">
-        <b className="text-body font-semibold text-primary">Logs</b>
-        <div className="flex gap-2">
+        <span className="text-dim text-sm">Logs</span>
+        <div className="flex gap-1">
           {(["activity", "trace"] as const).map((v) => (
             <button
               key={v}
               type="button"
               aria-pressed={view === v}
               onClick={() => setView(v)}
-              className={`cursor-pointer rounded-pill border px-3 py-1.5 text-caption transition-colors ${
+              className={`cursor-pointer rounded-md2 px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
                 view === v
-                  ? "border-accent/60 bg-accent/10 text-accent"
-                  : "border-line bg-surface text-muted hover:text-primary"
+                  ? "bg-hover text-primary"
+                  : "text-dim hover:bg-hover hover:text-secondary"
               }`}
             >
               {v === "activity" ? "Project activity" : "Session trace"}

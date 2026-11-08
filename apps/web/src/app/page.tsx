@@ -39,7 +39,6 @@ import {
   type LiveDelegation,
   type WorkspaceTab,
 } from "@/components/TaskDrawer";
-import { Skeleton } from "@/components/Skeleton";
 import { ScreenPip } from "@/components/ScreenPip";
 import { Dot, StateChip, TabPills } from "@/components/ui";
 import { toastErr } from "@/components/ui/toast";
@@ -1521,6 +1520,12 @@ export default function Home() {
                             activeTab={mainTab}
                             rev={taskRev}
                             onProjectUpdated={() => void loadProjects()}
+                            onDeleted={(pid) => {
+                              // D33: hapus dari Config → refresh daftar; scope
+                              // aktif terhapus → kembali ke HOME.
+                              void loadProjects();
+                              if (activeProjectId === pid) void pickProject(null);
+                            }}
                             live={{
                               parentPersonaId: active.id,
                               parentState: personaState,

@@ -736,3 +736,4 @@
 - [x] dns.lookup tanpa timeout di hostnameIsPrivate → race 5 dtk (unref) · throttle domainThrottle livelock self-requeue → reservasi slot sekali · ddg selalu dipanggil (+10 dtk/search) → hanya bila hasil site-router < 3, race 5 dtk · watchdog withTimeout 25s/45s di web_search/web_fetch · budget query 10→30/jam · pesan error tool EN — research.test.ts 24/24
 
 
+

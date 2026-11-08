@@ -110,15 +110,7 @@ export function TracePanel({
     "overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3 sm:px-6">
-      <header className="mb-3 flex flex-wrap items-center gap-3">
-        <b className="text-body font-semibold text-primary">Session Trace</b>
-        {sessionId && (
-          <small className="font-mono text-caption text-dim">
-            {sessionId.slice(0, 14)}…
-          </small>
-        )}
-      </header>
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-3">
       {sessionId === null ? (
         <p className={`${hint} flex items-center justify-center`}>
           No active conversation yet — open or start a chat session first, then
