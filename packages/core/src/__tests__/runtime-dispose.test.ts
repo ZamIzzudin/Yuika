@@ -26,6 +26,9 @@ function makeRuntime() {
 describe("runtime.dispose (HMR replace)", () => {
   it("resolve bersih; health timer & retry berhenti (tak ada proses MCP, config null)", async () => {
     const rt = makeRuntime();
+    // D60-follow-up: boot juga meng-init workspace sebagai repo git sekali
+    // (idempoten) — syarat MCP git "--repository {workspace}".
+    expect(fs.existsSync(path.join(dir, ".git"))).toBe(true);
     expect(typeof rt.dispose).toBe("function");
     await expect(rt.dispose()).resolves.toBeUndefined();
     // idempoten (dispose kedua saat runtime sudah di-replace tak boleh melempar)

@@ -1,5 +1,6 @@
 // @yuika/core, runtime wiring: satu factory untuk seluruh kernel (dipakai apps/web).
 // DEMO-SHORTCUT: core berjalan in-process di Next.js; P0 memisah jadi service + worker.
+import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -39,7 +40,7 @@ import { registerConsultTool } from "./tools/consult-tool.js";
 import { registerTodoTools } from "./tools/todo-tools.js";
 import { connectMcpFromConfig, connectMcpServer, type McpCallInfo, type McpRegistry } from "./mcp/client.js";
 import { MCP_CATALOG } from "./mcp/catalog.js";
-import { installFromCatalog, uninstallFromConfig } from "./mcp/install.js";
+import { installFromCatalog, uninstallFromConfig, mergeMcpConfig, readUserConfig } from "./mcp/install.js";
 import { McpAuditStore } from "./mcp/audit.js";
 import { UsageLedger } from "./usage/ledger.js";
 import { loadPriceBook, saveModelPrice } from "./model-prices.js";
@@ -99,6 +100,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   // membuat server filesystem skip semua direktorinya. Satu mkdir di boot
   // menutup Docker + desktop sekaligus.
   fs.mkdirSync(path.join(paths.workspacePath, "reports"), { recursive: true });
+  // MCP git (mcp-server-git --repository {workspace}) menuntut path yang
+  // SUDAH jadi repository git; tanpa ini server git mati di boot ("not a
+  // valid Git repository"). Init sekali, idempoten — repo lokal kerja
+  // agent (status/diff/commit), bukan remote. Nested repo per-project aman
+  // (tampil untracked/gitlink saja).
+  try {
+    if (!fs.existsSync(path.join(paths.workspacePath, ".git"))) {
+      execFileSync("git", ["init", "-q"], { cwd: paths.workspacePath, stdio: "pipe" });
+    }
+  } catch {
+    // git tak ada di PATH (jarang): MCP git akan gagal sendiri; fitur lain aman.
+  }
 
   const store: ISessionStore = createSessionStore(paths.dbPath);
  // approval pending dari proses sebelumnya → expired (turn-nya mati
@@ -329,12 +342,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const onMcpCall = (info: McpCallInfo) => mcpAudit.log(info);
   let mcpConfig: McpRegistry | null = null;
   const reloadMcpConfig = (): McpRegistry | null => {
-    if (!paths.mcpConfigPath || !fs.existsSync(paths.mcpConfigPath)) return null;
-    const raw = JSON.parse(fs.readFileSync(paths.mcpConfigPath, "utf-8")) as McpRegistry;
-    for (const cfg of Object.values(raw.mcpServers)) {
+    // Base (mcp.json, layer image) ∪ overlay user (workspace/mcp.user.json,
+    // volume persist): instalasi + token user selamat lintas redeploy.
+    const base =
+      paths.mcpConfigPath && fs.existsSync(paths.mcpConfigPath)
+        ? (JSON.parse(fs.readFileSync(paths.mcpConfigPath, "utf-8")) as McpRegistry)
+        : null;
+    const merged = mergeMcpConfig(base, readUserConfig(paths.workspacePath));
+    if (!base && Object.keys(merged.mcpServers).length === 0) return null;
+    for (const cfg of Object.values(merged.mcpServers)) {
       cfg.args = cfg.args?.map((a) => a.replaceAll("{workspace}", paths.workspacePath));
     }
-    return raw;
+    return merged;
   };
   mcpConfig = reloadMcpConfig();
   /** Connection state: connected -> (down) reconnecting with backoff -> parked
@@ -1292,19 +1311,21 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // ---- catalog & install ----
     /** The curated catalog for the MCP panel UI. */
     mcpCatalog: () => MCP_CATALOG,
-    /** Install from the catalog -> write mcp.json + reload in memory. NO
-     *  auto-connect (fail-closed): the user must Trust it in the panel. */
+    /** Install from the catalog -> write workspace overlay (persist) +
+     *  reload in memory. NO auto-connect (fail-closed): the user must
+     *  Trust it in the panel. */
     installMcpServer: (catalogId: string, env: Record<string, string>) => {
       if (!paths.mcpConfigPath) throw new Error("mcp.json tidak dikonfigurasi (YUI_MCP_CONFIG)");
-      const { name } = installFromCatalog(paths.mcpConfigPath, catalogId, env);
+      const { name } = installFromCatalog(paths.workspacePath, catalogId, env);
       mcpConfig = reloadMcpConfig();
       return { name, statuses: serverStatuses() };
     },
-    /** Lepas server: putuskan koneksi (bila ada) + hapus dari mcp.json. */
+    /** Lepas server: putuskan koneksi (bila ada) + hapus dari config
+     *  efektif (overlay; tombstone bila server base). */
     uninstallMcpServer: async (name: string) => {
       if (!paths.mcpConfigPath) throw new Error("mcp.json tidak dikonfigurasi (YUI_MCP_CONFIG)");
       await disconnectMcp(name);
-      const removed = uninstallFromConfig(paths.mcpConfigPath, name);
+      const removed = uninstallFromConfig(paths.workspacePath, name, paths.mcpConfigPath);
       mcpConfig = reloadMcpConfig();
       return { removed, statuses: serverStatuses() };
     },
