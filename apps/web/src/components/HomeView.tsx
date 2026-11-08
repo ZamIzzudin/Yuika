@@ -193,7 +193,7 @@ export function HomeView({
             type="button"
             aria-label="New project"
             onClick={() => setOpen(true)}
-            className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg2 border border-dashed border-line-strong bg-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent hover:bg-accent-soft hover:text-primary"
+            className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg2 border border-dashed border-line-strong bg-surface text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent hover:bg-accent-soft hover:text-primary"
           >
             <Plus size={22} weight="bold" aria-hidden className="text-accent" />
             <span className="text-body">New project</span>
