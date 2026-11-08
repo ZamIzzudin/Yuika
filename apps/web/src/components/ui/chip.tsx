@@ -16,16 +16,23 @@ const TONES: Record<ChipTone, string> = {
 
 export function Chip({
   tone = "muted",
+  size = "md",
   className = "",
   children,
 }: {
   tone?: ChipTone;
+  /** md = default; sm = chip mini untuk card/baris compact (D42). */
+  size?: "md" | "sm";
   className?: string;
   children: ReactNode;
 }) {
+  const pad =
+    size === "sm"
+      ? "gap-1 px-1.5 py-0.5 text-[10px] leading-3"
+      : "gap-2 px-3 py-2 text-caption leading-4";
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-pill border px-3 py-2 text-caption leading-4 ${TONES[tone]} ${className}`}
+      className={`inline-flex items-center rounded-pill border ${pad} ${TONES[tone]} ${className}`}
     >
       {children}
     </span>

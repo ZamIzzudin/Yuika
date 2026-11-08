@@ -129,8 +129,8 @@ export function ProjectDashboardView({
               <b className="text-caption font-semibold text-secondary">
                 {PHASE_LABEL[p.phase] ?? p.phase}
               </b>
-              {p.gate === "pending" && <Chip tone="warn">gate</Chip>}
-              {p.gate === "passed" && <Chip tone="ok">gate ok</Chip>}
+              {p.gate === "pending" && <Chip size="sm" tone="warn">gate</Chip>}
+              {p.gate === "passed" && <Chip size="sm" tone="ok">gate ok</Chip>}
             </div>
             <div className="flex min-h-[20px] flex-wrap items-center gap-1">
               {p.owners.length === 0 ? (
@@ -166,9 +166,9 @@ export function ProjectDashboardView({
               )}
               {p.qa && (
                 <>
-                  <Chip tone="ok">{p.qa.pass} pass</Chip>
-                  {p.qa.fail > 0 && <Chip tone="danger">{p.qa.fail} fail</Chip>}
-                  {p.qa.warn > 0 && <Chip tone="warn">{p.qa.warn} warn</Chip>}
+                  <Chip size="sm" tone="ok">{p.qa.pass} pass</Chip>
+                  {p.qa.fail > 0 && <Chip size="sm" tone="danger">{p.qa.fail} fail</Chip>}
+                  {p.qa.warn > 0 && <Chip size="sm" tone="warn">{p.qa.warn} warn</Chip>}
                 </>
               )}
             </div>
@@ -198,12 +198,13 @@ export function ProjectDashboardView({
                   {r.stepsDone}/{r.stepsTotal} steps
                 </span>
                 {r.delta !== null && (
-                  <Chip tone={r.delta >= 0 ? "ok" : "warn"}>
+                  <Chip size="sm" tone={r.delta >= 0 ? "ok" : "warn"}>
                     {r.delta >= 0 ? "+" : ""}
                     {r.delta} vs prev
                   </Chip>
                 )}
                 <Chip
+                  size="sm"
                   tone={
                     r.status === "done"
                       ? "ok"

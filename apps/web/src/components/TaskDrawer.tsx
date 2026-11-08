@@ -504,10 +504,7 @@ function ProjectEditCard({
               onChange={(e) => setName(e.target.value)}
             />
           </Field>
-          <Field
-            label="Description"
-            hint="Shown on Home and read by every persona on the team."
-          >
+          <Field label="Description">
             <TextArea
               value={desc}
               maxLength={280}
@@ -911,7 +908,11 @@ export function ProjectTabs({
                           </code>
                         </span>
                         <div className="ml-auto flex shrink-0 items-center gap-2">
-                          {dirty && <Chip tone="warn">Unsaved</Chip>}
+                          {dirty && (
+                            <Chip size="sm" tone="warn">
+                              Unsaved
+                            </Chip>
+                          )}
                           <Button
                             size="sm"
                             variant={dirty ? "primary" : "secondary"}

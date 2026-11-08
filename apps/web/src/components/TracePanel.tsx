@@ -137,7 +137,7 @@ export function TracePanel({
               className="group rounded-lg2 border border-line bg-surface px-3 py-2"
             >
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2.5 select-none [&::-webkit-details-marker]:hidden">
-                <Chip tone={STATUS_TONE[t.status] ?? "muted"}>
+                <Chip size="sm" tone={STATUS_TONE[t.status] ?? "muted"}>
                   {STATUS_LABEL[t.status] ?? t.status}
                 </Chip>
                 <span className="font-mono text-caption text-secondary">

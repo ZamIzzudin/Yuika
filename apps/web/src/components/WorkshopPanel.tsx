@@ -131,9 +131,9 @@ export function WorkshopPanel({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <b className="text-body font-semibold text-primary">Workshop</b>
-            <Chip tone={STATE_TONE[st] ?? "muted"}>{st}</Chip>
+            <Chip size="sm" tone={STATE_TONE[st] ?? "muted"}>{st}</Chip>
             {info?.backend === "local" && (
-              <Chip tone="warn">local fallback, no isolation</Chip>
+              <Chip size="sm" tone="warn">local fallback, no isolation</Chip>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -277,6 +277,7 @@ export function WorkshopPanel({
                 {new Date(l.at).toLocaleTimeString()}
               </span>
               <Chip
+                size="sm"
                 tone={
                   l.kind === "error"
                     ? "danger"

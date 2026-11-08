@@ -441,7 +441,7 @@ export function McpPanel() {
                             </span>
                           )}
                         </div>
-                        <Chip tone={risk.tone}>{risk.label}</Chip>
+                        <Chip size="sm" tone={risk.tone}>{risk.label}</Chip>
                       </div>
 
                       <small className="text-caption leading-5 text-muted">

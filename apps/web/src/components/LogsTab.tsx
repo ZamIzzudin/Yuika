@@ -89,6 +89,7 @@ function ActivityFeed({ projectId }: { projectId: string }) {
                 {fmt(a.at)}
               </small>
               <Chip
+                size="sm"
                 tone={a.isError ? "danger" : KIND_TONE[a.kind]}
                 className="flex-none"
               >

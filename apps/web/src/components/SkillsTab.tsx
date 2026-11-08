@@ -350,7 +350,7 @@ export function SkillsTab() {
                       {s.name.replaceAll("-", " ")}
                     </b>
                     {s.status && (
-                      <Chip tone={STATUS_TONE[s.status] ?? "muted"}>
+                      <Chip size="sm" tone={STATUS_TONE[s.status] ?? "muted"}>
                         {STATUS_LABEL[s.status] ?? s.status}
                       </Chip>
                     )}
