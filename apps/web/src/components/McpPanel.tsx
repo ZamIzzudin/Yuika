@@ -262,8 +262,8 @@ export function McpPanel() {
                       !s.connected && (s.state === "reconnecting" || s.trusted)
                     }
                   />
-                  <b className="min-w-0 flex-1 truncate text-body font-semibold text-primary">
-                    {s.name}
+                  <b className="min-w-0 flex-1 truncate text-body font-semibold text-primary capitalize">
+                    {s.name.replaceAll("-", " ")}
                   </b>
                   {(s.state === "parked" || s.state === "reconnecting") && (
                     <Button

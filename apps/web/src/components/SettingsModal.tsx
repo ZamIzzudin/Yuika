@@ -509,6 +509,19 @@ function UsageDashboard() {
     }
   > | null>(null);
   const [hours, setHours] = useState<number>(0); // 0 = semua waktu
+  /** Nama tampilan persona (mis. “Hiro Yui”) untuk label chart & tabel. */
+  const [names, setNames] = useState<Record<string, string>>({});
+  useEffect(() => {
+    void authFetch(apiUrl("/api/personas"))
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (j: { personas?: { id: string; name: string }[] } | null) =>
+          j &&
+          setNames(Object.fromEntries(j.personas!.map((p) => [p.id, p.name]))),
+      )
+      .catch(() => undefined);
+  }, []);
+  const nameOf = (id: string) => names[id] ?? id.replace("yui-", "");
 
   const load = useCallback(async () => {
     const since = hours > 0 ? Date.now() - hours * 3_600_000 : undefined;
@@ -648,9 +661,6 @@ function UsageDashboard() {
             <Stat
               label="Est. cost"
               value={anyPriced ? fmtCost(totalCost) : "—"}
-              sub={
-                anyPriced ? "from your price book" : "set model prices below"
-              }
             />
           </div>
 
@@ -688,7 +698,7 @@ function UsageDashboard() {
                       className="w-24 shrink-0 truncate text-caption text-secondary"
                       title={p.key}
                     >
-                      {p.key.replace("yui-", "")}
+                      {nameOf(p.key)}
                     </span>
                     <div className="flex h-3 min-w-0 flex-1 overflow-hidden rounded-pill bg-inset">
                       <div
@@ -759,9 +769,7 @@ function UsageDashboard() {
                       key={`${r.personaId}|${r.model}`}
                       className="border-b border-line"
                     >
-                      <td className="py-1 pr-3">
-                        {r.personaId.replace("yui-", "")}
-                      </td>
+                      <td className="py-1 pr-3">{nameOf(r.personaId)}</td>
                       <td className="py-1 pr-3">
                         <code className="font-mono">{r.model}</code>
                       </td>
@@ -788,19 +796,45 @@ function UsageDashboard() {
           />
 
           {data.recent && data.recent.length > 0 && (
-            <Card className="flex flex-col gap-1.5 p-4">
+            <Card className="p-4">
               <span className="text-caption font-semibold uppercase tracking-wide text-dim">
-                Recent
+                Recent calls
               </span>
-              <ul className="flex flex-col gap-0.5 text-caption text-muted">
-                {data.recent.map((e, i) => (
-                  <li key={i} className="flex flex-wrap gap-x-2">
-                    <code className="font-mono">{e.model}</code> ·{" "}
-                    {e.personaId.replace("yui-", "")} · {fmt(e.promptTokens)}+{" "}
-                    {fmt(e.outputTokens)} tok · {e.latencyMs} ms
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-1">
+                <Table
+                  label="Recent calls"
+                  head={["Time", "Persona", "Model", "In", "Out", "Latency"]}
+                >
+                  {data.recent.map((e, i) => (
+                    <tr
+                      key={`${e.at}|${e.model}|${i}`}
+                      className="border-b border-line last:border-0"
+                    >
+                      <td
+                        className="py-1 pr-3 tabular-nums text-dim"
+                        title={new Date(e.at).toLocaleString("en-US")}
+                      >
+                        {new Date(e.at).toLocaleTimeString("en-US", {
+                          hour12: false,
+                        })}
+                      </td>
+                      <td className="py-1 pr-3">{nameOf(e.personaId)}</td>
+                      <td className="py-1 pr-3">
+                        <code className="font-mono">{e.model}</code>
+                      </td>
+                      <td className="py-1 pr-3 tabular-nums">
+                        {fmt(e.promptTokens)}
+                      </td>
+                      <td className="py-1 pr-3 tabular-nums">
+                        {fmt(e.outputTokens)}
+                      </td>
+                      <td className="py-1 pr-3 tabular-nums text-dim">
+                        {e.latencyMs} ms
+                      </td>
+                    </tr>
+                  ))}
+                </Table>
+              </div>
             </Card>
           )}
         </>
