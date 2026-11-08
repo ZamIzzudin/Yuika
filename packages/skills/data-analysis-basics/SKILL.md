@@ -27,7 +27,7 @@ dari file mentah. Milik: Watson Yui.
 ## 2. Bersihkan secara eksplisit
 
 - Dedup (baris identik), type-cast (tanggal → ISO, angka → number), tangani
-  null (buang / isi dengan alasan — WAJIB dicatat jumlah yang dibuang).
+  null (buang / isi dengan alasan, WAJIB dicatat jumlah yang dibuang).
 - Simpan hasil bersih sebagai file terpisah (`data-clean.csv`), JANGAN
   menimpa file mentah.
 
@@ -40,7 +40,7 @@ dari file mentah. Milik: Watson Yui.
 
 ## 4. Statistik yang jujur
 
-- Laporkan n, mean/median, dan spread (std/IQR) — bukan mean saja.
+- Laporkan n, mean/median, dan spread (std/IQR), bukan mean saja.
 - Korelasi ≠ kausalitas. Selisih kecil pada n kecil = "belum ada bukti",
   bukan "tren naik".
 - Missing data membiaskan: sebutkan arah bias yang mungkin.

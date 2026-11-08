@@ -1,4 +1,4 @@
-// P0-QA-1 — mock provider OpenAI-compatible untuk E2E smoke.
+// P0-QA-1, mock provider OpenAI-compatible untuk E2E smoke.
 // Deterministik & tanpa biaya: spec mengantri "script" jawaban via POST /__script,
 // server menjawab POST /v1/chat/completions dengan SSE stream standar OpenAI.
 // Panggilan tanpa script (mis. learn nudge) dijawab fallback "ok".
@@ -27,7 +27,7 @@ function chunk(delta, finish = null) {
 /** Jawab satu completion sesuai script (atau fallback). */
 function answer(res, script) {
   res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
-  // reasoning_content (GLM-compat) — streaming "thinking"
+  // reasoning_content (GLM-compat), streaming "thinking"
   if (script?.reasoning) for (const w of script.reasoning.split(" ")) sse(res, chunk({ reasoning_content: w + " " }));
   if (script?.text) for (const w of script.text.split(" ")) sse(res, chunk({ content: w + " " }));
   if (script?.toolCalls?.length) {

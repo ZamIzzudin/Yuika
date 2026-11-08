@@ -1,5 +1,5 @@
-// @yuika/core — session store: SQLite append-only (DEMO-WEEK-1 §3.1).
-// INVARIANT (PLAN §3.2): messages & events hanya INSERT — tidak ada UPDATE/DELETE.
+// @yuika/core, session store: SQLite append-only (DEMO-WEEK-1 §3.1).
+// INVARIANT (PLAN §3.2): messages & events hanya INSERT, tidak ada UPDATE/DELETE.
 // System prompt & toolset DIBEKUKAN saat createSession (prompt-cache discipline).
 import Database from "better-sqlite3";
 import fs from "node:fs";
@@ -18,8 +18,8 @@ export interface SessionRow {
   projectId: string | null;
 }
 
-/** P0-DATA-1: kontrak penyimpanan sesi — SATU interface, dua driver:
- *  SQLite (default — embedded, zero-config, desktop/dev) & Postgres (server:
+/** P0-DATA-1: kontrak penyimpanan sesi, SATU interface, dua driver:
+ *  SQLite (default, embedded, zero-config, desktop/dev) & Postgres (server:
  *  multi-worker, skala events besar). Implementasi PG memakai worker-thread +
  *  sync-bridge sehingga interface tetap SINKRON (paritas dengan better-sqlite3,
  *  nol perubahan di call site & 250+ test). */
@@ -56,7 +56,7 @@ export interface ISessionStore {
 }
 
 /** Factory driver (P0-DATA-1): YUI_DB_DRIVER=sqlite (default) | postgres.
- *  postgres → sync-bridge worker (session/pg-bridge.ts — hanya
+ *  postgres → sync-bridge worker (session/pg-bridge.ts, hanya
  *  node:worker_threads, worker dibuat lazy); DATABASE_URL wajib (divalidasi
  *  fail-fast di env.ts). Sinkron: createYuiRuntime tidak berubah bentuk. */
 export function createSessionStore(dbPath: string): ISessionStore {
@@ -97,7 +97,7 @@ export class SessionStore implements ISessionStore {
         ts INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, id);
-      -- P0-DATA-2: arsip retention — baris events lama dipindah ke sini (id ASLI
+      -- P0-DATA-2: arsip retention, baris events lama dipindah ke sini (id ASLI
       -- dipertahankan; identitas event tidak berubah). Bacaan memakai UNION
       -- events + events_archive sehingga replay/hidrasi tetap utuh.
       CREATE TABLE IF NOT EXISTS events_archive (
@@ -109,7 +109,7 @@ export class SessionStore implements ISessionStore {
         archived_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_archive_session ON events_archive(session_id, id);
-      -- P0-CORE-4: checkpoint kompresi konteks — append-only; baris ter-id TERBESAR
+      -- P0-CORE-4: checkpoint kompresi konteks, append-only; baris ter-id TERBESAR
       -- per sesi = checkpoint aktif (view prompt memakainya; messages tak pernah diubah).
       CREATE TABLE IF NOT EXISTS context_checkpoints (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,7 +120,7 @@ export class SessionStore implements ISessionStore {
         created_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_ctxcp_session ON context_checkpoints(session_id, id);
-      -- P0-DEL-1: job delegasi persist — status lintas restart (audit + heal).
+      -- P0-DEL-1: job delegasi persist, status lintas restart (audit + heal).
       CREATE TABLE IF NOT EXISTS delegation_jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         parent_session_id TEXT NOT NULL,
@@ -183,7 +183,7 @@ export class SessionStore implements ISessionStore {
     };
   }
 
-  /** Sesi sebuah project terurut terbaru-dulu (untuk riwayat/resume) — berdasar event terakhir tiap sesi. */
+  /** Sesi sebuah project terurut terbaru-dulu (untuk riwayat/resume), berdasar event terakhir tiap sesi. */
   listProjectSessions(projectId: string): Array<{ id: string; personaId: string; createdAt: number; lastEventAt: number; lastEventId: number }> {
     const rows = this.db
       .prepare(
@@ -202,7 +202,7 @@ export class SessionStore implements ISessionStore {
     return rows.map((r) => ({ id: r.id, personaId: r.persona_id, createdAt: r.created_at, lastEventAt: r.last_event_at, lastEventId: r.last_event_id }));
   }
 
-  /** P1-PRT-3: sesi terbaru lintas project — judul = pesan user pertama.
+  /** P1-PRT-3: sesi terbaru lintas project, judul = pesan user pertama.
    *  Dipakai host worker utk host.state / list_sessions (RemoteEvent). */
   listRecentSessions(limit: number): Array<{ id: string; personaId: string; title: string | null; updatedAt: number }> {
     const rows = this.db
@@ -225,16 +225,16 @@ export class SessionStore implements ISessionStore {
     return rows.map((r) => ({ id: r.id, personaId: r.persona_id, title: r.title, updatedAt: r.updated_at }));
   }
 
-  /** P1-PER-4: jumlah sesi per persona (lintas project — growth tracking). */
+  /** P1-PER-4: jumlah sesi per persona (lintas project, growth tracking). */
   personaSessionCounts(): Map<string, number> {
     const rows = this.db.prepare(`SELECT persona_id, COUNT(*) AS n FROM sessions GROUP BY persona_id`).all() as Array<{ persona_id: string; n: number }>;
     return new Map(rows.map((r) => [r.persona_id, r.n]));
   }
 
   /** P1-PER-4: jumlah turn SELESAI per persona (event persona.state done).
-   *  Scan events sekali — cukup cepat di skala demo; index menyusul bila perlu. */
+   *  Scan events sekali, cukup cepat di skala demo; index menyusul bila perlu. */
   personaDoneTurnCounts(): Map<string, number> {
-    // P0-DATA-2: scan events ∪ arsip — statistik growth tidak berubah karena retensi.
+    // P0-DATA-2: scan events ∪ arsip, statistik growth tidak berubah karena retensi.
     const rows = this.db
       .prepare(
         `SELECT payload FROM events WHERE type = 'persona.state'
@@ -247,7 +247,7 @@ export class SessionStore implements ISessionStore {
         const p = JSON.parse(r.payload) as { state?: string; personaId?: string };
         if (p.state === "done" && p.personaId) out.set(p.personaId, (out.get(p.personaId) ?? 0) + 1);
       } catch {
-        /* payload rusak — skip */
+        /* payload rusak, skip */
       }
     }
     return out;
@@ -311,7 +311,7 @@ export class SessionStore implements ISessionStore {
     }));
   }
 
-  /** P0-CORE-4: messages + seq (untuk memotong batas kompresi yang aman —
+  /** P0-CORE-4: messages + seq (untuk memotong batas kompresi yang aman,
    *  tidak boleh memotong di tengah pasangan assistant-toolCalls/tool-result). */
   getMessagesWithSeq(sessionId: string): Array<{ seq: number; msg: InternalMessage }> {
     const rows = this.db
@@ -328,7 +328,7 @@ export class SessionStore implements ISessionStore {
     }));
   }
 
-  /** P0-CORE-4: simpan checkpoint kompresi (append-only — tidak mengubah messages). */
+  /** P0-CORE-4: simpan checkpoint kompresi (append-only, tidak mengubah messages). */
   saveContextCheckpoint(sessionId: string, uptoSeq: number, summary: string, model: string): void {
     this.db
       .prepare("INSERT INTO context_checkpoints (session_id, upto_seq, summary, model, created_at) VALUES (?, ?, ?, ?, ?)")
@@ -359,7 +359,7 @@ export class SessionStore implements ISessionStore {
       .run(patch.status, patch.summary ?? null, patch.error ?? null, Date.now(), id);
   }
 
-  /** Job berstatus running — kandidat heal saat boot (proses mati). */
+  /** Job berstatus running, kandidat heal saat boot (proses mati). */
   findRunningDelegationJobs(): Array<{ id: number; parentSessionId: string; childSessionId: string; personaId: string; goal: string }> {
     return (this.db
       .prepare("SELECT id, parent_session_id, child_session_id, persona_id, goal FROM delegation_jobs WHERE status = 'running'")
@@ -396,15 +396,15 @@ export class SessionStore implements ISessionStore {
     }));
   }
 
-  /** P0-DATA-2 — pindahkan events lama ke events_archive.
+  /** P0-DATA-2, pindahkan events lama ke events_archive.
    *
-   *  Kandidat: baris `ts < cutoff` dari sesi DINGIN (event terakhir sesi < cutoff —
-   *  sesi aktif tidak disentuh). Sesi dengan turn GANTUNG (belum ada penutup —
+   *  Kandidat: baris `ts < cutoff` dari sesi DINGIN (event terakhir sesi < cutoff,
+   *  sesi aktif tidak disentuh). Sesi dengan turn GANTUNG (belum ada penutup,
    *  dipakai boot-heal) dilewati seluruhnya; setelah heal menutupnya di boot
    *  berikutnya, sesi itu layak diarsip pada siklus sesudahnya.
    *
    *  Identitas event TIDAK berubah (id asli ikut pindah); bacaan memakai UNION
-   *  (getEvents/growth/listSessions) sehingga replay & hidrasi tetap lengkap —
+   *  (getEvents/growth/listSessions) sehingga replay & hidrasi tetap lengkap,
    *  hanya tabel aktif yang mengecil. `nowMs` disuntik untuk test (jam dimajukan).
    */
   archiveOldEvents(retentionDays: number, nowMs: number = Date.now()): { archived: number; sessions: number } {
@@ -421,7 +421,7 @@ export class SessionStore implements ISessionStore {
              SELECT session_id FROM events GROUP BY session_id HAVING MAX(ts) < ?
            ) AND e.session_id NOT IN (
              -- sesi turn gantung (logika = findInterruptedTurns): milik boot-heal,
-             -- jangan diutak-atik — biasanya sudah ditutup heal sebelum housekeeping jalan
+             -- jangan diutak-atik, biasanya sudah ditutup heal sebelum housekeeping jalan
              SELECT s.id FROM sessions s
              JOIN (SELECT session_id, MAX(id) AS id FROM events WHERE type = 'turn.started' GROUP BY session_id) ts
                ON ts.session_id = s.id
@@ -452,7 +452,7 @@ export class SessionStore implements ISessionStore {
     return { archived, sessions };
   }
 
-  /** Append event draft + lekatkan meta (id monotonic, ts) — kunci replay/resume. */
+  /** Append event draft + lekatkan meta (id monotonic, ts), kunci replay/resume. */
   appendEvent(sessionId: string, draft: EventDraft): YuiEventType {
     const withMeta = { ...draft, sessionId, id: 0, ts: Date.now() } as Record<string, unknown>;
     const info = this.db
@@ -463,7 +463,7 @@ export class SessionStore implements ISessionStore {
   }
 
   getEvents(sessionId: string, sinceId = 0): YuiEventType[] {
-    // P0-DATA-2: UNION dengan arsip — replay SSE & hidrasi melihat riwayat
+    // P0-DATA-2: UNION dengan arsip, replay SSE & hidrasi melihat riwayat
     // lengkap walau baris lama sudah dipindah dari tabel aktif.
     const rows = this.db
       .prepare(
@@ -482,7 +482,7 @@ export class SessionStore implements ISessionStore {
 
   /** P0 reliabilitas (boot heal): sesi yang `turn.started` TERAKHIRNYA tidak
    *  punya event penutup (persona.state done/idle/error, turn.cancelled, atau
-   *  session.error) — turn itu mati bersama proses lama (server direstart saat
+   *  session.error), turn itu mati bersama proses lama (server direstart saat
    *  berjalan). Tanpa heal, replay UI menampilkan "berjalan" zombie selamanya. */
   findInterruptedTurns(): Array<{ sessionId: string; personaId: string; lastTurnEventId: number }> {
     const rows = this.db
@@ -501,7 +501,7 @@ export class SessionStore implements ISessionStore {
     return rows.map((r) => ({ sessionId: r.sid, personaId: r.pid, lastTurnEventId: r.last_turn_id }));
   }
 
-  /** P0-DATA-3: approval persist — kartu pending survive restart (jika mati →
+  /** P0-DATA-3: approval persist, kartu pending survive restart (jika mati →
    *  expired), dan "Setujui & ingat" lintas restart via approval_memory. */
   insertApproval(row: { requestId: string; sessionId: string; tool: string; args: Record<string, unknown>; reason: string }): void {
     this.db
@@ -554,7 +554,7 @@ export class SessionStore implements ISessionStore {
     let approvals = 0;
     const tx = this.db.transaction(() => {
       events = this.db.prepare(`DELETE FROM events WHERE session_id IN (${ph})`).run(...ids).changes;
-      // P0-DATA-2: arsip ikut dibersihkan (paritas driver PG — project terhapus
+      // P0-DATA-2: arsip ikut dibersihkan (paritas driver PG, project terhapus
       // tidak meninggalkan jejak events arsip); angka laporan tetap dari tabel aktif
       this.db.prepare(`DELETE FROM events_archive WHERE session_id IN (${ph})`).run(...ids).changes;
       this.db.prepare(`DELETE FROM messages WHERE session_id IN (${ph})`).run(...ids);

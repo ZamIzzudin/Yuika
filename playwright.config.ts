@@ -1,6 +1,6 @@
-// P0-QA-1 — Playwright config: smoke E2E skenario demo §2.
+// P0-QA-1, Playwright config: smoke E2E skenario demo §2.
 // Tiga server dikelola Playwright: mock provider (:3299) → api (:3291) → web (:3990).
-// Port & data terisolasi dari dev (3000/3211) — tidak bentrok dengan sesi dev user.
+// Port & data terisolasi dari dev (3000/3211), tidak bentrok dengan sesi dev user.
 import { defineConfig } from "@playwright/test";
 import path from "node:path";
 
@@ -12,7 +12,7 @@ const DOUBLE_PORT = 3110; // P1-PRT-6: claim stub + SpecRelay (portal double)
 export default defineConfig({
   testDir: "./e2e",
   timeout: 120_000,
-  // satu worker: mock provider & api memakai DB single-file + state global —
+  // satu worker: mock provider & api memakai DB single-file + state global,
   // paralelisme antar file belum aman (dan smoke memang serial).
   workers: 1,
   fullyParallel: false,
@@ -55,7 +55,7 @@ export default defineConfig({
         YUI_PORTAL_DEVICE_DB: "e2e/.tmp/portal-device.db",
         // CP-3 SSO: portal base utk start/complete → portal-double :3110
         YUI_PORTAL_URL: "http://127.0.0.1:3110",
-        // Batch 2: shell terminal deterministik (fixture echo-shell — ECHO:<line>).
+        // Batch 2: shell terminal deterministik (fixture echo-shell, ECHO:<line>).
         YUI_TERMINAL_MODE: "local",
         YUI_TERMINAL_CMD: `node ${path.resolve("packages/core/src/terminal/__fixture__/echo-shell.mjs")}`,
         // P2-STU-4 e2e: server halaman lokal (loopback) di-allow eksplisit
@@ -64,7 +64,7 @@ export default defineConfig({
       },
     },
     {
-      // P1-PRT-6 — double portal: claim stub :3110 + SpecRelay ws://3111
+      // P1-PRT-6, double portal: claim stub :3110 + SpecRelay ws://3111
       // (semantik SPEC-PROTOCOL v1; relay produksi = repo yuika-portal).
       command: "npx tsx e2e/portal-double.mts",
       url: `http://127.0.0.1:${DOUBLE_PORT}/healthz`,

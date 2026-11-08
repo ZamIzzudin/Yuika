@@ -1,7 +1,7 @@
 "use client";
 
 // Batch 14a follow-up: hook SSE screen share (frame+state) + relay input +
-// lease — dipakai ScreenPip (floating). Satu sumber logika.
+// lease, dipakai ScreenPip (floating). Satu sumber logika.
 import { useCallback, useEffect, useState } from "react";
 import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
 
@@ -22,7 +22,7 @@ export interface ScreenStream {
   dim: { w: number; h: number } | null;
   err: string | null;
   takeBusy: boolean;
-  /** Kirim input (click/type/press/scroll/navigate) — false bila ditolak. */
+  /** Kirim input (click/type/press/scroll/navigate), false bila ditolak. */
   input: (body: Record<string, unknown>) => Promise<boolean>;
   /** Ambil / lepas lease user (fence). */
   lease: (act: "take" | "yield") => Promise<void>;

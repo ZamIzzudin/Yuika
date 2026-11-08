@@ -1,4 +1,4 @@
-// P1-MDL-2: smoke test model — model harus MEMANGGIL tool (2 langkah tool-call),
+// P1-MDL-2: smoke test model, model harus MEMANGGIL tool (2 langkah tool-call),
 // bukan sekadar balas teks; gagal → router markUnhealthy → fallback otomatis.
 import { describe, expect, it } from "vitest";
 import type { ProviderAdapter, ProviderChunk, ChatRequest, ProviderDone } from "../provider/adapter.js";
@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-/** Provider palsu — script per model: nama model menentukan perilaku. */
+/** Provider palsu, script per model: nama model menentukan perilaku. */
 function fakeProvider(scripts: Record<string, (req: ChatRequest) => ProviderDone>): ProviderAdapter {
   return {
     id: "fake",

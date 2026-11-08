@@ -1,6 +1,6 @@
-// Batch 7 (RS-1) — router search: cache → site-router (intent-aware) → engine umum
+// Batch 7 (RS-1), router search: cache → site-router (intent-aware) → engine umum
 // (searxng bila dikonfigurasi, ddg fallback nonofficial). Hasil selalu parsial +
-// daftar provider yang gagal — agent memutuskan ganti query, bukan menabrak ulang.
+// daftar provider yang gagal, agent memutuskan ganti query, bukan menabrak ulang.
 import { createHash } from "node:crypto";
 import type { ResearchCache } from "./cache.js";
 import type { ResearchBudget } from "./budget.js";
@@ -71,7 +71,7 @@ export async function researchSearch(query: string, opts: SearchOpts = {}): Prom
     if (!b.ok) {
       return {
         results: [],
-        errors: [{ provider: "budget", error: `research query budget exhausted (${b.limit}/hour per session) — refine the query or wait; cached results still work` }],
+        errors: [{ provider: "budget", error: `research query budget exhausted (${b.limit}/hour per session), refine the query or wait; cached results still work` }],
         cached: false,
       };
     }
@@ -80,7 +80,7 @@ export async function researchSearch(query: string, opts: SearchOpts = {}): Prom
   const errors: SearchOutcome["errors"] = [];
   const byProvider: Array<{ priority: number; results: SearchResult[] }> = [];
 
-  // 1) site-router — paralel, gagal satu tidak menjatuhkan lainnya
+  // 1) site-router, paralel, gagal satu tidak menjatuhkan lainnya
   const providers = opts.providers ?? DEFAULT_PROVIDERS;
   const matched = providers.filter((p) => {
     try {
@@ -95,7 +95,7 @@ export async function researchSearch(query: string, opts: SearchOpts = {}): Prom
     else errors.push({ provider: matched[i]!.name, error: r.reason instanceof Error ? r.reason.message : String(r.reason) });
   });
 
-  // 2) engine umum — HANYA bila hasil site-router belum cukup (bug nyata 2026-11:
+  // 2) engine umum, HANYA bila hasil site-router belum cukup (bug nyata 2026-11:
   // ddg selalu dipanggil & timeout 10 dtk menambah latensi tiap search, padahal
   // news/wikipedia sudah menjawab). searxng self-host (eksplisit dikonfigurasi
   // operator) tetap selalu dipanggil; ddg nonofficial = pelengkap terakhir + race 5 dtk.

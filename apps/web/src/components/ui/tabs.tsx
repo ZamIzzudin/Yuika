@@ -1,6 +1,6 @@
-// DS-1 — komponen global: TabPills + primitif kecil (EmptyState, Skeleton, MetaRow, SectionTitle).
+// DS-1, komponen global: TabPills + primitif kecil (EmptyState, Skeleton, MetaRow, SectionTitle).
 // TabPills: tab kapsul terpusat (aria lengkap; konten digele pemanggil).
-// Center sejati: pemanggil pakai grid 3 kolom [1fr_auto_1fr] — kolom kiri &
+// Center sejati: pemanggil pakai grid 3 kolom [1fr_auto_1fr], kolom kiri &
 // kanan sama lebar, pills di kolom tengah (lihat PersonaStudioView & page.tsx).
 import type { ReactNode } from "react";
 import { Leaf } from "@phosphor-icons/react";
@@ -55,7 +55,7 @@ export function TabPills({
   );
 }
 
-/** Keadaan kosong seragam — JANGAN pakai <p className="dim"> polos untuk list kosong. */
+/** Keadaan kosong seragam, JANGAN pakai <p className="dim"> polos untuk list kosong. */
 export function EmptyState({
   icon,
   title,

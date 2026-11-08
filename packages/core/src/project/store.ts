@@ -1,6 +1,6 @@
-// @yuika/core — project store (P1-PRJ-1, PLAN §13.1: project = entitas first-class).
+// @yuika/core, project store (P1-PRJ-1, PLAN §13.1: project = entitas first-class).
 // DB yang sama dengan sessions (demo.db); project BISA di-update (beda invariant
-// append-only events). Tabel project_tasks dibuat sekaligus — dipakai P1-PRJ-4.
+// append-only events). Tabel project_tasks dibuat sekaligus, dipakai P1-PRJ-4.
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
@@ -56,12 +56,12 @@ export class ProjectStore {
       );
       CREATE INDEX IF NOT EXISTS idx_project_events_project ON project_events(project_id, seq);
     `);
-    // P1-DUN-1: kolom kind — ruangan `dungeon` (arena latihan) vs `project` produksi
+    // P1-DUN-1: kolom kind, ruangan `dungeon` (arena latihan) vs `project` produksi
     const pcols = this.db.prepare("PRAGMA table_info(projects)").all() as { name: string }[];
     if (!pcols.some((c) => c.name === "kind")) {
       this.db.exec("ALTER TABLE projects ADD COLUMN kind TEXT NOT NULL DEFAULT 'project'");
     }
-    // P2-PM-3: kolom detail task (Planner) — migrasi idempotent utk DB lama
+    // P2-PM-3: kolom detail task (Planner), migrasi idempotent utk DB lama
     const tcols = this.db.prepare("PRAGMA table_info(project_tasks)").all() as { name: string }[];
     const detailCols: Array<[string, string]> = [
       ["description", "TEXT"],
@@ -73,7 +73,7 @@ export class ProjectStore {
     for (const [col, decl] of detailCols) {
       if (!tcols.some((c) => c.name === col)) this.db.exec(`ALTER TABLE project_tasks ADD COLUMN ${col} ${decl}`);
     }
-    // P2-STU-4: riwayat kunjungan tab Browser (agent riset & user) — audit +
+    // P2-STU-4: riwayat kunjungan tab Browser (agent riset & user), audit +
     // "user melihat halaman yang sama dgn agent".
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS browser_visits (
@@ -86,7 +86,7 @@ export class ProjectStore {
       );
       CREATE INDEX IF NOT EXISTS idx_browser_visits_project ON browser_visits(project_id, id DESC);
     `);
-    // P2-FLOW-2: run workflow — satu eksekusi workflow.yaml per project.
+    // P2-FLOW-2: run workflow, satu eksekusi workflow.yaml per project.
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS workflow_runs (
         id TEXT PRIMARY KEY,
@@ -142,7 +142,7 @@ export class ProjectStore {
     return { ...cur, ...next };
   }
 
-  /** D28 (kartu Home "… Ago"): tandai aktivitas terbaru project — sesi baru,
+  /** D28 (kartu Home "… Ago"): tandai aktivitas terbaru project, sesi baru,
    *  perubahan roster, task. Edit metadata sudah lewat updateProjectData. */
   touchProject(id: string): void {
     this.db
@@ -172,7 +172,7 @@ export class ProjectStore {
       sets.push("phase_states = ?");
       vals.push(JSON.stringify(patch.phaseStates));
     }
-    // P2-FLOW-6: reassign step mengubah persona di def — persist agar
+    // P2-FLOW-6: reassign step mengubah persona di def, persist agar
     // resume pasca-restart tetap memakai persona baru.
     if (patch.workflow !== undefined) {
       sets.push("workflow = ?");
@@ -216,7 +216,7 @@ export class ProjectStore {
   }
 
   // ---- tasks (P1-PRJ-4) + event task.node.* (P1-PRJ-7, PLAN §13.7) ----
-  // Setiap mutasi task menulis event DI TRANSAKSI YANG SAMA — ProjectStore adalah
+  // Setiap mutasi task menulis event DI TRANSAKSI YANG SAMA, ProjectStore adalah
   // satu-satunya penulis → TaskTree (proyeksi event) tak bisa drift dari tabel.
   /** P2-PM-3: input detail task (dipakai createTask & updateTask). */
   createTask(input: {
@@ -339,7 +339,7 @@ export class ProjectStore {
       .run(payload.projectId as string, type, JSON.stringify({ ...payload, ts }), ts);
   }
 
-  /** Event stream project urut seq ASC — sumber replay TaskTree. */
+  /** Event stream project urut seq ASC, sumber replay TaskTree. */
   listEvents(projectId: string): ProjectEvent[] {
     const rows = this.db
       .prepare("SELECT type, payload FROM project_events WHERE project_id = ? ORDER BY seq ASC")
@@ -348,7 +348,7 @@ export class ProjectStore {
   }
 
   /** P1-PRJ-8: hapus SEMUA baris milik project (tasks + event + baris projects)
-   *  dalam SATU transaksi — panggil SETELAH artefak lain (sesi/file) bersih. */
+   *  dalam SATU transaksi, panggil SETELAH artefak lain (sesi/file) bersih. */
   deleteProjectData(projectId: string): { tasks: number; projectEvents: number } {
     const tasks = this.db.prepare("DELETE FROM project_tasks WHERE project_id = ?").run(projectId).changes;
     const projectEvents = this.db.prepare("DELETE FROM project_events WHERE project_id = ?").run(projectId).changes;
@@ -380,7 +380,7 @@ export type WorkflowRunStatus =
   | "queued"
   | "running"
   | "awaiting_gate"
-  | "paused" // P2-FLOW-6: steering — pause mid-run (resume manual)
+  | "paused" // P2-FLOW-6: steering, pause mid-run (resume manual)
   | "done"
   | "failed"
   | "stopped";
@@ -396,7 +396,7 @@ export interface WorkflowPhaseState {
   phaseId: string;
   status: "pending" | "running" | "done";
   steps: WorkflowStepState[];
-  /** FLOW-3: true = gate fase ini SUDAH di-approve (persist) — resume tidak
+  /** FLOW-3: true = gate fase ini SUDAH di-approve (persist), resume tidak
    *  menanya ulang; undefined/false + gate ON = gate harus ditanya lagi. */
   gatePassed?: boolean;
 }

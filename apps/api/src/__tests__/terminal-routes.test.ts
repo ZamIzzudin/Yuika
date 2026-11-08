@@ -1,4 +1,4 @@
-// P2-STU-2: kontrak HTTP routes terminal — runtime PALSU (pola api.test.ts),
+// P2-STU-2: kontrak HTTP routes terminal, runtime PALSU (pola api.test.ts),
 // TerminalManager asli dengan shell fixture (echo-shell.mjs) via
 // YUI_TERMINAL_CMD → deterministik lintas OS.
 import { afterAll, describe, expect, it } from "vitest";

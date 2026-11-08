@@ -1,4 +1,4 @@
-// P1-DUN-3: eval buta — parser verdict, prompt anti-bias, evaluator penuh
+// P1-DUN-3: eval buta, parser verdict, prompt anti-bias, evaluator penuh
 // (pending → pass = promote ready; fail = tetap tested + alasan; throw = fail rapi).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -32,10 +32,10 @@ const mission = () => Mission.parse(YAML.parse(missionYaml));
 
 describe("parseVerdict (P1-DUN-3)", () => {
   it("LULUS + alasan GAGAL; verdict TERAKHIR yang dihitung (model kadang nulis draft di tengah)", () => {
-    expect(parseVerdict("analisis...\nVERDICT: GAGAL — kekurangan contoh").verdict).toBe("fail");
+    expect(parseVerdict("analisis...\nVERDICT: GAGAL, kekurangan contoh").verdict).toBe("fail");
     expect(parseVerdict("VERDICT: LULUS").reason).toBe("semua kriteria terpenuhi");
-    expect(parseVerdict("draft VERDICT: GAGAL — mungkin\nfinal: bukti cukup\nVERDICT: LULUS").verdict).toBe("pass");
-    expect(parseVerdict("VERDICT: GAGAL — kriteria 2 tidak ada bukti")).toEqual({ verdict: "fail", reason: "kriteria 2 tidak ada bukti" });
+    expect(parseVerdict("draft VERDICT: GAGAL, mungkin\nfinal: bukti cukup\nVERDICT: LULUS").verdict).toBe("pass");
+    expect(parseVerdict("VERDICT: GAGAL, kriteria 2 tidak ada bukti")).toEqual({ verdict: "fail", reason: "kriteria 2 tidak ada bukti" });
     expect(parseVerdict("tanpa verdict sama sekali")).toEqual({ verdict: "fail", reason: "hakim tidak mengeluarkan VERDICT yang valid" });
   });
 });
@@ -82,7 +82,7 @@ describe("evaluator (P1-DUN-3)", () => {
     expect(final.verdict).toBe("pass");
     expect(promoted).toEqual(["Demo Skill"]);
     expect(judgeTurns[0]).toContain("VERDICT: LULUS");
-    expect(listSkills(skillsDir)[0]!.status).toBe("tested"); // promote via callback — runtime yang memanggil setSkillStatus
+    expect(listSkills(skillsDir)[0]!.status).toBe("tested"); // promote via callback, runtime yang memanggil setSkillStatus
     const stored = readEval(skill.dir);
     expect(stored?.verdict).toBe("pass");
     expect(stored?.judgeSessionId).toBe("s_judge");
@@ -109,7 +109,7 @@ describe("evaluator (P1-DUN-3)", () => {
       createJudgeSession: () => "s_j2",
       ensureRoom: () => "p_x",
       runTurn: () => Promise.resolve(),
-      lastAssistantText: () => "kriteria 1 tidak ada buktinya di folder.\nVERDICT: GAGAL — laporan tidak memuat contoh kode",
+      lastAssistantText: () => "kriteria 1 tidak ada buktinya di folder.\nVERDICT: GAGAL, laporan tidak memuat contoh kode",
       promote: () => undefined,
     });
     const fail2 = await ev2.evaluate(mission(), { name: skill.name, dir: skill.dir });

@@ -1,5 +1,5 @@
 "use client";
-// DS-1 — barrel komponen global. Fitur baru mengimpor DARI SINI, bukan menulis
+// DS-1, barrel komponen global. Fitur baru mengimpor DARI SINI, bukan menulis
 // markup mentah (docs/DESIGN-SYSTEM.md).
 export { Button } from "./button.js";
 export { Chip, ChipToggle, Dot, StateChip, STATE_LABEL } from "./chip.js";

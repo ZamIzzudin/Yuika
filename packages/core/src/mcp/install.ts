@@ -1,5 +1,5 @@
-// @yuika/core — Install/uninstall server MCP (P1-MCP-1): tulis deklarasi ke
-// `mcp.json` (root repo). Tidak ada auto-connect — fail-closed tetap berlaku:
+// @yuika/core, Install/uninstall server MCP (P1-MCP-1): tulis deklarasi ke
+// `mcp.json` (root repo). Tidak ada auto-connect, fail-closed tetap berlaku:
 // setelah install, user harus Trust server di panel MCP (P1-MCP-3) sebelum
 // runtime menghubungkannya. Placeholder `{workspace}` disimpan apa adanya;
 // substitusi path absolut dilakukan runtime saat load (lihat runtime.ts).
@@ -60,7 +60,7 @@ export function uninstallFromConfig(mcpConfigPath: string, name: string): boolea
   return true;
 }
 
-/** Status ringkas untuk UI setelah install (tanpa koneksi — belum di-trust). */
+/** Status ringkas untuk UI setelah install (tanpa koneksi, belum di-trust). */
 export function statusOfDecl(name: string, _decl: McpServerConfig): McpServerStatus {
   return {
     name,

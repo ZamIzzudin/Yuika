@@ -1,4 +1,4 @@
-// P2-PM-3 — task list detail first-class: persist di store, replay di TaskTree,
+// P2-PM-3, task list detail first-class: persist di store, replay di TaskTree,
 // skenario Planner ≥30 task via tool todo_add → lintTaskList hijau.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -15,7 +15,7 @@ function makeStore() {
   return { store: new ProjectStore(path.join(dir, "test.db")), dir };
 }
 
-/** Fake session store minimal — todo tools hanya butuh projectId sesi. */
+/** Fake session store minimal, todo tools hanya butuh projectId sesi. */
 function fakeSessionStore(projectId: string | null) {
   return {
     getSession: () => (projectId ? { id: "s_pm3", projectId } : { id: "s_global" }),

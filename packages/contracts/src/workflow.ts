@@ -1,8 +1,8 @@
-// @yuika/contracts — workflow deklaratif (P2-FLOW-1, PLAN §13.2).
+// @yuika/contracts, workflow deklaratif (P2-FLOW-1, PLAN §13.2).
 // SATU sumber schema `workflow.yaml`: fase 7-langkah (planning→riset→desain→
 // develop→testing→dokumentasi→deliverable), mode sequential/parallel, steps
 // {persona, task, depends_on}, gate human-approval default ON.
-// Engine (core) TIDAK PERNAH menulis state bebas — semua transisi lewat
+// Engine (core) TIDAK PERNAH menulis state bebas, semua transisi lewat
 // event; def ini read-only hasil parse+lint.
 import { z } from "zod";
 import YAML from "yaml";
@@ -10,7 +10,7 @@ import YAML from "yaml";
 // ── schema ──────────────────────────────────────────────────────────────────
 
 export const WorkflowStepDef = z.object({
-  /** Opsional — default `s<index+1>` per fase (uniqueness dicek lint). */
+  /** Opsional, default `s<index+1>` per fase (uniqueness dicek lint). */
   id: z.string().min(1).optional(),
   persona: z.string().min(1),
   task: z.string().min(1),
@@ -26,7 +26,7 @@ export const WorkflowPhaseDef = z.object({
   name: z.string().min(1),
   mode: z.enum(["sequential", "parallel"]),
   steps: z.array(WorkflowStepDef).min(1),
-  /** Human gate SEBELUM fase berikut (default ON — §12.13). Fase terakhir
+  /** Human gate SEBELUM fase berikut (default ON, §12.13). Fase terakhir
    *  diabaikan engine (tidak ada fase berikutnya). */
   gate: z.boolean().optional(),
 });
@@ -42,7 +42,7 @@ export type WorkflowDef = z.infer<typeof WorkflowDef>;
 
 // ── normalisasi (isi default; idempotent) ───────────────────────────────────
 
-/** Hasil normalisasi — tanpa field optional (dipakai engine & lint). */
+/** Hasil normalisasi, tanpa field optional (dipakai engine & lint). */
 export interface NormalizedStep {
   id: string;
   persona: string;
@@ -88,7 +88,7 @@ export interface WorkflowLintResult {
 }
 
 export interface LintOptions {
-  /** Roster persona valid (id) — jika diberikan, persona di luar daftar = error. */
+  /** Roster persona valid (id), jika diberikan, persona di luar daftar = error. */
   personas?: string[];
 }
 
@@ -162,10 +162,10 @@ export function loadWorkflowYaml(text: string): WorkflowDef {
 
 // ── template 7 fase (default project baru) ─────────────────────────────────
 
-export const SEVEN_PHASE_TEMPLATE_YAML = `# workflow.yaml — template 7 fase (PLAN §13)
+export const SEVEN_PHASE_TEMPLATE_YAML = `# workflow.yaml, template 7 fase (PLAN §13)
 # Fase berjalan berurutan; mode parallel = N agent delegation anak sekaligus
 # (cap max_concurrent per step / cap global per project). gate = human approval
-# "fase X selesai — lanjut?" SEBELUM fase berikut (default ON).
+# "fase X selesai, lanjut?" SEBELUM fase berikut (default ON).
 name: Seven-phase delivery
 description: planning → research → design → develop → testing → documentation → delivery
 phases:

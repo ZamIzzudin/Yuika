@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a) — docsites: query yang menyebut domain dokumen (react.dev, nodejs.org,
+// Batch 7 (RS-1a), docsites: query yang menyebut domain dokumen (react.dev, nodejs.org,
 // …) → cari halaman lewat llms.txt; fallback sitemap.xml. Provider ringan utk
 // "dokumentasi resmi lebih otoritatif daripada aggregator" (PERSONA scholar).
 import type { SearchProvider, SearchResult } from "../types.js";
@@ -24,7 +24,7 @@ async function fromLlmsTxt(domain: string, keywords: string, limit: number): Pro
   const { status, text } = await httpText(`https://${domain}/llms.txt`, { timeoutMs: 8_000 });
   if (status >= 400 || !text) return [];
   const out: SearchResult[] = [];
-  const lines = text.split(/\r?\n/).slice(0, 2000); // llms.txt bisa panjang — cap awal cukup
+  const lines = text.split(/\r?\n/).slice(0, 2000); // llms.txt bisa panjang, cap awal cukup
   const kw = keywords.split(/\s+/);
   for (const line of lines) {
     const m = /^\s*[-*]\s*\[([^\]]+)\]\(([^)]+)\)(?::\s*(.*))?/.exec(line);
@@ -50,7 +50,7 @@ export const docsitesProvider: SearchProvider = {
     } catch {
       /* lanjut sitemap */
     }
-    // fallback: sitemap.xml — ambih <loc> yang mengandung kata kunci (slug).
+    // fallback: sitemap.xml, ambih <loc> yang mengandung kata kunci (slug).
     const { status, text } = await httpText(`https://${picked.domain}/sitemap.xml`, { timeoutMs: 8_000 });
     if (status >= 400) return [];
     const kw = picked.keywords.split(/\s+/).filter((k) => k.length > 2);

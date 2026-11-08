@@ -1,6 +1,6 @@
-// @yuika/api — routes workflow (P2-FLOW): start/list/detail run, gate decision,
+// @yuika/api, routes workflow (P2-FLOW): start/list/detail run, gate decision,
 // stop. Default workflow = template 7 fase; custom diterima sebagai object
-// atau teks YAML (divalidasi zod + lint — id unik, depends_on valid, tanpa siklus).
+// atau teks YAML (divalidasi zod + lint, id unik, depends_on valid, tanpa siklus).
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { z } from "zod";
@@ -10,7 +10,7 @@ const StartRunRequest = z.object({
   brief: z.string().max(4_000).optional(),
   /** Object WorkflowDef ATAU teks YAML workflow.yaml. Kosong = template 7 fase. */
   workflow: z.unknown().optional(),
-  /** Sesi chat conductor sebagai lead (kendali via chat — 2026-11-08).
+  /** Sesi chat conductor sebagai lead (kendali via chat, 2026-11-08).
    *  Harus milik project ini. */
   leadSessionId: z.string().min(1).optional(),
 });
@@ -136,6 +136,6 @@ export function registerWorkflowRoutes(app: FastifyInstance, getRt: () => YuiRun
     return { ok: true };
   });
 
-  /** Template 7 fase (YAML) — dipakai UI utk preview/mulai cepat. */
+  /** Template 7 fase (YAML), dipakai UI utk preview/mulai cepat. */
   app.get("/api/workflows/template", async () => ({ yaml: SEVEN_PHASE_TEMPLATE_YAML }));
 }

@@ -1,5 +1,5 @@
-// Batch 7 (RS-1a) — DuckDuckGo lite/html sebagai ENGINE UMUM fallback (nonofficial,
-// bisa berubah/rate-limit — makanya posisinya terakhir setelah API resmi, dan bisa
+// Batch 7 (RS-1a), DuckDuckGo lite/html sebagai ENGINE UMUM fallback (nonofficial,
+// bisa berubah/rate-limit, makanya posisinya terakhir setelah API resmi, dan bisa
 // dimatikan YUI_RESEARCH_DDG=0). Parser diekspor utk unit test (fixture).
 import type { SearchProvider, SearchResult } from "../types.js";
 import { decodeEntities, htmlToPlain, httpText } from "../util.js";
@@ -18,7 +18,7 @@ function unwrapDdgHref(href: string): string | null {
   return null;
 }
 
-/** Parser halaman lite.duckduckgo.com/lite — tabel hasil sederhana. */
+/** Parser halaman lite.duckduckgo.com/lite, tabel hasil sederhana. */
 export function parseDdgLite(html: string, limit: number): SearchResult[] {
   const out: SearchResult[] = [];
   const linkRe = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
@@ -29,7 +29,7 @@ export function parseDdgLite(html: string, limit: number): SearchResult[] {
     if (!url || !title) continue;
     out.push({ title, url, snippet: "", source: "ddg" });
   }
-  // snippet: cell berikut link — pasangkan berurutan bila ada.
+  // snippet: cell berikut link, pasangkan berurutan bila ada.
   const snips = [...html.matchAll(/class="result-snippet"[^>]*>([\s\S]*?)<\/td>/g)].map((s) => htmlToPlain(s[1]!));
   out.forEach((r, i) => {
     if (snips[i]) r.snippet = snips[i]!.slice(0, 240);
@@ -37,7 +37,7 @@ export function parseDdgLite(html: string, limit: number): SearchResult[] {
   return out;
 }
 
-/** Parser halaman html.duckduckgo.com/html — kartu result__a + result__snippet. */
+/** Parser halaman html.duckduckgo.com/html, kartu result__a + result__snippet. */
 export function parseDdgHtml(html: string, limit: number): SearchResult[] {
   const out: SearchResult[] = [];
   const blockRe = /<a[^>]+class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>([\s\S]*?)(?=<a[^>]+class="result__a"|<\/body>|$)/g;
@@ -71,6 +71,6 @@ export const ddgProvider: SearchProvider = {
       const results = parseDdgHtml(html.text, opts.limit);
       if (results.length) return results;
     }
-    throw new Error("ddg blocked or no results (nonofficial endpoint — try again later or configure YUI_SEARXNG_URL)");
+    throw new Error("ddg blocked or no results (nonofficial endpoint, try again later or configure YUI_SEARXNG_URL)");
   },
 };

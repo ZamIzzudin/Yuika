@@ -1,8 +1,8 @@
-// P0-CORE-5: CONTRACT INVARIANT TESTS — dua jaminan fondasi yang TIDAK BOLEH
+// P0-CORE-5: CONTRACT INVARIANT TESTS, dua jaminan fondasi yang TIDAK BOLEH
 // pernah regresi, dijaga sebagai test eksplisit (bukan asumsi):
-//   (a) HISTORY APPEND-ONLY — messages hanya INSERT: seq monotonic, konten
+//   (a) HISTORY APPEND-ONLY, messages hanya INSERT: seq monotonic, konten
 //       pesan lama tidak pernah berubah/dihapus walau kompresi aktif.
-//   (b) SYSTEM PROMPT & TOOLSET FROZEN PER SESI — snapshot saat createSession
+//   (b) SYSTEM PROMPT & TOOLSET FROZEN PER SESI, snapshot saat createSession
 //       dipakai SELURUH turn; sumber berubah setelahnya tidak memengaruhi
 //       sesi berjalan (prompt-cache discipline).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -95,7 +95,7 @@ describe("(b) system prompt & toolset frozen per sesi", () => {
     const loop = new AgentLoop({ store, provider, model: "m", workspacePath: ws, approvals: { request: async () => true } as never, emit: () => {} });
     await loop.runTurn("s1", "halo");
 
-    // Sumber "berubah": registry bertambah tool baru — snapshot sesi tetap.
+    // Sumber "berubah": registry bertambah tool baru, snapshot sesi tetap.
     const session = store.getSession("s1")!;
     expect(session.systemPrompt).toBe("SYS-ORI");
     expect(session.toolsets).toEqual(["t_stable"]);
@@ -107,7 +107,7 @@ describe("(b) system prompt & toolset frozen per sesi", () => {
       expect(req.messages[0]).toEqual({ role: "system", content: "SYS-ORI" });
       const names = (req.tools ?? []).map((t) => t.name);
       expect(names).toContain("t_stable");
-      // tool TERLAMBAT didaftarkan TIDAK pernah bocor ke sesi — toolset frozen.
+      // tool TERLAMBAT didaftarkan TIDAK pernah bocor ke sesi, toolset frozen.
       expect(names).not.toContain("t_added_late");
     }
     // toolset sesi di store tidak berubah pasca-turn.

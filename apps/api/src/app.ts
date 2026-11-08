@@ -1,7 +1,7 @@
-// @yuika/api — Fastify app factory (P0-INF-1): semua REST/SSE yang dulu Next
+// @yuika/api, Fastify app factory (P0-INF-1): semua REST/SSE yang dulu Next
 // route handlers di apps/web/src/app/api/**. Path DIPERTAHANKAN persis
 // (prefix /api/…) sehingga frontend hanya ganti base URL (lib/api.ts).
-// buildApp(rt?) — runtime bisa di-inject (test); default: singleton proses api.
+// buildApp(rt?), runtime bisa di-inject (test); default: singleton proses api.
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import { ZodError } from "zod";
@@ -35,7 +35,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   const app = Fastify({ logger: false, bodyLimit: 12 * 1024 * 1024 });
   void app.register(cors, { origin: true }); // local app: reflect origin (web:3000 ↔ api:3211)
 
-  // Upload raw (pdf/xlsx/…): parser catch-all buffer — JSON tetap via parser
+  // Upload raw (pdf/xlsx/…): parser catch-all buffer, JSON tetap via parser
   // bawaan; tipe tanpa parser terdaftar jatuh ke sini sebagai Buffer.
   app.addContentTypeParser("*", { parseAs: "buffer" }, (_req, body, done) => done(null, body));
 

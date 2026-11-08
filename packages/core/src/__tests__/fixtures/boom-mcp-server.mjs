@@ -1,4 +1,4 @@
-// P0-MCP-1: server MCP stdio fixture untuk test — initialize + tools/list OK,
+// P0-MCP-1: server MCP stdio fixture untuk test, initialize + tools/list OK,
 // lalu MATI (exit 1) saat tools/call pertama → transport.onclose harus memicu onDown.
 import readline from "node:readline";
 
@@ -18,6 +18,6 @@ rl.on("line", (line) => {
   else if (msg.method === "tools/list") reply({ tools: TOOLS });
   else if (msg.method === "tools/call") {
     reply({ content: [{ type: "text", text: "about to die" }], isError: false });
-    setTimeout(() => process.exit(1), 50); // crash setelah balas — transport tutup
+    setTimeout(() => process.exit(1), 50); // crash setelah balas, transport tutup
   } else if (msg.method === "ping") reply({});
 });

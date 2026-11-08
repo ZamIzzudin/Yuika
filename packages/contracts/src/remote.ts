@@ -1,12 +1,12 @@
-// P1-PRT-2 — Kontrak payload remote (SALINAN VERBATIM dari
-// docs/portal/CONTRACTS-REMOTE.md — FROZEN v1, mirror yuika-portal).
+// P1-PRT-2, Kontrak payload remote (SALINAN VERBATIM dari
+// docs/portal/CONTRACTS-REMOTE.md, FROZEN v1, mirror yuika-portal).
 // Isi envelope E2E (SPEC-PROTOCOL §5); OPAQUE bagi relay & portal.
-// Mengubah shape/enum = proto v2 (SPEC-PROTOCOL §12) — jangan edit sepihak.
+// Mengubah shape/enum = proto v2 (SPEC-PROTOCOL §12), jangan edit sepihak.
 //
 // Amandemen aditif v1.1 (SCR-7, 2026-11): +act watch_screen/unwatch_screen,
 // +ev screen.state/screen.frame, +field host.state.screens (opsional).
 // Murni aditif: remote lama mem-BUANG ev tak dikenal (safeParse skip), host
-// lama membalas error unknown_action — tidak ada hapus/ganti shape.
+// lama membalas error unknown_action, tidak ada hapus/ganti shape.
 //
 // Aturan (CONTRACTS §1): action ber-rid dibalas event ber-rid sama; delta
 // ber-seq per sessionId (resume via subscribe{sinceSeq}); ping_host→pong_host
@@ -67,7 +67,7 @@ export const RemoteAction = z.discriminatedUnion("act", [
     rid: z.string(),
     sessions: z.array(z.string()),
   }),
-  // SCR-7 (v1.1): remote menonton live screen persona di host — 1fps JPEG,
+  // SCR-7 (v1.1): remote menonton live screen persona di host, 1fps JPEG,
   // read-only (tanpa input/lease di v0).
   z.object({
     proto: z.literal(1),
@@ -93,14 +93,14 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
   z.object({
     proto: z.literal(1),
     ev: z.literal("host.state"),
-    /** persona roster ringkas + sesi aktif — dikirim saat remote join */
+    /** persona roster ringkas + sesi aktif, dikirim saat remote join */
     sessions: z.array(z.object({
       sessionId: z.string(),
       title: z.string(),
       personaId: z.string(),
       updatedAt: z.number().int(),
     })),
-    /** SCR-7 (v1.1): live screen aktif di host (opsional — remote lama abaikan). */
+    /** SCR-7 (v1.1): live screen aktif di host (opsional, remote lama abaikan). */
     screens: z.array(z.object({
       key: z.string(),
       personaId: z.string(),
@@ -185,7 +185,7 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
     ev: z.literal("pong_host"),
     rid: z.string(),
   }),
-  // SCR-7 (v1.1): remote watch — state saat mulai/berubah; frame ~1fps.
+  // SCR-7 (v1.1): remote watch, state saat mulai/berubah; frame ~1fps.
   z.object({
     proto: z.literal(1),
     ev: z.literal("screen.state"),
@@ -202,7 +202,7 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
     proto: z.literal(1),
     ev: z.literal("screen.frame"),
     key: z.string(),
-    /** base64 JPEG — di-throttle 1fps + dedupe frame identik di host. */
+    /** base64 JPEG, di-throttle 1fps + dedupe frame identik di host. */
     data: z.string(),
     width: z.number().int(),
     height: z.number().int(),

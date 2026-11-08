@@ -1,4 +1,4 @@
-// yuika — reset data untuk retest dari nol (npm run data:clean).
+// yuika, reset data untuk retest dari nol (npm run data:clean).
 // Yang dibersihkan (semuanya DATA, bukan kode):
 //   • demo.db + -shm + -wal          → sesi, pesan, event, projects, file_revisions, audit MCP
 //   • model-overrides.json (root)    → override model per persona (tabel di Pengaturan)
@@ -70,7 +70,7 @@ const fmt = (p) => {
 };
 
 console.log(DRY ? "▾ Yang AKAN dibersihkan (dry-run, tidak ada yang dihapus):" : "▾ Membersihkan data test…");
-if (!exists.length) console.log("  (tidak ada data — sudah bersih)");
+if (!exists.length) console.log("  (tidak ada data, sudah bersih)");
 for (const t of exists) console.log(`  • ${t.label}  ${fmt(t.p)}`);
 if (DRY) {
   console.log("\nJalankan: npm run data:clean");
@@ -84,7 +84,7 @@ if (fs.existsSync(dbPath)) {
     fs.renameSync(dbPath, probe);
     fs.renameSync(probe, dbPath);
   } catch {
-    console.error("\n✗ demo.db masih dikunci — dev server kemungkinan masih jalan.");
+    console.error("\n✗ demo.db masih dikunci, dev server kemungkinan masih jalan.");
     console.error("  1) hentikan dev server (Ctrl+C di terminal `npm run dev`)");
     console.error("  2) jalankan ulang: npm run data:clean");
     console.error("  3) nyalakan lagi: npm run dev");
@@ -98,7 +98,7 @@ for (const t of exists) {
     fs.rmSync(t.p, { recursive: true, force: true });
     n++;
   } catch (e) {
-    console.error(`  ! gagal: ${t.p} — ${e.message}`);
+    console.error(`  ! gagal: ${t.p}, ${e.message}`);
   }
 }
 
@@ -111,7 +111,7 @@ if (!KEEP_MCP) {
       console.log("  • mcp.json → di-restore ke versi repo");
     }
   } catch {
-    /* bukan repo git / mcp.json tidak ada — abaikan */
+    /* bukan repo git / mcp.json tidak ada, abaikan */
   }
 }
 

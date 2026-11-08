@@ -1,4 +1,4 @@
-// P1-DUN-1/2: dungeon — misi parse & jalan (v0), ruangan = project kind dungeon,
+// P1-DUN-1/2: dungeon, misi parse & jalan (v0), ruangan = project kind dungeon,
 // run status persist + sweep restart; skill lifecycle draft→tested (accept).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -103,7 +103,7 @@ describe("dungeon mission (P1-DUN-1)", () => {
 });
 
 describe("skill lifecycle (P1-DUN-2)", () => {
-  it("propose → draft; accept → tested (bukan ready — eval P1-DUN-3 menyusul)", () => {
+  it("propose → draft; accept → tested (bukan ready, eval P1-DUN-3 menyusul)", () => {
     const skillsDir = path.join(dir, "skills");
     proposeSkill(skillsDir, "demo-skill", "Skill hasil misi contoh.", "Langkah 1.\nLangkah 2.");
     let skills = listSkills(skillsDir); // drafts terpisah

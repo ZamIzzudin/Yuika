@@ -1,4 +1,4 @@
-// P0-CORE-4: kompresi konteks v0 — view prompt memakai checkpoint saat estimasi
+// P0-CORE-4: kompresi konteks v0, view prompt memakai checkpoint saat estimasi
 // token melewati ambang. Invariant: TABEL MESSAGES TIDAK PERNAH DIUBAH
 // (append-only dijaga); kompresi = lapisan view + tabel checkpoint terpisah.
 // Fail-soft: aux model gagal → turn jalan tanpa kompresi.

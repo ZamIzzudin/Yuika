@@ -1,4 +1,4 @@
-// @yuika/relay-client — RelayHost: peran host (register_host, kelola remote,
+// @yuika/relay-client, RelayHost: peran host (register_host, kelola remote,
 // seal event per-recipient). Dipakai apps/api (host worker) & Tauri nanti.
 import { RemoteAction, type RemoteEvent } from "@yuika/contracts";
 import type { RelayClient, RelayHandlers } from "./core.js";
@@ -30,7 +30,7 @@ export interface RelayHostOpts {
  *   SPEC §4.1) → host_ready.
  * - `remote_joined`/`remote_left` menjaga map remote (kunci seal).
  * - `sendEvent(to|'all', ev)` → envelope E2E per-recipient (box tak bisa
- *   dibuka remote lain — broadcast = N box, SPEC §5.4).
+ *   dibuka remote lain, broadcast = N box, SPEC §5.4).
  * - action masuk dibuka + parse zod; unknown act → error unknown_action.
  */
 export class RelayHost {

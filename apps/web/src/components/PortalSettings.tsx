@@ -1,6 +1,6 @@
 "use client";
-// P1-PRT-3 — seksi Settings → Portal: pairing host + status link + remote list.
-// Kunci device HOST dibuat di proses api (bukan browser) — halaman ini hanya
+// P1-PRT-3, seksi Settings → Portal: pairing host + status link + remote list.
+// Kunci device HOST dibuat di proses api (bukan browser), halaman ini hanya
 // menyerahkan pairing token (QR/copy dari portal web) ke /api/portal/pair.
 import { useCallback, useEffect, useState } from "react";
 import { apiUrl, authFetch } from "@/lib/api";
@@ -15,8 +15,13 @@ interface PortalStatus {
   relayUrl: string | null;
   relayState: "offline" | "connecting" | "authed" | "closed";
   remotes: Array<{ deviceId: string; kind: string; name: string }>;
-  /** CP-4: browser auto-link (SSO) — presence, terpisah dari host manual. */
-  webDevice: { deviceId: string; name: string; linkedAt: number; online: boolean } | null;
+  /** CP-4: browser auto-link (SSO), presence, terpisah dari host manual. */
+  webDevice: {
+    deviceId: string;
+    name: string;
+    linkedAt: number;
+    online: boolean;
+  } | null;
   /** CP-5: "unlinked" = device dihapus dari portal (bukan error jaringan). */
   note?: "unlinked";
 }
@@ -49,7 +54,11 @@ export function PortalSettings() {
       const res = await authFetch(apiUrl("/api/portal/pair"), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token: token.trim(), portalUrl: portalUrl.trim(), name: name.trim() || "Yuika host" }),
+        body: JSON.stringify({
+          token: token.trim(),
+          portalUrl: portalUrl.trim(),
+          name: name.trim() || "Yuika host",
+        }),
       });
       const body = (await res.json()) as { error?: string; deviceId?: string };
       if (!res.ok) {
@@ -58,7 +67,7 @@ export function PortalSettings() {
         const m = body.error?.match(/for kind '(\w+)'/i);
         if (m && m[1] && m[1].toLowerCase() !== "desktop") {
           toastErr(
-            `${body.error} — this input pairs Yuika as a host: generate a Desktop token (Portal → Devices). ${m[1] === "web" ? "Web tokens are for the Remote page (/dev/remote)." : ""}`,
+            `${body.error}, this input pairs Yuika as a host: generate a Desktop token (Portal → Devices). ${m[1] === "web" ? "Web tokens are for the Remote page (/dev/remote)." : ""}`,
           );
         } else {
           toastErr(body.error ?? "pairing failed");
@@ -78,9 +87,13 @@ export function PortalSettings() {
   async function unlink() {
     setBusy(true);
     try {
-      const res = await authFetch(apiUrl("/api/portal/unlink"), { method: "DELETE" });
+      const res = await authFetch(apiUrl("/api/portal/unlink"), {
+        method: "DELETE",
+      });
       if (!res.ok) {
-        toastErr(((await res.json()) as { error?: string }).error ?? "unlink failed");
+        toastErr(
+          ((await res.json()) as { error?: string }).error ?? "unlink failed",
+        );
         return;
       }
       toastOk("Host unlinked locally (unlink at the portal Devices page too)");
@@ -95,15 +108,15 @@ export function PortalSettings() {
   return (
     <section aria-label="Portal" className="flex flex-col gap-4">
       <p className="text-caption text-dim">
-        Link this Yuika instance to your Yuika Portal account, then control it from another
-        device (phone, second browser). Keys stay on this host; traffic is end-to-end
-        encrypted through the relay.
+        Link this Yuika instance to your Yuika Portal account, then control it
+        from another device (phone, second browser). Keys stay on this host;
+        traffic is end-to-end encrypted through the relay.
       </p>
 
       {st.note === "unlinked" && (
         <p className="text-caption text-amber-400">
           Device was unlinked from the portal. Generate a new pairing token in
-          Yuika Portal (Devices) to link it again — this is not a network error.
+          Yuika Portal (Devices) to link it again, this is not a network error.
         </p>
       )}
 
@@ -153,52 +166,85 @@ export function PortalSettings() {
                 "none connected"
               ) : (
                 <span className="text-emerald-400">
-                  {st.remotes.length} connected: {st.remotes.map((r) => r.name).join(", ")}
+                  {st.remotes.length} connected:{" "}
+                  {st.remotes.map((r) => r.name).join(", ")}
                 </span>
               )}
             </dd>
             <dt>Web session</dt>
             <dd>
               {st.webDevice ? (
-                <span className={st.webDevice.online ? "text-emerald-400" : "text-dim"}>
-                  {st.webDevice.online ? "online" : "linked"} · {st.webDevice.deviceId}
+                <span
+                  className={
+                    st.webDevice.online ? "text-emerald-400" : "text-dim"
+                  }
+                >
+                  {st.webDevice.online ? "online" : "linked"} ·{" "}
+                  {st.webDevice.deviceId}
                 </span>
               ) : (
-                "not linked — sign in via Yuika Portal to auto-link this browser"
+                "not linked, sign in via Yuika Portal to auto-link this browser"
               )}
             </dd>
           </dl>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => void unlink()} disabled={busy}>
+            <Button
+              variant="ghost"
+              onClick={() => void unlink()}
+              disabled={busy}
+            >
               Unlink this host
             </Button>
           </div>
           <p className="text-caption text-dim">
-            Unlinking here removes local credentials only — also unlink the device slot at the
-            portal Devices page before pairing a replacement.
+            Unlinking here removes local credentials only, also unlink the
+            device slot at the portal Devices page before pairing a replacement.
           </p>
         </Card>
       ) : (
         <Card className="flex flex-col gap-3 p-4">
           <ol className="flex flex-col gap-1 text-caption text-dim">
             <li>1. Register or sign in at your Yuika Portal account.</li>
-            <li>2. Open Devices, add a pairing token — choose the <span className="text-primary">Desktop</span> kind (this app is a host).</li>
+            <li>
+              2. Open Devices, add a pairing token, choose the{" "}
+              <span className="text-primary">Desktop</span> kind (this app is a
+              host).
+            </li>
             <li>3. Paste the token below (valid for 2 minutes, single use).</li>
           </ol>
           <p className="text-caption text-faint">
-            Web tokens are not for this input — they pair a remote browser at the{" "}
+            Web tokens are not for this input, they pair a remote browser at the{" "}
             <span className="font-mono">/dev/remote</span> page.
           </p>
           <Field label="Portal URL">
-            <TextInput value={portalUrl} onChange={(e) => setPortalUrl(e.target.value)} spellCheck={false} />
+            <TextInput
+              value={portalUrl}
+              onChange={(e) => setPortalUrl(e.target.value)}
+              spellCheck={false}
+            />
           </Field>
           <Field label="Host name">
-            <TextInput value={name} onChange={(e) => setName(e.target.value)} maxLength={64} />
+            <TextInput
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={64}
+            />
           </Field>
-          <Field label="Pairing token" hint="from the portal Devices page (QR copy-paste)">
-            <TextInput value={token} onChange={(e) => setToken(e.target.value)} placeholder="43-character token" spellCheck={false} />
+          <Field
+            label="Pairing token"
+            hint="from the portal Devices page (QR copy-paste)"
+          >
+            <TextInput
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="43-character token"
+              spellCheck={false}
+            />
           </Field>
-          <Button onClick={() => void pair()} disabled={busy || token.trim().length < 20}>
+          <Button
+            onClick={() => void pair()}
+            disabled={busy || token.trim().length < 20}
+          >
             {busy ? "Pairing…" : "Pair this host"}
           </Button>
         </Card>

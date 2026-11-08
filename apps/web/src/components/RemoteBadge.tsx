@@ -1,5 +1,5 @@
 "use client";
-// P1-PRT-3 — badge "N remote connected" (poll ringan /api/portal/status).
+// P1-PRT-3, badge "N remote connected" (poll ringan /api/portal/status).
 // compact = varian titik hijau utk sidebar kolaps.
 import { useEffect, useState } from "react";
 import { apiUrl, authFetch } from "@/lib/api";
@@ -20,7 +20,7 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
         const res = await authFetch(apiUrl("/api/portal/status"));
         if (res.ok && alive) setSt((await res.json()) as RemoteBadgeState);
       } catch {
-        /* offline — coba lagi */
+        /* offline, coba lagi */
       }
     };
     void load();
@@ -41,7 +41,9 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
         title={label}
         aria-label={label}
         className="relative flex size-9 cursor-pointer items-center justify-center rounded-md2 text-emerald-400"
-        onClick={() => window.dispatchEvent(new CustomEvent("yui:open-settings"))}
+        onClick={() =>
+          window.dispatchEvent(new CustomEvent("yui:open-settings"))
+        }
       >
         <span className="size-2.5 rounded-full bg-emerald-400" aria-hidden />
         <span className="absolute -top-0.5 right-1 rounded-full bg-emerald-500/20 px-1 text-[10px] font-semibold">

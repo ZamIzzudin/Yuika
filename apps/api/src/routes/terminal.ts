@@ -1,4 +1,4 @@
-// @yuika/api — P2-STU-2: routes terminal — sesi shell shared user & agent.
+// @yuika/api, P2-STU-2: routes terminal, sesi shell shared user & agent.
 //   POST   /api/terminal/sessions        {projectId} → mulai/ambil sesi
 //   GET    /api/terminal/sessions        → daftar
 //   GET    /api/terminal/sessions/:id/stream → SSE (replay ring + live)
@@ -18,7 +18,7 @@ import { moduleLogger } from "@yuika/core";
 const log = moduleLogger("api:terminal");
 
 export function registerTerminalRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
-  /** Mulai/ambil sesi terminal project (satu per project — shared dengan agent). */
+  /** Mulai/ambil sesi terminal project (satu per project, shared dengan agent). */
   app.post("/api/terminal/sessions", async (req, reply) => {
     const { projectId } = (req.body ?? {}) as { projectId?: string };
     if (!projectId) return reply.code(400).send({ error: "projectId wajib" });
@@ -45,7 +45,7 @@ export function registerTerminalRoutes(app: FastifyInstance, getRt: () => YuiRun
 
   app.get("/api/terminal/sessions", async () => ({ sessions: listTerminalSessions() }));
 
-  /** Log eksekusi run_command project (view "Commands" panel terminal —
+  /** Log eksekusi run_command project (view "Commands" panel terminal,
    *  FLOW user 2026-11 #7: run_command terlihat tanpa membuka sesi shell). */
   app.get("/api/projects/:id/terminal/commands", async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -92,14 +92,14 @@ export function registerTerminalRoutes(app: FastifyInstance, getRt: () => YuiRun
       closed = true;
       sub.unsubscribe();
     });
-    // keepalive comment tiap 20 dtk — proxy/dev-server tak memotong idle.
+    // keepalive comment tiap 20 dtk, proxy/dev-server tak memotong idle.
     const ka = setInterval(() => {
       if (closed) return clearInterval(ka);
       reply.raw.write(": ka\n\n");
     }, 20_000);
   });
 
-  /** Ring buffer sesi (JSON) — alternatif SSE utk test/klien ringan. */
+  /** Ring buffer sesi (JSON), alternatif SSE utk test/klien ringan. */
   app.get("/api/terminal/sessions/:id/buffer", async (req, reply) => {
     const { id } = req.params as { id: string };
     const { getTerminalSession } = await import("@yuika/core");

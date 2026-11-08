@@ -1,6 +1,6 @@
-// @yuika/core — logging terstruktur (P0-INF-3): SATU logger pino untuk seluruh
+// @yuika/core, logging terstruktur (P0-INF-3): SATU logger pino untuk seluruh
 // core, di-cache di globalThis (aturan repo: state module-level wajib
-// globalThis — Next dev HMR & vitest sering memuat ulang modul; tanpa ini
+// globalThis, Next dev HMR & vitest sering memuat ulang modul; tanpa ini
 // akan lahir banyak instance pino yang menulis duplikat).
 //
 // Output: JSON-lines ke stdout (machine-parseable). Level via YUI_LOG_LEVEL;
@@ -8,7 +8,7 @@
 // bermakna), "info" saat trace mati, "warn" di bawah vitest (output test
 // bersih). traceId per turn = `turnId` yang di-bind via child logger:
 //   const log = getLogger().child({ mod: "loop", sessionId, turnId });
-// SEMUA baris log dari turn itu otomatis membawa sessionId+turnId — cukup
+// SEMUA baris log dari turn itu otomatis membawa sessionId+turnId, cukup
 // grep satu id untuk menelusuri alur penuh.
 import pino, { type Logger } from "pino";
 import { Writable } from "node:stream";
@@ -24,12 +24,12 @@ function defaultLevel(): string {
 }
 
 // ---- Mode pretty (dev): baris tunggal mudah dibaca manusia, TAPI tetap
-// terstruktur — struktur `YUI HH:MM:SS.mmm [mod] msg key=val …` stabil:
+// terstruktur, struktur `YUI HH:MM:SS.mmm [mod] msg key=val …` stabil:
 //   find "[mcp]"      → semua aktivitas modul itu
 //   find "connected"  → peristiwa tertentu lintas modul
 //   find "ses=1003"   → seluruh alur satu sesi (4 char terakhir sessionId)
 //   find "ERROR/WARN" → hanya baris bermasalah
-// JSON-lines asli tetap tersedia untuk mesin (YUI_LOG_PRETTY=0 — dipakai
+// JSON-lines asli tetap tersedia untuk mesin (YUI_LOG_PRETTY=0, dipakai
 // docker-compose: agregator log grep-able per field).
 function fmtVal(v: unknown): string {
   if (typeof v === "string") return /^\S*$/.test(v) ? v : JSON.stringify(v);
@@ -42,7 +42,7 @@ function fmtVal(v: unknown): string {
 }
 
 function prettyLine(o: Record<string, unknown>): string {
-  // time bisa epoch number (default pino) ATAU ISO string (isoTime) — Date menerima
+  // time bisa epoch number (default pino) ATAU ISO string (isoTime), Date menerima
   // keduanya; guard NaN untuk data eksternal
   const d = new Date(o.time as string | number);
   const t = Number.isNaN(d.getTime()) ? "??:??:??.???" : d.toISOString().slice(11, 23); // HH:MM:SS.mmm
@@ -62,18 +62,18 @@ const prettyStream = new Writable({
     try {
       process.stdout.write(prettyLine(JSON.parse(String(chunk))) + "\n");
     } catch {
-      process.stdout.write(chunk); // baris non-JSON — lewat apa adanya
+      process.stdout.write(chunk); // baris non-JSON, lewat apa adanya
     }
     cb();
   },
 });
 
-/** Logger root (singleton). Jangan tulis langsung — pakai `.child({ mod })`. */
+/** Logger root (singleton). Jangan tulis langsung, pakai `.child({ mod })`. */
 export function getLogger(): Logger {
   if (!g.__yuiLogger) {
     const opts = {
       level: defaultLevel(),
-      base: { app: "yui" }, // tanpa pid/hostname — noise untuk local-first app
+      base: { app: "yui" }, // tanpa pid/hostname, noise untuk local-first app
       timestamp: pino.stdTimeFunctions.isoTime,
     };
     g.__yuiLogger = env.logPretty ? pino(opts, prettyStream) : pino(opts);

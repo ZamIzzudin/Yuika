@@ -1,6 +1,6 @@
-// @yuika/core — SCR-6 (Batch 14b): QA watch tools untuk persona QA (Sherlock).
+// @yuika/core, SCR-6 (Batch 14b): QA watch tools untuk persona QA (Sherlock).
 // Sherlock MENONTON live screen persona lain (read-only, tanpa lease) dan
-// mencatat hasil verifikasi sebagai event qa.check — NON-BLOCKING: tidak ada
+// mencatat hasil verifikasi sebagai event qa.check, NON-BLOCKING: tidak ada
 // approval/gate, murni sinyal kualitas utk activity feed (tab Logs) dan
 // laporan QA pasca-run.
 import { z } from "zod";
@@ -13,7 +13,7 @@ import { redactActive } from "../vault/redact.js";
 
 const log = moduleLogger("qa");
 
-// SCR-6/14c: resolusi target pintar — persona id BUKAN nama tampilan (Hiro
+// SCR-6/14c: resolusi target pintar, persona id BUKAN nama tampilan (Hiro
 // = yui-coder) dan sesi target bisa hidup di project lain. Pola:
 //   "project/personaId" → key penuh apa adanya
 //   "personaId"         → cari di seluruh sesi aktif; unik → pakai (cross-project OK,
@@ -47,8 +47,8 @@ function resolveScreenTarget(projectId: string, target: string): Resolved {
   return {
     error: `no active screen for '${target}' (persona ids are technical, e.g. Hiro is 'yui-coder', not the display name)`,
     hint: all.length
-      ? "No session for that persona id. Active screens are listed — retry with the exact persona id or a full 'project/personaId' key."
-      : "There are no active screen sessions at all right now — the target must open its browser first, then retry.",
+      ? "No session for that persona id. Active screens are listed, retry with the exact persona id or a full 'project/personaId' key."
+      : "There are no active screen sessions at all right now, the target must open its browser first, then retry.",
     activeScreens: all,
   };
 }
@@ -67,7 +67,7 @@ function registerQaTools(): void {
       const resolved = resolveScreenTarget(ctx.projectId, args.target);
       if ("error" in resolved) {
         // stop (on=false) pada sesi yang sudah mati → idempoten, bukan error
-        if (args.on === false) return { result: { watching: false, target: args.target, note: "no active session — nothing to stop" } };
+        if (args.on === false) return { result: { watching: false, target: args.target, note: "no active session, nothing to stop" } };
         return { isError: true, result: resolved };
       }
       try {
@@ -85,7 +85,7 @@ function registerQaTools(): void {
           isError: true,
           result: {
             error: e instanceof Error ? e.message : String(e),
-            hint: "The target persona has no active screen session — ask it to open one (or wait) and retry.",
+            hint: "The target persona has no active screen session, ask it to open one (or wait) and retry.",
           },
         };
       }
@@ -95,7 +95,7 @@ function registerQaTools(): void {
   registry.register({
     name: "qa_snapshot",
     description:
-      "Read-only snapshot of another persona's live screen (same view as browser_snapshot, but for the target persona's session — no lease involved). Password fields are always masked.",
+      "Read-only snapshot of another persona's live screen (same view as browser_snapshot, but for the target persona's session, no lease involved). Password fields are always masked.",
     parameters: z.object({
       target: z.string().min(1).describe("Persona id whose screen to read, e.g. yui-coder"),
     }),
@@ -112,7 +112,7 @@ function registerQaTools(): void {
           isError: true,
           result: {
             error: e instanceof Error ? e.message : String(e),
-            hint: "The target persona has no active screen session — qa_watch first, then retry.",
+            hint: "The target persona has no active screen session, qa_watch first, then retry.",
           },
         };
       }
@@ -122,7 +122,7 @@ function registerQaTools(): void {
   registry.register({
     name: "qa_check",
     description:
-      "Record one QA verdict about what you are observing (a persona's screen, a file, a command result). Non-blocking — it lands in the project activity feed as a quality signal. Call it per checklist item, honestly: reproduce before you verify, isolate before you blame.",
+      "Record one QA verdict about what you are observing (a persona's screen, a file, a command result). Non-blocking, it lands in the project activity feed as a quality signal. Call it per checklist item, honestly: reproduce before you verify, isolate before you blame.",
     parameters: z.object({
       item: z.string().min(1).max(120).describe("Short check name, e.g. 'login form accepts valid creds'"),
       status: z.enum(["pass", "fail", "warn"]).describe("pass | fail | warn"),

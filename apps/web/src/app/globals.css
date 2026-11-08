@@ -1,12 +1,12 @@
 /*
- * Yuika — design tokens & shell.
+ * Yuika, design tokens & shell.
  * Sistem token diturunkan dari OpenBot (D:\projects\openbot, packages/brand/tokens.css):
  * palet netral monokrom, satu aksen hue-210, border super-samar, ukuran teks kecil rapat.
  * Semua nilai UI lewat token --yui-*; komponen tidak menulis warna sendiri.
  *
  * ── Tailwind v4 (DS-1) ─────────────────────────────────────────────────
  * Komponen baru WAJIB pakai utility Tailwind semantik (bg-surface, text-muted,
- * border-line, rounded-card, …) atau komponen ui/* — bukan CSS kustom.
+ * border-line, rounded-card, …) atau komponen ui/*, bukan CSS kustom.
  * @theme di bawah meng-alias token --yui-* → utility, jadi nilai visual
  * identik; CSS kelas lama (bagian bawah file) tetap hidup selama migrasi
  * file demi file (docs/DESIGN-SYSTEM.md).
@@ -50,11 +50,11 @@
   /* Tipografi semantik (yui: kecil-rapat) + font */
   --font-sans: var(--yui-font-sans);
   --font-mono: var(--yui-font-mono);
-  --text-caption: 12px;   /* yui-sm — meta, hint, chip */
-  --text-body: 13px;      /* yui-md — default UI */
-  --text-lead: 14px;      /* yui-lg — teks panel */
-  --text-title: 16px;     /* yui-xl — judul seksi */
-  --text-display: 18px;   /* yui-2xl — judul halaman */
+  --text-caption: 12px; /* yui-sm, meta, hint, chip */
+  --text-body: 13px; /* yui-md, default UI */
+  --text-lead: 14px; /* yui-lg, teks panel */
+  --text-title: 16px; /* yui-xl, judul seksi */
+  --text-display: 18px; /* yui-2xl, judul halaman */
 
   /* Radius & bayangan */
   --radius-sm2: 6px;
@@ -63,7 +63,7 @@
   --radius-card: 14px;
   --radius-xl2: 20px;
   --radius-bubble: 22px;
-  --radius-pill: 999px;    /* kapsul — chip, dot, bar progress */
+  --radius-pill: 999px; /* kapsul, chip, dot, bar progress */
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35);
   --shadow-pop: 0 8px 28px rgb(0 0 0 / 0.45);
 
@@ -72,7 +72,7 @@
   --ease-inout-yui: var(--yui-ease-in-out);
 }
 
-/* Utility kustom DS (v4 @utility — bisa dipakai bersama utility lain):
+/* Utility kustom DS (v4 @utility, bisa dipakai bersama utility lain):
  * .glass-panel = permukaan modal/dropdown (token --yui-glass) */
 @utility glass-panel {
   background: var(--yui-glass);
@@ -92,7 +92,7 @@
 @utility pop-yui {
   animation: pop-in 380ms var(--ease-out-yui) both;
 }
-/* Persona Studio: dock galeri — scroll tetap jalan, scrollbar TIDAK tampil. */
+/* Persona Studio: dock galeri, scroll tetap jalan, scrollbar TIDAK tampil. */
 [data-dock] {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -154,7 +154,7 @@
   --yui-warning: #ff9412;
   --yui-warning-soft: rgba(255, 148, 18, 0.12);
 
-  /* Alias semantik (dipakai board/tree/org — jangan hardcode fallback lagi) */
+  /* Alias semantik (dipakai board/tree/org, jangan hardcode fallback lagi) */
   --yui-ok: var(--yui-success);
   --yui-warn: var(--yui-warning);
   --yui-info: var(--yui-accent-text);
@@ -162,8 +162,10 @@
   --yui-danger-soft: rgba(255, 96, 105, 0.12);
 
   /* Tipografi: kecil, rapat, presisi */
-  --yui-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --yui-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  --yui-font-sans:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --yui-font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
   --yui-text-sm: 12px;
   --yui-text-md: 13px;
   --yui-text-lg: 14px;
@@ -199,8 +201,11 @@
   --yui-glass-blur: blur(24px) saturate(150%);
 }
 
-* { box-sizing: border-box; }
-html, body {
+* {
+  box-sizing: border-box;
+}
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -211,16 +216,30 @@ html, body {
   line-height: 1.55;
   text-rendering: geometricPrecision;
 }
-#__next, main { height: 100%; }
+#__next,
+main {
+  height: 100%;
+}
 
 /* ── Shell ─────────────────────────────────────────────────────── */
 
 /* ── Workspace: satu area konten + tab bar (Chat juga tab) ────── */
-.workspace { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 /* Persona Studio: maskot pop-in (character-select switch). */
 @keyframes pop-in {
-  from { opacity: 0; transform: scale(0.86); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 /* Kartu orbit workspace melayang pelan (float-yui). */
 @keyframes yui-float {
@@ -233,12 +252,28 @@ html, body {
     box-shadow: 0 18px 30px -12px rgb(0 0 0 / 0.5);
   }
 }
-@keyframes yui-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes yui-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
 
 /* ── Persona list (pola agent-row OpenBot) ─────────────────────── */
 
 /* ── Header percakapan ─────────────────────────────────────────── */
-@keyframes chip-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes chip-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
 
 /* ── Timeline pesan ────────────────────────────────────────────── */
 
@@ -246,20 +281,38 @@ html, body {
 
 /* User: bubble terang rata kanan (pola ui-bubble default OpenBot) */
 @keyframes message-in {
-  from { opacity: 0; translate: 0 6px; }
-  to { opacity: 1; translate: 0 0; }
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
 /* Typing dots (pola team-typing-dots) */
-@keyframes typing-dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes typing-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
 
 /* Langkah tool: senyap, mono, lipat (pola agent-steps) */
-.steps { display: flex; flex-direction: column; gap: 2px; }
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
 /* Delegation: baris subagent (pola subagents) */
 /* Feed live delegasi (fix dev-10 "kartu delegasi statis menit-lamanya") */
 
-/* Reasoning stream (fix dev-10: pikiran model GLM kini terlihat — kolaps-able) */
+/* Reasoning stream (fix dev-10: pikiran model GLM kini terlihat, kolaps-able) */
 
 /* Approval: kartu tenang, outline + aksen lembut (pola bubble tinted) */
 .approval {
@@ -276,11 +329,29 @@ html, body {
   background: var(--yui-warning-soft);
   padding: var(--yui-space-3) var(--yui-space-4);
 }
-.approval .card b { font-size: var(--yui-text-md); font-weight: 500; }
-.approval .card code { font-family: var(--yui-font-mono); font-size: var(--yui-text-sm); }
-.approval .why { margin: 2px 0 0; color: var(--yui-text-muted); font-size: var(--yui-text-sm); }
-.approval .verdict { margin-top: var(--yui-space-2); font-size: var(--yui-text-sm); color: var(--yui-text-muted); }
-.approval .actions { display: flex; gap: var(--yui-space-2); margin-top: var(--yui-space-3); }
+.approval .card b {
+  font-size: var(--yui-text-md);
+  font-weight: 500;
+}
+.approval .card code {
+  font-family: var(--yui-font-mono);
+  font-size: var(--yui-text-sm);
+}
+.approval .why {
+  margin: 2px 0 0;
+  color: var(--yui-text-muted);
+  font-size: var(--yui-text-sm);
+}
+.approval .verdict {
+  margin-top: var(--yui-space-2);
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-muted);
+}
+.approval .actions {
+  display: flex;
+  gap: var(--yui-space-2);
+  margin-top: var(--yui-space-3);
+}
 
 /* Error sesi */
 
@@ -293,12 +364,16 @@ html, body {
  * Composer textarea punya styling sendiri dan dikecualikan. */
 
 /* ── Empty state (pola agent-chat-empty) ───────────────────────── */
-  /* safe center: muat = tengah; overflow = mulai dari atas (tidak ada
-     konten terpotong — jebakan klasik flex center + overflow) */
+/* safe center: muat = tengah; overflow = mulai dari atas (tidak ada
+     konten terpotong, jebakan klasik flex center + overflow) */
 
 /* ── Portrait ──────────────────────────────────────────────────── */
-.portrait-face { display: block; }
-.portrait-face.compact { width: 36px; }
+.portrait-face {
+  display: block;
+}
+.portrait-face.compact {
+  width: 36px;
+}
 
 .sr-only {
   position: absolute;
@@ -308,66 +383,194 @@ html, body {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.portrait-hero-wrap { display: flex; justify-content: center; }
-.portrait-hero { width: 220px; }
+.portrait-hero-wrap {
+  display: flex;
+  justify-content: center;
+}
+.portrait-hero {
+  width: 220px;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  /* Pop-in ganti karakter dimatikan — langsung tampil. */
-  .pop-yui { animation: none; }
+  /* Pop-in ganti karakter dimatikan, langsung tampil. */
+  .pop-yui {
+    animation: none;
+  }
 }
 
 /* ── Project panel (P1-PRJ-6 shell v0) ─────────────────────────── */
 
 /* Badge project di chat-header */
 .project-chip {
-  display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
-  font: inherit; font-size: var(--yui-text-sm); color: var(--yui-text-secondary);
-  background: var(--yui-bg-surface); border: 1px solid var(--yui-border-strong);
-  border-radius: 999px; padding: 3px 10px; cursor: pointer; max-width: 180px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font: inherit;
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-secondary);
+  background: var(--yui-bg-surface);
+  border: 1px solid var(--yui-border-strong);
+  border-radius: 999px;
+  padding: 3px 10px;
+  cursor: pointer;
+  max-width: 180px;
 }
-.project-chip i { width: 6px; height: 6px; border-radius: 50%; background: var(--yui-accent); }
-.project-chip span, .project-chip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.project-chip:hover { border-color: var(--yui-border-focus); color: var(--yui-text-primary); }
+.project-chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--yui-accent);
+}
+.project-chip span,
+.project-chip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-chip:hover {
+  border-color: var(--yui-border-focus);
+  color: var(--yui-text-primary);
+}
 
 /* ── Task drawer (P1-PRJ-4 UI) ─────────────────────────────────── */
 /* ── Org-chart Tim (struktur delegasi live) ───────────────────── */
-.org-chart { display: flex; flex-direction: column; align-items: center; gap: 0; }
-.org-connector { width: 2px; height: 20px; background: var(--yui-border-strong); }
-.org-children {
-  list-style: none; margin: 0; padding: var(--yui-space-3) 0 0; display: flex; flex-direction: column; gap: var(--yui-space-2);
-  width: 100%; align-items: center; position: relative;
+.org-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
-.org-children::before { content: ""; position: absolute; top: 0; left: 50%; width: 2px; height: 12px; background: var(--yui-border-strong); }
+.org-connector {
+  width: 2px;
+  height: 20px;
+  background: var(--yui-border-strong);
+}
+.org-children {
+  list-style: none;
+  margin: 0;
+  padding: var(--yui-space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--yui-space-2);
+  width: 100%;
+  align-items: center;
+  position: relative;
+}
+.org-children::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background: var(--yui-border-strong);
+}
 
 /* ── TaskTree (tab Pohon) ─────────────────────────────────────── */
-.task-add { display: flex; gap: var(--yui-space-2); padding-bottom: var(--yui-space-3); }
-.task-add input { min-width: 0; flex: 1; }
-.task-add-btn { padding: 0 12px; }
-.task-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-.task-row { display: flex; align-items: flex-start; gap: var(--yui-space-2); padding: var(--yui-space-2); border-radius: 8px; }
-.task-row:hover { background: var(--yui-hover); }
-.task-status {
-  flex: none; font: inherit; font-size: var(--yui-text-sm); cursor: pointer;
-  border: 1px solid var(--yui-border-strong); border-radius: 999px; padding: 2px 8px;
-  color: var(--yui-text-muted); background: var(--yui-bg-surface); margin-top: 1px;
+.task-add {
+  display: flex;
+  gap: var(--yui-space-2);
+  padding-bottom: var(--yui-space-3);
 }
-.task-row[data-s="todo"] .task-status { color: var(--yui-text-muted); }
-.task-row[data-s="doing"] .task-status { color: var(--yui-accent-text); border-color: var(--yui-accent); }
-.task-row[data-s="review"] .task-status { color: var(--yui-warning); border-color: var(--yui-warning); }
-.task-row[data-s="done"] .task-status { color: var(--yui-success); border-color: var(--yui-success); }
-.task-row[data-s="done"] .task-title { color: var(--yui-text-dim); text-decoration: line-through; }
-.task-body { display: flex; flex-direction: column; min-width: 0; }
-.task-title { font-size: var(--yui-text-md); color: var(--yui-text-secondary); line-height: 1.45; overflow-wrap: anywhere; }
-.task-assignee { font-size: var(--yui-text-sm); color: var(--yui-text-dim); }
+.task-add input {
+  min-width: 0;
+  flex: 1;
+}
+.task-add-btn {
+  padding: 0 12px;
+}
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--yui-space-2);
+  padding: var(--yui-space-2);
+  border-radius: 8px;
+}
+.task-row:hover {
+  background: var(--yui-hover);
+}
+.task-status {
+  flex: none;
+  font: inherit;
+  font-size: var(--yui-text-sm);
+  cursor: pointer;
+  border: 1px solid var(--yui-border-strong);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: var(--yui-text-muted);
+  background: var(--yui-bg-surface);
+  margin-top: 1px;
+}
+.task-row[data-s="todo"] .task-status {
+  color: var(--yui-text-muted);
+}
+.task-row[data-s="doing"] .task-status {
+  color: var(--yui-accent-text);
+  border-color: var(--yui-accent);
+}
+.task-row[data-s="review"] .task-status {
+  color: var(--yui-warning);
+  border-color: var(--yui-warning);
+}
+.task-row[data-s="done"] .task-status {
+  color: var(--yui-success);
+  border-color: var(--yui-success);
+}
+.task-row[data-s="done"] .task-title {
+  color: var(--yui-text-dim);
+  text-decoration: line-through;
+}
+.task-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.task-title {
+  font-size: var(--yui-text-md);
+  color: var(--yui-text-secondary);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.task-assignee {
+  font-size: var(--yui-text-sm);
+  color: var(--yui-text-dim);
+}
 
 /* ── Roster (P1-PRJ-3, di drawer proyek) ───────────────────────── */
-.roster-section { display: flex; flex-direction: column; gap: var(--yui-space-2); padding-bottom: var(--yui-space-4); border-bottom: 1px solid var(--yui-border); margin-bottom: var(--yui-space-3); }
+.roster-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--yui-space-2);
+  padding-bottom: var(--yui-space-4);
+  border-bottom: 1px solid var(--yui-border);
+  margin-bottom: var(--yui-space-3);
+}
 
 /* ── Panel MCP (P1-MCP-3, sidebar) ─────────────────────────────── */
 
 /* State kosong di dalam chat-scroll: hero + saran + composer aktif di bawahnya */
-.chat-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--yui-space-3); padding: var(--yui-space-8) var(--yui-space-6); min-height: 100%; text-align: center; }
-.chat-empty h1 { margin: 0; }
+.chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--yui-space-3);
+  padding: var(--yui-space-8) var(--yui-space-6);
+  min-height: 100%;
+  text-align: center;
+}
+.chat-empty h1 {
+  margin: 0;
+}
 
 /* ── Pemilihan persona di tengah layar (scope Workspace) ───────── */
 
@@ -380,7 +583,12 @@ html, body {
 /* ── Papan kanban (P2-FLOW-7) ──────────────────────────────────── */
 
 /* ── Katalog MCP (P1-MCP-1) ───────────────────────────────────── */
-.mcp-catalog { margin-top: var(--yui-space-4); display: flex; flex-direction: column; gap: var(--yui-space-2); }
+.mcp-catalog {
+  margin-top: var(--yui-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--yui-space-2);
+}
 
 /* ── Memori (P1-MEM-1) ──────────────────────────────────────────── */
 
@@ -388,40 +596,71 @@ html, body {
 
 /* ── Sidebar footer + Settings modal ────────────────────────────── */
 
-  /* Glass ala menu macOS (disetujui user): bg semi-transparan + blur di belakang */
+/* Glass ala menu macOS (disetujui user): bg semi-transparan + blur di belakang */
 
-/* ── Skeleton (loader konten — satu bahasa visual) ──────────────── */
+/* ── Skeleton (loader konten, satu bahasa visual) ──────────────── */
 .skeleton {
-  display: flex; flex-direction: column; gap: var(--yui-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--yui-space-2);
   padding: var(--yui-space-2) 0;
 }
 .skeleton .sk {
-  position: relative; display: block; height: 10px;
+  position: relative;
+  display: block;
+  height: 10px;
   border-radius: var(--yui-radius-pill);
   background: var(--yui-hover);
   overflow: hidden;
 }
 .skeleton .sk::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.07),
+    transparent
+  );
   transform: translateX(-100%);
   animation: yui-shimmer 1.6s var(--yui-ease-in-out) infinite;
 }
-@keyframes yui-shimmer { to { transform: translateX(100%); } }
-.skeleton.rows { gap: 6px; }
+@keyframes yui-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+.skeleton.rows {
+  gap: 6px;
+}
 .skeleton .sk.row {
-  height: 30px; border-radius: var(--yui-radius-md);
-  display: flex; align-items: center; gap: var(--yui-space-2);
+  height: 30px;
+  border-radius: var(--yui-radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--yui-space-2);
   padding: 0 var(--yui-space-2);
 }
 .skeleton .sk.row > i {
-  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
   background: var(--yui-hover);
 }
-.skeleton .sk.row .sk-line { height: 8px; border-radius: var(--yui-radius-pill); background: var(--yui-hover); }
-.skeleton .sk.row::after { border-radius: var(--yui-radius-md); }
+.skeleton .sk.row .sk-line {
+  height: 8px;
+  border-radius: var(--yui-radius-pill);
+  background: var(--yui-hover);
+}
+.skeleton .sk.row::after {
+  border-radius: var(--yui-radius-md);
+}
 @media (prefers-reduced-motion: reduce) {
-  .skeleton .sk::after { animation: none; }
+  .skeleton .sk::after {
+    animation: none;
+  }
 }
 
 /* ── Tab Skill (P1-MEM-3) ───────────────────────────────────────── */
@@ -432,12 +671,23 @@ html, body {
 
 /* ── Galeri 15 bentuk Orin (dev 10) ──────────────────────────────── */
 /* ── Kartu & modal galeri 15 bentuk Orin (dev 10) ────────────────── */
-.stop-btn { margin-left: 2px; color: var(--yui-warn, #e6a23c); }
+.stop-btn {
+  margin-left: 2px;
+  color: var(--yui-warn, #e6a23c);
+}
 
 /* Diff file (P2-STU-3) */
-.file-diff-stat { margin: 0 0 4px; color: var(--yui-text-dim); font-size: var(--yui-text-sm); }
-.file-diff-stat .add { color: var(--yui-ok); }
-.file-diff-stat .del { color: var(--yui-warn); }
+.file-diff-stat {
+  margin: 0 0 4px;
+  color: var(--yui-text-dim);
+  font-size: var(--yui-text-sm);
+}
+.file-diff-stat .add {
+  color: var(--yui-ok);
+}
+.file-diff-stat .del {
+  color: var(--yui-warn);
+}
 
 /* Markdown dalam bubble chat (dev-10) */
 
@@ -445,7 +695,7 @@ html, body {
 
 /* Tombol refresh file tree */
 
-/* Diagram hierarki Tim v3 (dev-10): kanvas tak terbatas ala Excalidraw —
+/* Diagram hierarki Tim v3 (dev-10): kanvas tak terbatas ala Excalidraw,
    pan hold-drag (Pointer Events + capture), scroll = geser, Ctrl+scroll = zoom,
    grid dot yang ikut bergeser (background-position = pan), tanpa dependency. */
 
@@ -453,7 +703,7 @@ html, body {
 
 /* Dungeon (P1-DUN-1..2): arena latihan persona di tab Skill. */
 
-/* P1-DUN-5: gating fase roster — siap/belum per fase workflow. */
+/* P1-DUN-5: gating fase roster, siap/belum per fase workflow. */
 /* P1-MDL-2: panel smoke test model di Settings. */
 
 /* ── Dungeon page (P1-DUN-4): halaman terpisah arena latihan persona ── */
@@ -461,10 +711,21 @@ html, body {
 /* ── Metering panel (P1-CRED-1) ── */
 
 /* P1-INF-4: trace view */
-.trace-running { color: #e0af68; border-color: #e0af68; }
-.trace-error { color: #e06c75; border-color: #e06c75; }
-.trace-done { color: #9ece6a; border-color: #9ece6a; }
-.trace-cancelled { color: var(--yui-text-secondary); }
+.trace-running {
+  color: #e0af68;
+  border-color: #e0af68;
+}
+.trace-error {
+  color: #e06c75;
+  border-color: #e06c75;
+}
+.trace-done {
+  color: #9ece6a;
+  border-color: #9ece6a;
+}
+.trace-cancelled {
+  color: var(--yui-text-secondary);
+}
 
 /* P1-CRED-2/3/4: panel saldo & batas */
 
@@ -475,11 +736,12 @@ html, body {
 /* Dungeon: tab Misi/Riwayat + daftar riwayat sesi latihan (fix dev-10 user) */
 
 /* ── Scrollbar compact (fix 2026-11 user: default browser terlalu tebal,
-   memakan ruang & konten terlihat padat) — tipis 7px, track transparan,
+   memakan ruang & konten terlihat padat), tipis 7px, track transparan,
    warna dari token yui (bukan hex mentah), memudar saat idle ── */
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--yui-text-muted) 35%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, var(--yui-text-muted) 35%, transparent)
+    transparent;
 }
 ::-webkit-scrollbar {
   width: 7px;
@@ -498,4 +760,3 @@ html, body {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
-

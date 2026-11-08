@@ -1,4 +1,4 @@
-// P1-CRED-1: metering ledger — rollup per persona/model, filter, dan integrasi
+// P1-CRED-1: metering ledger, rollup per persona/model, filter, dan integrasi
 // AgentLoop (usage dari provider → event; TANPA usage → tidak tercatat; multi-
 // iterasi tool round → event per panggilan model).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -66,7 +66,7 @@ describe("UsageLedger (P1-CRED-1)", () => {
   });
 });
 
-/** Provider skrip (mirror loop.test.ts) — done chunk bisa membawa usage. */
+/** Provider skrip (mirror loop.test.ts), done chunk bisa membawa usage. */
 class FakeProvider implements ProviderAdapter {
   readonly id = "fake";
   constructor(private script: { deltas?: string[]; done: ProviderDone }[]) {}

@@ -1,5 +1,5 @@
-// P0-SEC-1 — sandbox container run_command:
-//  1. kontrak flag `docker run` (network none, cap, ro-rootfs, mount) — tanpa spawn
+// P0-SEC-1, sandbox container run_command:
+//  1. kontrak flag `docker run` (network none, cap, ro-rootfs, mount), tanpa spawn
 //  2. mode routing: docker fail-closed / auto fallback lokal + catatan / off
 //  3. timeout → docker kill (bukan cuma CLI)
 //  4. redaction tetap jalan di jalur sandbox
@@ -31,7 +31,7 @@ afterEach(() => {
 const ctx = () => ({ sessionId: "s1", turnId: "t1", workspacePath: dir, emit: () => {} });
 const approve = () => ({ ...ctx(), requestApproval: vi.fn(async () => true) });
 
-describe("P0-SEC-1 sandboxArgv — kontrak flag docker run", () => {
+describe("P0-SEC-1 sandboxArgv, kontrak flag docker run", () => {
   const argv = sandboxArgv("n1", "node", ["x.js"], "/tmp/ws");
 
   it("network default-deny", () => {

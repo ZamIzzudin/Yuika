@@ -1,4 +1,4 @@
-// P0-DEL-2: cancel/steer anak delegasi dari parent — arahan mid-turn di-drain
+// P0-DEL-2: cancel/steer anak delegasi dari parent, arahan mid-turn di-drain
 // loop anak tiap awal iterasi; abort menutup job sebagai interrupted (bukan error)
 // dan kartu delegasi parent ditutup dengan penanda pembatalan.
 import { describe, expect, it, beforeEach } from "vitest";
@@ -104,7 +104,7 @@ function makeDeps(provider: ProviderAdapter, controls?: DelegationDeps["controls
 }
 
 describe("P0-DEL-2 steer anak", () => {
-  it("arahan mid-turn di-drain di iterasi berikutnya — terlihat provider & sesi anak", async () => {
+  it("arahan mid-turn di-drain di iterasi berikutnya, terlihat provider & sesi anak", async () => {
     const provider = new ScriptedProvider([
       () => ({ type: "done", finishReason: "tool_calls", text: "", toolCalls: [{ id: "c1", name: "todo_list", args: {} }] }),
       () => ({ type: "done", finishReason: "stop", text: "oke, fokus ke ringkasan eksekutif", toolCalls: [] }),
@@ -122,10 +122,10 @@ describe("P0-DEL-2 steer anak", () => {
     expect(summary).toContain("ringkasan");
     // iterasi 2 provider menerima pesan arahan berlabel
     const iter2 = provider.calls[1]!;
-    expect(JSON.stringify(iter2.messages)).toContain("[arahan user — mid-turn] fokus ke ringkasan eksekutif");
+    expect(JSON.stringify(iter2.messages)).toContain("[arahan user, mid-turn] fokus ke ringkasan eksekutif");
     // arahan tercatat di history sesi anak (bukan hilang di prompt saja)
     const childMsgs = store.getMessages(handle.childSessionId);
-    expect(JSON.stringify(childMsgs)).toContain("[arahan user — mid-turn]");
+    expect(JSON.stringify(childMsgs)).toContain("[arahan user, mid-turn]");
     // kontrol dilepas setelah selesai
     expect(map.size).toBe(0);
   });

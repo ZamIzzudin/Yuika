@@ -1,28 +1,28 @@
 "use client";
-// Batch 16 v3 — Team Assembly playground (model fisika docs/Orin Playground):
-//  · MASKOT ANIMASI (OrinPortrait) — tanpa label nama di playground.
+// Batch 16 v3, Team Assembly playground (model fisika docs/Orin Playground):
+//  · MASKOT ANIMASI (OrinPortrait), tanpa label nama di playground.
 //  · Spawn SEKALI: objek fisika per personaId dibuat satu kali di ref-map;
 //    hover/detail TIDAK pernah menyentuhnya; maskot digambar DI ATAS overlay
 //    detail (overlay = lapis radial di belakang) → tak ada "respawn" palsu.
-//  · HIDUP: scheduler think() ala referensi — rangkaian hop, hop senang di
+//  · HIDUP: scheduler think() ala referensi, rangkaian hop, hop senang di
 //    tempat, dengung (sway), jeda; crouch antisipasi sebelum lompat.
 //  · GRAVITASI + COLLISION antar maskot: terpisah bermassa, impuls memantul,
 //    tabrakan keras → stun; kontak vertikal → BISA SALING TIMPA (stacking).
 //  · DRAG & THROW: angkat (held, mengikuti pointer), lempar (kecepatan dari
 //    sampel 110ms terakhir, clamp), TAP = sapa (hop kecil senang).
 //  · Detail hover: radial overlay transparan→canvas + fade/scale in-out.
-//  · Start session: dropdown persona + tombol (≥1 assign). Kartu = toggle
+//  · Start Session: dropdown persona + tombol (≥1 assign). Kartu = toggle
 //    assign/unassign. Dekorasi lingkaran ala orbit lama.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PersonaInfo } from "@yuika/contracts";
-import { CaretDown } from "@phosphor-icons/react";
+import { CaretDown, Dot } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { OrinPortrait } from "./OrinPortrait";
 import { Button } from "./ui";
 import { useMenuAutoClose } from "./ui/menu";
 
 const MPX = 56; // ukuran OrinPortrait playground
-const R = 20; // radius collision — cukup kecil agar menyentuh "skin to skin"
+const R = 20; // radius collision, cukup kecil agar menyentuh "skin to skin"
 
 type Mode = "air" | "crouch" | "idle" | "held" | "stun";
 
@@ -65,17 +65,23 @@ export function TeamSetupView({
   onUnassign,
   onStart,
   busy,
+  title = "Build Your Team",
+  /** D34: slot footer, jika diisi, MENGGANTI blok "Start Session"
+   *  (dipakai Config → Roster agar interaksinya identik tanpa dropdown). */
+  footer,
 }: {
   project: { id: string; name: string };
   personas: PersonaInfo[];
   assignedIds: string[];
   onAssign: (personaId: string) => void;
   onUnassign: (personaId: string) => void;
-  onStart: (p: PersonaInfo) => void;
+  onStart?: (p: PersonaInfo) => void;
   busy?: boolean;
+  title?: string;
+  footer?: React.ReactNode;
 }) {
   const [hoverP, setHoverP] = useState<PersonaInfo | null>(null);
-  /** Dropdown pemilih lead — pola yang sama dengan dropdown persona header Chat
+  /** Dropdown pemilih lead, pola yang sama dengan dropdown persona header Chat
    *  (details + glass-panel + auto-close: klik luar/Escape/pilih item). */
   const startMenu = useMenuAutoClose<HTMLDetailsElement>();
   /** Detail overlay: persona terakhir + flag tampil → fade OUT dengan scale
@@ -86,9 +92,9 @@ export function TeamSetupView({
   } | null>(null);
   const [startSel, setStartSel] = useState<string | null>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
-  /** Mount list — SATU-SATUNYA alasan maskot muncul/hilang (assignment). */
+  /** Mount list, SATU-SATUNYA alasan maskot muncul/hilang (assignment). */
   const [mounted, setMounted] = useState<string[]>([]);
-  /** Fisika: ref-map by personaId — DIBUAT SEKALI, tak pernah di-recreate. */
+  /** Fisika: ref-map by personaId, DIBUAT SEKALI, tak pernah di-recreate. */
   const bodies = useRef(new Map<string, M>());
   const pointer = useRef({ x: 0, y: 0 });
 
@@ -400,7 +406,7 @@ export function TeamSetupView({
             }
           greetPair = null;
         }
-        // render imperatif — React tidak ikut 60fps
+        // render imperatif, React tidak ikut 60fps
         el.querySelectorAll<HTMLElement>("[data-mascot]").forEach((n) => {
           const m = bodies.current.get(n.dataset.mascot!);
           if (!m) return;
@@ -519,191 +525,201 @@ export function TeamSetupView({
   const zoneH = 170; // perkiraan tinggi zona (utk release-throw scaling)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-8 justify-center">
-      <div className="mb-10 text-center">
-        <h1 className="text-4xl font-semibold text-primary">Build Your Team</h1>
-      </div>
-
-      {/* ── Panggung ala orbit lama ─────────────────────────────────────── */}
-      <div className="relative mt-2 h-[460px] w-full max-w-[720px] select-none sm:h-[500px]">
-        {/* Dekorasi lingkaran konsentris (orbit lama) */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute top-1/2 left-1/2 h-[80%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
-          <div className="absolute top-1/2 left-1/2 h-[52%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
-          <div className="absolute top-1/2 left-1/2 h-[35%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
+    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-8">
+      <div className="my-auto flex w-full max-w-[720px] flex-col items-center">
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-semibold text-primary">{title}</h1>
         </div>
 
-        {/* DETAIL hover (z-30, DI ATAS playground — bring to front): radial
+        {/* ── Panggung ala orbit lama ─────────────────────────────────────── */}
+        <div className="relative mt-2 h-[460px] w-full max-w-[720px] select-none sm:h-[500px]">
+          {/* Dekorasi lingkaran konsentris (orbit lama) */}
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            <div className="absolute top-1/2 left-1/2 h-[80%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
+            <div className="absolute top-1/2 left-1/2 h-[52%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
+            <div className="absolute top-1/2 left-1/2 h-[35%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
+          </div>
+
+          {/* DETAIL hover (z-30, DI ATAS playground, bring to front): radial
             transparan→canvas, fade+scale; pointer-events-none sehingga kartu
             di tepi tetap bisa di-hover/klik. Maskot tetap hidup di belakang. */}
-        {detail && (
-          <div
-            key={detail.p.id}
-            aria-live="polite"
-            className={`pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 px-16 text-center transition-all ease-[var(--ease-out-yui)] duration-300 sm:px-20 ${
-              detail.show ? "opacity-100 scale-100" : "opacity-0 scale-75"
-            }`}
-            style={{
-              background:
-                "radial-gradient(ellipse 62% 52% at center, var(--color-canvas) 52%, transparent 100%)",
-            }}
-          >
-            <OrinPortrait state="idle" personaId={detail.p.id} size={170} />
-            <b className="text-title font-semibold text-primary">
-              {detail.p.name}
-            </b>
-            <p className="max-w-[320px] text-body leading-6 text-muted">
-              {detail.p.description}
-            </p>
-          </div>
-        )}
+          {detail && (
+            <div
+              key={detail.p.id}
+              aria-live="polite"
+              className={`pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 px-16 text-center transition-all ease-[var(--ease-out-yui)] duration-300 sm:px-20 ${
+                detail.show ? "opacity-100 scale-100" : "opacity-0 scale-75"
+              }`}
+              style={{
+                background:
+                  "radial-gradient(ellipse 62% 52% at center, var(--color-canvas) 52%, transparent 100%)",
+              }}
+            >
+              <OrinPortrait state="idle" personaId={detail.p.id} size={170} />
+              <b className="text-title font-semibold text-primary">
+                {detail.p.name}
+              </b>
+              <p className="max-w-[320px] text-body leading-6 text-muted">
+                {detail.p.description}
+              </p>
+            </div>
+          )}
 
-        {/* PLAYGROUND (z-20): zona fisik TENGAH — tanpa background & tanpa
+          {/* PLAYGROUND (z-20): zona fisik TENGAH, tanpa background & tanpa
             label; maskot ANIMASI bisa di-drag, dilempar, saling menimpa. */}
-        <div
-          ref={zoneRef}
-          className="absolute top-1/2 left-1/2 z-20 h-[34%] w-[38%] -translate-x-1/2 -translate-y-1/2"
-          role="presentation"
-        >
-          {mounted.map((pid) => {
-            const p = personas.find((x) => x.id === pid);
-            if (!p) return null;
+          <div
+            ref={zoneRef}
+            className="absolute top-1/2 left-1/2 z-20 h-[34%] w-[38%] -translate-x-1/2 -translate-y-1/2"
+            role="presentation"
+          >
+            {mounted.map((pid) => {
+              const p = personas.find((x) => x.id === pid);
+              if (!p) return null;
+              return (
+                <div
+                  key={pid}
+                  data-mascot={pid}
+                  className="absolute top-0 left-0 flex flex-col items-center will-change-transform"
+                  style={{ width: MPX }}
+                >
+                  <button
+                    type="button"
+                    aria-label={`Play with ${p.name}`}
+                    title={`${p.name}, drag to toss, tap to greet`}
+                    className="pointer-events-auto cursor-grab touch-none border-0 bg-transparent p-0"
+                    onPointerDown={(e) => onGrabStart(pid, e)}
+                    onPointerMove={(e) => onGrabMove(pid, e)}
+                    onPointerUp={(e) => onGrabEnd(pid, e, zoneH)}
+                    onPointerCancel={(e) => onGrabEnd(pid, e, zoneH)}
+                  >
+                    <OrinPortrait state="idle" personaId={p.id} size={MPX} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* RING kartu float ala orbit lama (klik = assign / unassign) */}
+          {ringCards.map(({ p, left, top }, i) => {
+            const assigned = assignedIds.includes(p.id);
             return (
               <div
-                key={pid}
-                data-mascot={pid}
-                className="absolute top-0 left-0 flex flex-col items-center will-change-transform"
-                style={{ width: MPX }}
+                key={p.id}
+                className="absolute z-30 -translate-x-1/2 -translate-y-1/2"
+                style={{ left, top }}
               >
                 <button
                   type="button"
-                  aria-label={`Play with ${p.name}`}
-                  title={`${p.name} — drag to toss, tap to greet`}
-                  className="pointer-events-auto cursor-grab touch-none border-0 bg-transparent p-0"
-                  onPointerDown={(e) => onGrabStart(pid, e)}
-                  onPointerMove={(e) => onGrabMove(pid, e)}
-                  onPointerUp={(e) => onGrabEnd(pid, e, zoneH)}
-                  onPointerCancel={(e) => onGrabEnd(pid, e, zoneH)}
+                  onMouseEnter={() => setHoverP(p)}
+                  onMouseLeave={() => setHoverP(null)}
+                  onFocus={() => setHoverP(p)}
+                  onBlur={() => setHoverP(null)}
+                  onClick={() => (assigned ? onUnassign(p.id) : onAssign(p.id))}
+                  aria-pressed={assigned}
+                  aria-label={p.name}
+                  title={
+                    assigned
+                      ? `${p.name} is on the team, click to remove`
+                      : `Assign ${p.name} to this project`
+                  }
+                  style={{ animationDelay: `${(i * 1.1).toFixed(1)}s` }}
+                  className={`relative flex w-[130px] cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui ${
+                    assigned
+                      ? "border-accent bg-accent-soft"
+                      : "border-line bg-surface hover:border-line-strong hover:bg-hover"
+                  }`}
                 >
-                  <OrinPortrait state="idle" personaId={p.id} size={MPX} />
+                  <PersonaFace personaId={p.id} size={40} />
+                  <b className="text-caption font-semibold text-secondary">
+                    {p.name}
+                  </b>
+                  {assigned && (
+                    <i
+                      className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-white"
+                      aria-hidden
+                    >
+                      ✓
+                    </i>
+                  )}
                 </button>
               </div>
             );
           })}
         </div>
 
-        {/* RING kartu float ala orbit lama (klik = assign / unassign) */}
-        {ringCards.map(({ p, left, top }, i) => {
-          const assigned = assignedIds.includes(p.id);
-          return (
+        {/* ── Start Session: dropdown persona + tombol (≥1 assigned) ─────────
+          D34: bisa diganti slot `footer` (Config → Roster, tanpa dropdown). */}
+        {footer ??
+          (onStart ? (
             <div
-              key={p.id}
-              className="absolute z-30 -translate-x-1/2 -translate-y-1/2"
-              style={{ left, top }}
+              className="mt-3 flex min-h-[40px] items-center gap-5"
+              aria-live="polite"
             >
-              <button
-                type="button"
-                onMouseEnter={() => setHoverP(p)}
-                onMouseLeave={() => setHoverP(null)}
-                onFocus={() => setHoverP(p)}
-                onBlur={() => setHoverP(null)}
-                onClick={() => (assigned ? onUnassign(p.id) : onAssign(p.id))}
-                aria-pressed={assigned}
-                aria-label={p.name}
-                title={
-                  assigned
-                    ? `${p.name} is on the team — click to remove`
-                    : `Assign ${p.name} to this project`
-                }
-                style={{ animationDelay: `${(i * 1.1).toFixed(1)}s` }}
-                className={`relative flex w-[130px] cursor-pointer flex-col items-center gap-1.5 rounded-card border px-3.5 py-3 text-center shadow-card transition-[background-color,border-color,color,box-shadow] ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] motion-safe:float-yui ${
-                  assigned
-                    ? "border-accent bg-accent-soft"
-                    : "border-line bg-surface hover:border-line-strong hover:bg-hover"
-                }`}
-              >
-                <PersonaFace personaId={p.id} size={40} />
-                <b className="text-caption font-semibold text-secondary">
-                  {p.name}
-                </b>
-                {assigned && (
-                  <i
-                    className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-white"
-                    aria-hidden
-                  >
-                    ✓
-                  </i>
-                )}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Start session: dropdown persona + tombol (≥1 assigned) ───────── */}
-      <div
-        className="mt-3 flex min-h-[40px] items-center gap-5"
-        aria-live="polite"
-      >
-        {assignedPersonas.length > 0 && startLead ? (
-          <>
-            <details className="group relative" ref={startMenu.ref}>
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary select-none transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary [&::-webkit-details-marker]:hidden">
-                <PersonaFace personaId={startLead.id} size={18} />
-                <span className="flex min-w-0 flex-col text-left">
-                  <b className="text-body font-semibold text-primary">
-                    {startLead.name}
-                  </b>
-                </span>
-                <CaretDown size={12} aria-hidden />
-              </summary>
-              <div className="glass-panel absolute bottom-full right-0 z-30 mb-1 flex max-h-[260px] w-[260px] flex-col gap-px overflow-y-auto rounded-lg2 p-1 shadow-pop">
-                {assignedPersonas.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    aria-current={p.id === startLead.id ? "true" : undefined}
-                    className={`flex cursor-pointer items-center gap-2.5 rounded-md2 border px-2 py-1.5 text-left transition-colors ${
-                      p.id === startLead.id
-                        ? "border-line bg-hover"
-                        : "border-transparent hover:bg-hover"
-                    }`}
-                    onClick={() => {
-                      setStartSel(p.id);
-                      startMenu.close();
-                    }}
-                  >
-                    <PersonaFace personaId={p.id} size={20} />
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-body text-secondary">
-                        {p.name}
+              {assignedPersonas.length > 0 && startLead ? (
+                <>
+                  <details className="group relative" ref={startMenu.ref}>
+                    <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md2 border border-line bg-control px-3 py-1.5 text-caption text-secondary select-none transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary [&::-webkit-details-marker]:hidden">
+                      <PersonaFace personaId={startLead.id} size={18} />
+                      <span className="flex min-w-0 flex-col text-left">
+                        <b className="text-body font-semibold text-primary">
+                          {startLead.name}
+                        </b>
                       </span>
-                      <small className="truncate text-caption text-dim">
-                        {p.expertise}
-                      </small>
-                    </span>
-                    {p.id === startLead.id && (
-                      <i className="text-accent" aria-hidden>
-                        ✓
-                      </i>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </details>
-            <Button
-              variant="primary"
-              disabled={busy}
-              onClick={() => onStart(startLead)}
-            >
-              {busy ? "Opening…" : "Start session"}
-            </Button>
-          </>
-        ) : (
-          <span className="text-caption text-dim">
-            Assign at least one persona as your partner
-          </span>
-        )}
+                      <CaretDown size={12} aria-hidden />
+                    </summary>
+                    <div className="glass-panel absolute bottom-full right-0 z-30 mb-1 flex max-h-[260px] w-[260px] flex-col gap-px overflow-y-auto rounded-lg2 p-1 shadow-pop">
+                      {assignedPersonas.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          aria-current={
+                            p.id === startLead.id ? "true" : undefined
+                          }
+                          className={`flex cursor-pointer items-center gap-2.5 rounded-md2 border px-2 py-1.5 text-left transition-colors ${
+                            p.id === startLead.id
+                              ? "border-line bg-hover"
+                              : "border-transparent hover:bg-hover"
+                          }`}
+                          onClick={() => {
+                            setStartSel(p.id);
+                            startMenu.close();
+                          }}
+                        >
+                          <PersonaFace personaId={p.id} size={20} />
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate text-body text-secondary">
+                              {p.name}
+                            </span>
+                            <small className="truncate text-caption text-dim">
+                              {p.expertise}
+                            </small>
+                          </span>
+                          {p.id === startLead.id && (
+                            <Dot
+                              weight="fill"
+                              aria-hidden
+                              className="size-3 shrink-0 text-accent"
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </details>
+                  <Button
+                    variant="primary"
+                    disabled={busy}
+                    onClick={() => onStart(startLead)}
+                  >
+                    {busy ? "Opening…" : "Start Session"}
+                  </Button>
+                </>
+              ) : (
+                <span className="text-caption text-dim">
+                  Assign at least one persona as your partner
+                </span>
+              )}
+            </div>
+          ) : null)}
       </div>
     </div>
   );

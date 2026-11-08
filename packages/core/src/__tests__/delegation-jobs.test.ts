@@ -1,4 +1,4 @@
-// P0-DEL-1: delegation job persist — baris job di DB (status lintas restart),
+// P0-DEL-1: delegation job persist, baris job di DB (status lintas restart),
 // audit done/error, dan boot-heal menutup job 'running' jadi 'interrupted'.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -73,7 +73,7 @@ describe("delegation job persist (P0-DEL-1)", () => {
   it("job row: error tercatat saat anak gagal (bukan hanya event)", async () => {
     const p = new OkProvider();
     const handle = runChildPersona(deps(p), { sessionId: PARENT, turnId: "t2" }, "yui-scribe", "tugas gagal", null, () => {});
-    p.fail = true; // provider mati SETELAH job dibuat — simulasi crash runtime anak
+    p.fail = true; // provider mati SETELAH job dibuat, simulasi crash runtime anak
     await expect(handle.summary).rejects.toThrow("provider anak mati");
     const jobs = store.listDelegationJobs("proj-1");
     expect(jobs[0]!.status).toBe("error");
@@ -81,7 +81,7 @@ describe("delegation job persist (P0-DEL-1)", () => {
   });
 
   it("boot-heal: job 'running' pasca-restart → interrupted + alasan", async () => {
-    // Simulasi: server mati saat job berjalan — baris running tertinggal
+    // Simulasi: server mati saat job berjalan, baris running tertinggal
     // (dibuat manual karena proses nyata tak bisa di-restart dalam satu test).
     const id = store.startDelegationJob({ parentSessionId: PARENT, parentTurnId: "t3", childSessionId: "s_child_x", personaId: "yui-coder", goal: "kerja setengah jalan" });
     expect(store.findRunningDelegationJobs().length).toBe(1);

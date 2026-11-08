@@ -1,4 +1,4 @@
-// P1-MEM-1: tool memory_append — agent menyimpan catatan reusable; scope user
+// P1-MEM-1: tool memory_append, agent menyimpan catatan reusable; scope user
 // lintas project, scope project hanya untuk sesi yang melekat ke project.
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";

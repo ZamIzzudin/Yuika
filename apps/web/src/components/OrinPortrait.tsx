@@ -1,10 +1,10 @@
 "use client";
 /**
- * OrinPortrait v8 — maskot Orin + SISTEM AKSI IDLE (docs/orin_v8_larger_star.html).
+ * OrinPortrait v8, maskot Orin + SISTEM AKSI IDLE (docs/orin_v8_larger_star.html).
  * Rig & keyframe dipindah 1:1 dari halaman sumber v6/v8: badan ber-GRADIENT
  * radial 3-stop + soft shadow, mata kapsul gelap + KILAU (glint) ganda,
  * geometri 15 bentuk organik membulat (orinShapes v8), bintang diskalakan 1.18×
- * pada siluet saja (wajah tidak — rig bersama konsisten).
+ * pada siluet saja (wajah tidak, rig bersama konsisten).
  * SATU rig mata dipakai semua bentuk. Identitas persona = bentuk.
  *
  * Mapping PersonaState (7) → mood (6):
@@ -12,15 +12,15 @@
  *   awaiting_input→listening (mata besar) · done/celebrating→happy (mata "^") ·
  *   error→confused. celebrating men-trigger bounce ekstra.
  *
- * Aksi idle (BARU v4.2) — hanya saat mood idle & user tak menggerakkan kursor 5 dtk:
+ * Aksi idle (BARU v4.2), hanya saat mood idle & user tak menggerakkan kursor 5 dtk:
  *   melirik (look) · giggle · senandung (hum + not ♪) · penasaran (tilt) ·
  *   menguap (yawn) · cegukan (hiccup). Idle 45 dtk → menguap → TIDUR (mata sipit,
  *   "z" melayang); interaksi apa pun (gerak/klik/tik) membangunkan dengan animasi wake.
- *   Aksi menimpa mood via layer `ov` (smoothing lambat) — mood agent tak diganggu.
+ *   Aksi menimpa mood via layer `ov` (smoothing lambat), mood agent tak diganggu.
  *
- * FX layer: "..." (thinking) · "?" (confused) · ♪ (hum) · z (sleep) — fade + melayang.
+ * FX layer: "..." (thinking) · "?" (confused) · ♪ (hum) · z (sleep), fade + melayang.
  *
- * Rig ini FINAL (Rive dibatalkan 2026-11 — jalur .riv dicabut; dokumen arsip
+ * Rig ini FINAL (Rive dibatalkan 2026-11, jalur .riv dicabut; dokumen arsip
  * docs/ART-DIRECTION.md). Urutan bentuk resmi: SHAPE_ORDER di orinShapes.tsx.
  */
 import { useEffect, useId, useRef } from "react";
@@ -35,8 +35,15 @@ type MoodName =
   | "happy"
   | "confused";
 
-/** Aksi idle — durasi (dtk) persis ACT di halaman sumber v4(2). */
-type IdleAction = "look" | "giggle" | "hum" | "tilt" | "yawn" | "hiccup" | "wake";
+/** Aksi idle, durasi (dtk) persis ACT di halaman sumber v4(2). */
+type IdleAction =
+  | "look"
+  | "giggle"
+  | "hum"
+  | "tilt"
+  | "yawn"
+  | "hiccup"
+  | "wake";
 const ACT: Record<IdleAction, number> = {
   look: 2.6,
   giggle: 1.5,
@@ -57,7 +64,7 @@ const MOOD: Record<PersonaState, MoodName> = {
   error: "confused",
 };
 
-// rig params — persis B di halaman sumber v8
+// rig params, persis B di halaman sumber v8
 const B = {
   ew: 30,
   eh: 68,
@@ -76,13 +83,30 @@ const B = {
 type Rig = typeof B;
 const mk = (o: Partial<Rig> = {}): Rig => ({ ...B, ...o });
 
-// keyframe per mood — persis S di halaman sumber v8
+// keyframe per mood, persis S di halaman sumber v8
 const S: Record<MoodName, Rig> = {
   idle: mk(),
-  listening: mk({ ew: 31, eh: 78, gap: 36, by: -7, sy: 1.035, ring: 1, ey: -7 }),
+  listening: mk({
+    ew: 31,
+    eh: 78,
+    gap: 36,
+    by: -7,
+    sy: 1.035,
+    ring: 1,
+    ey: -7,
+  }),
   thinking: mk({ ew: 28, eh: 55, tilt: 11, gx: -0.7, gy: -0.8, rot: -3 }),
   speaking: mk({ halo: 1, by: -3 }),
-  happy: mk({ ew: 30, eh: 56, gap: 43, hap: 1, by: -12, sy: 1.045, rot: 2.5, ey: -4 }),
+  happy: mk({
+    ew: 30,
+    eh: 56,
+    gap: 43,
+    hap: 1,
+    by: -12,
+    sy: 1.045,
+    rot: 2.5,
+    ey: -4,
+  }),
   confused: mk({ ew: 28, eh: 56, tilt: 18, gx: 0.3, rot: 7 }),
 };
 
@@ -107,7 +131,7 @@ export function OrinPortrait({
   const cRRef = useRef<SVGRectElement>(null);
   const aLRef = useRef<SVGPathElement>(null);
   const aRRef = useRef<SVGPathElement>(null);
-  // v8: kilau mata (glint utama + sekunder) — hidup di atas kapsul gelap
+  // v8: kilau mata (glint utama + sekunder), hidup di atas kapsul gelap
   const glLRef = useRef<SVGCircleElement>(null);
   const glsLRef = useRef<SVGCircleElement>(null);
   const glRRef = useRef<SVGCircleElement>(null);
@@ -123,7 +147,7 @@ export function OrinPortrait({
   const gid = useId(); // id gradient/filter unik per instance (banyak Orin di 1 halaman)
   const gradId = `orinBody-${gid.replace(/[^a-zA-Z0-9-]/g, "")}`;
   const shadowId = `orinShadow-${gid.replace(/[^a-zA-Z0-9-]/g, "")}`;
-  // stop gradient badan — persis paintBody v8 (terang → warna → bayangan)
+  // stop gradient badan, persis paintBody v8 (terang → warna → bayangan)
   const cLight = mixHex(shape.color, "#FFFFFF", 0.48);
   const cShade = mixHex(shape.color, "#151728", 0.34);
 
@@ -150,9 +174,21 @@ export function OrinPortrait({
     if (!svg) return;
 
     const cur = mk();
-    const sc = { fy: shape.fy, gs: shape.gs, es: shape.es, gr: shape.gr }; // konstan — bentuk statis per instance
-    // layer override aksi idle (smooth lambat: tidur 2.8, aktif 16 — v8)
-    const ov = { gx: 0, gy: 0, by: 0, sy: 0, rot: 0, hap: 0, eh: 1, ey: 0, tilt: 0, gap: 0, mo: 0 };
+    const sc = { fy: shape.fy, gs: shape.gs, es: shape.es, gr: shape.gr }; // konstan, bentuk statis per instance
+    // layer override aksi idle (smooth lambat: tidur 2.8, aktif 16, v8)
+    const ov = {
+      gx: 0,
+      gy: 0,
+      by: 0,
+      sy: 0,
+      rot: 0,
+      hap: 0,
+      eh: 1,
+      ey: 0,
+      tilt: 0,
+      gap: 0,
+      mo: 0,
+    };
     const fxv = { dots: 0, q: 0, notes: 0, z: 0 };
     let raf = 0;
     const t0 = performance.now();
@@ -166,7 +202,7 @@ export function OrinPortrait({
       smx = 0,
       smy = 0,
       sm = 0;
-    // mesin aksi idle — persis halaman sumber v4(2)
+    // mesin aksi idle, persis halaman sumber v4(2)
     let actName: IdleAction | null = null,
       actT0 = 0,
       actDur = 1,
@@ -230,7 +266,7 @@ export function OrinPortrait({
     window.addEventListener("keydown", onDown);
 
     const frame = (now: number) => {
-      // FIX NaN translate (lapis 2): nilai apapun yang tak hingga → 0 —
+      // FIX NaN translate (lapis 2): nilai apapun yang tak hingga → 0,
       // transform SVG tak pernah menerima NaN (spam console user 2026-11).
       const fin = (v: number) => (Number.isFinite(v) ? v : 0);
       const dt = Math.min(0.033, (now - last) / 1e3);
@@ -246,11 +282,12 @@ export function OrinPortrait({
         wakeUp(now);
       }
 
-      // kedip (22% kedip ganda) — kurva v8: .08+.92·sin(bp·π) lebih halus
+      // kedip (22% kedip ganda), kurva v8: .08+.92·sin(bp·π) lebih halus
       let bl = 1;
       if (now > nextBlink) {
         blink = 1;
-        nextBlink = now + (Math.random() < 0.22 ? 230 : 2500 + Math.random() * 3300);
+        nextBlink =
+          now + (Math.random() < 0.22 ? 230 : 2500 + Math.random() * 3300);
       }
       if (blink > 0) {
         blink -= dt / 0.18;
@@ -263,7 +300,7 @@ export function OrinPortrait({
         }
       }
 
-      // audioLevel: disimulasikan saat speaking (menyala-nyala halo) — mic asli menyusul voice (P3)
+      // audioLevel: disimulasikan saat speaking (menyala-nyala halo), mic asli menyusul voice (P3)
       if (name === "speaking") {
         if (now > lvlT) {
           lvlT = now + 80 + Math.random() * 110;
@@ -274,7 +311,19 @@ export function OrinPortrait({
       const L = sm;
 
       // ---- aksi idle (v4.2): hanya saat mood idle ----
-      const A = { gx: 0, gy: 0, by: 0, sy: 0, rot: 0, hap: 0, eh: 1, ey: 0, tilt: 0, gap: 0, mo: 0 };
+      const A = {
+        gx: 0,
+        gy: 0,
+        by: 0,
+        sy: 0,
+        rot: 0,
+        hap: 0,
+        eh: 1,
+        ey: 0,
+        tilt: 0,
+        gap: 0,
+        mo: 0,
+      };
       if (name !== "idle") {
         actName = null;
         idleSince = now;
@@ -293,14 +342,21 @@ export function OrinPortrait({
             actName = "yawn";
             sleepAfter = true;
           } else {
-            const pool = ([
-              "look", "look", "look",
-              "giggle", "giggle",
-              "hum", "hum",
-              "tilt", "tilt",
-              "yawn",
-              "hiccup",
-            ] as IdleAction[]).filter((x) => x !== lastAct);
+            const pool = (
+              [
+                "look",
+                "look",
+                "look",
+                "giggle",
+                "giggle",
+                "hum",
+                "hum",
+                "tilt",
+                "tilt",
+                "yawn",
+                "hiccup",
+              ] as IdleAction[]
+            ).filter((x) => x !== lastAct);
             actName = pool[Math.floor(Math.random() * pool.length)] ?? "look";
           }
           actT0 = now;
@@ -376,7 +432,8 @@ export function OrinPortrait({
       }
       const kk = 1 - Math.exp(-dt * (sleeping ? 2.8 : 16));
       for (const q in ov)
-        ov[q as keyof typeof ov] += (A[q as keyof typeof ov] - ov[q as keyof typeof ov]) * kk;
+        ov[q as keyof typeof ov] +=
+          (A[q as keyof typeof ov] - ov[q as keyof typeof ov]) * kk;
 
       // tatapan: parallax cursor dihaluskan (v8: smx/smy → tak menyentak)
       // (fin: NaN tak pernah menempel di state smoothing)
@@ -396,11 +453,16 @@ export function OrinPortrait({
       gy += ov.gy;
       bumpRef.current *= Math.exp(-dt * 4.8);
 
-      // body: napas + bounce klik/perayaan (squash-stretch) — amplitudo v8 tenang
+      // body: napas + bounce klik/perayaan (squash-stretch), amplitudo v8 tenang
       const breath = Math.sin(t * 1.18),
         sway = Math.sin(t * 0.72 + 0.4),
-        by = cur.by + breath * 1.25 - Math.sin(bumpRef.current * Math.PI) * 15 + ov.by;
-      const sy = cur.sy + breath * 0.009 + L * 0.035 + bumpRef.current * 0.045 + ov.sy,
+        by =
+          cur.by +
+          breath * 1.25 -
+          Math.sin(bumpRef.current * Math.PI) * 15 +
+          ov.by;
+      const sy =
+          cur.sy + breath * 0.009 + L * 0.035 + bumpRef.current * 0.045 + ov.sy,
         // v8: bola memakai skala SERAGAM agar tetap bulat; lainnya squash parsial
         sx = shapeKeyOrb ? sy : 1 + (1 - sy) * 0.62 + breath * 0.003;
       const rot =
@@ -431,8 +493,22 @@ export function OrinPortrait({
         SVGCircleElement | null,
         number,
       ][] = [
-        [eLRef.current, cLRef.current, aLRef.current, glLRef.current, glsLRef.current, -1],
-        [eRRef.current, cRRef.current, aRRef.current, glRRef.current, glsRRef.current, 1],
+        [
+          eLRef.current,
+          cLRef.current,
+          aLRef.current,
+          glLRef.current,
+          glsLRef.current,
+          -1,
+        ],
+        [
+          eRRef.current,
+          cRRef.current,
+          aRRef.current,
+          glRRef.current,
+          glsRRef.current,
+          1,
+        ],
       ];
       for (const [g, c, a, gl, gls, d] of eyes) {
         if (!g || !c || !a) continue;
@@ -450,7 +526,7 @@ export function OrinPortrait({
         a.setAttribute("stroke-width", String(w * 0.82));
         a.setAttribute("d", `M${-aw},5Q0,-14 ${aw},5`);
         a.style.opacity = String(hp);
-        // kilau: titik utama kiri-atas + sekunder kecil — ikut kedip & arc-fade
+        // kilau: titik utama kiri-atas + sekunder kecil, ikut kedip & arc-fade
         if (gl) {
           gl.setAttribute("cx", String(-w * 0.2));
           gl.setAttribute("cy", String(-h * 0.23));
@@ -519,7 +595,7 @@ export function OrinPortrait({
       for (let i = 0; i < 2; i++) {
         const nn = fx[5 + i] as SVGTextElement | null;
         if (nn) {
-          const pn = ((humU * 1.7 + i * 0.5) % 1 + 1) % 1;
+          const pn = (((humU * 1.7 + i * 0.5) % 1) + 1) % 1;
           nn.setAttribute("x", String(300 + Math.sin(pn * 7 + i * 2) * 12));
           nn.setAttribute("y", String(132 - pn * 92));
           nn.style.opacity = String(fxv.notes * Math.sin(pn * Math.PI));
@@ -528,7 +604,7 @@ export function OrinPortrait({
       for (let i = 0; i < 3; i++) {
         const zz = fx[7 + i] as SVGTextElement | null;
         if (zz) {
-          const pz = ((t * 0.45 + i * 0.33) % 1 + 1) % 1;
+          const pz = (((t * 0.45 + i * 0.33) % 1) + 1) % 1;
           zz.setAttribute("x", String(258 + pz * 40));
           zz.setAttribute("y", String(116 - pz * 76));
           zz.setAttribute("font-size", String(24 + pz * 38));
@@ -540,7 +616,7 @@ export function OrinPortrait({
     };
     raf = requestAnimationFrame(frame);
 
-    // klik: squash + senyum sebentar kalau idle — "hidup"
+    // klik: squash + senyum sebentar kalau idle, "hidup"
     const onClick = () => {
       bumpRef.current = 1;
       if (moodRef.current === "idle")
@@ -578,7 +654,13 @@ export function OrinPortrait({
             <stop offset="100%" stopColor={cShade} />
           </radialGradient>
           <filter id={shadowId} x="-35%" y="-35%" width="170%" height="180%">
-            <feDropShadow dx="0" dy="9" stdDeviation="8" floodColor="#000" floodOpacity="0.28" />
+            <feDropShadow
+              dx="0"
+              dy="9"
+              stdDeviation="8"
+              floodColor="#000"
+              floodOpacity="0.28"
+            />
           </filter>
         </defs>
         <circle
@@ -611,11 +693,15 @@ export function OrinPortrait({
             opacity={0}
           />
           {/* siluet v8: gradient + soft shadow; bodyScale (bintang 1.18×) hanya
-              di sini — wajah di bawah TIDAK ikut diskalakan */}
+              di sini, wajah di bawah TIDAK ikut diskalakan */}
           <g
             fill={`url(#${gradId})`}
             filter={`url(#${shadowId})`}
-            transform={shape.bodyScale && shape.bodyScale !== 1 ? `scale(${shape.bodyScale})` : undefined}
+            transform={
+              shape.bodyScale && shape.bodyScale !== 1
+                ? `scale(${shape.bodyScale})`
+                : undefined
+            }
           >
             {shape.geom}
           </g>

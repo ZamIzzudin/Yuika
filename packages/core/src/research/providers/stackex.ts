@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a) — StackOverflow via StackExchange API (resmi, tanpa key).
+// Batch 7 (RS-1a), StackOverflow via StackExchange API (resmi, tanpa key).
 import type { SearchProvider, SearchResult } from "../types.js";
 import { decodeEntities, httpJson } from "../util.js";
 

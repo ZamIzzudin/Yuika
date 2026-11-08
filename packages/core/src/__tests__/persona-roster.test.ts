@@ -1,5 +1,5 @@
-// P1-PER-6 + P2-PM-1 + P1-PER-8: roster D9+D22+D26 = 9 persona — manifest
-// valid, delegation rules koheren (semua id yang dirujuk ada — mencegah typo
+// P1-PER-6 + P2-PM-1 + P1-PER-8: roster D9+D22+D26 = 9 persona, manifest
+// valid, delegation rules koheren (semua id yang dirujuk ada, mencegah typo
 // seperti `yui_designer`), dan toolset persona baru ekspos tool yang terdaftar.
 import { describe, expect, it } from "vitest";
 import path from "node:path";
@@ -18,7 +18,7 @@ describe("persona roster D9 (P1-PER-6)", () => {
     expect(personas.every((p) => p.manifest.description.length <= 120)).toBe(true); // kontrak zod memaksa, guard tipologi
   });
 
-  it("delegation rules koheren — semua id di can_spawn/spawnable_by dikenal (atau 'user')", () => {
+  it("delegation rules koheren, semua id di can_spawn/spawnable_by dikenal (atau 'user')", () => {
     const known = new Set([...ids, "user"]);
     for (const p of personas) {
       for (const id of p.manifest.delegation.can_spawn) expect(known.has(id), `${p.manifest.id} can_spawn → ${id} tidak dikenal`).toBe(true);
@@ -49,7 +49,7 @@ describe("persona roster D9 (P1-PER-6)", () => {
     expect(conductor.manifest.tools).not.toContain("run_in_workshop");
   });
 
-  it("SCR-6 amandemen user: Analyst bisa MENONTON live screen (bukan hanya rekonstruksi riwayat) — verdict tetap milik Sherlock", () => {
+  it("SCR-6 amandemen user: Analyst bisa MENONTON live screen (bukan hanya rekonstruksi riwayat), verdict tetap milik Sherlock", () => {
     const analyst = personas.find((p) => p.manifest.id === "yui-analyst")!;
     expect(analyst.manifest.tools).toContain("qa_watch");
     expect(analyst.manifest.tools).toContain("qa_snapshot");
@@ -60,12 +60,12 @@ describe("persona roster D9 (P1-PER-6)", () => {
     expect(analyst.personaMd).toContain("do not reconstruct from session history");
   });
 
-  it("P2-PM-1 (D22): Planner — PM bukan eksekutor; consult + task tools; konsultasi hanya ke 3 penasihat", () => {
+  it("P2-PM-1 (D22): Planner, PM bukan eksekutor; consult + task tools; konsultasi hanya ke 3 penasihat", () => {
     const planner = personas.find((p) => p.manifest.id === "yui-planner")!;
     expect(planner.manifest.tools).toContain("consult"); // brainstorm terstruktur
     expect(planner.manifest.tools).toContain("todo_add"); // task list detail
     expect(planner.manifest.tools).toContain("write_file"); // dokumen perencanaan
-    // Planner TIDAK mendelegasikan eksekusi (itu ranah Conductor) — hanya konsultasi:
+    // Planner TIDAK mendelegasikan eksekusi (itu ranah Conductor), hanya konsultasi:
     expect(planner.manifest.tools).not.toContain("delegate_task");
     expect(planner.manifest.delegation.can_spawn.sort()).toEqual(["yui-analyst", "yui-scholar", "yui-scribe"]);
     // dipanggil user langsung ATAU didelegasikan Conductor (fase planning di workflow nanti)
@@ -75,13 +75,13 @@ describe("persona roster D9 (P1-PER-6)", () => {
     expect(planner.personaMd).toContain("acceptance");
   });
 
-  it("P1-PER-8 (D26): Sherlock — QA watcher read-only; QA tools + tanpa tool eksekusi browser", () => {
+  it("P1-PER-8 (D26): Sherlock, QA watcher read-only; QA tools + tanpa tool eksekusi browser", () => {
     const sherlock = personas.find((p) => p.manifest.id === "yui-sherlock")!;
     // SCR-6 tools ekspos
     for (const t of ["qa_watch", "qa_snapshot", "qa_check"]) {
       expect(sherlock.manifest.tools, `sherlock toolset → ${t}`).toContain(t);
     }
-    // Dia TIDAK menyetir browser (bukan driver — watcher): tanpa lease tools
+    // Dia TIDAK menyetir browser (bukan driver, watcher): tanpa lease tools
     for (const t of ["browser_open", "browser_click", "browser_type", "request_login", "request_takeover"]) {
       expect(sherlock.manifest.tools).not.toContain(t);
     }

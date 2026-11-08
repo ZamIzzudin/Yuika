@@ -1,4 +1,4 @@
-// P2-PM-2 (D22): consult — brainstorm multi-persona terstruktur untuk Planner.
+// P2-PM-2 (D22): consult, brainstorm multi-persona terstruktur untuk Planner.
 // Verifikasi: 2 persona konsultasi PARALEL → 2 jawaban berlabel + prompt anak
 // berformat tetap (PENDAPAT/RISIKO/SARAN/ASUMSI) berisi pertanyaan; duplikat
 // persona didedupe; persona asing → isError rapi (bukan crash).

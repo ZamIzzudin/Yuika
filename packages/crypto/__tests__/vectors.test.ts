@@ -1,11 +1,11 @@
 /**
- * Golden vectors protokol v1 — file IDENTIK diverifikasi di dua repo
+ * Golden vectors protokol v1, file IDENTIK diverifikasi di dua repo
  * (yuika-portal & your-yui mirror). Hijau di keduanya ⇒ implementasi crypto
  * kompatibel di wire. Mengubah docs/portal/vectors/proto1.json = bump proto
  * (SPEC-PROTOCOL.md §12). Hash file tercatat di docs/portal/README.md.
  *
  * Suite ini menjalankan DUA backend (node + web/WebCrypto) terhadap vectors
- * yang sama — bukti interop node↔browser sekaligus.
+ * yang sama, bukti interop node↔browser sekaligus.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -33,7 +33,7 @@ for (const backend of [
   { name: "node", verify: async (...a: Parameters<typeof node.verifyChallenge>) => node.verifyChallenge(...a), open: async (to: DeviceKeys, from: DeviceKeys, box: string) => node.open(to, from, box).toString("utf8"), seal: async (from: DeviceKeys, to: DeviceKeys, pt: string) => node.seal(from, to, pt), sha: async (s: string) => node.sha256Hex(s) },
   { name: "web", verify: web.verifyChallenge, open: web.open, seal: web.seal, sha: web.sha256Hex },
 ] as const) {
-  describe(`golden vectors proto 1 — backend ${backend.name}`, () => {
+  describe(`golden vectors proto 1, backend ${backend.name}`, () => {
     it("versi proto dikunci 1", () => {
       expect(vectors.proto).toBe(1);
     });
@@ -68,7 +68,7 @@ for (const backend of [
 }
 
 /** Interop lintas backend: box dibuat web dibuka node (dan sebaliknya). */
-describe("golden vectors — interop node ↔ web", () => {
+describe("golden vectors, interop node ↔ web", () => {
   for (const e of vectors.envelope) {
     it(`box node ${e.name} terbuka web & sebaliknya (roundtrip)`, async () => {
       const from = keyOf(e.fromDeviceId);

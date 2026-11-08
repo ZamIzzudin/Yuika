@@ -1,9 +1,9 @@
-// Batch 12 (P2-VLT) — Vault v0: store AES-256-GCM (AAD tamper, key file,
+// Batch 12 (P2-VLT), Vault v0: store AES-256-GCM (AAD tamper, key file,
 // purge run-only), redaksi nilai aktif (plain/base64/urlencode), kartu fill
 // via manager (deadline skip, nilai TIDAK pernah di event), tools
 // vault_request/vault_list/vault_forget/secret_http (origin-bound, redirect
 // ditolak, response di-redact), run_command env refs + nama reserved.
-// Semua hermetic — TANPA network eksternal.
+// Semua hermetic, TANPA network eksternal.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";

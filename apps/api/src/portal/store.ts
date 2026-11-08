@@ -1,6 +1,6 @@
-// @yuika/api — P1-PRT-3: portal device store (kredential device HOST).
+// @yuika/api, P1-PRT-3: portal device store (kredential device HOST).
 // Gaya auth.db: SQLite terpisah dari sesi; private key TIDAK pernah keluar
-// dari proses host (browser tidak menyimpan kunci host — keputusan D23).
+// dari proses host (browser tidak menyimpan kunci host, keputusan D23).
 // DB path: env YUI_PORTAL_DEVICE_DB || <repo>/portal-device.db (gitignore *.db).
 import fs from "node:fs";
 import path from "node:path";
@@ -67,7 +67,7 @@ function toRecord(r: Row): HostDeviceRecord {
   };
 }
 
-/** Device host yang ter-link (maksimal SATU per instalasi — v0). */
+/** Device host yang ter-link (maksimal SATU per instalasi, v0). */
 export function getHostDevice(): HostDeviceRecord | null {
   const r = open().prepare(`SELECT ${ROW} FROM host_device WHERE id = 1`).get() as Row | undefined;
   return r ? toRecord(r) : null;
@@ -86,14 +86,14 @@ export function saveHostDevice(rec: HostDeviceRecord): void {
   } as Record<string, unknown>);
 }
 
-/** Lepas link LOKAL (perangkat masih terdaftar di portal — unlink di sana terpisah). */
+/** Lepas link LOKAL (perangkat masih terdaftar di portal, unlink di sana terpisah). */
 export function clearHostDevice(): void {
   open().prepare("DELETE FROM host_device WHERE id = 1").run();
 }
 
 // ── CP-4: auto-link browser (device WEB hasil SSO) ─────────────────────
 // Terpisah dari host manual (Settings pairing): satu instalasi bisa punya
-// keduanya — host (desktop) utk remote-control, web (auto SSO) utk presence.
+// keduanya, host (desktop) utk remote-control, web (auto SSO) utk presence.
 function ensureWebTable(d: Database.Database): void {
   d.exec(`
     CREATE TABLE IF NOT EXISTS web_device (
@@ -113,7 +113,7 @@ function ensureWebTable(d: Database.Database): void {
   `);
 }
 
-/** Device web hasil auto-link SSO (maks SATU per instalasi — v0). */
+/** Device web hasil auto-link SSO (maks SATU per instalasi, v0). */
 export function getWebDevice(): HostDeviceRecord | null {
   const d = open();
   ensureWebTable(d);

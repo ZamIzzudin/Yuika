@@ -1,4 +1,4 @@
-// P1-DEL-4: audit isolasi konteks anak — sesi anak FRESH: tidak membawa
+// P1-DEL-4: audit isolasi konteks anak, sesi anak FRESH: tidak membawa
 // history parent (pesan user/model/tool parent), prompt anak hanya goal +
 // system persona anak + memori global. Diverifikasi lewat messages &
 // systemPrompt tersimpan, bukan sekadar asumsi "fresh session".
@@ -78,13 +78,13 @@ describe("isolasi konteks anak (P1-DEL-4)", () => {
     );
     await handle.summary;
 
-    // 1) Sesi anak baru & fresh — bukan lanjutan parent.
+    // 1) Sesi anak baru & fresh, bukan lanjutan parent.
     const child = store.getSession(handle.childSessionId)!;
     expect(child.id).not.toBe(PARENT);
     expect(child.personaId).toBe("yui-scribe");
     expect(child.systemPrompt).not.toContain("RAHASIA-INTERNAL");
 
-    // 2) Messages anak hanya berisi goal (user) + jawaban anak — tanpa history parent.
+    // 2) Messages anak hanya berisi goal (user) + jawaban anak, tanpa history parent.
     const msgs = store.getMessages(handle.childSessionId);
     const bodies = msgs.map((m) => JSON.stringify(m.content));
     for (const b of bodies) {

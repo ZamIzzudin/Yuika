@@ -1,4 +1,4 @@
-// P2-STU-4 — browser reader: allowlist, SSRF guard, sanitizer, redirect
+// P2-STU-4, browser reader: allowlist, SSRF guard, sanitizer, redirect
 // re-validation, content-type/size gate. Server lokal utk fetch nyata.
 import { afterEach, describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -125,9 +125,9 @@ describe("P2-STU-4 browser reader", () => {
   });
 });
 
-// ── FLOW user 2026-11 (#4): policy allowAll — buka semua domain publik ──────
+// ── FLOW user 2026-11 (#4): policy allowAll, buka semua domain publik ──────
 describe("browser policy allowAll", () => {
-  it("allowAll melewati cek host — SSRF guard IP private TETAP jalan", async () => {
+  it("allowAll melewati cek host, SSRF guard IP private TETAP jalan", async () => {
     // host di luar allowlist lolos saat allowAll
     const url = await assertBrowserUrlAllowed("https://some-random-site.example.org/path", {
       allow: ["example.com"],

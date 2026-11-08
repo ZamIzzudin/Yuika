@@ -1,4 +1,4 @@
-// @yuika/api — routes sesi (P0-INF-1, port 1:1 dari Next route handlers).
+// @yuika/api, routes sesi (P0-INF-1, port 1:1 dari Next route handlers).
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import type { YuiEvent } from "@yuika/contracts";
@@ -11,18 +11,18 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return reply.code(200).send({ sessionId, persona, projectId });
   });
 
-  /** Riwayat sesi sebuah project (terbaru dulu) — pintu resume percakapan. */
+  /** Riwayat sesi sebuah project (terbaru dulu), pintu resume percakapan. */
   app.get("/api/sessions", async (req) => {
     const projectId = (req.query as Record<string, string | undefined>).projectId;
     if (!projectId) return { sessions: [] };
     return { sessions: getRt().listProjectSessions(projectId) };
   });
 
-  /** POST /api/sessions/:id/cancel — tombol Stop (P0-CORE-1).
+  /** POST /api/sessions/:id/cancel, tombol Stop (P0-CORE-1).
    *  Abort HTTP provider + loop; progres tersimpan, turn berakhir graceful. */
   app.post("/api/sessions/:id/cancel", async (req) => ({ cancelled: getRt().cancelTurn((req.params as { id: string }).id) }));
 
-  /** Replay event (resume/reconnect) — pola events.since Hermes. */
+  /** Replay event (resume/reconnect), pola events.since Hermes. */
   app.get("/api/sessions/:id/events", async (req) => {
     const { id } = req.params as { id: string };
     const since = Number((req.query as Record<string, string | undefined>).since ?? 0);
@@ -48,7 +48,7 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
   /** SSE stream: replay dari store (since) lalu live via EventBus.
    *  - `id: <eventId>` dikirim agar auto-reconnect browser membawa Last-Event-Id
    *    (replay reconnect mulai dari titik yang benar, bukan since awal URL).
-   *  - `?snapshot=1` = replay lalu TUTUP (sekali baca — dipakai client resync
+   *  - `?snapshot=1` = replay lalu TUTUP (sekali baca, dipakai client resync
    *    saat window fokus: menutup celah event yang terlewat, tanpa SSE ganda). */
   app.get("/api/sessions/:id/stream", (req, reply) => {
     const { id } = req.params as { id: string };
@@ -59,7 +59,7 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
     const rt = getRt();
 
     reply.hijack();
-    // hijack() melewati pipeline reply Fastify — header @fastify/cors (onRequest)
+    // hijack() melewati pipeline reply Fastify, header @fastify/cors (onRequest)
     // tak pernah tersalin ke raw response. Browser (web:3000 → api:3211, atau
     // E2E :3990 → :3291) memblokir stream tanpa ACAO. Refleksikan origin manual,
     // selaras kebijakan cors { origin: true } app.ts.
@@ -77,7 +77,7 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
       reply.raw.write(`id: ${e.id}\ndata: ${JSON.stringify(e)}\n\n`);
     };
     // Anti-race & anti-duplikat: subscribe dulu (buffer), replay dari store, lalu
-    // flush buffer — event hidup hanya dikirim bila id > lastSent (id monotonic).
+    // flush buffer, event hidup hanya dikirim bila id > lastSent (id monotonic).
     const buffer: YuiEvent[] = [];
     let flushing = true;
     let lastSent = since;

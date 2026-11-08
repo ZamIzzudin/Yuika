@@ -1,6 +1,6 @@
-// @yuika/core — uv/uvx support (P1-MCP-1 lanjutan): server MCP Python (git, time,
+// @yuika/core, uv/uvx support (P1-MCP-1 lanjutan): server MCP Python (git, time,
 // sentry) berjalan via uvx. Modul ini: (1) deteksi uvx di PATH, (2) fallback
-// path absolut (installer uv masuk %USERPROFILE%\.local\bin — DI LUAR PATH
+// path absolut (installer uv masuk %USERPROFILE%\.local\bin, DI LUAR PATH
 // proses dev server), (3) one-click install installer resmi astral.sh.
 // Fallback absolut membuat "Install uv" dari UI langsung terpakai TANPA restart
 // dev server (spawn pakai path penuh).
@@ -64,7 +64,7 @@ export function invalidateUvxCache() {
 /**
  * Jalankan installer resmi uv (astral.sh). Windows: PowerShell script; lainnya: sh.
  * Return log tail untuk ditampilkan di UI. Setelah selesai cache dihapus lalu
- * findUvx() dipanggil ulang — bila ketemu, path absolut dikembalikan agar
+ * findUvx() dipanggil ulang, bila ketemu, path absolut dikembalikan agar
  * koneksi MCP Python bisa jalan tanpa restart dev server.
  */
 export async function installUv(): Promise<{ ok: boolean; uvxPath: string | null; log: string }> {

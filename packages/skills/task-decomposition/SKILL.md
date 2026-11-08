@@ -37,9 +37,9 @@ expertise you do not have (deep research, document writing, coding).
 
 ## Pitfalls
 
-- Delegating a goal that references "the above" or "as discussed" — the child sees nothing
+- Delegating a goal that references "the above" or "as discussed", the child sees nothing
   of this conversation.
-- Doing specialist work yourself because it feels faster — delegate unless it is a single
+- Doing specialist work yourself because it feels faster, delegate unless it is a single
   trivial tool call.
 - Skipping synthesis: the user wants YOUR answer, not three pasted summaries.
 

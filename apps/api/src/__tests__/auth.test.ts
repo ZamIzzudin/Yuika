@@ -1,5 +1,5 @@
 // Auth gate (portal-only, CP-3+): me/logout + middleware tenant scope.
-// Local register/login DIHAPUS — akun & signup hidup di yuika-portal.
+// Local register/login DIHAPUS, akun & signup hidup di yuika-portal.
 // Isolasi: YUI_AUTH_DB menunjuk file tmp per suite (di-setup sebelum import).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Database from "better-sqlite3";
@@ -63,7 +63,7 @@ describe("auth gate portal-only (me/logout + tenant scope)", () => {
     const yes = await app.inject({ method: "GET", url: "/api/personas", headers: { authorization: `Bearer ${token}` } });
     expect(yes.statusCode).toBe(200);
 
-    // Token via query (?auth_token=) — jalur yang sama dengan SSE
+    // Token via query (?auth_token=), jalur yang sama dengan SSE
     // (EventSource tak bisa set header).
     const viaQuery = await app.inject({ method: "GET", url: "/api/personas", query: { auth_token: token } });
     expect(viaQuery.statusCode).toBe(200);
@@ -96,7 +96,7 @@ describe("auth gate portal-only (me/logout + tenant scope)", () => {
     db.close();
     const legacy = findOrCreatePortalUser("acc_c", "legacy@yuika.test");
     expect(legacy.id).toBe("u_legacy");
-    // …dan kini milik acc_c — account lain dgn email itu → tolak
+    // …dan kini milik acc_c, account lain dgn email itu → tolak
     expect(() => findOrCreatePortalUser("acc_d", "legacy@yuika.test")).toThrow(/another portal account/);
   });
 });

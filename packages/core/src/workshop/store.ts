@@ -1,7 +1,7 @@
-// P2-WKS — registry workshop persist (Batch 13).
-// SQLite SENDIRI (file db runtime yang sama, koneksi sendiri — WAL aman):
+// P2-WKS, registry workshop persist (Batch 13).
+// SQLite SENDIRI (file db runtime yang sama, koneksi sendiri, WAL aman):
 // workshop = artefak HOST-LOCAL (container docker di host ini), maka TIDAK
-// lewat ISessionStore — mode session Postgres (YUI_DB_DRIVER=postgres) tetap
+// lewat ISessionStore, mode session Postgres (YUI_DB_DRIVER=postgres) tetap
 // menyimpan workshop lokal (sesi boleh direplikasi, container tidak).
 import Database from "better-sqlite3";
 import type { WorkshopInfo, WorkshopState } from "@yuika/contracts";
@@ -25,7 +25,7 @@ interface WorkshopRow {
 
 export class WorkshopStore {
   private db: Database.Database;
-  /** woken_at internal (metering uptime saat sleep) — tidak diekspos kontrak. */
+  /** woken_at internal (metering uptime saat sleep), tidak diekspos kontrak. */
   private wokenAt = new Map<string, number>();
 
   constructor(dbPath: string) {
@@ -79,7 +79,7 @@ export class WorkshopStore {
     return (this.db.prepare(`SELECT * FROM workshops`).all() as WorkshopRow[]).map((r) => this.fromRow(r));
   }
 
-  /** wokenAt (ms) — dipakai manager utk akumulasi uptime; null = tidak running. */
+  /** wokenAt (ms), dipakai manager utk akumulasi uptime; null = tidak running. */
   wokenAtOf(projectId: string): number | null {
     return this.wokenAt.get(projectId) ?? null;
   }

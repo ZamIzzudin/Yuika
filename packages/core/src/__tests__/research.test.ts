@@ -1,6 +1,6 @@
-// Batch 7 (RS) — Research Engine: parsers (robots/ddg/news), router fallback chain,
+// Batch 7 (RS), Research Engine: parsers (robots/ddg/news), router fallback chain,
 // budget, cache TTL, fetcher pipeline (SSRF + robots + Readability via server lokal),
-// tool web_search/web_fetch. Semua hermetic — TANPA network eksternal.
+// tool web_search/web_fetch. Semua hermetic, TANPA network eksternal.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -250,7 +250,7 @@ describe("RS fetcher pipeline", () => {
     const o1 = await researchFetch(page, { policy: OPEN, domainDelayMs: 0, cache, budget, sessionId: "s" });
     expect(o1.cached).toBe(false);
     const o2 = await researchFetch(page, { policy: OPEN, domainDelayMs: 0, cache, budget, sessionId: "s" });
-    expect(o2.cached).toBe(true); // budget page habis — tapi cache hit tak dihitung
+    expect(o2.cached).toBe(true); // budget page habis, tapi cache hit tak dihitung
     expect(budget.consume("s", "page").ok).toBe(false);
   });
 
@@ -372,12 +372,12 @@ describe("RS fix: throttle livelock + watchdog + ddg kondisional", () => {
     );
     const enough = fake("A", [R("https://a.test/1"), R("https://a.test/2"), R("https://a.test/3")]);
     const o1 = await researchSearch("q", { providers: [enough], ddgEnabled: true, limit: 5 });
-    expect(ddgCalls.filter((u) => u.includes("duckduckgo")).length).toBe(0); // dilewati — cukup
+    expect(ddgCalls.filter((u) => u.includes("duckduckgo")).length).toBe(0); // dilewati, cukup
     expect(o1.results.length).toBe(3);
 
     const thin = fake("B", [R("https://b.test/1")]);
     const o2 = await researchSearch("q2", { providers: [thin], ddgEnabled: true, limit: 5 });
-    expect(ddgCalls.filter((u) => u.includes("duckduckgo")).length).toBe(1); // dipanggil — hasil tipis
+    expect(ddgCalls.filter((u) => u.includes("duckduckgo")).length).toBe(1); // dipanggil, hasil tipis
     expect(o2.results.some((r) => r.source.includes("ddg"))).toBe(true);
   });
 });

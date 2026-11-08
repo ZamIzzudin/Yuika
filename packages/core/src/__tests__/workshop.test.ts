@@ -1,4 +1,4 @@
-// P2-WKS-1/2 (Batch 13) — workshop manager: lifecycle + persist + uptime +
+// P2-WKS-1/2 (Batch 13), workshop manager: lifecycle + persist + uptime +
 // egress config + audit ring, dengan host PALSU (cepat); integrasi Docker
 // ASLI di suite kedua (skip bila daemon tak ada).
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -14,7 +14,7 @@ let dir: string;
 let store: WorkshopStore;
 const events: Array<{ type: string; projectId: string; [k: string]: unknown }> = [];
 
-/** Host palsu: state map + exec echo — cukup utk semua jalur manager. */
+/** Host palsu: state map + exec echo, cukup utk semua jalur manager. */
 function fakeHost(): WorkshopHost & { states: Map<string, string>; execs: Array<[string, string]> } {
   const states = new Map<string, string>();
   const execs: Array<[string, string]> = [];
@@ -54,7 +54,7 @@ function makeManager(host = fakeHost()): WorkshopManager {
   });
 }
 
-/** Paksa host tanpa resolveHost probe docker — inject via resolveHost override. */
+/** Paksa host tanpa resolveHost probe docker, inject via resolveHost override. */
 function managerWith(host: ReturnType<typeof fakeHost>): WorkshopManager & { resolveHost: () => Promise<WorkshopHost> } {
   const m = makeManager(host) as WorkshopManager & { resolveHost: () => Promise<WorkshopHost> };
   m.resolveHost = async () => host;
@@ -151,7 +151,7 @@ describe("workshop manager (fake host)", () => {
     host.states.delete("yuika-ws-p_dr");
     const info = await m.start("p_dr");
     expect(info.state).toBe("running");
-    // container dibuat ulang (ensureRunning dipanggil lagi — bukan early-return)
+    // container dibuat ulang (ensureRunning dipanggil lagi, bukan early-return)
     expect(host.states.get("yuika-ws-p_dr")).toBe("running");
   });
 });
@@ -166,7 +166,7 @@ async function dockerUp(): Promise<boolean> {
 
 describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
   // anti-leak: bila test gagal di tengah, container test dibuang (pid test
-  // selalu p_it_/p_eg_/p_mg_ — container project user tak tersentuh).
+  // selalu p_it_/p_eg_/p_mg_, container project user tak tersentuh).
   afterEach(async () => {
     const { execFile } = await import("node:child_process");
     for (const pfx of ["yuika-ws-p_it_", "yuika-ws-p_eg_", "yuika-ws-p_mg_"]) {
@@ -191,18 +191,18 @@ describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
     expect(r.exitCode).toBe(0);
     expect(r.stdout.trim()).toBe("ws-ok");
 
-    // bind workspace: exec TANPA cwd → /home/node/project = workspace host —
+    // bind workspace: exec TANPA cwd → /home/node/project = workspace host,
     // file project = satu dunia dengan tab Files (fix test-user #3).
     await m.exec(pid, "sh", ["-c", "echo bind > bindmark.txt"]);
     expect(fs.readFileSync(path.join(dir, "bindmark.txt"), "utf8").trim()).toBe("bind");
 
-    // tulis file ke volume /home/node (cache hangat — di luar project bind)
+    // tulis file ke volume /home/node (cache hangat, di luar project bind)
     await m.exec(pid, "sh", ["-c", "echo persist > /home/node/marker.txt"]);
 
     // sleep → container stopped, volume utuh
     const asleep = await m.sleep(pid, "idle");
     expect(asleep.state).toBe("asleep");
-    // bangun lagi — file masih ada (persist terbukti)
+    // bangun lagi, file masih ada (persist terbukti)
     await m.start(pid);
     const cat = await m.exec(pid, "cat", ["/home/node/marker.txt"]);
     expect(cat.stdout.trim()).toBe("persist");

@@ -1,14 +1,14 @@
-// @yuika/core — Batch 14a (D25) ScreenManager: Chromium headless per
+// @yuika/core, Batch 14a (D25) ScreenManager: Chromium headless per
 // (project, persona) + screencast JPEG + input relay + lease user↔persona.
 //
 // Desain:
 //   - SATU browser per key "<projectId>/<personaId>" (SCR-3: profil persist
 //     per project×persona → login/cookie bertahan; user-data-dir di
-//     <dataDir>/.yuika/browser/<projectId>/<personaId> — DI LUAR workspace
+//     <dataDir>/.yuika/browser/<projectId>/<personaId>, DI LUAR workspace
 //     project sehingga tak pernah jadi artefak Files).
 //   - Screencast: Page.startScreencast jpeg; FPS dikontrol dengan
 //     menahan Page.screencastFrameAck (CDP hanya mengirim frame berikutnya
-//     setelah ack) — YUI_SCREEN_FPS_IDLE (default 2) saat tanpa viewer,
+//     setelah ack), YUI_SCREEN_FPS_IDLE (default 2) saat tanpa viewer,
 //     YUI_SCREEN_FPS_ACTIVE (default 15) saat ada viewer/agent aktif.
 //   - Lease (rokazo fence): SATU pengendali input. Owner "user" | personaId.
 //     Input dari pihak yang bukan owner → error EN jelas.
@@ -16,7 +16,7 @@
 //     (YUI_TAKEOVER_TIMEOUT_MS default 120s; 0 = tanpa deadline).
 //   - Idle auto-close (YUI_SCREEN_IDLE_MS default 15 menit; 0 = off):
 //     tanpa viewer + tanpa aktivitas → browser dimatikan.
-//   - Headless Edge/Chrome di host (Docker absen — catatan PLAN §6.5 kelas 0).
+//   - Headless Edge/Chrome di host (Docker absen, catatan PLAN §6.5 kelas 0).
 // Env: YUI_BROWSER_EXEC override executable.
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
@@ -136,7 +136,7 @@ function fpsIdle(): number { return Math.max(1, Number(process.env.YUI_SCREEN_FP
 function fpsActive(): number { return Math.min(30, Math.max(1, Number(process.env.YUI_SCREEN_FPS_ACTIVE ?? 15) || 15)); }
 function idleMs(): number { return Math.max(0, Number(process.env.YUI_SCREEN_IDLE_MS ?? 15 * 60_000) || 0); }
 /** Tool-idle close (default 120s): sesi tanpa viewer DAN tanpa aktivitas tool
- *  persona ditutup — persona "selesai memakai browser" → shutdown otomatis
+ *  persona ditutup, persona "selesai memakai browser" → shutdown otomatis
  *  (0 = off). YUI_SCREEN_IDLE_MS tetap hard cap. */
 function toolIdleMs(): number { return Math.max(0, Number(process.env.YUI_SCREEN_TOOL_IDLE_MS ?? 120_000) || 0); }
 function effectiveIdleMs(): number {
@@ -171,7 +171,7 @@ function touch(s: ScreenSession): void {
 }
 
 /** SCR-6: persona QA (watcher read-only) menonton sesi screen persona lain.
- *  Watcher TIDAK punya lease/viewer FPS — hanya (a) keep-alive sesi,
+ *  Watcher TIDAK punya lease/viewer FPS, hanya (a) keep-alive sesi,
  *  (b) terlihat di state (transparansi siapa sedang QA). */
 export function qaWatch(targetKey: string, watcher: string, on: boolean): ScreenState {
   const s = sessions.get(targetKey);
@@ -188,7 +188,7 @@ function scheduleIdleCheck(s: ScreenSession): void {
   const ms = effectiveIdleMs();
   if (!ms) return;
   s.idleTimer = setTimeout(() => {
-    // SCR-6: QA watcher dihitung sebagai penonton — selama persona QA masih
+    // SCR-6: QA watcher dihitung sebagai penonton, selama persona QA masih
     // menonton, sesi TIDAK di-auto-close meski tanpa viewer/tool activity.
     if (s.viewers <= 0 && s.watchers.size === 0 && Date.now() - s.lastActivity >= ms) {
       log.info({ key: s.key }, "screen idle (no viewer, no tool activity) → close");
@@ -214,7 +214,7 @@ export async function ensureScreen(
   const exec = detectBrowserExec();
   if (!exec) {
     throw new Error(
-      "No browser executable found — set YUI_BROWSER_EXEC to a Chrome/Edge/Chromium path",
+      "No browser executable found, set YUI_BROWSER_EXEC to a Chrome/Edge/Chromium path",
     );
   }
 
@@ -243,7 +243,7 @@ export async function ensureScreen(
   sessions.set(key, s);
 
   try {
-    // profil persist per project×persona (SCR-3) — di dataDir, BUKAN workspace
+    // profil persist per project×persona (SCR-3), di dataDir, BUKAN workspace
     const profile = path.join(dataDir, ".yuika", "browser", projectId, personaId);
     fs.mkdirSync(profile, { recursive: true });
     const proc = spawn(exec, [
@@ -290,7 +290,7 @@ export async function ensureScreen(
       }
     });
 
-    // screencast — ack ditahan sesuai FPS (lihat startScreencast)
+    // screencast, ack ditahan sesuai FPS (lihat startScreencast)
     await startScreencast(s);
 
     s.status = "running";
@@ -344,7 +344,7 @@ async function cleanup(s: ScreenSession): Promise<void> {
   try { await s.conn?.close(); } catch { /* abaikan */ }
   if (s.proc && !s.proc.killed) {
     // tunggu proses BENAR-BENAR mati (Windows: user-data-dir terkunci sampai
-    // exit — restart cepat akan gagal spawn bila tidak ditunggu)
+    // exit, restart cepat akan gagal spawn bila tidak ditunggu)
     await new Promise<void>((resolve) => {
       const t = setTimeout(resolve, 3_000);
       s.proc!.once("close", () => { clearTimeout(t); resolve(); });
@@ -424,7 +424,7 @@ export function takeLease(key: string, owner: string): { ok: boolean; owner: str
   if (!s) return { ok: false, owner: null };
   const incoming = screenLeaseId(owner, ++s.fence);
   if (!canTakeScreenLease(s.lease, incoming)) {
-    // race: fence sudah loncat — coba ulang sekali dengan fence baru
+    // race: fence sudah loncat, coba ulang sekali dengan fence baru
     const retry = screenLeaseId(owner, ++s.fence);
     if (!canTakeScreenLease(s.lease, retry)) return { ok: false, owner: parseScreenLeaseId(s.lease!).ownerId };
     s.lease = retry;
@@ -442,7 +442,7 @@ export function yieldLease(key: string, owner: string): boolean {
   if (!s.lease) { fireState(s); return true; }
   const mine = screenLeaseId(owner, s.fence);
   if (!canReleaseScreenLease(s.lease, mine)) return false;
-  s.lease = null; // lepas total — pihak mana pun boleh ambil
+  s.lease = null; // lepas total, pihak mana pun boleh ambil
   fireState(s);
   touch(s);
   return true;
@@ -458,8 +458,8 @@ function requireOwner(s: ScreenSession, actor: string): void {
   if (owner !== null && owner !== actor) {
     throw new Error(
       owner === "user"
-        ? `Screen is under user control — ask them to release it (or wait) before acting (actor: ${actor})`
-        : `Screen is under control of ${owner} — use request_takeover to ask for handover (actor: ${actor})`,
+        ? `Screen is under user control, ask them to release it (or wait) before acting (actor: ${actor})`
+        : `Screen is under control of ${owner}, use request_takeover to ask for handover (actor: ${actor})`,
     );
   }
 }
@@ -537,7 +537,7 @@ export async function screenScroll(key: string, actor: string, deltaX: number, d
   touch(s);
 }
 
-/** Ketik teks ke elemen terfokus — Input.insertText (IME-style, andal utk
+/** Ketik teks ke elemen terfokus, Input.insertText (IME-style, andal utk
  *  unicode) + keydown/keyup utk key khusus (SCR-0 proof). */
 export async function screenType(key: string, actor: string, text: string): Promise<void> {
   const s = sessions.get(key);
@@ -583,7 +583,7 @@ export async function screenPress(key: string, actor: string, k: string): Promis
 
 // ── snapshot (agent view) ───────────────────────────────────────────────────
 
-/** Ekspresi dieksekusi DI HALAMAN — kumpulkan ringkasan a11y-lite utk agent.
+/** Ekspresi dieksekusi DI HALAMAN, kumpulkan ringkasan a11y-lite utk agent.
  *  ref = indeks; koordinat = pusat bbox (viewport CSS px, cocok dgn frame). */
 const SNAPSHOT_EXPR = `(() => {
   const vis = (el) => {
@@ -596,7 +596,7 @@ const SNAPSHOT_EXPR = `(() => {
   const nodes = [...document.querySelectorAll(sel)].filter(vis).slice(0, 120);
   const items = nodes.map((el, i) => {
     const r = el.getBoundingClientRect();
-    // VLT-4: input[type=password] DILARANG expose value/attr-value ke agent —
+    // VLT-4: input[type=password] DILARANG expose value/attr-value ke agent,
     // di-mask DI SUMBER (apapun jalur isinya: kartu login / vault / user ketik).
     const pw = el.tagName === "INPUT" && String(el.getAttribute("type") || "text").toLowerCase() === "password";
     const shown = pw ? "" : String(el.value ?? "");
@@ -630,7 +630,7 @@ export async function screenSnapshot(key: string): Promise<Snapshot> {
   return snap;
 }
 
-// ── request_takeover pending (SCR-4) — pola vault fill ─────────────────────
+// ── request_takeover pending (SCR-4), pola vault fill ─────────────────────
 
 export interface PendingTakeover {
   requestId: string;
@@ -659,7 +659,7 @@ export function takeoverTimeoutMs(): number {
   return Math.max(0, Number(process.env.YUI_TAKEOVER_TIMEOUT_MS ?? 120_000) || 0);
 }
 
-/** Buka permintaan takeover: return { requestId, deadline, result } —
+/** Buka permintaan takeover: return { requestId, deadline, result },
  *  PEMANGGIL (tool) yang menunggu `result`; kartu UI non-blocking dibuat
  *  dari event takeover.requested (dipancarkan tool), bukan di sini. */
 export function openTakeoverRequest(
@@ -714,7 +714,7 @@ export function listPendingTakeovers(key?: string): { requestId: string; key: st
     .map(({ requestId, key: k, personaId, reason, deadline }) => ({ requestId, key: k, personaId, reason, deadline }));
 }
 
-// ── VLT-4: fill_login pending + CDP fill — nilai TIDAK pernah masuk event ──
+// ── VLT-4: fill_login pending + CDP fill, nilai TIDAK pernah masuk event ──
 
 export interface LoginFillResult {
   ok: boolean;
@@ -738,7 +738,7 @@ interface LoginRegistry {
   seq: number;
 }
 
-/** Password card-path per key — didaftarkan sbg active secret saat fill
+/** Password card-path per key, didaftarkan sbg active secret saat fill
  *  (scrub dari SEMUA teks keluar proses ini), dilepas saat sesi stop. */
 const loginSecrets = new Map<string, string[]>();
 
@@ -749,7 +749,7 @@ export function loginTimeoutMs(): number {
   return Math.max(0, Number(process.env.YUI_LOGIN_TIMEOUT_MS ?? 120_000) || 0);
 }
 
-/** Eval generik read-only (returnByValue) — dipakai test & QA utk membaca
+/** Eval generik read-only (returnByValue), dipakai test & QA utk membaca
  *  state DOM (mis. document.title setelah submit form). */
 export async function screenEvalJson<T>(key: string, expr: string): Promise<T | undefined> {
   const s = sessions.get(key);
@@ -760,7 +760,7 @@ export async function screenEvalJson<T>(key: string, expr: string): Promise<T | 
   return r.result?.value;
 }
 
-/** Isi form login di halaman aktif via CDP. TANPA lease check — aksi ini
+/** Isi form login di halaman aktif via CDP. TANPA lease check, aksi ini
  *  di-otorisasi user lewat REST fill (padanannya user mengetik sendiri).
  *  Heuristik: input[type=password] PERTAMA + input text/email terdekat
  *  sebelumnya dalam form yang sama (fallback: document). */
@@ -800,7 +800,7 @@ export async function screenFillLogin(
   return out;
 }
 
-/** Buka permintaan login — PEMANGGIL (tool request_login) menunggu result.
+/** Buka permintaan login, PEMANGGIL (tool request_login) menunggu result.
  *  Kartu UI dibuat dari event login.requested yang dipancarkan tool. */
 export function openLoginRequest(
   key: string,
@@ -853,7 +853,7 @@ export async function resolveLogin(
     rec.resolve({ status: "failed", saved: false, fill });
     return true;
   }
-  // VLT-4 hardening: password jadi active secret (VLT-5) selama sesi hidup —
+  // VLT-4 hardening: password jadi active secret (VLT-5) selama sesi hidup,
   // apa pun yang mencoba membacanya balik (snapshot/teks/log) di-scrub.
   const prev = loginSecrets.get(rec.key) ?? [];
   registerActiveSecret(creds.pass);

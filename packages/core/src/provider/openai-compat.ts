@@ -1,4 +1,4 @@
-// @yuika/core — OpenAI-compatible streaming adapter (D12)
+// @yuika/core, OpenAI-compatible streaming adapter (D12)
 import OpenAI from "openai";
 import { env } from "../env.js";
 import type {
@@ -60,7 +60,7 @@ export class OpenAICompatProvider implements ProviderAdapter {
       baseURL: cfg.baseUrl,
       apiKey: cfg.apiKey,
       // P0-CORE-2 (parsial): panggilan provider bisa menggantung menit-lamanya
-      // (di test: 139 dtk dan 35 dtk) — timeout per request + retry transien.
+      // (di test: 139 dtk dan 35 dtk), timeout per request + retry transien.
       timeout: Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? env.providerTimeoutMs),
       maxRetries: 2,
     });
@@ -81,7 +81,7 @@ export class OpenAICompatProvider implements ProviderAdapter {
     let text = "";
     let finishReason: ProviderDone["finishReason"] = "stop";
     // Akumulasi fragment tool-call per index (provider mengirim delta per index);
-    // args masih string mentah (fragmen JSON) — baru di-parse jadi object di bawah.
+    // args masih string mentah (fragmen JSON), baru di-parse jadi object di bawah.
     const calls = new Map<number, { id: string; name: string; args: string }>();
     let usage: ProviderDone["usage"];
 
@@ -90,7 +90,7 @@ export class OpenAICompatProvider implements ProviderAdapter {
       if (!choice) continue;
       const delta = choice.delta;
       // GLM/Anthropic-compat mengirim pikiran model di reasoning_content.
-      // Fix dev-10: JANGAN dibuang — streaming "thinking" inilah yang membuat
+      // Fix dev-10: JANGAN dibuang, streaming "thinking" inilah yang membuat
       // panggilan menit-lamanya terasa hidup di UI (42k token reasoning pernah
       // hilang diam-diam → UI seolah hang).
       if ((delta as { reasoning_content?: string } | undefined)?.reasoning_content) {

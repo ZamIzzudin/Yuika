@@ -1,37 +1,37 @@
-// @yuika/core — Memory manager (P1-MEM-1): dokumen editable —
+// @yuika/core, Memory manager (P1-MEM-1): dokumen editable,
 //   USER.md                      (workspace, lintas project): preferensi & fakta user.
 //   MEMORY.md                    (per project): keputusan, pelajaran, konteks proyek.
 //   memory/domains/<domain>.md   (P1-MEM-6, per persona-domain): keahlian yang
 //                                persona pelajari tentang cara bekerja bersama user
-//                                — lintas project, milik persona (TIDAK ikut
-//                                terhapus saat project dihapus — kebijakan P1-PRJ-8).
-// Prinsip Hermes §4.7: file milik user — transparan, editable langsung;
+//                               , lintas project, milik persona (TIDAK ikut
+//                                terhapus saat project dihapus, kebijakan P1-PRJ-8).
+// Prinsip Hermes §4.7: file milik user, transparan, editable langsung;
 // agent hanya menambah (append terkurasi, dedupe) lewat tool memory_append.
 // Kapan dibaca: di-inject ke system prompt saat sesi DIBUAT (frozen per sesi,
-// cache discipline) — catatan baru berlaku mulai sesi berikutnya.
+// cache discipline), catatan baru berlaku mulai sesi berikutnya.
 import fs from "node:fs";
 import path from "node:path";
 
 export type MemoryScope = "user" | "project" | "domain";
 
-export const USER_HEADER = `# USER.md — preferensi pengguna
+export const USER_HEADER = `# USER.md, preferensi pengguna
 
-> Catatan yang Yui baca untuk mengenal preferensimu. Boleh diedit langsung —
+> Catatan yang Yui baca untuk mengenal preferensimu. Boleh diedit langsung,
 > file ini milikmu. Agent menambah catatan lewat tool \`memory_append\`.
 
 `;
 
-export const PROJECT_HEADER = (projectName: string) => `# MEMORY.md — memori project ${projectName}
+export const PROJECT_HEADER = (projectName: string) => `# MEMORY.md, memori project ${projectName}
 
 > Keputusan, pelajaran, dan konteks yang agent baca di setiap sesi baru proyek ini.
 
 `;
 
-/** P1-MEM-6: memori domain persona — lintas project, milik persona. */
-export const DOMAIN_HEADER = (domain: string) => `# ${domain}.md — memori bidang "${domain}"
+/** P1-MEM-6: memori domain persona, lintas project, milik persona. */
+export const DOMAIN_HEADER = (domain: string) => `# ${domain}.md, memori bidang "${domain}"
 
 > Keahlian yang persona bidang ini pelajari tentang cara bekerja bersama user
-> (lintas project). File milik user — boleh diedit langsung.
+> (lintas project). File milik user, boleh diedit langsung.
 
 `;
 
@@ -76,7 +76,7 @@ export function readMemory(
   return header;
 }
 
-/** Simpan utuh (dari editor user) — satu-satunya jalur menimpa. */
+/** Simpan utuh (dari editor user), satu-satunya jalur menimpa. */
 export function saveMemory(
   workspacePath: string,
   scope: MemoryScope,
@@ -126,20 +126,20 @@ export function appendCurated(
 
 /**
  * Bagian system prompt: catatan memori yang dibaca agent.
- * Dipanggil saat sesi DIBUAT (frozen) — bukan tiap turn.
+ * Dipanggil saat sesi DIBUAT (frozen), bukan tiap turn.
  * P1-MEM-6: domain = memori persona ini (lintas project), dari manifest.
  */
 export function memoryPromptSection(workspacePath: string, projectRootPath?: string | null, domain?: string | null): string {
   const parts: string[] = [];
   const user = readMemory(workspacePath, "user").replace(USER_HEADER, "").trim();
-  if (user) parts.push(`## Preferensi pengguna (USER.md — milik user, bisa diedit)\n${user}`);
+  if (user) parts.push(`## Preferensi pengguna (USER.md, milik user, bisa diedit)\n${user}`);
   if (domain) {
     const dom = readMemory(workspacePath, "domain", null, "", domain).replace(/^# [^\n]*\n\n> [^\n]*\n\n/, "").trim();
-    if (dom) parts.push(`## Memori bidang kamu: "${domain}" (lintas project — keahlian yang kamu pelajari)\n${dom}`);
+    if (dom) parts.push(`## Memori bidang kamu: "${domain}" (lintas project, keahlian yang kamu pelajari)\n${dom}`);
   }
   if (projectRootPath) {
     const proj = readMemory(workspacePath, "project", projectRootPath).replace(/^# MEMORY\.md[\s\S]*?\n\n/, "").trim();
-    if (proj) parts.push(`## Memori project ini (MEMORY.md — keputusan & pelajaran)\n${proj}`);
+    if (proj) parts.push(`## Memori project ini (MEMORY.md, keputusan & pelajaran)\n${proj}`);
   }
   if (parts.length === 0) return "";
   return `\n\n${parts.join("\n\n")}\n\nGunakan catatan di atas untuk menyesuaikan cara bekerjamu. Perubahan preferensi yang jelas & reusable bisa kamu simpan lewat tool memory_append.`;

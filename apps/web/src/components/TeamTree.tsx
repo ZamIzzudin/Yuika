@@ -1,12 +1,12 @@
 import { apiUrl, authFetch } from "@/lib/api";
 // Diagram hierarki delegasi (tab Tim, dev-10 v3): CANVAS tak terbatas ala
-// Excalidraw/draw.io — hold & drag untuk menggeser, Ctrl+scroll / tombol ± untuk
+// Excalidraw/draw.io, hold & drag untuk menggeser, Ctrl+scroll / tombol ± untuk
 // zoom, ⌂ me-reset. Isinya tree/organisasi bercabang dari GRAF event delegasi
 // nyata: conductor root, anak sejajar, cucu di bawah pemberi tugasnya; persona
 // sama boleh muncul di dua cabang (dua sesi berbeda, label "dari <pemberi>")
 // tanpa menyiratkan atasan permanen. Implementasi canvas murni CSS transform
 // + Pointer Events (tanpa dependency).
-// DS-1: Tailwind semantik — garis penghubung via varian before:/after:.
+// DS-1: Tailwind semantik, garis penghubung via varian before:/after:.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
 import type { DelegationEdge } from "@yuika/contracts";
@@ -209,10 +209,16 @@ export function TeamTree({
   const [edges, setEdges] = useState<DelegationEdge[] | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // run workflow aktif (merge Flow→Team 2026-11-08): tiap run = ROOT kedua di
-  // canvas — conductor lead + cabang step (fase implisit di belakang; label
+  // canvas, conductor lead + cabang step (fase implisit di belakang; label
   // fase menyusul di tab Task). Kendali run ada di chat (WorkflowRunBar).
   const [runs, setRuns] = useState<
-    Array<{ id: string; status: string; name: string; leadSessionId?: string; phaseCount: number }>
+    Array<{
+      id: string;
+      status: string;
+      name: string;
+      leadSessionId?: string;
+      phaseCount: number;
+    }>
   >([]);
 
   // --- state canvas: pan {x,y} + zoom (transform-origin = pusat viewport) ---
@@ -238,9 +244,16 @@ export function TeamTree({
           ((await dr.json()) as { delegations: DelegationEdge[] }).delegations,
         );
       if (wr.ok) {
-        const list = ((await wr.json()) as {
-          runs: Array<{ id: string; status: string; workflow: { name: string; phaseCount: number }; leadSessionId?: string }>;
-        }).runs;
+        const list = (
+          (await wr.json()) as {
+            runs: Array<{
+              id: string;
+              status: string;
+              workflow: { name: string; phaseCount: number };
+              leadSessionId?: string;
+            }>;
+          }
+        ).runs;
         setRuns(
           list
             .filter((r) => !["done", "failed", "stopped"].includes(r.status))
@@ -324,7 +337,7 @@ export function TeamTree({
     <div
       ref={canvasRef}
       role="tree"
-      aria-label="Delegation hierarchy diagram — canvas"
+      aria-label="Delegation hierarchy diagram, canvas"
       className={`relative h-[85vh] touch-none overflow-hidden rounded-lg2 border border-line bg-inset [background-image:radial-gradient(color-mix(in_srgb,var(--color-dim)_26%,transparent)_1px,transparent_1px)] [background-size:22px_22px] select-none ${
         dragging ? "cursor-grabbing" : "cursor-grab"
       }`}
@@ -334,7 +347,7 @@ export function TeamTree({
       onPointerCancel={endDrag}
       style={{ backgroundPosition: `${pan.x}px ${pan.y}px` }}
     >
-      {/* kontrol zoom overlay — klik tidak ikut tergeser (stopPropagation) */}
+      {/* kontrol zoom overlay, klik tidak ikut tergeser (stopPropagation) */}
       <div
         className="absolute top-3 right-3 z-10 flex items-center gap-1"
         onPointerDown={(e) => e.stopPropagation()}
@@ -379,56 +392,67 @@ export function TeamTree({
         <div className="mx-auto flex min-w-max justify-center px-6 pt-2 pb-4">
           <div className="flex flex-col items-center gap-14">
             {/* ROOT terpisah: run workflow aktif yang lead-nya BUKAN sesi
-                root (run dari sesi lain / engine) — fase implisit, cabang step
+                root (run dari sesi lain / engine), fase implisit, cabang step
                 milik sesi lead-nya masing-masing */}
             {separateRuns.map((r) => (
               <div key={r.id} className="flex flex-col items-center">
                 <Card
                   personaId="yui-conductor"
-                  state={r.status === "running" || r.status === "awaiting_gate" ? "working" : "idle"}
+                  state={
+                    r.status === "running" || r.status === "awaiting_gate"
+                      ? "working"
+                      : "idle"
+                  }
                   subtitle={`Workflow · ${r.name} · ${r.status.replace("_", " ")}`}
                   root
                 />
                 {r.leadSessionId && edges !== null && (
-                  <Branch parentSessionId={r.leadSessionId} edges={edges} now={now} isRootBranch />
+                  <Branch
+                    parentSessionId={r.leadSessionId}
+                    edges={edges}
+                    now={now}
+                    isRootBranch
+                  />
                 )}
               </div>
             ))}
-            {/* ROOT chat: sesi aktif — run yang di-lead sesi ini DIGABUNG ke
+            {/* ROOT chat: sesi aktif, run yang di-lead sesi ini DIGABUNG ke
                 kartu (satu tree, tanpa kembar) */}
             <div className="flex flex-col items-center">
-            {rootPersonaId ? (
-              <Card
-                personaId={rootPersonaId}
-                state={mergedActive ? "working" : leadState}
-                subtitle={
-                  mergedRun
-                    ? `Workflow · ${mergedRun.name} · ${mergedRun.status.replace("_", " ")}` +
-                      (mergedRuns.length > 1 ? ` (+${mergedRuns.length - 1})` : "")
-                    : "Lead This Session"
-                }
-                root
-              />
-            ) : (
-              <p className="text-caption text-dim">
-                Open a session to see the live delegation structure.
-              </p>
-            )}
-            {rootSessionId && edges !== null && (
-              <Branch
-                parentSessionId={rootSessionId}
-                edges={edges}
-                now={now}
-                isRootBranch
-              />
-            )}
-            {edges !== null && edges.length === 0 && runs.length === 0 && (
-              <p className="mt-2.5 text-center text-caption text-dim">
-                No delegations yet,
-                <br /> The lead works alone, or ask it to delegate.
-              </p>
-            )}
-          </div>
+              {rootPersonaId ? (
+                <Card
+                  personaId={rootPersonaId}
+                  state={mergedActive ? "working" : leadState}
+                  subtitle={
+                    mergedRun
+                      ? `Workflow · ${mergedRun.name} · ${mergedRun.status.replace("_", " ")}` +
+                        (mergedRuns.length > 1
+                          ? ` (+${mergedRuns.length - 1})`
+                          : "")
+                      : "Lead This Session"
+                  }
+                  root
+                />
+              ) : (
+                <p className="text-caption text-dim">
+                  Open a session to see the live delegation structure.
+                </p>
+              )}
+              {rootSessionId && edges !== null && (
+                <Branch
+                  parentSessionId={rootSessionId}
+                  edges={edges}
+                  now={now}
+                  isRootBranch
+                />
+              )}
+              {edges !== null && edges.length === 0 && runs.length === 0 && (
+                <p className="mt-2.5 text-center text-caption text-dim">
+                  No delegations yet,
+                  <br /> The lead works alone, or ask it to delegate.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

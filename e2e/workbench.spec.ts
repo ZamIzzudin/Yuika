@@ -1,4 +1,4 @@
-// Batch 6 e2e — P2-STU-1 (chat state survive pindah tab + layout kolom),
+// Batch 6 e2e, P2-STU-1 (chat state survive pindah tab + layout kolom),
 // P2-STU-7 (Docs: deliverable md terbaca), P2-STU-4 (Browser read-only via
 // proxy allowlist: server halaman lokal di-spec, script distrip).
 import { expect, test } from "@playwright/test";
@@ -21,13 +21,13 @@ test("STU-1: pindah tab → chat tertutup penuh, draft tetap selamat", async ({ 
   await expect(composer).toBeVisible({ timeout: 15_000 });
   await composer.fill("draft yang harus selamat");
 
-  // pindah ke tab Files — SATU TAB SATU HALAMAN: chat tertutup penuh,
+  // pindah ke tab Files, SATU TAB SATU HALAMAN: chat tertutup penuh,
   // tab aktif lebar penuh (bukan lagi layout kolom Batch 6 awal)
   await page.getByRole("tab", { name: "Files" }).click();
   await expect(page.getByLabel("Project files")).toBeVisible({ timeout: 15_000 });
   await expect(composer).toBeHidden();
 
-  // kembali ke Chat — state tetap utuh (komponen disembunyikan, bukan unmount)
+  // kembali ke Chat, state tetap utuh (komponen disembunyikan, bukan unmount)
   await page.getByRole("tab", { name: "Chat" }).click();
   await expect(composer).toBeVisible();
   await expect(composer).toHaveValue("draft yang harus selamat");
@@ -46,7 +46,7 @@ test("STU-7 (merge ke Files): upload md → Files tab ter-render markdown + seks
   expect(up.ok()).toBeTruthy();
 
   await openProjectWithLead(page, name);
-  // tab Docs sudah dihapus — fungsinya diserap tab Files (keputusan user)
+  // tab Docs sudah dihapus, fungsinya diserap tab Files (keputusan user)
   await page.getByRole("tab", { name: "Files" }).click();
 
   // tree menampilkan file (folder uploads) → klik file → default ter-render markdown
@@ -61,12 +61,12 @@ test("STU-7 (merge ke Files): upload md → Files tab ter-render markdown + seks
   await page.getByRole("button", { name: "rendered" }).click();
   await expect(page.getByRole("heading", { name: "Deliverable One" })).toBeVisible();
 
-  // seksi Run reports hadir (state kosong ok — belum ada run di project baru)
+  // seksi Run reports hadir (state kosong ok, belum ada run di project baru)
   await expect(page.getByText("Run reports")).toBeVisible();
 });
 
 test("STU-4 (Batch 14a++): policy browser di Config + fetch reader via REST", async ({ page, request }) => {
-  // Reader UI dihapus dari tab (user 2026-11) — policy kini di Config →
+  // Reader UI dihapus dari tab (user 2026-11), policy kini di Config →
   // Browser; halaman tetap bisa di-fetch via REST (sanitasi jalan). Server
   // lokal loopback; API e2e di-set YUI_BROWSER_ALLOW=127.0.0.1 +
   // YUI_BROWSER_ALLOW_PRIVATE=1 (prod TIDAK memakai env ini).
@@ -138,11 +138,11 @@ test("FLOW gate: pintu Workflow dari chat conductor (keputusan user: flow = alat
   await expect(bar).toBeVisible();
   await expect(bar.getByText("Workflow armed", { exact: false })).toBeVisible();
   await expect(
-    page.getByPlaceholder("Describe the goal — this message starts a workflow run"),
+    page.getByPlaceholder("Describe the goal, this message starts a workflow run"),
   ).toBeVisible();
 
-  // (tombol header Workflow dihapus 2026-11 — menumpuk status persona; tab
+  // (tombol header Workflow dihapus 2026-11, menumpuk status persona; tab
   // Team di tablist atas = pintu yang sama)
   await page.getByRole("tab", { name: "Team" }).click();
-  await expect(page.getByLabel("Delegation hierarchy diagram — canvas")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByLabel("Delegation hierarchy diagram, canvas")).toBeVisible({ timeout: 15_000 });
 });

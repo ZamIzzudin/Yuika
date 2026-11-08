@@ -1,4 +1,4 @@
-// P0-INF-1: REST contract test apps/api — buildApp dengan runtime PALSU
+// P0-INF-1: REST contract test apps/api, buildApp dengan runtime PALSU
 // (cast) → fastify.inject. Menguji kontrak HTTP (path/status/body), BUKAN
 // logika runtime (sudut itu milik suite core).
 import { describe, expect, it } from "vitest";
@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Isolasi auth gate (pola auth.test.ts): auth.db tmp — auth.db DEV punya user
+// Isolasi auth gate (pola auth.test.ts): auth.db tmp, auth.db DEV punya user
 // terdaftar → gate aktif → semua kontrak 401 tanpa ini.
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "yui-api-contract-"));
 process.env.YUI_AUTH_DB = path.join(TMP, "auth.db");
@@ -72,7 +72,7 @@ const fake = {
 const app = buildApp(fake);
 
 describe("apps/api REST contract", () => {
-  it("GET /api/projects/:id/activity — 200 shape {activity:[…]} (Batch 14a++ Logs)", async () => {
+  it("GET /api/projects/:id/activity, 200 shape {activity:[…]} (Batch 14a++ Logs)", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/activity?limit=50" });
     expect(r.statusCode).toBe(200);
     const d = r.json() as { activity: { personaId: string; kind: string; label: string }[] };
@@ -80,12 +80,12 @@ describe("apps/api REST contract", () => {
     // browsing history ikut tergabung (kind visit)
     expect(d.activity.some((a) => a.kind === "visit" && a.label.includes("example.com"))).toBe(true);
   });
-  it("GET /api/projects/:id/activity — project tak dikenal → 404 {error}", async () => {
+  it("GET /api/projects/:id/activity, project tak dikenal → 404 {error}", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_hantu/activity" });
     expect(r.statusCode).toBe(404);
     expect(r.json()).toMatchObject({ error: "project not found" });
   });
-  it("GET /api/projects/:id/dashboard — 200 shape {dashboard} (P2-PM-4/5); tak dikenal → 404", async () => {
+  it("GET /api/projects/:id/dashboard, 200 shape {dashboard} (P2-PM-4/5); tak dikenal → 404", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/dashboard" });
     expect(r.statusCode).toBe(200);
     const d = r.json() as { dashboard: { tasks: { total: number }; phases: unknown[] } };
@@ -95,7 +95,7 @@ describe("apps/api REST contract", () => {
     expect(nf.statusCode).toBe(404);
     expect(nf.json()).toMatchObject({ error: "project tidak ditemukan" });
   });
-  it("GET /api/projects/:id/workshop(+log) — 200 shape (P2-WKS); project asing → 404", async () => {
+  it("GET /api/projects/:id/workshop(+log), 200 shape (P2-WKS); project asing → 404", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/workshop" });
     expect(r.statusCode).toBe(200);
     expect(r.json()).toMatchObject({ workshop: { projectId: "p_ok", state: "absent" } });
@@ -105,14 +105,14 @@ describe("apps/api REST contract", () => {
     const nf = await app.inject({ method: "GET", url: "/api/projects/p_hantu/workshop" });
     expect(nf.statusCode).toBe(404);
   });
-  it("POST /api/sessions — valid → 200 shape {sessionId,persona,projectId}", async () => {
+  it("POST /api/sessions, valid → 200 shape {sessionId,persona,projectId}", async () => {
     const r = await app.inject({ method: "POST", url: "/api/sessions", payload: { personaId: "yui-scholar" } });
     expect(r.statusCode).toBe(200);
     expect(r.json()).toMatchObject({ sessionId: "s_new", persona: { id: "yui-scholar" }, projectId: null });
     expect(calls).toContain("createSession:yui-scholar");
   });
 
-  it("POST /api/sessions — body invalid → 400 {error} (zod via error handler)", async () => {
+  it("POST /api/sessions, body invalid → 400 {error} (zod via error handler)", async () => {
     const r = await app.inject({ method: "POST", url: "/api/sessions", payload: { personaId: "" } });
     expect(r.statusCode).toBe(400);
     expect(typeof r.json().error).toBe("string");
@@ -125,7 +125,7 @@ describe("apps/api REST contract", () => {
     expect(body.events[0]!.type).toBe("turn.started");
   });
 
-  it("POST /api/delegations/:id — pause/resume/steer + 404 bila tak aktif", async () => {
+  it("POST /api/delegations/:id, pause/resume/steer + 404 bila tak aktif", async () => {
     expect((await app.inject({ method: "POST", url: "/api/delegations/s_child", payload: { action: "pause" } })).statusCode).toBe(200);
     expect((await app.inject({ method: "POST", url: "/api/delegations/s_child", payload: { action: "resume" } })).statusCode).toBe(200);
     expect((await app.inject({ method: "POST", url: "/api/delegations/s_child", payload: { action: "steer", text: "fokus" } })).statusCode).toBe(200);
@@ -134,13 +134,13 @@ describe("apps/api REST contract", () => {
     expect(gone.statusCode).toBe(404);
   });
 
-  it("GET /api/projects/:id — 404 {error} bila tak ada", async () => {
+  it("GET /api/projects/:id, 404 {error} bila tak ada", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_nope" });
     expect(r.statusCode).toBe(404);
     expect(r.json().error).toContain("tidak ditemukan");
   });
 
-  it("POST /api/projects/:id/uploads — nama divalidasi & ext luar daftar → 400", async () => {
+  it("POST /api/projects/:id/uploads, nama divalidasi & ext luar daftar → 400", async () => {
     const bad = await app.inject({ method: "POST", url: "/api/projects/p_ok/uploads?name=..%2Fevil.exe", payload: Buffer.from("x"), headers: { "content-type": "application/octet-stream" } });
     expect(bad.statusCode).toBe(400);
     const ok = await app.inject({ method: "POST", url: "/api/projects/p_ok/uploads?name=doc.pdf", payload: Buffer.from("%PDF-1.4"), headers: { "content-type": "application/octet-stream" } });
@@ -148,7 +148,7 @@ describe("apps/api REST contract", () => {
     expect(ok.json().path).toBe("uploads/doc.pdf");
   });
 
-  it("P2-PM-3: GET /tasks/validate — lint DAG + coverage (kontrak bentuk)", async () => {
+  it("P2-PM-3: GET /tasks/validate, lint DAG + coverage (kontrak bentuk)", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/tasks/validate" });
     expect(r.statusCode).toBe(200);
     const body = r.json();
@@ -158,7 +158,7 @@ describe("apps/api REST contract", () => {
     expect(body.stats.phaseCoverage.length).toBe(7);
   });
 
-  it("P2-STU-4: GET /browser/fetch — proxy read-only + 403 host_denied; GET /browser/visits", async () => {
+  it("P2-STU-4: GET /browser/fetch, proxy read-only + 403 host_denied; GET /browser/visits", async () => {
     const ok = await app.inject({ method: "GET", url: "/api/projects/p_ok/browser/fetch?url=https%3A%2F%2Fexample.com" });
     expect(ok.statusCode).toBe(200);
     expect(ok.json()).toMatchObject({ title: "Doc", html: "<h1>Hi</h1>" });
@@ -178,7 +178,7 @@ describe("apps/api REST contract", () => {
     expect(r.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
   });
 
-  it("CORS di SSE stream: hijack() melewati pipeline fastify — ACAO harus tetap ada (fix E2E 2026-11)", async () => {
+  it("CORS di SSE stream: hijack() melewati pipeline fastify, ACAO harus tetap ada (fix E2E 2026-11)", async () => {
     // hijack + raw.writeHead menimpa header; tanpa refleksi manual browser
     // memblokir EventSource (kejadian E2E P0-QA-1: web:3990 → api:3291).
     const r = await app.inject({ method: "GET", url: "/api/sessions/s1/stream?snapshot=1", headers: { origin: "http://localhost:3990" } });

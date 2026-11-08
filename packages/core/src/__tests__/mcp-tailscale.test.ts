@@ -1,4 +1,4 @@
-// dev-10: MCP server Tailscale (in-repo) — handshake stdio + tools/list +
+// dev-10: MCP server Tailscale (in-repo), handshake stdio + tools/list +
 // tools/call dengan CLI tailscale TIDAK tersedia → hasil isError rapi.
 import { describe, expect, it } from "vitest";
 import { spawn } from "node:child_process";
@@ -45,7 +45,7 @@ describe("MCP tailscale server (stdio)", () => {
 
   it("tools/call ts_status tanpa CLI → isError rapi (bukan crash)", async () => {
     const res = await rpc("tools/call", { name: "ts_status", arguments: {} }, 3);
-    // CLI tailscale mungkin ada/ tidak di mesin test — dua-duanya harus dibalas
+    // CLI tailscale mungkin ada/ tidak di mesin test, dua-duanya harus dibalas
     expect(res.result).toBeDefined();
   }, 20_000);
 });

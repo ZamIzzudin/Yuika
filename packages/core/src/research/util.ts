@@ -1,6 +1,6 @@
-// Batch 7 (RS) — util bersama provider riset: UA, fetch wrapper, strip HTML.
+// Batch 7 (RS), util bersama provider riset: UA, fetch wrapper, strip HTML.
 
-/** UA browser desktop untuk halaman umum & endpoint nonofficial (fungsi dulu —
+/** UA browser desktop untuk halaman umum & endpoint nonofficial (fungsi dulu,
  *  sebagian endpoint menolak UA non-browser; identitas jujur dipakai untuk API resmi). */
 export const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -49,7 +49,7 @@ export async function httpText(
   return { status: res.status, text: (await res.text()).slice(0, 2 * 1024 * 1024) };
 }
 
-/** Race promise dengan deadline — guard watchdog utk await yang bisa menggantung
+/** Race promise dengan deadline, guard watchdog utk await yang bisa menggantung
  *  (DNS, stream lambat). Label jadi pesan error. */
 export function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   let t: ReturnType<typeof setTimeout> | undefined;
@@ -60,7 +60,7 @@ export function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promis
 }
 
 /** Throttle per-domain (RS-2): jeda minimum antar request ke host yang sama.
- *  RESERVASI SEKALI lalu tidur sampai slot — caller paralel tidak pernah
+ *  RESERVASI SEKALI lalu tidur sampai slot, caller paralel tidak pernah
  *  me-re-queue dirinya (bug lama: waiter menambah slot tiap bangun → livelock). */
 const nextSlot = new Map<string, number>();
 

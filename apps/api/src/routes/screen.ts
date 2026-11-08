@@ -1,4 +1,4 @@
-// @yuika/api — Batch 14a (P2-SCR): routes shared live screen.
+// @yuika/api, Batch 14a (P2-SCR): routes shared live screen.
 //   GET    /api/projects/:id/screens                       → daftar sesi (selector tab Browser)
 //   POST   /api/projects/:id/screens                       {personaId} → start/ambil
 //   DELETE /api/projects/:id/screens/:persona              → stop
@@ -8,7 +8,7 @@
 //   POST   /api/projects/:id/screens/:persona/yield        → user melepas
 //   POST   /api/takeover/:requestId/resolve                {grant} → jawab kartu persona
 //   GET    /api/takeover/pending                           → kartu aktif (replay)
-// Frame TIDAK lewat event bus sesi (bandwidth) — SSE khusus ini.
+// Frame TIDAK lewat event bus sesi (bandwidth), SSE khusus ini.
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import {
@@ -102,7 +102,7 @@ export function registerScreenRoutes(app: FastifyInstance, getRt: () => YuiRunti
     // input user hanya bila user pegang lease (atau lease kosong → ambil otomatis)
     if (leaseOwner(key) !== "user") {
       const t = takeLease(key, "user");
-      if (!t.ok) return reply.code(409).send({ error: `screen is controlled by ${leaseOwner(key)} — use Take control` });
+      if (!t.ok) return reply.code(409).send({ error: `screen is controlled by ${leaseOwner(key)}, use Take control` });
     }
     try {
       const a = parsed.data;

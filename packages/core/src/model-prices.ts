@@ -1,7 +1,7 @@
-// @yuika/core — price book (P1-MDL-3): harga per model untuk indikator biaya.
-// File JSON di data/ (mirror model-overrides) — user isi lewat Settings.
+// @yuika/core, price book (P1-MDL-3): harga per model untuk indikator biaya.
+// File JSON di data/ (mirror model-overrides), user isi lewat Settings.
 // Estimasi biaya = metering (P1-CRED-1, tanpa estimasi token) × harga DI-SET
-// user; model tanpa harga = biaya tidak dihitung (bukan 0 — jujur).
+// user; model tanpa harga = biaya tidak dihitung (bukan 0, jujur).
 import fs from "node:fs";
 import path from "node:path";
 import { PriceBook, type ModelPrice } from "@yuika/contracts";
@@ -22,7 +22,7 @@ export function saveModelPrice(file: string, model: string, price: ModelPrice): 
   return all;
 }
 
-/** Biaya (unit mata uang price) dari token — 0 bila model tak berharga di buku. */
+/** Biaya (unit mata uang price) dari token, 0 bila model tak berharga di buku. */
 export function costOf(promptTokens: number, outputTokens: number, price: ModelPrice | undefined): number | null {
   if (!price || (!price.inputPerMillion && !price.outputPerMillion)) return null; // tanpa harga → tak dihitung
   return (promptTokens / 1_000_000) * price.inputPerMillion + (outputTokens / 1_000_000) * price.outputPerMillion;

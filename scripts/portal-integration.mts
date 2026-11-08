@@ -1,9 +1,9 @@
-// P1-PRT-6 — INTEGRASI PORTAL NYATA (docs/INTEGRATION.md §5, 10 skenario)
+// P1-PRT-6, INTEGRASI PORTAL NYATA (docs/INTEGRATION.md §5, 10 skenario)
 // SDK/crypto Yuika vs PORTAL PRODUKSI yuika-portal: web HTTP nyata
 // (register/pairing/claim/unlink + cookie sesi) dan relay WS nyata
-// (ws://localhost:3101) — bukan SpecRelay double, bukan seed lib internal.
+// (ws://localhost:3101), bukan SpecRelay double, bukan seed lib internal.
 //
-// Prasyarat (INTEGRATION.md §3 — web DULU, relay menunggu db):
+// Prasyarat (INTEGRATION.md §3, web DULU, relay menunggu db):
 //   cd d:/projects/yuika-portal
 //   npm run dev  -w @yuika-portal/web     # :3100
 //   npm run start -w @yuika-portal/relay  # :3101
@@ -11,7 +11,7 @@
 // Jalankan: npx tsx scripts/portal-integration.mts
 //
 // Catatan rate limit claim (10/mnt/IP): skenario 10 sengaja membakar kuota
-// sampai 429 — setelah selesai, tunggu Retry-After sebelum menjalankan lagi.
+// sampai 429, setelah selesai, tunggu Retry-After sebelum menjalankan lagi.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -104,7 +104,7 @@ class Conn {
     if (i >= 0) return Promise.resolve(this.frames.splice(i, 1)[0]!);
     return new Promise((resolve, reject) => {
       const to = setTimeout(() => {
-        const w = this.waiters.find((x) => x.pred === pred); // noop — waiters unik per pred closure
+        const w = this.waiters.find((x) => x.pred === pred); // noop, waiters unik per pred closure
         reject(new Error(`[${this.label}] wait timeout ${ms}ms (frames: ${this.frames.map((f) => f.t).join(",")})`));
         void w;
       }, ms);
@@ -189,7 +189,7 @@ async function main() {
     const c1 = conn("A1", ids.A1, kA1);
     const ok = await c1.connect();
     check("auth valid → auth_ok", ok === "auth_ok");
-    c1.close(); // jangan bocorkan koneksi — S8 menghitung cap per akun
+    c1.close(); // jangan bocorkan koneksi, S8 menghitung cap per akun
     const bad = conn("A1-badsig", ids.A1, kA1);
     const badPriv = generateDeviceKeys().signPriv;
     const bye = await bad.connectBadSig(badPriv);
@@ -280,7 +280,7 @@ async function main() {
     check("box A3 TIDAK terbuka oleh A2", threw);
   }
 
-  // ══ S6: list_hosts — dua host akun sama ═══════════════════════════════
+  // ══ S6: list_hosts, dua host akun sama ═══════════════════════════════
   {
     console.log("[S6] list_hosts");
     r2.close();
@@ -351,7 +351,7 @@ async function main() {
 
   // ══ S10: matriks claim API ════════════════════════════════════════════
   {
-    console.log("[S10] claim API (rate limit akan terbakar — jangan ulang <1 mnt)");
+    console.log("[S10] claim API (rate limit akan terbakar, jangan ulang <1 mnt)");
     // slot clash: semua kind A terisi → token baru kind web → 409 already linked
     const tokWeb = j(await A.call("POST", "/api/devices/pairing", { kind: "web" })).token;
     const clash = await A.call("POST", "/api/devices/claim", { token: tokWeb, kind: "web", name: "Clash", signPub: kA2.signPub, dhPub: kA2.dhPub });
@@ -364,7 +364,7 @@ async function main() {
     check("claim baru → 201 + deviceId", fresh.status === 201 && !!j(fresh).deviceId, `${fresh.status} ${fresh.text}`);
     const reuse = await A.call("POST", "/api/devices/claim", { token: tokMobile.token, kind: "mobile", name: "Reuse", signPub: kNew.signPub, dhPub: kNew.dhPub });
     check("reuse token → 409 already used", reuse.status === 409 && j(reuse).error.includes("already used"), `${reuse.status} ${reuse.text}`);
-    // expired 410 — issue BARU setelah semua pairing lain (issue baru per
+    // expired 410, issue BARU setelah semua pairing lain (issue baru per
     // account+kind MENGHAPUS token lama → token setup sudah pasti 404), lalu
     // biarkan >120 dtk TANPA issue lain → claim → 410.
     const expTok = j(await A.call("POST", "/api/devices/pairing", { kind: "web" }));
@@ -373,7 +373,7 @@ async function main() {
     await new Promise((r) => setTimeout(r, wait));
     const exp = await A.call("POST", "/api/devices/claim", { token: expTok.token, kind: "web", name: "Exp", signPub: kA2.signPub, dhPub: kA2.dhPub });
     check("token expired → 410", exp.status === 410 && j(exp).error.includes("expired"), `${exp.status} ${exp.text}`);
-    // 429: fixed-window 10/mnt/IP — 3 claim di atas + burn hingga 12 → trip
+    // 429: fixed-window 10/mnt/IP, 3 claim di atas + burn hingga 12 → trip
     let got429 = false;
     let retryAfter = "";
     for (let i = 0; i < 12 && !got429; i++) {

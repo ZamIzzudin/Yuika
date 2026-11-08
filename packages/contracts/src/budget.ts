@@ -1,13 +1,13 @@
 // P1-CRED-2/3/4: budget & admission control per workspace.
 // Prinsip (PLAN §8.2, gas-station pattern): saldo = angka JUJUR dari ledger
 // metering × price book user-set (tanpa estimasi); HOLD hanya perkiraan kasar
-// untuk pre-auth (di-settle saat turn selesai — actual usage sudah tercatat
+// untuk pre-auth (di-settle saat turn selesai, actual usage sudah tercatat
 // di ledger sendiri). Model tanpa harga = biaya tidak dihitung → coverage
 // "partial" = angka adalah BATAS BAWAH (tidak bohong jadi 0).
 // Rate limit (CRED-3): turn/menit sliding-window + cap delegation concurrency.
 import { z } from "zod";
 
-/** Konfigurasi budget & limit workspace — file `data/budget.json`. */
+/** Konfigurasi budget & limit workspace, file `data/budget.json`. */
 export const BudgetConfig = z.object({
   /** "warn" = melewati limit tetap jalan (badge di UI); "block" = turn ditolak. */
   mode: z.enum(["warn", "block"]).default("warn"),
@@ -26,7 +26,7 @@ export type BudgetConfig = z.infer<typeof BudgetConfig>;
 export const UpdateBudgetRequest = BudgetConfig.partial().omit({ updatedAt: true });
 export type UpdateBudgetRequest = z.infer<typeof UpdateBudgetRequest>;
 
-/** Snapshot saldo untuk UI (CRED-4) — semua angka dari ledger × price book. */
+/** Snapshot saldo untuk UI (CRED-4), semua angka dari ledger × price book. */
 export const BudgetStatus = z.object({
   config: BudgetConfig,
   /** Belanja sejak tengah malam lokal (porsi model terhargai saja). */
@@ -54,7 +54,7 @@ export const UsageMatrixRow = z.object({
   calls: z.number().int().nonnegative(),
   promptTokens: z.number().int().nonnegative(),
   outputTokens: z.number().int().nonnegative(),
-  /** Estimasi biaya baris — null bila model tak dihargai (jujur, bukan 0). */
+  /** Estimasi biaya baris, null bila model tak dihargai (jujur, bukan 0). */
   cost: z.number().nullable(),
   currency: z.enum(["USD", "IDR"]).nullable(),
 });

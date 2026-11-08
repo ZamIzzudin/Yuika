@@ -1,4 +1,4 @@
-// P1-PRT-6 — GERBANG remote control (Batch 1 · Remote Control).
+// P1-PRT-6, GERBANG remote control (Batch 1 · Remote Control).
 // Bukti end-to-end via /dev/remote (browser kedua = device remote sejati,
 // kunci WebCrypto di browser) terhadap host apps/api + SpecRelay double
 // (semantik SPEC-PROTOCOL v1). Live run vs relay yuika-portal menyusul
@@ -32,7 +32,7 @@ function openRemote(page: Page, token: string, name: string): Promise<Page> {
 
 test.describe.configure({ mode: "serial" });
 
-test("G1 — host pair via REST (claim stub) → relay host online", async ({ request }) => {
+test("G1, host pair via REST (claim stub) → relay host online", async ({ request }) => {
   const r = await request.post(`${API}/api/portal/pair`, {
     data: { token: "tok_host_e2e_000000000001", portalUrl: PORTAL, relayUrl: RELAY, name: "E2E host" },
   });
@@ -48,7 +48,7 @@ test("G1 — host pair via REST (claim stub) → relay host online", async ({ re
     .toBe("authed");
 });
 
-test("G2-G6 — remote browser: join, stream, approve, resume, dua remote", async ({ page, context, request }) => {
+test("G2-G6, remote browser: join, stream, approve, resume, dua remote", async ({ page, context, request }) => {
   test.setTimeout(180_000);
 
   // Script provider: prompt#1 teks stream; prompt#2 toolCall write_file (approval)
@@ -75,7 +75,7 @@ test("G2-G6 — remote browser: join, stream, approve, resume, dua remote", asyn
 
   // ── G3: prompt pertama → delta streaming terlihat ────────────────────
   // Sesi BARU via New session + persona Yui Coder (punya write_file utk
-  // G4) — deterministik, tak tergantung sesi leftover run lain.
+  // G4), deterministik, tak tergantung sesi leftover run lain.
   await page.getByRole("button", { name: "New session" }).click();
   await page.getByRole("combobox").selectOption({ label: "Hiro Yui" });
   const input = page.getByPlaceholder(/First prompt creates a session|Message the host/);
@@ -83,7 +83,7 @@ test("G2-G6 — remote browser: join, stream, approve, resume, dua remote", asyn
   await input.press("Enter");
   await expect(page.getByText(/streams over the encrypted relay/)).toBeVisible({ timeout: 60_000 });
 
-  // ── G4: approval remote — write_file minta persetujuan ───────────────
+  // ── G4: approval remote, write_file minta persetujuan ───────────────
   // Paksa mode "ask" (approval-mode.json persist antar run bisa "auto").
   const modeRes = await request.put(`${API}/api/settings/approval`, { data: { mode: "ask" } });
   expect(modeRes.ok()).toBeTruthy();
@@ -98,7 +98,7 @@ test("G2-G6 — remote browser: join, stream, approve, resume, dua remote", asyn
     page.locator("div", { hasText: "write_file" }).filter({ hasText: "approved" }).first(),
   ).toBeVisible({ timeout: 30_000 });
 
-  // ── G5: resume — reload halaman (drop remote) → device tersimpan di
+  // ── G5: resume, reload halaman (drop remote) → device tersimpan di
   // localStorage → auto connect → snapshot sesi memuat jawaban sebelumnya ─
   await page.reload();
   await expect(page.getByText(/joined/i).first()).toBeVisible({ timeout: 30_000 });

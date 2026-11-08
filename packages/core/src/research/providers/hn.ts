@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a) — Hacker News via Algolia (API publik, toleran rate limit).
+// Batch 7 (RS-1a), Hacker News via Algolia (API publik, toleran rate limit).
 import type { SearchProvider, SearchResult } from "../types.js";
 import { httpJson } from "../util.js";
 

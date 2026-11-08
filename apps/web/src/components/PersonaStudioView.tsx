@@ -1,7 +1,7 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
-// 🎮 Persona Studio — menu Persona (permintaan user 2026-11):
-// tab Characters = CharacterStage (layar character-select penuh — konstelasi,
+// 🎮 Persona Studio, menu Persona (permintaan user 2026-11):
+// tab Characters = CharacterStage (layar character-select penuh, konstelasi,
 // maskot hero, dua card kaca, galeri dock; lihat CharacterStage.tsx).
 // Tab Missions (melatih skill baru) + Training history = warisan Dungeon (P1-DUN).
 // DS-1: hanya komponen ui/* + utility Tailwind semantik (docs/DESIGN-SYSTEM.md).
@@ -76,7 +76,7 @@ const DEFAULT_ACC: Record<"research" | "documents", string[]> = {
   ],
 };
 
-// View utama — menu Persona (menggantikan Enhancer/Dungeon).
+// View utama, menu Persona (menggantikan Enhancer/Dungeon).
 // ---------------------------------------------------------------------------
 export function PersonaStudioView({
   personas,
@@ -375,10 +375,10 @@ export function PersonaStudioView({
   return (
     <section
       className="flex h-full min-h-0 w-full flex-col px-4 pt-3 lg:px-6"
-      aria-label="Persona — character studio"
+      aria-label="Persona, character studio"
     >
       {/* Header: back + judul di kiri, TAB PILLS terpusat di tengah. */}
-      {/* grid 3 kolom [1fr_auto_1fr] — pills center geometris sejati (kolom kiri
+      {/* grid 3 kolom [1fr_auto_1fr], pills center geometris sejati (kolom kiri
           & kanan sama lebar); sebelumnya mx-auto + spacer fixed 150px → geser). */}
       <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 pb-3">
         <div className="flex shrink-0 justify-self-start">
@@ -409,7 +409,7 @@ export function PersonaStudioView({
               <EmptyState
                 icon={<Clock size={20} />}
                 title="No training runs yet"
-                hint="Run a mission first — every training run is recorded here."
+                hint="Run a mission first, every training run is recorded here."
               />
             ) : (
               <div className="flex flex-col gap-2">
@@ -446,7 +446,7 @@ export function PersonaStudioView({
                         )}
                         {r.summary ? (
                           <span className="truncate">
-                            — {r.summary.slice(0, 140)}
+                            , {r.summary.slice(0, 140)}
                           </span>
                         ) : null}
                       </MetaRow>
@@ -598,7 +598,7 @@ export function PersonaStudioView({
                     </Field>
                     {mode === "research" && (
                       <Field
-                        label="Starting sources — one URL per line (optional)"
+                        label="Starting sources, one URL per line (optional)"
                         className="col-span-2"
                       >
                         <TextArea
@@ -611,7 +611,7 @@ export function PersonaStudioView({
                       </Field>
                     )}
                     <Field
-                      label="Pass criteria — one per line"
+                      label="Pass criteria, one per line"
                       hint="used by the blind eval later"
                       className="col-span-2"
                     >
@@ -666,7 +666,7 @@ export function PersonaStudioView({
   );
 }
 
-/** Toggle mode chip (dipakai form misi) — padanan ChipToggle dengan ukuran form. */
+/** Toggle mode chip (dipakai form misi), padanan ChipToggle dengan ukuran form. */
 function ChipToggle2({
   active,
   onClick,

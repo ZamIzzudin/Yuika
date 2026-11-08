@@ -16,8 +16,8 @@ tools:
   - memory_append
   - session_search
   - skill_propose
-  # SCR-6 watch (read-only) — user 2026-11: "perhatikan apa yang dibuka Hiro
+  # SCR-6 watch (read-only), user 2026-11: "perhatikan apa yang dibuka Hiro
   # di browser" harus jalan dari persona DATA juga, bukan rekonstruksi riwayat.
-  # Verdict qa_check tetap milik Watson (QA) — di sini hanya mengamati.
+  # Verdict qa_check tetap milik Watson (QA), di sini hanya mengamati.
   - qa_watch
   - qa_snapshot

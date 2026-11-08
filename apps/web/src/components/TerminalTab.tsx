@@ -1,5 +1,5 @@
 "use client";
-// P2-STU-2 — tab Terminal: xterm.js ↔ sesi shell di apps/api (SSE + REST).
+// P2-STU-2, tab Terminal: xterm.js ↔ sesi shell di apps/api (SSE + REST).
 // Sesi SHARED dengan agent (tool `terminal`): output agent muncul live di
 // sini, dan ketikan user mengalir ke stdin proses yang sama.
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -11,7 +11,7 @@ import { apiUrl, authTokenQuery, authFetch } from "@/lib/api";
 
 export interface TerminalTabProps {
   project: { id: string; name: string };
-  /** D31: slot pojok kanan baris status — switcher Shell/Commands milik
+  /** D31: slot pojok kanan baris status, switcher Shell/Commands milik
    *  TerminalFullTab duduk sebaris dengan pill status. */
   toolbar?: React.ReactNode;
 }
@@ -34,7 +34,7 @@ export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
     let term: Terminal | null = null;
 
     (async () => {
-      // mulai/ambil sesi (satu per project — agent memakai sesi yang sama)
+      // mulai/ambil sesi (satu per project, agent memakai sesi yang sama)
       let info: { id: string; backend: string; exited: boolean } | null = null;
       try {
         const res = await authFetch(apiUrl("/api/terminal/sessions"), {
@@ -58,7 +58,7 @@ export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
         cursorBlink: true,
         convertEol: true,
         scrollback: 5_000,
-        // D30: selaras design system — bg persis --yui-bg-inset (#101010,
+        // D30: selaras design system, bg persis --yui-bg-inset (#101010,
         // sama dengan pane Files), foreground sekunder, kursor & seleksi aksen.
         theme: {
           background: "#101010",
@@ -90,7 +90,7 @@ export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
         // - Backspace \x7f → \b \b (hapus karakter terakhir di layar).
         //   Menulis \x7f mentah memicu "xterm.js: Parsing error: {}" (parser
         //   menolak DEL) DAN tidak menghapus apa pun di layar (D32, lapor user).
-        // Ke backend tetap dikirim byte asli — pemrosesan tetap di sisi shell.
+        // Ke backend tetap dikirim byte asli, pemrosesan tetap di sisi shell.
         if (d === "\r") term?.write("\r\n");
         else if (d === "\x7f") term?.write("\b \b");
         else term?.write(d);
@@ -115,14 +115,14 @@ export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
         term?.write((ev as MessageEvent).data);
       });
       es.addEventListener("data", (ev) => {
-        // chunk live — JANGAN echo ganda ketikan lokal (backend pipe tak echo,
+        // chunk live, JANGAN echo ganda ketikan lokal (backend pipe tak echo,
         // tapi stdout shell bisa memantulkan perintah; kirim apa adanya).
         term?.write((ev as MessageEvent).data);
       });
       es.addEventListener("exit", () => {
         if (dead) return;
         setStatus("exited");
-        writeLine("— session ended —");
+        writeLine("— session ended,");
       });
       es.onerror = () => {
         /* SSE reconnect otomatis browser; replay idempotent via ring */

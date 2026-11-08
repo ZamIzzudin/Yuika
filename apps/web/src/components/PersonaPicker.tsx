@@ -1,4 +1,3 @@
-
 "use client";
 import { useState } from "react";
 import type { PersonaInfo } from "@yuika/contracts";
@@ -6,7 +5,7 @@ import { usePersonaShape } from "./orinShapes";
 import { OrinPortrait } from "./OrinPortrait";
 
 /**
- * Wajah kecil persona (list/header) — mini-maskot Orin v8: bentuk + mata kapsul statis,
+ * Wajah kecil persona (list/header), mini-maskot Orin v8: bentuk + mata kapsul statis,
  * identik dengan portrait besar (orinShapes). bodyScale (bintang 1.18×) diterapkan
  * pada siluet saja; viewBox dilebarkan agar bintang muat penuh.
  */
@@ -32,7 +31,9 @@ export function PersonaFace({
     >
       <g
         fill={s.color}
-        transform={s.bodyScale && s.bodyScale !== 1 ? `scale(${s.bodyScale})` : undefined}
+        transform={
+          s.bodyScale && s.bodyScale !== 1 ? `scale(${s.bodyScale})` : undefined
+        }
       >
         {s.geom}
       </g>
@@ -45,7 +46,7 @@ export function PersonaFace({
 }
 
 /**
- * Pemilihan persona layar kosong (scope Workspace) — **orbit floating card**:
+ * Pemilihan persona layar kosong (scope Workspace), **orbit floating card**:
  * kartu sederhana (maskot + nama) mengambang mengelilingi pusat; persona yang
  * di-hover tampil besar di tengah (maskot + nama + deskripsi + badge level).
  * Klik kartu = mulai sesi. Default fokus = persona pertama (Conductor).
@@ -65,14 +66,14 @@ export function PersonaOrbit({
   return (
     <div className="relative mt-2 h-[460px] w-full max-w-[720px] sm:h-[500px]">
       {/* dekorasi: lintasan orbit (elips putus-putus tepat di jalur kartu) +
-          ring dalam + glow lembut di belakang maskot — anti "terlalu sepi" */}
+          ring dalam + glow lembut di belakang maskot, anti "terlalu sepi" */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute top-1/2 left-1/2 h-[80%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
         <div className="absolute top-1/2 left-1/2 h-[52%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
         <div className="absolute top-1/2 left-1/2 h-[35%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
       </div>
       {/* pusat: maskot INTERAKTIF persona terpilih + deskripsi (muncul saat hover
-          kartu — mata mengikuti kursor & bisa diklik, OrinPortrait v4) */}
+          kartu, mata mengikuti kursor & bisa diklik, OrinPortrait v4) */}
       {active && (
         <div
           key={active.id}
@@ -117,8 +118,7 @@ export function PersonaOrbit({
           </div>
         );
       })}
-      {/* (katalog 15 bentuk kini ada di page Persona — card identitas) */}
+      {/* (katalog 15 bentuk kini ada di page Persona, card identitas) */}
     </div>
   );
 }
-

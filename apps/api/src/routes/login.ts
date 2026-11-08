@@ -1,10 +1,10 @@
-// @yuika/api — VLT-4 fill_login (blok C): jawaban kartu login dari user.
+// @yuika/api, VLT-4 fill_login (blok C): jawaban kartu login dari user.
 //   POST /api/login/:requestId/fill  {user, pass, save?, submit?} → isi form
 //   POST /api/login/:requestId/skip                              → tolak
 //   GET  /api/login/pending                                      → replay kartu
 //
-// INVARIAN Batch 12/14: nilai user/pass HANYA hidup di request ini — masuk
-// CDP fill (+ optional vault store) — TIDAK PERNAH ke event/log/model.
+// INVARIAN Batch 12/14: nilai user/pass HANYA hidup di request ini, masuk
+// CDP fill (+ optional vault store), TIDAK PERNAH ke event/log/model.
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { listPendingLogins, resolveLogin } from "@yuika/core";
@@ -21,7 +21,7 @@ export function registerLoginRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     const submit = b.submit !== false; // default: submit form
     const pending = listPendingLogins().find((p: { requestId: string }) => p.requestId === requestId);
     if (!pending) return reply.code(404).send({ error: "request not found (expired or resolved)" });
-    // Save to Vault dulu (nilainya sah apa pun hasil heuristik fill) — record
+    // Save to Vault dulu (nilainya sah apa pun hasil heuristik fill), record
     // kind=login scope persona, value JSON {user,pass} (dienkripsi AES-GCM).
     if (save) {
       try {
@@ -35,7 +35,7 @@ export function registerLoginRoutes(app: FastifyInstance, getRt: () => YuiRuntim
           value: JSON.stringify({ user: b.user, pass: b.pass }),
         });
       } catch {
-        /* vault gagal ≠ fill gagal — lanjut run-only */
+        /* vault gagal ≠ fill gagal, lanjut run-only */
       }
     }
     const ok = await resolveLogin(requestId, { user: b.user, pass: b.pass, save, submit });

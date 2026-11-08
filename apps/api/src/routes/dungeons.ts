@@ -1,4 +1,4 @@
-// @yuika/api — dungeon (latihan skill persona) + materials upload.
+// @yuika/api, dungeon (latihan skill persona) + materials upload.
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -9,10 +9,10 @@ const MAX_UPLOAD = 10 * 1024 * 1024;
 const OK_EXT = new Set([".pdf", ".xlsx", ".xls", ".csv", ".md", ".txt", ".json", ".html", ".htm", ".xml", ".yaml", ".yml"]);
 
 export function registerDungeonRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
-  /** GET /api/dungeons — daftar misi + riwayat run (P1-DUN-1). */
+  /** GET /api/dungeons, daftar misi + riwayat run (P1-DUN-1). */
   app.get("/api/dungeons", async () => ({ dungeons: getRt().listDungeons() }));
 
-  /** POST /api/dungeons — jalankan misi ({missionId}) → run sandbox dimulai. */
+  /** POST /api/dungeons, jalankan misi ({missionId}) → run sandbox dimulai. */
   app.post("/api/dungeons", async (req, reply) => {
     const { missionId } = z.object({ missionId: z.string().min(1) }).parse(req.body);
     try {
@@ -22,7 +22,7 @@ export function registerDungeonRoutes(app: FastifyInstance, getRt: () => YuiRunt
     }
   });
 
-  /** POST /api/dungeons/mission — buat latihan buatan user (P1-DUN-4). */
+  /** POST /api/dungeons/mission, buat latihan buatan user (P1-DUN-4). */
   app.post("/api/dungeons/mission", async (req, reply) => {
     const input = CreateMissionRequest.parse(req.body);
     try {
@@ -41,7 +41,7 @@ export function registerDungeonRoutes(app: FastifyInstance, getRt: () => YuiRunt
     }
   });
 
-  /** DELETE /api/dungeons/:slug — hapus latihan buatan user beserta foldernya. */
+  /** DELETE /api/dungeons/:slug, hapus latihan buatan user beserta foldernya. */
   app.delete("/api/dungeons/:slug", async (req, reply) => {
     const { slug } = req.params as { slug: string };
     try {
@@ -52,7 +52,7 @@ export function registerDungeonRoutes(app: FastifyInstance, getRt: () => YuiRunt
     }
   });
 
-  /** POST /api/dungeons/:slug/materials?name=… body = raw bytes — bahan ajar
+  /** POST /api/dungeons/:slug/materials?name=… body = raw bytes, bahan ajar
    *  user untuk latihan (P1-DUN-4), disimpan <dungeon>/materials/. Mirror
    *  sanitasi upload proyek. */
   app.post("/api/dungeons/:slug/materials", async (req, reply) => {

@@ -1,4 +1,4 @@
-// Batch 7 (RS-1) — budget riset per sesi (sliding window 1 jam): gratisan =
+// Batch 7 (RS-1), budget riset per sesi (sliding window 1 jam): gratisan =
 // rate-limit nyata; budget menjaga agent tetap sopan & jujur saat habis.
 export type BudgetKind = "query" | "page";
 

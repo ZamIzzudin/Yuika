@@ -1,6 +1,6 @@
-# CONTRACTS-REMOTE v1 — Payload Aplikasi Remote (zod, FROZEN)
+# CONTRACTS-REMOTE v1, Payload Aplikasi Remote (zod, FROZEN)
 
-> Isi envelope E2E (SPEC-PROTOCOL §5). **Opaque bagi relay & portal** — dokumen
+> Isi envelope E2E (SPEC-PROTOCOL §5). **Opaque bagi relay & portal**, dokumen
 > ini mengikat HOST dan REMOTE (semuanya di repo Yuika). Sesi portal TIDAK
 > mengimplementasi ini; cukup paham untuk konteks.
 >
@@ -23,7 +23,7 @@
   SPEC-PROTOCOL (frame 256 KB).
 - Enum & shape BEKU untuk v1; field optional baru diizinkan (ignore-unknown).
 
-## 2. RemoteAction (zod — salin verbatim)
+## 2. RemoteAction (zod, salin verbatim)
 
 ```ts
 import { z } from "zod";
@@ -82,7 +82,7 @@ export const RemoteAction = z.discriminatedUnion("act", [
     rid: z.string(),
     sessions: z.array(z.string()),
   }),
-  // ── v1.1 (SCR-7, 2026-11): remote watch live screen — aditif, penerima lama aman ──
+  // ── v1.1 (SCR-7, 2026-11): remote watch live screen, aditif, penerima lama aman ──
   z.object({
     proto: z.literal(1),
     act: z.literal("watch_screen"),
@@ -104,41 +104,49 @@ export const RemoteAction = z.discriminatedUnion("act", [
 export type RemoteAction = z.infer<typeof RemoteAction>;
 ```
 
-## 3. RemoteEvent (zod — salin verbatim)
+## 3. RemoteEvent (zod, salin verbatim)
 
 ```ts
 export const RemoteEvent = z.discriminatedUnion("ev", [
   z.object({
     proto: z.literal(1),
     ev: z.literal("host.state"),
-    /** persona roster ringkas + sesi aktif — dikirim saat remote join */
-    sessions: z.array(z.object({
-      sessionId: z.string(),
-      title: z.string(),
-      personaId: z.string(),
-      updatedAt: z.number().int(),
-    })),
-    /** v1.1 (SCR-7): live screen aktif di host — opsional, remote lama abaikan. */
-    screens: z.array(z.object({
-      key: z.string(),
-      personaId: z.string(),
-      url: z.string(),
-      title: z.string(),
-      status: z.enum(["starting", "running", "stopped", "failed"]),
-      viewers: z.number().int(),
-      watchers: z.number().int(),
-    })).optional(),
+    /** persona roster ringkas + sesi aktif, dikirim saat remote join */
+    sessions: z.array(
+      z.object({
+        sessionId: z.string(),
+        title: z.string(),
+        personaId: z.string(),
+        updatedAt: z.number().int(),
+      }),
+    ),
+    /** v1.1 (SCR-7): live screen aktif di host, opsional, remote lama abaikan. */
+    screens: z
+      .array(
+        z.object({
+          key: z.string(),
+          personaId: z.string(),
+          url: z.string(),
+          title: z.string(),
+          status: z.enum(["starting", "running", "stopped", "failed"]),
+          viewers: z.number().int(),
+          watchers: z.number().int(),
+        }),
+      )
+      .optional(),
   }),
   z.object({
     proto: z.literal(1),
     ev: z.literal("session.list"),
     rid: z.string(),
-    sessions: z.array(z.object({
-      sessionId: z.string(),
-      title: z.string(),
-      personaId: z.string(),
-      updatedAt: z.number().int(),
-    })),
+    sessions: z.array(
+      z.object({
+        sessionId: z.string(),
+        title: z.string(),
+        personaId: z.string(),
+        updatedAt: z.number().int(),
+      }),
+    ),
   }),
   z.object({
     proto: z.literal(1),
@@ -146,12 +154,14 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
     rid: z.string().optional(),
     sessionId: z.string(),
     /** transcript ringkas (≤ 50 pesan terakhir) untuk render cepat */
-    messages: z.array(z.object({
-      role: z.enum(["user", "assistant", "tool"]),
-      personaId: z.string().optional(),
-      text: z.string(),
-      at: z.number().int(),
-    })),
+    messages: z.array(
+      z.object({
+        role: z.enum(["user", "assistant", "tool"]),
+        personaId: z.string().optional(),
+        text: z.string(),
+        at: z.number().int(),
+      }),
+    ),
     latestSeq: z.number().int(),
   }),
   z.object({
@@ -215,7 +225,7 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
     proto: z.literal(1),
     ev: z.literal("screen.frame"),
     key: z.string(),
-    /** base64 JPEG — di-throttle 1fps + dedupe frame identik di host. */
+    /** base64 JPEG, di-throttle 1fps + dedupe frame identik di host. */
     data: z.string(),
     width: z.number().int(),
     height: z.number().int(),
@@ -243,15 +253,15 @@ export type RemoteEvent = z.infer<typeof RemoteEvent>;
 
 ## 5. Pemetaan host (implementasi Yuika, P1-PRT-3)
 
-| Action | Jalur host |
-|---|---|
-| `send_prompt` | POST runtime sesi (`personaId` override opsional) — sama dengan composer web |
-| `steer` / `cancel` | steer queue / abort aktif sesi |
-| `approve` / `reject` | resolve approval engine (persis tombol web) |
-| `list_sessions` | daftar sesi runtime |
-| `subscribe`/`unsubscribe` + `sinceSeq` | daftar topik bus → envelope; replay delta dari buffer seq |
-| `ping_host` | balas `pong_host` |
-| `watch_screen` / `unwatch_screen` | (v1.1) langganan screen manager viewer → pump frame `screen.frame` ~1fps (`YUI_REMOTE_SCREEN_MS`) + dedupe + cap 200KB; ack/state via `screen.state` |
+| Action                                 | Jalur host                                                                                                                                           |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `send_prompt`                          | POST runtime sesi (`personaId` override opsional), sama dengan composer web                                                                          |
+| `steer` / `cancel`                     | steer queue / abort aktif sesi                                                                                                                       |
+| `approve` / `reject`                   | resolve approval engine (persis tombol web)                                                                                                          |
+| `list_sessions`                        | daftar sesi runtime                                                                                                                                  |
+| `subscribe`/`unsubscribe` + `sinceSeq` | daftar topik bus → envelope; replay delta dari buffer seq                                                                                            |
+| `ping_host`                            | balas `pong_host`                                                                                                                                    |
+| `watch_screen` / `unwatch_screen`      | (v1.1) langganan screen manager viewer → pump frame `screen.frame` ~1fps (`YUI_REMOTE_SCREEN_MS`) + dedupe + cap 200KB; ack/state via `screen.state` |
 
 Event host = proyeksi `YuiEvent` bus yang sudah ada (message.delta ←
 `message.delta`, approval.request ← `approval.requested`, dst.) + `seq` counter

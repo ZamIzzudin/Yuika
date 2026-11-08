@@ -2,9 +2,9 @@
 // di-parse jadi React nodes. Cakupan: fenced code ```…```, heading #–####,
 // list -/* dan 1. (termasuk task list - [ ]/- [x]), blockquote >, inline
 // `code`, **bold**, *italic*, ~~strike~~, [teks](url), autolink http(s),
-// hr, dan TABEL GFM | a | b | (fix 2026-11: riset Scholar mengeluarkan tabel —
+// hr, dan TABEL GFM | a | b | (fix 2026-11: riset Scholar mengeluarkan tabel,
 // sebelumnya dirender mentah sebagai baris pipe). Sisanya teks polos.
-// DS-1: gaya via utility Tailwind semantik (docs/DESIGN-SYSTEM.md) — komponen
+// DS-1: gaya via utility Tailwind semantik (docs/DESIGN-SYSTEM.md), komponen
 // ini self-contained, tidak lagi bergantung pada kelas `.md` di globals.css.
 import React from "react";
 
@@ -24,7 +24,10 @@ function inline(text: string, keyPrefix = ""): Inline[] {
     const k = `${keyPrefix}i${i++}`;
     if (tok.startsWith("`"))
       out.push(
-        <code key={k} className="rounded-[4px] bg-hover px-1 py-px font-mono text-[12.5px]">
+        <code
+          key={k}
+          className="rounded-[4px] bg-hover px-1 py-px font-mono text-[12.5px]"
+        >
           {tok.slice(1, -1)}
         </code>,
       );
@@ -44,13 +47,25 @@ function inline(text: string, keyPrefix = ""): Inline[] {
     else if (tok.startsWith("[")) {
       const mm = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(tok)!;
       out.push(
-        <a key={k} href={mm[2]} target="_blank" rel="noreferrer noopener" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">
+        <a
+          key={k}
+          href={mm[2]}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
+        >
           {mm[1]}
         </a>,
       );
     } else
       out.push(
-        <a key={k} href={tok} target="_blank" rel="noreferrer noopener" className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent">
+        <a
+          key={k}
+          href={tok}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent"
+        >
           {tok}
         </a>,
       );
@@ -62,10 +77,14 @@ function inline(text: string, keyPrefix = ""): Inline[] {
 
 // ── Tabel GFM ──────────────────────────────────────────────────────────────────
 
-/** Baris delimiter `| :--- | ---: |` — WAJIB mengandung `|` (hindari salah tangkap
+/** Baris delimiter `| :--- | ---: |`, WAJIB mengandung `|` (hindari salah tangkap
  *  hr `---` / underline setext setelah paragraf ber-pipe). */
 function isDelimRow(s: string): boolean {
-  return s.includes("|") && s.includes("-") && /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(s);
+  return (
+    s.includes("|") &&
+    s.includes("-") &&
+    /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(s)
+  );
 }
 
 /** Split baris tabel pada `|` yang tidak di-escape (`\|`). Pipe tepi opsional dibuang. */
@@ -107,9 +126,23 @@ function TaskBox({ done }: { done: boolean }) {
       className={`mb-px mr-1.5 inline-block shrink-0 ${done ? "text-accent" : "text-dim"}`}
       fill="none"
     >
-      <rect x="1.25" y="1.25" width="13.5" height="13.5" rx="3" stroke="currentColor" strokeWidth="1.5" />
+      <rect
+        x="1.25"
+        y="1.25"
+        width="13.5"
+        height="13.5"
+        rx="3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
       {done && (
-        <path d="M4.5 8.5l2.5 2.5 4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M4.5 8.5l2.5 2.5 4.5-5.5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       )}
     </svg>
   );
@@ -122,7 +155,7 @@ export function Markdown({
 }: {
   text: string;
   /** "chat" (default, kompak) atau "doc" (Files tab: heading besar + spasi
-   *  lega — pengalaman baca dokumen). */
+   *  lega, pengalaman baca dokumen). */
   variant?: "chat" | "doc";
   /** D29 (Files): jika ada, fenced code digambar komponen eksternal
    *  (CodeBlock dgn syntax highlight + header). Chat tetap <pre> polos. */
@@ -142,7 +175,10 @@ export function Markdown({
   const flushPara = () => {
     if (para.length) {
       blocks.push(
-        <p key={key()} className={`whitespace-pre-wrap ${doc ? "leading-relaxed" : ""}`}>
+        <p
+          key={key()}
+          className={`whitespace-pre-wrap ${doc ? "leading-relaxed" : ""}`}
+        >
           {inline(para.join("\n"), key())}
         </p>,
       );
@@ -157,7 +193,10 @@ export function Markdown({
         L.ordered ? (
           <ol key={key()} className="ml-5 list-decimal">
             {L.items.map((it, j) => (
-              <li key={j} className={`${itemCls} ${it.task === 2 ? "text-dim" : ""}`}>
+              <li
+                key={j}
+                className={`${itemCls} ${it.task === 2 ? "text-dim" : ""}`}
+              >
                 {it.task !== 0 && <TaskBox done={it.task === 2} />}
                 {inline(it.t, `${j}`)}
               </li>
@@ -166,7 +205,10 @@ export function Markdown({
         ) : (
           <ul key={key()} className="ml-5 list-disc">
             {L.items.map((it, j) => (
-              <li key={j} className={`${itemCls} ${it.task === 2 ? "text-dim" : ""}`}>
+              <li
+                key={j}
+                className={`${itemCls} ${it.task === 2 ? "text-dim" : ""}`}
+              >
                 {it.task !== 0 && <TaskBox done={it.task === 2} />}
                 {inline(it.t, `${j}`)}
               </li>
@@ -182,9 +224,11 @@ export function Markdown({
       blocks.push(
         <blockquote
           key={key()}
-          className={doc
-            ? "rounded-r-md2 border-l-2 border-accent/60 bg-accent-soft/40 py-1.5 pr-3 pl-3.5 leading-relaxed text-muted"
-            : "border-l-2 border-line pl-3 text-dim"}
+          className={
+            doc
+              ? "rounded-r-md2 border-l-2 border-accent/60 bg-accent-soft/40 py-1.5 pr-3 pl-3.5 leading-relaxed text-muted"
+              : "border-l-2 border-line pl-3 text-dim"
+          }
         >
           {inline(quote.join("\n"), key())}
         </blockquote>,
@@ -207,9 +251,15 @@ export function Markdown({
       if (fence) {
         blocks.push(
           renderCode ? (
-            <div key={key()}>{renderCode(code.lines.join("\n"), code.lang)}</div>
+            <div key={key()}>
+              {renderCode(code.lines.join("\n"), code.lang)}
+            </div>
           ) : (
-            <pre key={key()} data-lang={code.lang || undefined} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
+            <pre
+              key={key()}
+              data-lang={code.lang || undefined}
+              className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5"
+            >
               <code>{code.lines.join("\n")}</code>
             </pre>
           ),
@@ -228,26 +278,41 @@ export function Markdown({
       continue;
     }
     // ── tabel GFM: baris ber-| diikuti baris delimiter `|---|---|` ──
-    if (line.includes("|") && li + 1 < lines.length && isDelimRow(lines[li + 1]!)) {
+    if (
+      line.includes("|") &&
+      li + 1 < lines.length &&
+      isDelimRow(lines[li + 1]!)
+    ) {
       flushAll();
       const head = splitRow(line);
       const aligns = splitRow(lines[li + 1]!).map(alignOf);
       li += 2;
       const rows: string[][] = [];
-      while (li < lines.length && lines[li]!.includes("|") && lines[li]!.trim()) {
+      while (
+        li < lines.length &&
+        lines[li]!.includes("|") &&
+        lines[li]!.trim()
+      ) {
         rows.push(splitRow(lines[li]!));
         li++;
       }
       li--; // kompensasi increment loop
       const alignCls = (a: "left" | "center" | "right") =>
-        a === "center" ? "text-center" : a === "right" ? "text-right" : "text-left";
+        a === "center"
+          ? "text-center"
+          : a === "right"
+            ? "text-right"
+            : "text-left";
       blocks.push(
         <div key={key()} className="my-1 max-w-full overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr className="bg-inset">
                 {head.map((c, j) => (
-                  <th key={j} className={`border-b border-line px-2 py-1.5 font-semibold text-primary ${alignCls(aligns[j] ?? "left")}`}>
+                  <th
+                    key={j}
+                    className={`border-b border-line px-2 py-1.5 font-semibold text-primary ${alignCls(aligns[j] ?? "left")}`}
+                  >
                     {inline(c, `h${j}`)}
                   </th>
                 ))}
@@ -257,7 +322,10 @@ export function Markdown({
               {rows.map((r, i2) => (
                 <tr key={i2} className="border-b border-line/60 last:border-0">
                   {head.map((_, j) => (
-                    <td key={j} className={`px-2 py-1.5 align-top ${alignCls(aligns[j] ?? "left")}`}>
+                    <td
+                      key={j}
+                      className={`px-2 py-1.5 align-top ${alignCls(aligns[j] ?? "left")}`}
+                    >
                       {inline(r[j] ?? "", `c${i2}-${j}`)}
                     </td>
                   ))}
@@ -289,7 +357,10 @@ export function Markdown({
       } else {
         const Tag = (["h4", "h4", "h5", "h6"] as const)[lvl - 1]!;
         blocks.push(
-          <Tag key={key()} className={`font-semibold text-primary ${Tag === "h4" ? "text-[1.05em]" : ""}`}>
+          <Tag
+            key={key()}
+            className={`font-semibold text-primary ${Tag === "h4" ? "text-[1.05em]" : ""}`}
+          >
             {inline(h[2]!, key())}
           </Tag>,
         );
@@ -315,8 +386,7 @@ export function Markdown({
         flushList();
         list = { ordered, items: [] };
       }
-      if (tl)
-        list.items.push({ t: tl[2]!, task: tl[1] === " " ? 1 : 2 });
+      if (tl) list.items.push({ t: tl[2]!, task: tl[1] === " " ? 1 : 2 });
       else list.items.push({ t: (ul ?? ol)![1]!, task: 0 });
       continue;
     }
@@ -330,17 +400,22 @@ export function Markdown({
     para.push(line);
   }
   if (code) {
-    // fence tak tertutup saat streaming — tampilkan apa adanya
+    // fence tak tertutup saat streaming, tampilkan apa adanya
     blocks.push(
       renderCode ? (
         <div key={key()}>{renderCode(code.lines.join("\n"), code.lang)}</div>
       ) : (
-        <pre key={key()} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
+        <pre
+          key={key()}
+          className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5"
+        >
           <code>{code.lines.join("\n")}</code>
         </pre>
       ),
     );
   }
   flushAll();
-  return <div className={`flex flex-col gap-2 ${doc ? "gap-3" : ""}`}>{blocks}</div>;
+  return (
+    <div className={`flex flex-col gap-2 ${doc ? "gap-3" : ""}`}>{blocks}</div>
+  );
 }

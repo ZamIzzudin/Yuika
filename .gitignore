@@ -9,7 +9,7 @@ workspace/
 next-env.d.ts
 demo.db*
 
-# Artefak runtime lokal (data user/jam kerja — bukan kode)
+# Artefak runtime lokal (data user/jam kerja, bukan kode)
 model-overrides.json
 packages/skills/*/.usage.json
 .tmp-*.txt
@@ -24,17 +24,17 @@ test-results/
 e2e/.tmp/
 apps/web/.next-e2e/
 
-# P1-INF-1 runtime auth db (SQLite) — jangan di-commit
+# P1-INF-1 runtime auth db (SQLite), jangan di-commit
 auth.db
 auth.db-shm
 auth.db-wal
 
-# Runtime portal device credentials (SQLite WAL/SHM) — jangan di-commit
+# Runtime portal device credentials (SQLite WAL/SHM), jangan di-commit
 *.db-shm
 *.db-wal
 
-# Batch 12 vault master key (auto-gen <data>/vault.key — JANGAN commit)
+# Batch 12 vault master key (auto-gen <data>/vault.key, JANGAN commit)
 vault.key
 
-# Yuika runtime state (screen profiles, policies) — cookies/browser data
+# Yuika runtime state (screen profiles, policies), cookies/browser data
 .yuika/

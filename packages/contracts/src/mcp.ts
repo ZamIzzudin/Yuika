@@ -1,4 +1,4 @@
-// @yuika/contracts — MCP (P1-MCP-3, PLAN D17/MCP): trust gate per-workspace,
+// @yuika/contracts, MCP (P1-MCP-3, PLAN D17/MCP): trust gate per-workspace,
 // izin granular per tool, audit log panggilan. Default = UNTRUSTED (fail-closed).
 import { z } from "zod";
 
@@ -25,7 +25,7 @@ export const McpServerStatus = z.object({
   connected: z.boolean(),
   toolCount: z.number(),
   tools: z.array(z.string()),
-  /** P0-MCP-1: siklus hidup — down → reconnecting (backoff) → parked (retry manual). */
+  /** P0-MCP-1: siklus hidup, down → reconnecting (backoff) → parked (retry manual). */
   state: z.enum(["connected", "reconnecting", "parked", "off"]).default("off"),
   lastError: z.string().nullable().default(null),
   nextRetryAt: z.number().nullable().default(null),
@@ -73,7 +73,7 @@ export const McpCatalogEntry = z.object({
   args: z.array(z.string()),
   envKeys: z.array(McpCatalogEnvKey),
   docsUrl: z.string().optional(),
-  /** Runtime proses: node (npx) atau python (uvx — butuh uv terpasang). */
+  /** Runtime proses: node (npx) atau python (uvx, butuh uv terpasang). */
   runtime: z.enum(["node", "python"]).optional(),
   /** Hint pemasangan bila ada prasyarat (mis. uv). Ditampilkan UI sebelum install. */
   setupNote: z.string().optional(),
@@ -83,7 +83,7 @@ export type McpCatalogEntry = z.infer<typeof McpCatalogEntry>;
 // POST /api/mcp/install
 export const InstallMcpRequest = z.object({
   catalogId: z.string().min(1).max(200),
-  /** Nilai env dari form UI — hanya value non-kosong yang ditulis ke mcp.json. */
+  /** Nilai env dari form UI, hanya value non-kosong yang ditulis ke mcp.json. */
   env: z.record(z.string(), z.string().max(2_000)).refine((o) => Object.keys(o).length <= 50, "maks 50 env key").default({}),
 });
 export type InstallMcpRequest = z.infer<typeof InstallMcpRequest>;

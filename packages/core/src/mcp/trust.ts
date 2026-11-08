@@ -1,4 +1,4 @@
-// @yuika/core — MCP trust gate (P1-MCP-3): fail-closed — server tanpa entri trust
+// @yuika/core, MCP trust gate (P1-MCP-3): fail-closed, server tanpa entri trust
 // TIDAK dihubungkan. Sumber: `workspace/mcp-trust.json` (per-workspace, deklaratif).
 import fs from "node:fs";
 import path from "node:path";

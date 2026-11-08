@@ -1,4 +1,4 @@
-// @yuika/core — P2-STU-2: tool `terminal` — agent memakai sesi terminal SHARED
+// @yuika/core, P2-STU-2: tool `terminal`, agent memakai sesi terminal SHARED
 // dengan user (tab Terminal). Perintah di luar daftar aman → approval card
 // (persis approval write_file/run_command: user approve dari chat utama).
 import { z } from "zod";
@@ -37,7 +37,7 @@ export function registerTerminalTool(
   registry.register({
     name: "terminal",
     description:
-      "Jalankan perintah di TERMINAL PROYEK — sesi yang SAMA dengan tab Terminal yang user lihat (output tampil live di UI; user bisa mengetik balik). Bila workshop project hidup, shell jalan DI DALAM container workshop (cwd = root proyek, file = file proyek yang sama dengan tab Files; install/paket menetap). Pakai untuk CLI interaktif/dev-server/npm. Output baru dikembalikan (tail 4000 char) setelah command senyap. Bebas approval: node, npm install|ci|run|test, tsc/vitest/jest, git status|log|diff|add|commit|branch|checkout, ls/cat/echo/pwd/cd/mkdir. Lainnya (npm publish, git push, curl, rm, …) butuh approval user.",
+      "Jalankan perintah di TERMINAL PROYEK, sesi yang SAMA dengan tab Terminal yang user lihat (output tampil live di UI; user bisa mengetik balik). Bila workshop project hidup, shell jalan DI DALAM container workshop (cwd = root proyek, file = file proyek yang sama dengan tab Files; install/paket menetap). Pakai untuk CLI interaktif/dev-server/npm. Output baru dikembalikan (tail 4000 char) setelah command senyap. Bebas approval: node, npm install|ci|run|test, tsc/vitest/jest, git status|log|diff|add|commit|branch|checkout, ls/cat/echo/pwd/cd/mkdir. Lainnya (npm publish, git push, curl, rm, …) butuh approval user.",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
       // Batch 13 follow-up: agent bekerja di PROJECT workspace (bukan dir
@@ -53,7 +53,7 @@ export function registerTerminalTool(
           /* tanpa workshop → jalur lama */
         }
       }
-      // sesi dibuat bila belum ada — user melihatnya muncul di tab Terminal
+      // sesi dibuat bila belum ada, user melihatnya muncul di tab Terminal
       await ensureSession(ws, { workshopContainer });
       const r = await runInSession(ws, args.command, { timeoutMs: args.timeoutMs, workshopContainer });
       return {
@@ -63,7 +63,7 @@ export function registerTerminalTool(
           ...(workshopContainer ? { workshop: true } : {}),
           note: r.backend === "local" ? "terminal lokal tanpa isolasi (Docker tak tersedia)" : undefined,
           output: r.output,
-          ...(r.timedOut ? { timedOut: true, hint: "output diambil sampai timeout — perintah mungkin masih jalan; panggil terminal lagi dengan command kosong string tidak diizinkan, gunakan timeoutMs lebih besar" } : {}),
+          ...(r.timedOut ? { timedOut: true, hint: "output diambil sampai timeout, perintah mungkin masih jalan; panggil terminal lagi dengan command kosong string tidak diizinkan, gunakan timeoutMs lebih besar" } : {}),
         },
       };
     },

@@ -1,4 +1,4 @@
-// P2-PM-3 — validator task list detail: DAG, coverage fase, kelengkapan.
+// P2-PM-3, validator task list detail: DAG, coverage fase, kelengkapan.
 import { describe, expect, it } from "vitest";
 import { lintTaskList } from "../tasklist-lint.js";
 import { WORKFLOW_PHASES, type TaskItem } from "../project.js";

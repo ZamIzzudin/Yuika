@@ -1,6 +1,6 @@
-// P1-PRT-6 — LIVE cross-repo smoke: SDK Yuika (@yuika/relay-client + crypto)
+// P1-PRT-6, LIVE cross-repo smoke: SDK Yuika (@yuika/relay-client + crypto)
 // melawan RELAY PRODUKSI yuika-portal (apps/relay hasil T1/P1-PRT-5) + claim
-// nyata (lib portal: issuePairingToken → claimPairingToken — bukan stub).
+// nyata (lib portal: issuePairingToken → claimPairingToken, bukan stub).
 // Menjalankan verifikasi kompatibilitas wire dua repo DI ATAS KODE NYATA,
 // di luar gerbang playwright (yang memakai SpecRelay double).
 //
@@ -28,7 +28,7 @@ const acc = createAccount(`live-${Date.now()}@yuika.test`, "pw-live-smoke-123");
 const tHost = issuePairingToken(acc.id, "desktop");
 const tRemote = issuePairingToken(acc.id, "web");
 
-// ── device keys via crypto Yuika (backend node — byte-exact portal) ───────
+// ── device keys via crypto Yuika (backend node, byte-exact portal) ───────
 const { generateDeviceKeys } = await import("@yuika/crypto");
 const hostKeys = generateDeviceKeys();
 const remoteKeys = generateDeviceKeys();
@@ -63,7 +63,7 @@ const ok = (name: string, cond: boolean) => {
   console.log(`[live] ✓ ${name}`);
 };
 
-// 1) handshake + register host — identitas = deviceId HASIL CLAIM (bukan id
+// 1) handshake + register host, identitas = deviceId HASIL CLAIM (bukan id
 //    lokal generateDeviceKeys: kunci PEM sama, id-nya dari portal).
 const hc = mk(hostKeys, hostClaim.deviceId, { minMs: 1_000, maxMs: 1_100 }); // window offline terlihat jelas
 const accountId = await hc.connect();
@@ -114,5 +114,5 @@ ok("host_back dalam sticky window + re-register", remote.state === "joined");
 hc.close();
 rc.close();
 await relay.close();
-console.log(`\nLIVE PORTAL SMOKE PASS — ${pass} langkah hijau (SDK Yuika ↔ relay produksi yuika-portal)`);
+console.log(`\nLIVE PORTAL SMOKE PASS, ${pass} langkah hijau (SDK Yuika ↔ relay produksi yuika-portal)`);
 process.exit(0);

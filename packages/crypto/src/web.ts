@@ -1,5 +1,5 @@
-// @yuika/crypto — backend WebCrypto (browser, async).
-// Identik byte-format dengan backend node (@yuika/crypto) — diverifikasi
+// @yuika/crypto, backend WebCrypto (browser, async).
+// Identik byte-format dengan backend node (@yuika/crypto), diverifikasi
 // golden vectors (suite vectors.test.ts menjalankan backend INI terhadap
 // vectors yang sama). Dipakai /dev/remote & mobile-web.
 //
@@ -74,7 +74,7 @@ async function deriveKey(dhPrivPem: string, peerDhPubPem: string, aad: string): 
   const pub = await subtle.importKey("spki", pemDecode(peerDhPubPem), { name: "X25519" }, false, []);
   const secret = new Uint8Array(await subtle.deriveBits({ name: "X25519", public: pub }, priv, 256));
   const hkdfKey = await subtle.importKey("raw", secret, "HKDF", false, ["deriveBits"]);
-  // HKDF-SHA256(secret, salt=aad, info="", L=32) — selaras node hkdfSync.
+  // HKDF-SHA256(secret, salt=aad, info="", L=32), selaras node hkdfSync.
   const keyBits = await subtle.deriveBits(
     { name: "HKDF", hash: "SHA-256", salt: utf8(aad), info: new Uint8Array(0) },
     hkdfKey,
@@ -83,7 +83,7 @@ async function deriveKey(dhPrivPem: string, peerDhPubPem: string, aad: string): 
   return subtle.importKey("raw", new Uint8Array(keyBits), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
-/** base64(iv ‖ ct ‖ tag) — AAD `from|to` (SPEC §5). */
+/** base64(iv ‖ ct ‖ tag), AAD `from|to` (SPEC §5). */
 export async function seal(
   from: { deviceId: string; dhPriv: string },
   to: { deviceId: string; dhPub: string },
@@ -93,7 +93,7 @@ export async function seal(
   const key = await deriveKey(from.dhPriv, to.dhPub, aad);
   const iv = new Uint8Array(IV_LEN);
   crypto.getRandomValues(iv);
-  // WebCrypto AES-GCM output = ciphertext ‖ tag — layout identik node (iv ‖ ct ‖ tag).
+  // WebCrypto AES-GCM output = ciphertext ‖ tag, layout identik node (iv ‖ ct ‖ tag).
   const ct = new Uint8Array(
     await subtle.encrypt({ name: "AES-GCM", iv, additionalData: utf8(aad) }, key, utf8(plaintext)),
   );
@@ -103,7 +103,7 @@ export async function seal(
   return bytesToB64(box);
 }
 
-/** Buka envelope — throw jika kunci/AAD salah. */
+/** Buka envelope, throw jika kunci/AAD salah. */
 export async function open(
   to: { deviceId: string; dhPriv: string },
   from: { deviceId: string; dhPub: string },

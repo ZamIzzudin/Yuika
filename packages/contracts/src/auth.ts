@@ -1,4 +1,4 @@
-// @yuika/contracts — auth (CP-3: portal-only — akun & signup hidup di
+// @yuika/contracts, auth (CP-3: portal-only, akun & signup hidup di
 // yuika-portal; Yuika tidak punya kredensial lokal). Skema dipakai
 // apps/api routes & web AuthGate.
 import { z } from "zod";
@@ -14,7 +14,7 @@ export const AuthStatus = z.object({
   user: AuthUser.nullable(),
   /** true bila server sudah punya user terdaftar (semua route butuh token). */
   authRequired: z.boolean(),
-  /** Base URL portal (sumber YUI_PORTAL_URL di API) — untuk link "buat akun". */
+  /** Base URL portal (sumber YUI_PORTAL_URL di API), untuk link "buat akun". */
   portalUrl: z.string().url(),
 });
 
@@ -22,7 +22,7 @@ export type AuthUserT = z.infer<typeof AuthUser>;
 export type AuthSessionT = z.infer<typeof AuthSession>;
 export type AuthStatusT = z.infer<typeof AuthStatus>;
 
-// ── CP-3 — SSO login via portal (OAuth2-style + PKCE) ───────────────────────
+// ── CP-3, SSO login via portal (OAuth2-style + PKCE) ───────────────────────
 // Portal = satu-satunya identity provider; Yuika mint sesinya SENDIRI.
 // Alur: start → redirect portal /authorize → Accept → callback ?code&state
 // → complete (tukar code+verifier di portal /api/oauth/token) → sesi Yuika.

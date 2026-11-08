@@ -1,4 +1,4 @@
-// P0-DATA-2 — retention & housekeeping events (tabel aktif tetap ramping,
+// P0-DATA-2, retention & housekeeping events (tabel aktif tetap ramping,
 // arsip dibaca via UNION sehingga replay/hidrasi/growth tetap utuh).
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -13,7 +13,7 @@ function mkStore(): SessionStore {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-hk-"));
   return new SessionStore(path.join(dir, "t.db"));
 }
-/** Test util: geser ts sebuah event (simulasi "lama") — hanya di test,
+/** Test util: geser ts sebuah event (simulasi "lama"), hanya di test,
  *  runtime tidak pernah memutasi baris events. */
 function setTs(store: SessionStore, eventId: number, ts: number): void {
   const db = (store as unknown as { db: Database.Database }).db;
@@ -36,7 +36,7 @@ describe("P0-DATA-2 retention events", () => {
     expect(r.sessions).toBe(1);
 
     const after = store.getEvents(sid).map((e) => e.id);
-    expect(after).toEqual(before); // identitas & urutan sama persis — replay aman
+    expect(after).toEqual(before); // identitas & urutan sama persis, replay aman
     expect(store.archiveOldEvents(30, FUTURE).archived).toBe(0); // idempoten
   });
 
@@ -65,7 +65,7 @@ describe("P0-DATA-2 retention events", () => {
     expect(store.archiveOldEvents(0, FUTURE)).toEqual({ archived: 0, sessions: 0 });
   });
 
-  it("turn gantung (tanpa penutup) tidak diarsip — milik boot-heal", () => {
+  it("turn gantung (tanpa penutup) tidak diarsip, milik boot-heal", () => {
     const store = mkStore();
     const sid = `s${++n}`;
     store.createSession(sid, "yui-coder", "SYS", []);

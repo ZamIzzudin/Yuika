@@ -1,4 +1,4 @@
-# CI (P0-INF-6): lint+typecheck+test di setiap push/PR — gerbang G-P0.
+# CI (P0-INF-6): lint+typecheck+test di setiap push/PR, gerbang G-P0.
 # Turbo menjalankan task per package (contracts+core vitest, semua tsc, web tsc);
 # turbo cache lokal di-cache antar-run lewat actions/cache untuk akselerasi.
 name: CI
@@ -24,7 +24,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      # G-P0 turunan: cache turbo lokal — task tak berubah dilewati antar-run
+      # G-P0 turunan: cache turbo lokal, task tak berubah dilewati antar-run
       - uses: actions/cache@v4
         with:
           path: .turbo
@@ -34,9 +34,9 @@ jobs:
       - name: Install (workspaces)
         run: npm ci
 
-      # PUB-5: gerbang audit — dependensi produksi wajib 0 vulnerability tinggi
+      # PUB-5: gerbang audit, dependensi produksi wajib 0 vulnerability tinggi
       # (sesi 2026-11: 4 high -> 0). Jika advisory baru muncul, step ini merah
-      # sampai upgrade/mitigasi — jangan di-skip; waiver lewat `continue-on-error`
+      # sampai upgrade/mitigasi, jangan di-skip; waiver lewat `continue-on-error`
       # hanya atas keputusan eksplisit + dicatat di docs/LICENSE-AUDIT.md §4.
       - name: Security audit gate (prod deps)
         run: npm audit --omit=dev

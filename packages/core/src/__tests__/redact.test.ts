@@ -1,4 +1,4 @@
-// P0-SEC-2: redaction secrets — kunci/token di tool result (stdout run_command,
+// P0-SEC-2: redaction secrets, kunci/token di tool result (stdout run_command,
 // isi read_file, baris search_files) disamarkan SEBELUM masuk konteks agent;
 // teks normal tidak berubah; fail-closed (ragu → redact).
 import { describe, expect, it } from "vitest";
@@ -23,7 +23,7 @@ describe("redactSecrets (P0-SEC-2)", () => {
     expect(redactSecrets("API_KEY=supersecretvalue123")).toBe(`API_KEY=${REDACTED}`);
     expect(redactSecrets('"password": "rahasia-panjang-99"')).toBe(`"password": "${REDACTED}"`);
     expect(redactSecrets("client_secret: abcdefgh12345678")).toBe(`client_secret: ${REDACTED}`);
-    expect(redactSecrets("Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456")).toBe(`Authorization: ${REDACTED}`); // kata "Bearer" ikut disamarkan — lebih aman
+    expect(redactSecrets("Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456")).toBe(`Authorization: ${REDACTED}`); // kata "Bearer" ikut disamarkan, lebih aman
   });
 
   it("teks normal TIDAK berubah (no false positive)", () => {

@@ -1,11 +1,11 @@
-// P2-WKS-1/2 (Batch 13) — Workshop persisten per project (D24).
+// P2-WKS-1/2 (Batch 13), Workshop persisten per project (D24).
 // Container yang MENETAP: volume /home/yui persist, tidur (docker stop) /
 // bangun (docker start) cepat, egress allowlist via proxy host (reuse
 // tools/egress.ts), cap resource + least-privilege (pola sandboxArgv).
 //
 // WorkshopHost = interface tipis (provider cloud bisa nempel nanti);
 // implementasi: DockerWorkshopHost (utama) + LocalWorkshopHost (fallback
-// TANPA isolasi — warning eksplisit, setara terminal lokal).
+// TANPA isolasi, warning eksplisit, setara terminal lokal).
 //
 // Semua transisi = log ring + event workshop.state (emit hook ke sesi
 // pemanggil; REST/UI poll ring utk sumber kebenaran).
@@ -30,11 +30,11 @@ export interface HostEnsureInput {
   cpus: string;
   pidsLimit: number;
   image: string;
-  /** Port proxy egress di host — undefined = --network none. */
+  /** Port proxy egress di host, undefined = --network none. */
   egressProxyPort?: number;
   /** Allowlist (utk log/audit host). */
   egressAllow: string[];
-  /** Workspace project di HOST — di-bind ke /home/node/project (nested di
+  /** Workspace project di HOST, di-bind ke /home/node/project (nested di
    *  atas volume): file project = satu dunia dengan tab Files & write_file;
    *  volume tetap menampung cache hangat (~/.npm, ~/.cache). */
   workspacePath: string;
@@ -43,7 +43,7 @@ export interface HostEnsureInput {
 export interface WorkshopHost {
   kind: "docker" | "local";
   available(): Promise<boolean>;
-  /** Buat (bila belum ada) + jalankan container — idempotent. */
+  /** Buat (bila belum ada) + jalankan container, idempotent. */
   ensureRunning(input: HostEnsureInput): Promise<void>;
   start(container: string): Promise<void>;
   stop(container: string): Promise<void>;
@@ -54,7 +54,7 @@ export interface WorkshopHost {
   exec(container: string, cmd: string, args: string[], opts: { timeoutMs: number; cwd?: string }): Promise<WorkshopExecResult>;
 }
 
-/** Path docker-friendly (Windows backslash → slash) — sama pola sandbox.mountPath. */
+/** Path docker-friendly (Windows backslash → slash), sama pola sandbox.mountPath. */
 function mountPath(ws: string): string {
   return ws.replace(/\\/g, "/");
 }
@@ -72,12 +72,12 @@ function run(cmd: string, args: string[], timeoutMs = 30_000): Promise<{ code: n
   });
 }
 
-/** Docker CLI — pola sandbox.ts (tanpa dependency dockerode). */
+/** Docker CLI, pola sandbox.ts (tanpa dependency dockerode). */
 export class DockerWorkshopHost implements WorkshopHost {
   kind = "docker" as const;
 
   async available(): Promise<boolean> {
-    // probe bisa kalah oleh load sistem saat ini (timeout 3s) — sekali retry
+    // probe bisa kalah oleh load sistem saat ini (timeout 3s), sekali retry
     // sebelum jatuh ke fallback local (workshop di-host-docker itu primernya).
     if (await dockerAvailable(true)) return true;
     await new Promise((r) => setTimeout(r, 800));
@@ -85,7 +85,7 @@ export class DockerWorkshopHost implements WorkshopHost {
   }
 
   async ensureRunning(input: HostEnsureInput): Promise<void> {
-    // volume persist (buat bila belum — data lama utuh)
+    // volume persist (buat bila belum, data lama utuh)
     const v = await run("docker", ["volume", "inspect", input.volume]);
     if (v.code !== 0) {
       const vc = await run("docker", ["volume", "create", input.volume]);
@@ -95,7 +95,7 @@ export class DockerWorkshopHost implements WorkshopHost {
     if (st !== "absent") {
       // Migrasi layout: container pra-label (mis. volume /home/yui, tanpa
       // bind workspace) → docker exec -w /home/node/project langsung mati.
-      // Buang container (VOLUME diutuhkan — isinya cache; file project di
+      // Buang container (VOLUME diutuhkan, isinya cache; file project di
       // host) lalu buat ulang dengan layout sekarang.
       const lbl = await run("docker", [
         "inspect", "-f", `{{index .Config.Labels "yuika.workshop.layout"}}`, input.container,
@@ -119,11 +119,11 @@ export class DockerWorkshopHost implements WorkshopHost {
         "--cap-drop", "ALL",
         "--security-opt", "no-new-privileges",
         "--user", "1000:1000",
-        // /home/node = home uid 1000 di image node — volume baru mewarisi
+        // /home/node = home uid 1000 di image node, volume baru mewarisi
         // kepemilikan (mount di path baru yang tak ada di image = owned root
         // → user 1000 tak bisa menulis). Cache hangat (~/.npm) hidup di sini.
         "-v", `${input.volume}:/home/node`,
-        // Nested bind: FILES PROJECT = workspace host (rw) — satu dunia
+        // Nested bind: FILES PROJECT = workspace host (rw), satu dunia
         // dengan tab Files / write_file / run_command sandbox (/workspace).
         "-v", `${mountPath(input.workspacePath)}:/home/node/project:rw`,
         "-w", "/home/node/project",
@@ -199,12 +199,12 @@ export class DockerWorkshopHost implements WorkshopHost {
   }
 }
 
-/** Versi layout container — dinaikkan saat struktur mount/flag berubah.
+/** Versi layout container, dinaikkan saat struktur mount/flag berubah.
  *  Container lama (tanpa label ini) dimigrasi otomatis: container dibuang
  *  (VOLUME & file project tetap) lalu dibuat ulang dengan layout baru. */
 const WORKSHOP_LAYOUT = "2"; // 2 = bind workspace /home/node/project + cwd situ
 
-/** Fallback TANPA Docker: direktori .yuika/workshop di project — shell lokal,
+/** Fallback TANPA Docker: direktori .yuika/workshop di project, shell lokal,
  *  TIDAK terisolasi (setara terminal lokal). Warning eksplisit di log/info. */
 export class LocalWorkshopHost implements WorkshopHost {
   kind = "local" as const;
@@ -217,14 +217,14 @@ export class LocalWorkshopHost implements WorkshopHost {
   }
 
   private dir(container: string): string {
-    // container name unik per project — dipakai sbg nama dir
+    // container name unik per project, dipakai sbg nama dir
     return path.join(this.workspaceRootOf(container.replace(/^yuika-ws-/, "")), ".yuika", "workshop");
   }
 
   async ensureRunning(input: HostEnsureInput): Promise<void> {
     fs.mkdirSync(this.dir(input.container), { recursive: true });
     this.dirs.add(input.container);
-    log.warn({ container: input.container }, "workshop LOCAL fallback — TANPA isolasi (no docker)");
+    log.warn({ container: input.container }, "workshop LOCAL fallback, TANPA isolasi (no docker)");
   }
 
   async start(_container: string): Promise<void> {
@@ -232,7 +232,7 @@ export class LocalWorkshopHost implements WorkshopHost {
   }
 
   async stop(_container: string): Promise<void> {
-    /* noop — proses mati sendiri */
+    /* noop, proses mati sendiri */
   }
 
   async remove(container: string, opts: { volume?: string }): Promise<void> {
@@ -289,7 +289,7 @@ export interface WorkshopManagerDeps {
   store: WorkshopStore;
   /** Root absolut project (workspace) per projectId. */
   workspaceRootOf: (projectId: string) => string;
-  /** Emit event ke sesi pemanggil (opsional — REST poll tetap sumber). */
+  /** Emit event ke sesi pemanggil (opsional, REST poll tetap sumber). */
   onEvent?: (ev: { type: "workshop.state" | "workshop.command"; projectId: string; [k: string]: unknown }) => void;
 }
 
@@ -314,12 +314,12 @@ export class WorkshopManager {
     } else {
       this.host = new LocalWorkshopHost(this.deps.workspaceRootOf);
       this.hostKind = "local";
-      log.warn("docker tidak tersedia — workshop jalan LOCAL fallback (tanpa isolasi)");
+      log.warn("docker tidak tersedia, workshop jalan LOCAL fallback (tanpa isolasi)");
     }
     return this.host;
   }
 
-  /** WKS-5: idle sleep — workshop running tanpa aktivitas → asleep. */
+  /** WKS-5: idle sleep, workshop running tanpa aktivitas → asleep. */
   startIdleWatchdog(idleMs = Number(process.env.YUI_WORKSHOP_IDLE_MS ?? 1_800_000)): void {
     this.stopIdleWatchdog();
     if (!idleMs) return;
@@ -414,7 +414,7 @@ export class WorkshopManager {
     let info = this.info(projectId);
     // Heal drift: store bilang running tapi container nyatanya hilang/mati
     // (docker prune, crash host, migrasi label) → jangan early-return;
-    // jatuh ke ensureRunning (recreate — volume & file project utuh).
+    // jatuh ke ensureRunning (recreate, volume & file project utuh).
     if (info.state === "running") {
       const real = await host.state(info.containerName);
       if (real === "running") return info;
@@ -451,7 +451,7 @@ export class WorkshopManager {
     }
   }
 
-  /** docker stop — volume utuh, bangun cepat. */
+  /** docker stop, volume utuh, bangun cepat. */
   async sleep(projectId: string, reason = "user"): Promise<WorkshopInfo> {
     const host = await this.resolveHost();
     const info = this.info(projectId);
@@ -464,7 +464,7 @@ export class WorkshopManager {
     return this.setState(info, reason === "idle" ? "asleep" : reason === "user" ? "stopped" : "asleep", reason);
   }
 
-  /** Recreate container (config baru) — volume PERTAHAN. */
+  /** Recreate container (config baru), volume PERTAHAN. */
   async recover(projectId: string): Promise<WorkshopInfo> {
     const host = await this.resolveHost();
     const info = this.info(projectId);
@@ -473,7 +473,7 @@ export class WorkshopManager {
     return await this.start(projectId, { egressAllow: info.egressAllow, by: "recover" });
   }
 
-  /** Kembali ke kondisi bersih — volume DIHAPUS (checkpoint = kosong v0). */
+  /** Kembali ke kondisi bersih, volume DIHAPUS (checkpoint = kosong v0). */
   async reset(projectId: string): Promise<WorkshopInfo> {
     const host = await this.resolveHost();
     const info = this.info(projectId);
@@ -483,7 +483,7 @@ export class WorkshopManager {
     return await this.start(projectId, { by: "reset" });
   }
 
-  /** Hapus total (container + volume + row) — hanya eksplisit dari UI/hapus project. */
+  /** Hapus total (container + volume + row), hanya eksplisit dari UI/hapus project. */
   async destroy(projectId: string): Promise<void> {
     const host = await this.resolveHost();
     const info = this.info(projectId);
@@ -494,7 +494,7 @@ export class WorkshopManager {
     this.deps.onEvent?.({ type: "workshop.state", projectId, from: info.state, to: "absent", reason: "destroy", ts: Date.now() });
   }
 
-  /** Eksekusi perintah (docker exec / lokal) — audit by persona-first. */
+  /** Eksekusi perintah (docker exec / lokal), audit by persona-first. */
   async exec(
     projectId: string,
     cmd: string,
@@ -503,7 +503,7 @@ export class WorkshopManager {
   ): Promise<WorkshopExecResult> {
     const host = await this.resolveHost();
     let info = this.info(projectId);
-    if (info.state === "absent") throw new Error("workshop belum dibuat — start dulu");
+    if (info.state === "absent") throw new Error("workshop belum dibuat, start dulu");
     if (info.state !== "running") info = await this.start(projectId, { by: opts.by ?? "user" });
     const by = opts.by ?? "user";
     const cmdline = [cmd, ...args].join(" ").slice(0, 2_000);
@@ -519,7 +519,7 @@ export class WorkshopManager {
     return res;
   }
 
-  /** Shutdown bersih (dispose runtime). Proxy egress TIDAK ditutup di sini —
+  /** Shutdown bersih (dispose runtime). Proxy egress TIDAK ditutup di sini,
    *  cache-nya shared dengan sandbox/terminal (getEgressProxy); shutdown
    *  proses yang membersihkan (pola egress.ts). */
   async close(): Promise<void> {

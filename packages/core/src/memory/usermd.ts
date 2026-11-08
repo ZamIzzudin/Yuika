@@ -1,4 +1,4 @@
-// @yuika/core — USER.md stub (W5-C2): preview learning-loop. JANGAN klaim lebih:
+// @yuika/core, USER.md stub (W5-C2): preview learning-loop. JANGAN klaim lebih:
 // ini hanya menempelkan 1 catatan preferensi statis per sesi baru. Loop belajar
 // sungguhan (nudge → skill-from-experience → curasi) = P1-MEM (TASKS.md).
 import fs from "node:fs";
@@ -11,15 +11,15 @@ export function userMdPath(workspacePath: string): string {
   return path.join(workspacePath, USER_MD);
 }
 
-/** Header file saat pertama dibuat — transparan & editable user (pola Hermes §4.7). */
-const HEADER = `# USER.md — preferensi pengguna
+/** Header file saat pertama dibuat, transparan & editable user (pola Hermes §4.7). */
+const HEADER = `# USER.md, preferensi pengguna
 
-> Catatan yang Yui baca untuk mengenal preferensimu. Boleh diedit langsung —
+> Catatan yang Yui baca untuk mengenal preferensimu. Boleh diedit langsung,
 > file ini milikmu. (Fitur "What Yui knows" penuh menyusul di P1.)
 
 `;
 const FOOTER_NOTE = (personaName: string, iso: string) =>
-  `- (preview) ${iso} · sesi dengan ${personaName}: preferensi default — jawaban ringkas, bahasa mengikuti user.\n`;
+  `- (preview) ${iso} · sesi dengan ${personaName}: preferensi default, jawaban ringkas, bahasa mengikuti user.\n`;
 
 /**
  * Append 1 catatan preferensi statis per sesi baru (label "preview").

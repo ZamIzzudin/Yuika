@@ -1,4 +1,4 @@
-// @yuika/relay-client — RelayRemote: peran remote (list_hosts, join, kirim
+// @yuika/relay-client, RelayRemote: peran remote (list_hosts, join, kirim
 // action, terima event, antrian saat host offline / reconnect).
 import { RemoteEvent, type RemoteAction } from "@yuika/contracts";
 import type { RelayClient, RelayHandlers } from "./core.js";
@@ -63,7 +63,7 @@ export class RelayRemote {
 
   async join(hostId: string, retryMaxMs = 30_000): Promise<JoinedMsg> {
     if (this.hostState === "joined" && this.hostId === hostId && this.hostDhPub) {
-      // idempotent — SPEC §4.3 (join ulang host sama = joined lagi tanpa duplikat)
+      // idempotent, SPEC §4.3 (join ulang host sama = joined lagi tanpa duplikat)
       this.opts.client.send({ t: "join", hostId, dhPub: this.opts.dhPub });
       return { t: "joined", hostId, hostName: "", hostKind: "web", hostDhPub: this.hostDhPub };
     }
@@ -80,9 +80,9 @@ export class RelayRemote {
         return res;
       }
       // 4104 host-not-online → bye menutup koneksi; RelayClient reconnect +
-      // flush outbox saat auth_ok — tunggu, lalu coba join ulang (backoff).
+      // flush outbox saat auth_ok, tunggu, lalu coba join ulang (backoff).
       // Bye join LAIN (4003 lintas akun, 4102 field invalid, 4200…) permanen:
-      // retry tidak mengubah hasil — terminal segera (SPEC §10, CP-1/CP-2).
+      // retry tidak mengubah hasil, terminal segera (SPEC §10, CP-1/CP-2).
       if ("code" in res && res.code !== undefined && res.code !== ByeCode.HOST_NOT_ONLINE) {
         this.setState("host-gone");
         throw new Error(res.error);
@@ -116,7 +116,7 @@ export class RelayRemote {
       ...prev,
       onAuthOk: (accountId) => {
         prev.onAuthOk?.(accountId);
-        // reconnect: join ulang idempotent (host online) — SPEC §10.
+        // reconnect: join ulang idempotent (host online), SPEC §10.
         if (this.hostId) {
           this.opts.client.send({ t: "join", hostId: this.hostId, dhPub: this.opts.dhPub });
           this.setState("joining");
@@ -125,7 +125,7 @@ export class RelayRemote {
       onBye: (code, error) => {
         prev.onBye?.(code, error);
         // join gagal fatal (mis. 4003 lintas akun / 4102 dhPub invalid) →
-        // penuhi waiter DENGAN code — layer join memutuskan retry vs terminal.
+        // penuhi waiter DENGAN code, layer join memutuskan retry vs terminal.
         const w = this.joinWaiter;
         this.joinWaiter = null;
         w?.({ error: `bye ${code}: ${error}`, code });
@@ -165,7 +165,7 @@ export class RelayRemote {
           );
           const parsed = RemoteEvent.safeParse(JSON.parse(pt));
           if (parsed.success) this.opts.onEvent(parsed.data, from);
-          else this.log("event tak sesuai kontrak — diabaikan");
+          else this.log("event tak sesuai kontrak, diabaikan");
         } catch (e) {
           this.log("gagal buka envelope dari host", e);
         }

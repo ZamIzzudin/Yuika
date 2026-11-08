@@ -1,16 +1,16 @@
-// @yuika/crypto — primitif portal (shared, isomorfik).
+// @yuika/crypto, primitif portal (shared, isomorfik).
 // Spec: docs/portal/SPEC-PROTOCOL.md §5 (mirror FROZEN dari yuika-portal).
 // Byte-format device credential & envelope WAJIB identik dengan
-// `yuika-portal/packages/crypto` — diverifikasi golden vectors
+// `yuika-portal/packages/crypto`, diverifikasi golden vectors
 // docs/portal/vectors/proto1.json (hash di docs/portal/README.md).
 //
-// File ini murni (tanpa node:crypto / DOM) — dipakai backend node (src/node.ts)
+// File ini murni (tanpa node:crypto / DOM), dipakai backend node (src/node.ts)
 // dan web (src/web.ts, WebCrypto).
 
 /** Kredential device: sign (Ed25519) + DH (X25519), PEM PKCS8/SPKI. */
 export interface DeviceKeys {
   deviceId: string;
-  /** Ed25519 PKCS8/SPKI PEM — private TIDAK pernah keluar dari device. */
+  /** Ed25519 PKCS8/SPKI PEM, private TIDAK pernah keluar dari device. */
   signPriv: string;
   signPub: string;
   /** X25519 PKCS8/SPKI PEM. */
@@ -22,7 +22,7 @@ export const IV_LEN = 12;
 export const KEY_LEN = 32;
 export const TAG_LEN = 16;
 
-// ── bytes ⇄ base64 (murni, tanpa Buffer — jalan di browser & node) ─────────
+// ── bytes ⇄ base64 (murni, tanpa Buffer, jalan di browser & node) ─────────
 
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -70,7 +70,7 @@ export function fromUtf8(bytes: Uint8Array): string {
   return new TextDecoder().decode(bytes);
 }
 
-// ── PEM (PKCS8/SPKI) — format identik export node:crypto ──────────────────
+// ── PEM (PKCS8/SPKI), format identik export node:crypto ──────────────────
 
 export function pemEncode(der: Uint8Array, label: "PRIVATE KEY" | "PUBLIC KEY"): string {
   const b64 = bytesToB64(der);

@@ -1,4 +1,4 @@
-// @yuika/core — runtime wiring: satu factory untuk seluruh kernel (dipakai apps/web).
+// @yuika/core, runtime wiring: satu factory untuk seluruh kernel (dipakai apps/web).
 // DEMO-SHORTCUT: core berjalan in-process di Next.js; P0 memisah jadi service + worker.
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -120,7 +120,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
   });
   // P0 reliabilitas (feedback user dev-10): turn/run yang mati bersama proses
-  // lama (server direstart saat berjalan) ditutup jujur — anti UI "berjalan"
+  // lama (server direstart saat berjalan) ditutup jujur, anti UI "berjalan"
   // zombie. Sekali per PROSES: HMR me-recreate runtime, tapi turn lama masih
   // hidup di memori proses ini → jangan bunuh (flag globalThis). Flag yang sama
   // menjaga sweepStaleRuns agar tidak menandai run HIDUP sebagai gagal saat HMR.
@@ -144,7 +144,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     promote: (skillName) => setSkillStatus(paths.skillsDir, skillName, "ready"),
   });
   const projectStore = new ProjectStore(paths.dbPath);
-  // Batch 13 (P2-WKS): workshop persisten — registry SQLite lokal sendiri
+  // Batch 13 (P2-WKS): workshop persisten, registry SQLite lokal sendiri
   // (koneksi kedua file sama, WAL) karena workshop = artefak host-local.
   const workshopStore = new WorkshopStore(paths.dbPath);
   const workshopManager = new WorkshopManager({
@@ -158,14 +158,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
   });
   workshopManager.startIdleWatchdog();
-  // Settings: provider & model bisa di-swap panas (updateProviderSettings) —
+  // Settings: provider & model bisa di-swap panas (updateProviderSettings),
   // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
   // sama dimutasi propertinya agar delegasi ikut provider baru.
   let providerKind: ProviderKind = (cfg.provider.kind as ProviderKind | undefined) ?? "openai-compat";
   let provider = makeProvider(cfg.provider.baseUrl, cfg.provider.apiKey);
   let providerBaseUrl = cfg.provider.baseUrl;
 
-  /** P1-INF-2: satu titik pembuatan provider — adapter per kind. */
+  /** P1-INF-2: satu titik pembuatan provider, adapter per kind. */
   function makeProvider(baseUrl: string, apiKey: string) {
     return providerKind === "anthropic"
       ? new AnthropicProvider({ baseUrl, apiKey })
@@ -174,10 +174,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         : new OpenAICompatProvider({ baseUrl, apiKey });
   }
   let model = cfg.provider.model;
-  // P1-MDL-1: override per persona (diedit di Settings) — file JSON di samping DB.
+  // P1-MDL-1: override per persona (diedit di Settings), file JSON di samping DB.
   const modelOverridesFile = path.join(path.dirname(paths.dbPath), "model-overrides.json");
   const modelPricesFile = path.join(path.dirname(paths.dbPath), "model-prices.json");
-  // Mode approval (fix dev-10): persist di data/ — "auto" = write_file &
+  // Mode approval (fix dev-10): persist di data/, "auto" = write_file &
   // run_command bebas-approval (mode cepat), "ask" = kartu persetujuan.
   const approvalModeFile = path.join(path.dirname(paths.dbPath), "approval-mode.json");
   try {
@@ -186,7 +186,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     setApprovalMode("ask"); // belum ada / rusak → default aman
   }
   // Mapping manual skill → persona (menu Dungeon): file data/skill-bindings.json.
-  // Baca ulang tiap akses (hot path kecil — satu file JSON) supai editan via UI
+  // Baca ulang tiap akses (hot path kecil, satu file JSON) supai editan via UI
   // langsung berlaku untuk SESI BARU tanpa restart runtime.
   const skillBindingsPath = path.join(path.dirname(paths.dbPath), "skill-bindings.json");
   function skillBindingsFile(): SkillBindingsFile {
@@ -203,18 +203,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerSessionSearchTools(store); // P1-MEM-5: riwayat sesi bisa ditelusuri agent
   registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)
   registerRunCommandTool();
-  // Batch 12 (P2-VLT): vault kredensial — store terenkripsi terpisah dari demo.db
+  // Batch 12 (P2-VLT): vault kredensial, store terenkripsi terpisah dari demo.db
   // (vault.db + vault.key di direktori data). Nilai tak pernah lewat jalur model.
   const vault = getVault(path.dirname(paths.dbPath));
   registerVaultTools();
   registerTerminalTool({
-    // P2-STU-2: terminal shared user & agent — Batch 13: agent ikut masuk
+    // P2-STU-2: terminal shared user & agent, Batch 13: agent ikut masuk
     // container workshop bila hidup + kerja di PROJECT workspace.
     workshop: () => workshopManager,
     projectRoot,
   });
   registerWorkshopTool({ manager: () => workshopManager }); // Batch 13 (P2-WKS-4)
-  // Batch 14a (P2-SCR, D25): shared live screen — Chromium per project×persona,
+  // Batch 14a (P2-SCR, D25): shared live screen, Chromium per project×persona,
   // screencast ke tab Browser (mode Live), input dua arah dgn lease fence.
   // dataDir dipakai untuk profil persist .yuika/browser/<project>/<persona>;
   // takeover.resolved dipancarkan TOOL via ctx.emit (turn masih menunggu).
@@ -229,7 +229,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     domainOfPersona: (personaId) => listPersonas(paths.personasDir).find((p) => p.manifest.id === personaId)?.manifest.memory.domain ?? null,
   });
   // Objek deps delegasi DI-MUTASI saat provider swap (spread terjadi di call time).
-  // P1-MDL-1: router model per persona — override file (Settings) → persona.yaml → default.
+  // P1-MDL-1: router model per persona, override file (Settings) → persona.yaml → default.
   const modelRouter = buildModelRouter({
     defaultModel: () => model, // getter: default bisa di-swap panas (updateProviderSettings)
     defaultFallback: process.env.YUI_MODEL_FALLBACK,
@@ -264,11 +264,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     }, // Batch 16: delegasi = merge-assign anak ke roster
   };
   registerDelegateTool(delegateDeps);
-  // P2-PM-2 (D22): consult — brainstorm terstruktur Planner ke persona spesialis
+  // P2-PM-2 (D22): consult, brainstorm terstruktur Planner ke persona spesialis
   // (paralel via delegation runner yang sama: metering/cap/event/audit berlaku).
   registerConsultTool(delegateDeps);
 
-  // P2-FLOW-2: workflow engine — deps memakai GETTER yang sama dgn delegateDeps
+  // P2-FLOW-2: workflow engine, deps memakai GETTER yang sama dgn delegateDeps
   // (provider/model hot-swap tetap terlihat; spread langsung akan membekukan nilai).
   const workflowEngine = new WorkflowEngine({
     get store() {
@@ -309,15 +309,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   if (resumedRuns.length) moduleLogger("workflow").info({ runs: resumedRuns }, "resume: run belum tamat dilanjutkan");
 
   // MCP dari config (demo: best-effort, lanjut jika gagal).
-  // Placeholder {workspace} di-substitusi path absolut — path relatif salah resolve
+  // Placeholder {workspace} di-substitusi path absolut, path relatif salah resolve
   // karena CWD dev server = apps/web, bukan root repo (bug npx 404/folder hilang).
-  // P1-MCP-3: trust gate fail-closed — hanya server di-trust workspace yang connect;
+  // P1-MCP-3: trust gate fail-closed, hanya server di-trust workspace yang connect;
   // tiap panggilan tool MCP di-audit. Trust berubah (PUT /api/mcp/trust) =
   // connect/disconnect dinamis + re-register handler (deny list baru).
   const mcpAudit = new McpAuditStore(paths.dbPath);
-  // P1-CRED-1: ledger metering — token per panggilan model (loop utama + delegasi anak).
+  // P1-CRED-1: ledger metering, token per panggilan model (loop utama + delegasi anak).
   const usageLedger = new UsageLedger(paths.dbPath);
-  // P1-CRED-2/3: admission control (saldo hold→settle + rate limit) — file budget.json.
+  // P1-CRED-2/3: admission control (saldo hold→settle + rate limit), file budget.json.
   const budgetFile = path.join(path.dirname(paths.dbPath), "budget.json");
   const admission = new AdmissionControl(usageLedger, modelPricesFile, budgetFile);
   const onMcpCall = (info: McpCallInfo) => mcpAudit.log(info);
@@ -331,7 +331,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return raw;
   };
   mcpConfig = reloadMcpConfig();
-  /** P0-MCP-1: state koneksi — connected → (mati) reconnecting backoff → parked
+  /** P0-MCP-1: state koneksi, connected → (mati) reconnecting backoff → parked
    *  (retry manual); penutupan disengaja (uninstall/toggle) tidak memicu retry. */
   const mcpConns = new Map<
     string,
@@ -402,13 +402,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     if (attempt > RETRY_DELAYS.length) {
       clearMcpRetry(name);
       mcpConns.set(name, { close: async () => undefined, toolNames: [], ping: async () => false, state: "parked", lastError: err, nextRetryAt: null });
-      moduleLogger("mcp").warn({ server: name, kind: "mcp", code: "MCP_PARKED" }, `parked after ${RETRY_DELAYS.length} reconnect attempts (${err}) — re-enable from the MCP panel`);
+      moduleLogger("mcp").warn({ server: name, kind: "mcp", code: "MCP_PARKED" }, `parked after ${RETRY_DELAYS.length} reconnect attempts (${err}), re-enable from the MCP panel`);
       return;
     }
     const delay = RETRY_DELAYS[Math.min(attempt - 1, RETRY_DELAYS.length - 1)]!;
     const nextRetryAt = Date.now() + delay;
     mcpConns.set(name, { close: async () => undefined, toolNames: [], ping: async () => false, state: "reconnecting", lastError: err, nextRetryAt });
-    moduleLogger("mcp").warn({ server: name, kind: "mcp", code: "MCP_RECONNECT", attempt, retryInMs: delay }, `down (${err}) — reconnecting`);
+    moduleLogger("mcp").warn({ server: name, kind: "mcp", code: "MCP_RECONNECT", attempt, retryInMs: delay }, `down (${err}), reconnecting`);
     const timer = setTimeout(
       () => {
         void connectMcp(name)
@@ -431,7 +431,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       onDown: (reason) => onMcpDown(name, reason),
       workspacePath: paths.workspacePath, // P1-MCP-4: mount utk cfg.sandbox
       // P1-MCP-6: daftar tool server berubah (notifikasi) → perbarui snapshot
-      // status (McpPanel polling) — persona mengambil tool baru tanpa restart.
+      // status (McpPanel polling), persona mengambil tool baru tanpa restart.
       onToolsChanged: (r) => {
         const c = mcpConns.get(name);
         if (c) c.toolNames = r.toolNames;
@@ -446,9 +446,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   }
 
   // Startup: connect semua server yang sudah di-trust (via helper di atas supaya
-  // mcpConns terisi — connectMcpFromConfig hanya untuk pemakaian standalone).
+  // mcpConns terisi, connectMcpFromConfig hanya untuk pemakaian standalone).
   // Gagal startup → scheduleMcpRetry (sama seperti server mati): cold start
-  // `uvx`/`npx` (unduh paket pertama) bisa timeout — retry backoff akan sukses
+  // `uvx`/`npx` (unduh paket pertama) bisa timeout, retry backoff akan sukses
   // begitu cache terisi; tanpa ini server mati permanen sampai restart proses.
   for (const name of Object.keys(mcpConfig?.mcpServers ?? {})) {
     void connectMcp(name).catch((e: unknown) => {
@@ -458,8 +458,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     });
   }
 
-  // P0-MCP-1: health check — ping tiap 60 dtk (fix 2026-11: 30 dtk terlalu
-  // sering — tiap recreate runtime di dev menumpuk ping & membebani; server
+  // P0-MCP-1: health check, ping tiap 60 dtk (fix 2026-11: 30 dtk terlalu
+  // sering, tiap recreate runtime di dev menumpuk ping & membebani; server
   // banyak → interval naik. stdio ping tetap murah, tapi jangan spam).
   const mcpHealthTimer = setInterval(() => {
     for (const [name, conn] of mcpConns) {
@@ -471,7 +471,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   }, 60_000);
   mcpHealthTimer.unref?.();
 
-  // P0-DATA-2: housekeeping harian — boot (setelah heal menutup turn gantung)
+  // P0-DATA-2: housekeeping harian, boot (setelah heal menutup turn gantung)
   // + interval 24 jam; retensi 0 = mati.
   const housekeep = () => {
     if (env.eventsRetentionDays > 0) store.archiveOldEvents(env.eventsRetentionDays);
@@ -491,7 +491,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     }));
   }
 
-  /** P1-PER-4: growth persona — dikurasi dari sesi/turn/task nyata. */
+  /** P1-PER-4: growth persona, dikurasi dari sesi/turn/task nyata. */
   function personaGrowth(): PersonaGrowth[] {
     return buildPersonaGrowth(
       listPersonas(paths.personasDir).map((p) => ({ id: p.manifest.id, name: p.manifest.name, domain: p.manifest.memory.domain })),
@@ -500,7 +500,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     );
   }
 
-  /** Menu Persona (2026-11): override bentuk geometri maskot — hanya entri
+  /** Menu Persona (2026-11): override bentuk geometri maskot, hanya entri
    *  yang dipilih user; tanpa entri = default web (PERSONA_SHAPE). */
   function personaShapes(): PersonaShapeOverride[] {
     const map = loadPersonaShapes(paths.workspacePath);
@@ -531,18 +531,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // Batch 16 (Team Assembly): persona project HARUS ter-assign di roster
     // (project.yaml). Pintu assign: welcome screen project (playground), Config
     // → Roster, workflow run (auto-assign semua), dan delegasi Maestro (merge).
-    // Dungeon (arena latihan) dikecualikan — sesinya ephemeral per misi.
+    // Dungeon (arena latihan) dikecualikan, sesinya ephemeral per misi.
     if (projectId && projectStore.getProject(projectId)?.kind !== "dungeon") {
       if (!loadRoster(projectRoot(projectId)).some((r) => r.personaId === personaId)) {
         throw new Error(
-          `${persona.manifest.name} is not assigned to this project — assign them on the project welcome screen or in Config → Roster first`,
+          `${persona.manifest.name} is not assigned to this project, assign them on the project welcome screen or in Config → Roster first`,
         );
       }
     }
     const sessionId = `s_${randomUUID()}`;
     // System prompt + toolset DIBEKUKAN di sini (prompt-cache discipline).
     // P1-MEM-1: USER.md + MEMORY.md project di-inject saat sesi dibuat (frozen).
-    // P1-MEM-6: + memori DOMAIN persona (lintas project) — juga frozen.
+    // P1-MEM-6: + memori DOMAIN persona (lintas project), juga frozen.
     const memExtra = memoryPromptSection(
       paths.workspacePath,
       projectId ? projectRoot(projectId) : null,
@@ -551,13 +551,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     createSessionWithPrompt(store, persona, sessionId, persona.manifest.tools, paths.skillsDir, projectId ?? null, memExtra, skillBindingsFile()[persona.manifest.id]);
     // D28: sesi baru = aktivitas project (kartu Home "… Ago")
     if (projectId) projectStore.touchProject(projectId);
-    // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru — learning-loop P1
+    // W5-C2 stub: 1 catatan preferensi (preview) per sesi baru, learning-loop P1
     appendUserPreferenceNote(paths.workspacePath, persona.manifest.name);
     const info = listPersonaInfos().find((p) => p.id === personaId)!;
     return { sessionId, persona: info, projectId: projectId ?? null };
   }
 
-  /** P1-PRT-3: sesi terbaru lintas project — host.state/list_sessions remote. */
+  /** P1-PRT-3: sesi terbaru lintas project, host.state/list_sessions remote. */
   function listRecentSessions(limit = 20): Array<{ sessionId: string; title: string; personaId: string; updatedAt: number }> {
     return store.listRecentSessions(limit).map((s) => ({
       sessionId: s.id,
@@ -567,7 +567,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     }));
   }
 
-  /** Riwayat sesi sebuah project (terbaru dulu) — untuk resume percakapan lintas kunjungan. */
+  /** Riwayat sesi sebuah project (terbaru dulu), untuk resume percakapan lintas kunjungan. */
   function listProjectSessions(projectId: string): Array<{
     sessionId: string;
     personaId: string;
@@ -584,7 +584,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     }));
   }
 
-  /** P1-PRJ-2: root file-ops efektif sesi — project root bila melekat, workspace bila tidak. */
+  /** P1-PRJ-2: root file-ops efektif sesi, project root bila melekat, workspace bila tidak. */
   function effectiveWorkspace(sessionId: string): string {
     const session = store.getSession(sessionId);
     if (!session) throw new Error(`session ${sessionId} tidak ditemukan`);
@@ -594,28 +594,27 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return path.join(paths.workspacePath, project.rootPath);
   }
 
-  /** Root absolut project di workspace (validasi project ada) — dipakai roster (PRJ-3). */
+  /** Root absolut project di workspace (validasi project ada), dipakai roster (PRJ-3). */
   function projectRoot(projectId: string): string {
     const project = projectStore.getProject(projectId);
     if (!project) throw new Error(`project tidak ditemukan: ${projectId}`);
     return path.join(paths.workspacePath, project.rootPath);
   }
 
-  /** P1-PRJ-5 (D17): allowlist tool MCP sesi = binding persona di roster project.yaml.
-   *  Sesi global / persona tanpa entry roster → null → SEMUA mcp__* disembunyikan. */
-  function mcpAllowlistFor(session: { personaId: string; projectId: string | null }): string[] | null {
-    if (!session.projectId) return null;
-    const entry = loadRoster(projectRoot(session.projectId)).find((r) => r.personaId === session.personaId);
-    if (!entry?.mcp.length) return null;
-    return entry.mcp.flatMap((b) =>
-      b.tools.length ? b.tools.map((t) => `mcp__${b.server}__${t}`) : [`mcp__${b.server}__*`],
-    );
+  /** D34: MCP access = PER-HOST (trust), bukan per-persona/per-project.
+   *  Server yang trusted di mcp-trust.json → SEMUA persona (assigned atau
+   *  bukan, project atau sesi global) melihat tools `mcp__<srv>__*`.
+   *  Binding roster `mcp:` (legacy P1-PRJ-5) sudah tidak meng-gate apa pun. */
+  function mcpAllowlistFor(_session: { personaId: string; projectId: string | null }): string[] | null {
+    const trusted = trustConfig().servers.filter((e) => e.trusted);
+    if (!trusted.length) return null;
+    return trusted.map((e) => `mcp__${e.server}__*`);
   }
 
   /** Loop di-cache per sesi: engine approval ("Setujui & ingat") bertahan antar turn
-   *  sesi yang sama — prompt/toolset toh frozen per sesi. */
+   *  sesi yang sama, prompt/toolset toh frozen per sesi. */
   const loopCache = new Map<string, AgentLoop>();
-  /** P0-CORE-1: satu turn aktif per sesi — AbortController untuk Stop (HTTP + loop checks). */
+  /** P0-CORE-1: satu turn aktif per sesi, AbortController untuk Stop (HTTP + loop checks). */
   const turnAborts = new Map<string, AbortController>();
   /** P0-DEL-2: kontrol anak delegasi aktif (cancel/steer dari UI parent).
    *  Key = childSessionId; unregister otomatis oleh runner (finally). */
@@ -624,9 +623,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     { parentSessionId: string; ctl: { abort: AbortController; steer: (text: string) => void; pause: () => void; resume: () => void } }
   >();
 
-  /** Dipakai REST runTurn & dungeon runner (async — resolve saat turn selesai). */
+  /** Dipakai REST runTurn & dungeon runner (async, resolve saat turn selesai). */
   function runTurnInternal(sessionId: string, text: string): Promise<void> {
-    // P1-CRED-2/3: admission control — cek rate limit & budget SEBELUM turn jalan.
+    // P1-CRED-2/3: admission control, cek rate limit & budget SEBELUM turn jalan.
     const emit = makeEmitter(store, EventBus, sessionId);
     const admit = admission.admitTurn(sessionId);
     if (!admit.ok) {
@@ -634,7 +633,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return Promise.resolve();
     }
     if (admit.warn) {
-      emit({ type: "session.error", message: `⚠ ${admit.warn} — turn tetap dijalankan (mode warn)`, recoverable: true });
+      emit({ type: "session.error", message: `⚠ ${admit.warn}, turn tetap dijalankan (mode warn)`, recoverable: true });
     }
     const ac = new AbortController();
     turnAborts.set(sessionId, ac);
@@ -676,7 +675,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   let smokeResults: ModelSmokeResult[] = [];
   let smokeRunning = false;
   async function runModelSmoke(): Promise<ModelSmokeResult[]> {
-    if (smokeRunning) return smokeResults; // sedang berjalan — pakai hasil terakhir
+    if (smokeRunning) return smokeResults; // sedang berjalan, pakai hasil terakhir
     smokeRunning = true;
     try {
       const models = new Set<string>([model, process.env.YUI_MODEL_FALLBACK ?? ""].filter(Boolean));
@@ -698,14 +697,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     }
   }
 
-  /** Batch 16: assign SEMUA persona ke roster project (merge) — dipanggil
+  /** Batch 16: assign SEMUA persona ke roster project (merge), dipanggil
    *  saat workflow run dimulai (satu run = seluruh tim ter-assign). */
   function rtAssignAll(projectId: string): RosterEntryIn[] {
     const ids = listPersonas(paths.personasDir).map((p) => p.manifest.id);
     return rtMergeAssign(projectId, ids);
   }
 
-  /** Merge personaIds ke roster — entry lama utuh (role custom, phases, MCP). */
+  /** Merge personaIds ke roster, entry lama utuh (role custom, phases, MCP). */
   function rtMergeAssign(projectId: string, personaIds: string[]): RosterEntryIn[] {
     const root = projectRoot(projectId); // validasi project ada
     const cur = loadRoster(root);
@@ -726,7 +725,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   return {
     getModelSmoke: (): { running: boolean; results: ModelSmokeResult[] } => ({ running: smokeRunning, results: smokeResults }),
     runModelSmoke: () => runModelSmoke(),
-    // P0-DATA-2: housekeeping retention — pindahkan events lama ke arsip.
+    // P0-DATA-2: housekeeping retention, pindahkan events lama ke arsip.
     // Dipanggil manual (REST) & otomatis (boot + interval harian); retensi dari
     // YUI_EVENTS_RETENTION_DAYS (0 = mati).
     housekeepEvents: (nowMs?: number): { archived: number; sessions: number } => {
@@ -734,22 +733,22 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       if (r.archived > 0) moduleLogger("data").info({ ...r, retentionDays: env.eventsRetentionDays }, "events diarsipkan (retention)");
       return r;
     },
-    // P1-CRED-1: metering ledger — summary rollup + feed event terbaru.
+    // P1-CRED-1: metering ledger, summary rollup + feed event terbaru.
     getUsageSummary: (filter: { projectId?: string; sessionId?: string; personaId?: string; since?: number } = {}) =>
       usageLedger.summary(filter),
     getUsageRecent: (limit = 50, filter: { projectId?: string; sessionId?: string; personaId?: string; since?: number } = {}) =>
       usageLedger.recent(limit, filter),
     paths,
-    /** Batch 14a (P2-SCR): direktori data runtime — profil browser persist. */
+    /** Batch 14a (P2-SCR): direktori data runtime, profil browser persist. */
     dataDir: path.dirname(paths.dbPath),
     store,
     bus: EventBus,
-    /** Batch 12 (P2-VLT): vault kredensial — utk REST metadata & fill. */
+    /** Batch 12 (P2-VLT): vault kredensial, utk REST metadata & fill. */
     vault,
-    /** Matikan runtime dengan rapi — dipanggil saat runtime DI-REPLACE (HMR dev:
+    /** Matikan runtime dengan rapi, dipanggil saat runtime DI-REPLACE (HMR dev:
      *  module lib/runtime di-reval → runtime baru; yang lama harus mati total,
      *  kalau tidak proses MCP stdio lama jadi ZOMBIE yang menumpuk tiap recompile
-     *  — feedback user dev-10: armada MCP reconnect penuh berulang kali).
+     * , feedback user dev-10: armada MCP reconnect penuh berulang kali).
      *  Turn yang masih berjalan di loop lama tetap menyelesaikan dirinya
      *  (data lewat file DB yang sama; event lewat bus globalThis). */
     dispose: async () => {
@@ -765,9 +764,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       // Batch 14a (P2-SCR-1): matikan semua Chromium shared-screen.
       try { await closeAllScreens(); } catch { /* shutdown best-effort */ }
       // Batch 12 (P2-VLT-2): sisa run-only dari turn yang mati dibersihkan;
-      // singleton vault (globalThis) TETAP hidup lintas HMR — db handle-nya
+      // singleton vault (globalThis) TETAP hidup lintas HMR, db handle-nya
       // WAL-safe, sama seperti store sesi (DELIBERAT: tidak di-close).
-      // DELIBERAT: koneksi sqlite TIDAK ditutup — turn yang masih berjalan di
+      // DELIBERAT: koneksi sqlite TIDAK ditutup, turn yang masih berjalan di
       // loop lama memakai objek store ini (WAL aman multi-handle; kebocoran
       // handle per HMR jauh lebih ringan daripada mematikan turn in-flight).
     },
@@ -780,7 +779,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     listRecentSessions,
     runTurn: (sessionId: string, text: string) => runTurnInternal(sessionId, text),
     /** Batalkan turn sesi (tombol Stop). true bila ada turn aktif yang dibatalkan.
-     *  P0-DEL-2: CASCADE — membatalkan turn parent sekaligus membatalkan semua
+     *  P0-DEL-2: CASCADE, membatalkan turn parent sekaligus membatalkan semua
      *  anak delegasi turn itu (dulu anak lanjut sendiri di background). */
     cancelTurn: (sessionId: string) => {
       const ac = turnAborts.get(sessionId);
@@ -834,13 +833,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // ---- projects (P1-PRJ-1, PLAN §13.1) ----
     createProject: (name: string, description = "") => {
       const id = `p_${randomUUID().slice(0, 8)}`;
-      const rootPath = `projects/${id}`; // relatif terhadap workspace — diisolasi penuh di P1-PRJ-2
+      const rootPath = `projects/${id}`; // relatif terhadap workspace, diisolasi penuh di P1-PRJ-2
       for (const sub of ["code", "docs", "reports"]) {
         fs.mkdirSync(path.join(paths.workspacePath, rootPath, sub), { recursive: true });
       }
       return projectStore.createProject({ id, name, description, rootPath });
     },
-    // ---- Dungeon (P1-DUN-1): arena latihan persona — ruangan sandbox ----
+    // ---- Dungeon (P1-DUN-1): arena latihan persona, ruangan sandbox ----
     listDungeons: () => {
       const missions = loadMissions(paths.workspacePath);
       return missions.map((m) => ({ mission: m, runs: dungeonRunner.runs(m.id) }));
@@ -884,15 +883,15 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     deleteDungeonMission: (slug: string) => deleteMission(paths.workspacePath, slug),
     listProjects: () => projectStore.listProjects(),
     getProject: (id: string) => projectStore.getProject(id),
-    /** P1-PRJ-8 (request user): hapus project + SEMUA artefak terkait — sesi &
+    /** P1-PRJ-8 (request user): hapus project + SEMUA artefak terkait, sesi &
      *  eventnya, task + project_events, file workspace (termasuk MEMORY.md project
      *  & uploads), revisi file, baris audit MCP, ruangan+dungeon run (kalau kind
-     *  dungeon). YANG DIPERTAHANKAN: skill persona (milik persona — keputusan user)
+     *  dungeon). YANG DIPERTAHANKAN: skill persona (milik persona, keputusan user)
      *  & usage ledger (akuntansi metering jujur; baris tinggal historis). */
     deleteProject: async (id: string): Promise<DeleteProjectResult> => {
       const project = projectStore.getProject(id);
       if (!project) throw new Error(`project tidak ditemukan: ${id}`);
-      // 0. Batch 13e: workshop project (container+volume+row) IKUT dihapus —
+      // 0. Batch 13e: workshop project (container+volume+row) IKUT dihapus,
       //    tanpa ini container yuika-ws-* menumpuk di docker host.
       const hadWorkshop = workshopManager.info(id).state !== "absent";
       if (hadWorkshop) await workshopManager.destroy(id);
@@ -905,7 +904,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         loopCache.delete(sid);
       }
       // 1.5 D31 (fix user): matikan sesi terminal project ini SEBELUM dir
-      //     di-rm — tanpa ini container sandbox `yui-ses-*` tetap hidup di
+      //     di-rm, tanpa ini container sandbox `yui-ses-*` tetap hidup di
       //     host setelah project dihapus (dan di Windows sesi local yang
       //     memegang cwd membuat rmSync gagal EPERM).
       const root = path.join(paths.workspacePath, project.rootPath);
@@ -940,11 +939,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         keptSkills: true,
       };
     },
-    // P2-STU-3 v0: tab File — tree + baca file, scoped dir project (anti traversal).
+    // P2-STU-3 v0: tab File, tree + baca file, scoped dir project (anti traversal).
     listProjectFiles: (id: string) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
-      // rootPath relatif thd workspace — WAJIB lewat projectRoot (fix: dulu readdir
+      // rootPath relatif thd workspace, WAJIB lewat projectRoot (fix: dulu readdir
       // relatif terhadap cwd Next apps/web → tree selalu kosong).
       return buildFileTree(projectRoot(id));
     },
@@ -955,7 +954,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       if (!p) throw new Error("project tidak ditemukan");
       return readProjectFile(projectRoot(id), relPath);
     },
-    // P2-STT-3: revisi & diff — snapshot lama direkam otomatis oleh write_file.
+    // P2-STT-3: revisi & diff, snapshot lama direkam otomatis oleh write_file.
     listFileRevisions: (id: string, relPath: string) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
@@ -978,7 +977,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
      *  projectId = project sesi parent; undefined/null = semua. */
     delegationJobs: (projectId?: string | null) => store.listDelegationJobs(projectId ?? undefined),
     /** Diagram Tim: SEMUA edge delegasi lintas sesi di proyek (grandchild ikut,
-     *  relasi nyata dari event — bukan asumsi urutan persona). */
+     *  relasi nyata dari event, bukan asumsi urutan persona). */
     getProjectDelegations: (id: string) => {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
@@ -1052,12 +1051,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         phase?: TaskItem["phase"];
       },
     ) => projectStore.updateTask(taskId, patch),
-    /** TaskTree (P1-PRJ-7): pohon utuh dari replay event project — tanpa state kedua. */
+    /** TaskTree (P1-PRJ-7): pohon utuh dari replay event project, tanpa state kedua. */
     getTaskTree: (projectId: string) => taskTreeFromEvents(projectStore.listEvents(projectId)),
     // ---- MCP trust/audit (P1-MCP-3) ----
     /** Status semua server: deklarasi mcp.json + trust workspace + koneksi live. */
     mcpServerStatuses: serverStatuses,
-    /** P0-MCP-1: hubungkan ulang sekarang (tombol ↻ di panel — bypass backoff). */
+    /** P0-MCP-1: hubungkan ulang sekarang (tombol ↻ di panel, bypass backoff). */
     mcpRetryConnect: async (name: string) => {
       await disconnectMcp(name); // pastikan entry lama (parked/karius) dilepas
       await connectMcp(name);
@@ -1073,7 +1072,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return trustOf(trustConfig(), input.server)!;
     },
     // ---- Settings: provider & model (swap panas) ----
-    /** Config provider aktif (key disamarkan — jangan pernah balas key penuh). */
+    /** Config provider aktif (key disamarkan, jangan pernah balas key penuh). */
     getProviderSettings: () => ({
       kind: providerKind,
       baseUrl: providerBaseUrl,
@@ -1083,10 +1082,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       hasApiKey: Boolean(process.env.YUI_API_KEY),
       keyPreview: process.env.YUI_API_KEY ? `…${process.env.YUI_API_KEY.slice(-4)}` : "",
     }),
-    // P1-MDL: model per persona — override untuk UI Settings (sumber: file JSON).
-    // P1-MDL-3: price book — indikator biaya metering (per persona/model).
+    // P1-MDL: model per persona, override untuk UI Settings (sumber: file JSON).
+    // P1-MDL-3: price book, indikator biaya metering (per persona/model).
     getModelPrices: () => loadPriceBook(modelPricesFile),
-    // Mode approval: GET/PUT (persist file — survive restart; global lintas sesi).
+    // Mode approval: GET/PUT (persist file, survive restart; global lintas sesi).
     approvalMode: () => getApprovalMode(),
     setApprovalMode: (mode: ApprovalMode) => {
       setApprovalMode(mode);
@@ -1097,7 +1096,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     getSkillBindings: () => {
       const bindings = skillBindingsFile();
       // Skill siap pakai + DRAF (feedback user: hasil latihan mandiri harus bisa
-      // diterima & dipasang langsung dari sini — jalur terima di tab Skill hanya
+      // diterima & dipasang langsung dari sini, jalur terima di tab Skill hanya
       // ada saat project aktif, jadikan mapping self-sufficient).
       const skills = [
         ...listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description, status: s.status, slug: null as string | null })),
@@ -1141,13 +1140,13 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return admission.status();
     },
     getUsageMatrix: (filter: UsageFilter = {}) => usageMatrixWithCost(usageLedger, modelPricesFile, filter),
-    /** P1-INF-4: trace per turn — event store + ledger digabung jadi timeline. */
+    /** P1-INF-4: trace per turn, event store + ledger digabung jadi timeline. */
     getTrace: (sessionId: string) => buildTrace(store, usageLedger, sessionId),
-    /** Batch 14a++: activity feed project-wide (Logs tab — semua sesi persona). */
+    /** Batch 14a++: activity feed project-wide (Logs tab, semua sesi persona). */
     getProjectActivity: (projectId: string, limit?: number) => buildProjectActivity(store, projectId, limit),
-    /** Batch 13 (P2-WKS): workshop persisten per project — manager singleton. */
+    /** Batch 13 (P2-WKS): workshop persisten per project, manager singleton. */
     workshop: workshopManager,
-    /** P2-PM-4/5: dashboard progres terukur — agregasi server (task/run/roster/
+    /** P2-PM-4/5: dashboard progres terukur, agregasi server (task/run/roster/
      *  sinyal QA+approval). null bila project tak ada. */
     getProjectDashboard: (projectId: string) => {
       const p = projectStore.getProject(projectId);
@@ -1235,7 +1234,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       if (Object.keys(toWrite).length > 0) {
         updateEnvFile(envFile, toWrite);
         loopCache.clear(); // sesi berikutnya memakai provider/model baru
-        // P1-MDL-2: smoke ulang di background — model baru gagal smoke → fallback otomatis
+        // P1-MDL-2: smoke ulang di background, model baru gagal smoke → fallback otomatis
         void runModelSmoke();
       }
       return { ok: true, note: "Sesi baru & turn berikutnya memakai config baru (loopCache dikosongkan; .env diperbarui)." };
@@ -1249,16 +1248,16 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         skills: skills.map((s) => ({ name: s.name, description: s.description, usage: readUsage(s.dir), status: s.status, personas: s.personas, eval: readEval(s.dir) })),
       };
     },
-    /** P1-DUN-3: eval buta skill `tested` (nama/slug) — fire-and-forget;
+    /** P1-DUN-3: eval buta skill `tested` (nama/slug), fire-and-forget;
      *  hasil di-polling via listSkillsWithDrafts (field `eval`). */
     evalSkill: (nameOrSlug: string) => {
       const skill = listSkills(paths.skillsDir).find((s) => s.name === nameOrSlug || path.basename(s.dir) === nameOrSlug);
       if (!skill) throw new Error(`skill aktif '${nameOrSlug}' tidak ditemukan`);
-      if (skill.status !== "tested") throw new Error(`skill '${skill.name}' berstatus ${skill.status} — hanya skill 'tested' yang bisa dieval (accept draft dulu)`);
+      if (skill.status !== "tested") throw new Error(`skill '${skill.name}' berstatus ${skill.status}, hanya skill 'tested' yang bisa dieval (accept draft dulu)`);
       const ev = readEval(skill.dir);
-      if (ev?.verdict === "pending") throw new Error("eval sedang berjalan — tunggu selesai");
+      if (ev?.verdict === "pending") throw new Error("eval sedang berjalan, tunggu selesai");
       const mission = missionForSkill(loadMissions(paths.workspacePath), skill.name);
-      if (!mission) throw new Error(`tidak ada misi dengan target skill '${skill.name}' — eval buta butuh kriteria acceptance dari misi`);
+      if (!mission) throw new Error(`tidak ada misi dengan target skill '${skill.name}', eval buta butuh kriteria acceptance dari misi`);
       void skillEvaluator.evaluate(mission, { name: skill.name, dir: skill.dir });
       return { ok: true, skill: skill.name };
     },
@@ -1270,7 +1269,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // ---- Runtime uv/uvx (server MCP Python) ----
     /** Status uvx: path yang bisa dijalankan ("uvx" bila di PATH) atau null. */
     mcpUvxCheck: async () => ({ uvxPath: await findUvx() }),
-    /** One-click install uv (installer resmi astral.sh) — dipanggil UI dengan konfirmasi. */
+    /** One-click install uv (installer resmi astral.sh), dipanggil UI dengan konfirmasi. */
     mcpInstallUv: async () => installUv(),
     // ---- Memory manager (P1-MEM-1) ----
     /** Baca dokumen memori (header dibuat bila belum ada). */
@@ -1305,7 +1304,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     // ---- roster project (P1-PRJ-3) ----
     getProjectRoster: (projectId: string) => loadRoster(projectRoot(projectId)),
-    /** P1-DUN-5: skill readiness persona di roster (assign gating) — dari
+    /** P1-DUN-5: skill readiness persona di roster (assign gating), dari
      *  inventory skill global (tested/ready = siap; draft tidak dihitung). */
     getRosterReadiness: (projectId: string) =>
       computeReadiness(
@@ -1326,7 +1325,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return loadRoster(projectRoot(projectId));
     },
     // ---- Batch 16 (Team Assembly): assign persona ke roster (merge) ----
-    /** Merge personaIds ke roster project — entry lama utuh (role custom,
+    /** Merge personaIds ke roster project, entry lama utuh (role custom,
      * phases, binding MCP). Dipakai: welcome playground, delegasi Maestro,
      * dan workflow run (assign SEMUA persona). Role default = expertise. */
     assignProjectPersonas: (projectId: string, personaIds: string[]): RosterEntryIn[] =>
@@ -1352,7 +1351,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       projectStore.addBrowserVisit({ projectId, url: page.url, title: page.title, byRole });
       return page;
     },
-    /** Policy browser project (allowlist + allowAll) — dipakai tab Browser. */
+    /** Policy browser project (allowlist + allowAll), dipakai tab Browser. */
     getBrowserPolicy: (projectId: string) => {
       if (!projectStore.getProject(projectId)) throw new Error("project tidak ditemukan");
       return readBrowserPolicy(projectRoot(projectId));

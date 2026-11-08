@@ -23,7 +23,7 @@ for (const backend of [
       const b = await backend.generate();
       const box = await backend.seal(a, b, "hello relay");
       expect(await backend.open(b, a, box)).toBe("hello relay");
-      // arah balik: B→A memakai box BARU (AAD dari|ke berbeda) — juga sah.
+      // arah balik: B→A memakai box BARU (AAD dari|ke berbeda), juga sah.
       const box2 = await backend.seal(b, a, "reply");
       expect(await backend.open(a, b, box2)).toBe("reply");
     });
@@ -37,7 +37,7 @@ for (const backend of [
       await expect(backend.open(b, c, box)).rejects.toThrow();
     });
 
-    it("sign/verify challenge — salah nonce gagal", async () => {
+    it("sign/verify challenge, salah nonce gagal", async () => {
       const k = await backend.generate();
       const sig = await backend.sign(k.signPriv, k.deviceId, "nonce-abc");
       expect(await backend.verify(k.signPub, k.deviceId, "nonce-abc", sig)).toBe(true);

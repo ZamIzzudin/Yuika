@@ -1,8 +1,8 @@
 "use client";
 // useWorkflowRun (keputusan user 2026-11-08, tahap 2): state run workflow
-// diangkat ke page — SATU COMPOSER untuk semua makna (steer saat run hidup /
+// diangkat ke page, SATU COMPOSER untuk semua makna (steer saat run hidup /
 // brief saat toggle Workflow Mode nyala / chat biasa). Bar di atas composer
-// jadi strip status murni (chip, progres, gate, pause/resume/stop) — tanpa
+// jadi strip status murni (chip, progres, gate, pause/resume/stop), tanpa
 // input. Polling 2.5s + SSE sesi lead (throttle 300ms).
 import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -43,7 +43,7 @@ const TERMINAL: RunStatus[] = ["done", "failed", "stopped"];
 
 export function useWorkflowRun(projectId: string | null) {
   const [activeRun, setActiveRun] = useState<RunSummary | null>(null);
-  /** Run terakhir (apa pun status) — umpan balik "run selesai" di bar
+  /** Run terakhir (apa pun status), umpan balik "run selesai" di bar
    *  sebelum kembali ke mode armed (chip done/stopped terlihat). */
   const [lastRun, setLastRun] = useState<RunSummary | null>(null);
   const [run, setRun] = useState<RunDetail | null>(null);
@@ -123,7 +123,7 @@ export function useWorkflowRun(projectId: string | null) {
     };
   }, [activeRun?.id, run?.leadSessionId, activeRun?.leadSessionId, loadRun, loadActive]);
 
-  /** Aksi run (gate/steer/pause/resume/stop) — dipakai bar & composer. */
+  /** Aksi run (gate/steer/pause/resume/stop), dipakai bar & composer. */
   const postAction = useCallback(
     async (path: string, body?: unknown): Promise<boolean> => {
       const id = activeRun?.id;

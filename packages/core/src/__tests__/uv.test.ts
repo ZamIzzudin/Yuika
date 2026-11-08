@@ -14,7 +14,7 @@ describe("uv/uvx (runtime Python untuk server MCP)", () => {
     }
   });
 
-  it("findUvx: string (PATH/absolut) atau null — tak melempar", async () => {
+  it("findUvx: string (PATH/absolut) atau null, tak melempar", async () => {
     invalidateUvxCache();
     const r = await findUvx();
     expect(r === null || typeof r === "string").toBe(true);

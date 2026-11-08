@@ -1,6 +1,6 @@
-// @yuika/core — Anthropic adapter (P1-INF-2): Messages API streaming via fetch SSE.
+// @yuika/core, Anthropic adapter (P1-INF-2): Messages API streaming via fetch SSE.
 // Konversi format internal (adapter.ts) → Anthropic: system terpisah, tool_use
-// blocks, tool_result sebagai user message. Tanpa SDK — fetch + SSE manual.
+// blocks, tool_result sebagai user message. Tanpa SDK, fetch + SSE manual.
 import { randomUUID } from "node:crypto";
 import { env } from "../env.js";
 import type {
@@ -187,7 +187,7 @@ export async function parseSse(
       try {
         onData(JSON.parse(payload) as Record<string, unknown>);
       } catch {
-        /* baris bukan JSON — abaikan */
+        /* baris bukan JSON, abaikan */
       }
     }
   }

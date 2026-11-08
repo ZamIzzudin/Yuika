@@ -1,5 +1,5 @@
-// Batch 7 (RS-1b) — Market: harga crypto (CoinGecko, gratis tanpa key) +
-// saham/forex (Stooq CSV — delayed). Hasil = baris harga sintetis, bukan link:
+// Batch 7 (RS-1b), Market: harga crypto (CoinGecko, gratis tanpa key) +
+// saham/forex (Stooq CSV, delayed). Hasil = baris harga sintetis, bukan link:
 // Scholar langsung dapat angka + tautan verifikasi.
 import type { SearchProvider, SearchResult } from "../types.js";
 import { httpJson, httpText } from "../util.js";
@@ -32,7 +32,7 @@ async function cryptoQuotes(query: string): Promise<SearchResult[]> {
       return {
         title: `${id.toUpperCase()}: $${p.usd!.toLocaleString("en-US")}${chg}`,
         url: `https://www.coingecko.com/en/coins/${id}`,
-        snippet: `CoinGecko spot · Rp${idrFmt.format(p.idr ?? 0)}/unit — harga live, verifikasi di halaman coin`,
+        snippet: `CoinGecko spot · Rp${idrFmt.format(p.idr ?? 0)}/unit, harga live, verifikasi di halaman coin`,
         source: "market:coingecko",
       };
     });
@@ -63,7 +63,7 @@ async function stooqQuotes(query: string): Promise<SearchResult[]> {
     out.push({
       title: `${s.toUpperCase()}: ${close.toLocaleString("en-US")} (${get("Date")} ${get("Time")})`,
       url: `https://stooq.com/q/?s=${s}`,
-      snippet: `Stooq delayed quote · Open ${get("Open")} High ${get("High")} Low ${get("Low")} — bukan realtime`,
+      snippet: `Stooq delayed quote · Open ${get("Open")} High ${get("High")} Low ${get("Low")}, bukan realtime`,
       source: "market:stooq",
     });
   }

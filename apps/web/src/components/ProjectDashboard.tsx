@@ -1,8 +1,8 @@
 "use client";
-// P2-PM-4/5 — Project dashboard: progres & health project terbaca sekali
+// P2-PM-4/5, Project dashboard: progres & health project terbaca sekali
 // lihat (target: project 100+ task tanpa scroll-cek satu-satu).
 // Server-computed via GET /api/projects/:id/dashboard; dirender di atas
-// board tab Task. Read-only — tidak ada kontrol di sini.
+// board tab Task. Read-only, tidak ada kontrol di sini.
 import { useCallback, useEffect, useState } from "react";
 import type { ProjectDashboard } from "@yuika/contracts";
 import { apiUrl, authFetch } from "@/lib/api";
@@ -47,7 +47,9 @@ function HealthChips({ d }: { d: ProjectDashboard }) {
       {d.health.pendingApprovals > 0 && (
         <Chip tone="warn">{d.health.pendingApprovals} approval on hold</Chip>
       )}
-      {d.health.qaFail > 0 && <Chip tone="danger">{d.health.qaFail} QA fail</Chip>}
+      {d.health.qaFail > 0 && (
+        <Chip tone="danger">{d.health.qaFail} QA fail</Chip>
+      )}
       {d.health.delegationErrors > 0 && (
         <Chip tone="danger">{d.health.delegationErrors} job error</Chip>
       )}
@@ -57,9 +59,7 @@ function HealthChips({ d }: { d: ProjectDashboard }) {
       {d.tasks.reopened === 0 &&
         d.health.pendingApprovals === 0 &&
         d.health.qaFail === 0 &&
-        d.health.delegationErrors === 0 && (
-          <Chip tone="ok">healthy</Chip>
-        )}
+        d.health.delegationErrors === 0 && <Chip tone="ok">healthy</Chip>}
     </div>
   );
 }
@@ -77,8 +77,11 @@ export function ProjectDashboardView({
 
   const refresh = useCallback(async () => {
     try {
-      const res = await authFetch(apiUrl(`/api/projects/${projectId}/dashboard`));
-      if (res.ok) setD(((await res.json()) as { dashboard: ProjectDashboard }).dashboard);
+      const res = await authFetch(
+        apiUrl(`/api/projects/${projectId}/dashboard`),
+      );
+      if (res.ok)
+        setD(((await res.json()) as { dashboard: ProjectDashboard }).dashboard);
     } catch {
       /* refresh berikutnya */
     }
@@ -99,8 +102,9 @@ export function ProjectDashboardView({
           <div className="flex items-baseline gap-2">
             <b className="text-body font-semibold text-primary">Progress</b>
             <span className="text-caption text-dim">
-              {d.tasks.done} done · {d.tasks.doing} doing · {d.tasks.review} review ·{" "}
-              {d.tasks.todo} todo · {d.tasks.withAcceptancePct}% with acceptance
+              {d.tasks.done} done · {d.tasks.doing} doing · {d.tasks.review}{" "}
+              review · {d.tasks.todo} todo · {d.tasks.withAcceptancePct}% with
+              acceptance
             </span>
           </div>
           <Bar done={d.tasks.done} total={d.tasks.total} />
@@ -108,7 +112,7 @@ export function ProjectDashboardView({
         <HealthChips d={d} />
       </div>
 
-      {/* P2-PM-4 — RACI ringan: kolom fase = owner + metrik live */}
+      {/* P2-PM-4, RACI ringan: kolom fase = owner + metrik live */}
       <div className="grid items-stretch gap-2 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
         {d.phases.map((p) => (
           <div
@@ -135,7 +139,11 @@ export function ProjectDashboardView({
                 p.owners.map((o) => {
                   const info = personas.find((x) => x.id === o);
                   return (
-                    <span key={o} className="flex items-center gap-1" title={info?.name ?? o}>
+                    <span
+                      key={o}
+                      className="flex items-center gap-1"
+                      title={info?.name ?? o}
+                    >
                       <PersonaFace personaId={o} size={14} />
                       <small className="text-caption text-muted">
                         {o.replace("yui-", "")}
@@ -168,18 +176,24 @@ export function ProjectDashboardView({
         ))}
       </div>
 
-      {/* P2-PM-5 — ringkasan iterasi (run ke-N + delta) */}
+      {/* P2-PM-5, ringkasan iterasi (run ke-N + delta) */}
       {d.runs.length > 0 && (
         <div className="flex flex-col gap-1">
-          <b className="text-caption font-semibold text-secondary">Iterations</b>
+          <b className="text-caption font-semibold text-secondary">
+            Iterations
+          </b>
           <div className="flex flex-col gap-1">
             {[...d.runs].reverse().map((r) => (
               <div
                 key={r.runId}
                 className="flex flex-wrap items-center gap-2 rounded-md2 border border-line px-2.5 py-1.5"
               >
-                <b className="text-caption tabular-nums text-secondary">#{r.index}</b>
-                <span className="min-w-0 flex-1 truncate text-body text-secondary">{r.name}</span>
+                <b className="text-caption tabular-nums text-secondary">
+                  #{r.index}
+                </b>
+                <span className="min-w-0 flex-1 truncate text-body text-secondary">
+                  {r.name}
+                </span>
                 <span className="text-caption tabular-nums text-dim">
                   {r.stepsDone}/{r.stepsTotal} steps
                 </span>

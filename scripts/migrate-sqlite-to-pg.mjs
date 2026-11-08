@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Yuika — P0-DATA-1: migrasi data SessionStore SQLite → Postgres.
+// Yuika, P0-DATA-1: migrasi data SessionStore SQLite → Postgres.
 // Sumber: yui.db (sessions/messages/events/events_archive/context_checkpoints/
 // delegation_jobs/approvals/approval_memory) → target Postgres (skema pg-session).
 //
@@ -10,7 +10,7 @@
 // --clear: TRUNCATE tabel target dulu; tanpa itu INSERT ... ON CONFLICT DO
 // NOTHING → aman diulang (id baris TIDAK berubah → replay SSE tetap konsisten).
 // Sequences di-setel ke MAX(id)+1 tiap tabel supaya id baru tak bertabrakan.
-// Catatan: per-baris dalam 1 transaksi per tabel — untuk data desktop (≤ ratusan
+// Catatan: per-baris dalam 1 transaksi per tabel, untuk data desktop (≤ ratusan
 // ribu events) cukup; skala server lebih besar → COPY/batch menyusul (P2).
 import { parseArgs } from "node:util";
 import { createRequire } from "node:module";
@@ -71,7 +71,7 @@ const SEQ_OF = {
 
 try {
   log(`from=${values.from} → to=${values.to}`);
-  // bootstrap skema target (idempotent — satu sumber DDL dengan driver runtime)
+  // bootstrap skema target (idempotent, satu sumber DDL dengan driver runtime)
   const boot = new PgSessionStore(values.to);
   await boot.migrate();
   await boot.close();
@@ -88,7 +88,7 @@ try {
     await dst.unsafe(`SELECT setval('${seq}', COALESCE((SELECT MAX(${col}) FROM ${table}), 0)::bigint + 1, false)`);
   }
   log("sequences disesuaikan ke MAX(id)+1");
-  log(`SELESAI — jalankan api: YUI_DB_DRIVER=postgres DATABASE_URL=${values.to}`);
+  log(`SELESAI, jalankan api: YUI_DB_DRIVER=postgres DATABASE_URL=${values.to}`);
 } finally {
   src.close();
   await dst.end({ timeout: 3 });

@@ -41,13 +41,13 @@ describe("FileRevisionStore + write_file (P2-STU-3)", () => {
     const ctx = { sessionId: "s", turnId: "t", workspacePath: dir, emit: () => {}, requestApproval: async () => true };
     await registry.dispatch("write_file", { path: "code/a.md", content: "v1" }, ctx);
     expect(store.listRevisions(path.join(dir, "code", "a.md"))).toHaveLength(0); // file baru
-    await registry.dispatch("write_file", { path: "code/a.md", content: "v2 — berubah" }, ctx);
+    await registry.dispatch("write_file", { path: "code/a.md", content: "v2, berubah" }, ctx);
     await registry.dispatch("write_file", { path: "code/a.md", content: "v3" }, ctx);
     const revs = store.listRevisions(path.join(dir, "code", "a.md"));
     expect(revs).toHaveLength(2);
     expect(revs[0]!.rev).toBeGreaterThan(revs[1]!.rev); // terbaru dulu
     expect(store.getRevision(path.join(dir, "code", "a.md"), revs[1]!.rev)).toBe("v1");
-    expect(store.getRevision(path.join(dir, "code", "a.md"), revs[0]!.rev)).toBe("v2 — berubah");
+    expect(store.getRevision(path.join(dir, "code", "a.md"), revs[0]!.rev)).toBe("v2, berubah");
     store.close();
   });
 

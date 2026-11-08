@@ -1,7 +1,7 @@
-// P1-PRT-3 — host worker portal: dispatch RemoteAction → runtime (fake) dan
+// P1-PRT-3, host worker portal: dispatch RemoteAction → runtime (fake) dan
 // proyeksi YuiEvent → RemoteEvent (seq + ring resume), lewat SpecRelay nyata
 // + koneksi SDK nyata (sama seperti produksi, runtime saja dipalsukan).
-// SCR-7: bridge screen JUGA dipalsukan (vi.mock) — stream frame sintetis.
+// SCR-7: bridge screen JUGA dipalsukan (vi.mock), stream frame sintetis.
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
@@ -186,7 +186,7 @@ describe("portal host worker", () => {
     events.length = 0;
     await remote.sendAction({ proto: 1, act: "subscribe", rid: "r-2", sessions: [sid], sinceSeq: { [sid]: 1 } });
     await waitUntil(() => events.some((e) => e.ev === "message.done"));
-    // replay: hanya seq 2 (done) — seq 1 (delta) sudah diterima remote
+    // replay: hanya seq 2 (done), seq 1 (delta) sudah diterima remote
     expect(events.filter((e) => e.ev === "message.delta")).toHaveLength(0);
     expect(events.some((e) => e.ev === "message.done" && e.seq === 2)).toBe(true);
     // snapshot ikut terkirim (render cepat)
@@ -209,7 +209,7 @@ describe("portal host worker", () => {
   });
 });
 
-describe("portal host worker — SCR-7 screen watch", () => {
+describe("portal host worker, SCR-7 screen watch", () => {
   const KEY = "p_scr7/yui-coder";
 
   beforeAll(() => {
@@ -228,7 +228,7 @@ describe("portal host worker — SCR-7 screen watch", () => {
     await waitUntil(() => events.some((e) => e.ev === "screen.frame" && e.data === "AAAA"), 3_000);
     h.onFrame(scr.frame(KEY, "BBBB"));
     await waitUntil(() => events.some((e) => e.ev === "screen.frame" && e.data === "BBBB"), 3_000);
-    h.onFrame(scr.frame(KEY, "BBBB")); // identik — tak boleh dobel
+    h.onFrame(scr.frame(KEY, "BBBB")); // identik, tak boleh dobel
     await new Promise((r) => setTimeout(r, 1_400)); // > 1 pump
     const frames = events.filter((e) => e.ev === "screen.frame") as unknown as { data: string }[];
     expect(frames.filter((f) => f.data === "AAAA").length).toBe(1);

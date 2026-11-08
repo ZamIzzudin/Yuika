@@ -1,4 +1,4 @@
-// P1-MEM-6: memory per-domain persona — file terpisah per domain (lintas
+// P1-MEM-6: memory per-domain persona, file terpisah per domain (lintas
 // project, milik persona), di-inject ke system prompt saat sesi DIBUAT
 // (frozen), tool memory_append scope "domain" menulis ke file domain
 // persona PEMANGGIL (bukan sembarang domain).

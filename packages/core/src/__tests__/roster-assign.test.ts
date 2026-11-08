@@ -1,6 +1,6 @@
-// Batch 16 (Team Assembly) — assign roster otomatis:
+// Batch 16 (Team Assembly), assign roster otomatis:
 //  · workflow run start → ensureFullRoster(projectId) dipanggil (semua persona
-//    masuk roster, merge — entry custom utuh)
+//    masuk roster, merge, entry custom utuh)
 //  · delegasi (runChildPersona) → onChildSpawn(personaId, projectId) dipanggil
 //    (runtime memakai ini untuk merge-assign anak ke roster)
 //  · sesi project dengan persona yang TIDAK di-roster → runtime menolak
@@ -38,7 +38,7 @@ function makeStores() {
   return { dir, projects, store };
 }
 
-describe("Batch 16 — Team Assembly (roster assign)", () => {
+describe("Batch 16, Team Assembly (roster assign)", () => {
   it("workflow engine.start → ensureFullRoster dipanggil dengan projectId", async () => {
     const { dir: dirRef, projects, store } = makeStores();
     try {
@@ -58,7 +58,7 @@ describe("Batch 16 — Team Assembly (roster assign)", () => {
       try {
         engine.startRun({ projectId: "p_w", brief: "demo", workflow: loadWorkflowYaml(SEVEN_PHASE_TEMPLATE_YAML) });
       } catch {
-        /* run boleh gagal/gated — panggilan roster tetap wajib terjadi */
+        /* run boleh gagal/gated, panggilan roster tetap wajib terjadi */
       }
       expect(ensure).toHaveBeenCalledTimes(1);
       expect(ensure).toHaveBeenCalledWith("p_w");

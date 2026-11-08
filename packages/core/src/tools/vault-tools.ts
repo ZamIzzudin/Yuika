@@ -1,10 +1,10 @@
-// @yuika/core — vault tools (Batch 12 / P2-VLT-2..3, D27).
+// @yuika/core, vault tools (Batch 12 / P2-VLT-2..3, D27).
 // INVARIAN KEAMANAN: nilai rahasia TIDAK PERNAH muncul di hasil tool (yang
-// dibaca model) maupun event/trace — tool mengembalikan metadata saja.
+// dibaca model) maupun event/trace, tool mengembalikan metadata saja.
 //   vault_list     → metadata yang terlihat persona/project ini
 //   vault_request  → kartu protected (user mengisi via UI; nilai masuk lewat
 //                    REST fill, bukan lewat chat/model)
-//   vault_forget   → hapus (butuh approval — tindakan destruktif)
+//   vault_forget   → hapus (butuh approval, tindakan destruktif)
 //   secret_http    → request ter-auth: nilai disuntik backend sbg header,
 //                    origin-bound (redirect DITOLAK), response di-redact
 import { z } from "zod";
@@ -30,7 +30,7 @@ const forgetSchema = z.object({ name: z.string().regex(NAME_RE) });
 const secretHttpSchema = z.object({
   url: z.string().url(),
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]).default("GET"),
-  /** Rahasia vault utk auth — disuntik backend, TIDAK ditulis agent. */
+  /** Rahasia vault utk auth, disuntik backend, TIDAK ditulis agent. */
   auth: z.object({
     name: z.string().regex(NAME_RE),
     via: z.enum(["bearer", "x-api-key", "header"]).default("bearer"),
@@ -72,14 +72,14 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
           return m.projectId === viewer.projectId;
         })
         .map((m) => ({ name: m.name, kind: m.kind, scope: m.scope, runOnly: m.runOnly, updatedAt: m.updatedAt }));
-      return { result: { secrets, note: "values are never returned — reference by name" } };
+      return { result: { secrets, note: "values are never returned, reference by name" } };
     },
   });
 
   registry.register({
     name: "vault_request",
     description:
-      "Ask the user to provide a credential (API key/token). Shows a protected card; the user fills the value in the UI — it never passes through this chat. kind: `api_key` (for secret_http) or `command` (for env vars in run_command). If the name already exists the user is not asked again. The user may Skip (then fall back to asking them to run the step manually).",
+      "Ask the user to provide a credential (API key/token). Shows a protected card; the user fills the value in the UI, it never passes through this chat. kind: `api_key` (for secret_http) or `command` (for env vars in run_command). If the name already exists the user is not asked again. The user may Skip (then fall back to asking them to run the step manually).",
     parameters: requestSchema,
     handler: async (args, ctx) => {
       const v = vault();
@@ -104,7 +104,7 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
         return { result: { name: out.name, kind: args.kind, hasValue: true, saved: out.saved, note: out.saved ? "stored encrypted in the vault" : "run-only (deleted when this turn ends)" } };
       }
       return {
-        result: { error: "not_provided", status: out.status, message: `user ${out.status} the credential request — fall back to manual steps` },
+        result: { error: "not_provided", status: out.status, message: `user ${out.status} the credential request, fall back to manual steps` },
         isError: true,
       };
     },
@@ -112,7 +112,7 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
 
   registry.register({
     name: "vault_forget",
-    description: "Delete a credential from the vault by name (destructive — needs user approval).",
+    description: "Delete a credential from the vault by name (destructive, needs user approval).",
     parameters: forgetSchema,
     handler: async (args, ctx) => {
       const ok = vault().forget(args.name);
@@ -127,7 +127,7 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
   registry.register({
     name: "secret_http",
     description:
-      "Authenticated HTTP request with a vault credential: the value is injected backend-side as a header (bearer / x-api-key / custom header) — it never appears in this conversation. Origin-bound: redirects are refused, HTTPS required (localhost http allowed for dev). Response is redacted and capped (default 8000 chars).",
+      "Authenticated HTTP request with a vault credential: the value is injected backend-side as a header (bearer / x-api-key / custom header), it never appears in this conversation. Origin-bound: redirects are refused, HTTPS required (localhost http allowed for dev). Response is redacted and capped (default 8000 chars).",
     parameters: secretHttpSchema,
     handler: async (args, ctx) => {
       const v = vault();
@@ -140,7 +140,7 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
       const secret = v.resolveForUse(args.auth.name, { personaId: ctx.personaId, projectId: ctx.projectId });
       if (!secret) {
         return {
-          result: { error: "not_found", message: `no vault credential "${args.auth.name}" visible here — call vault_request first` },
+          result: { error: "not_found", message: `no vault credential "${args.auth.name}" visible here, call vault_request first` },
           isError: true,
         };
       }
@@ -162,7 +162,7 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
         });
         if (res.status >= 300 && res.status < 400) {
           return {
-            result: { error: "redirect_refused", message: `redirect to ${res.headers.get("location") ?? "?"} refused — credentials are origin-bound; call the target origin separately if safe` },
+            result: { error: "redirect_refused", message: `redirect to ${res.headers.get("location") ?? "?"} refused, credentials are origin-bound; call the target origin separately if safe` },
             isError: true,
           };
         }
@@ -172,7 +172,7 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
         }
         const ctype = res.headers.get("content-type") ?? "";
         const raw = new TextDecoder().decode(buf);
-        // P2-VLT-5: redaksi ganda — nilai aktif (vault) lalu pola bentuk-baku.
+        // P2-VLT-5: redaksi ganda, nilai aktif (vault) lalu pola bentuk-baku.
         const body = redactSecrets(redactActive(raw)).slice(0, args.maxChars);
         ctx.emit({ type: "vault.used", name: args.auth.name, kind: "api_key", channel: "http", target: url.origin });
         return {

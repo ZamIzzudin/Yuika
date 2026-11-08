@@ -1,4 +1,4 @@
-// CP-3 SSO via portal — e2e browser penuh (double portal :3110):
+// CP-3 SSO via portal, e2e browser penuh (double portal :3110):
 // mode terbuka → pill "Sign in" → portal /authorize (auto-accept) → balik
 // /auth/callback?code&state → sesi Yuika → badge email → sign out → gerbang
 // portal-only. afterAll wipe users → spec lain tetap mode terbuka.
@@ -6,7 +6,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 
 const API = "http://127.0.0.1:3291";
 
-test("SSO — pill sign-in → authorize (auto-accept) → callback → login → sign out → gerbang portal-only", async ({
+test("SSO, pill sign-in → authorize (auto-accept) → callback → login → sign out → gerbang portal-only", async ({
   page,
 }) => {
   test.setTimeout(90_000);
@@ -76,7 +76,7 @@ test("SSO — pill sign-in → authorize (auto-accept) → callback → login �
 });
 
 test.afterAll(async ({ request }: { request: APIRequestContext }) => {
-  // kembali ke mode terbuka (users kosong) — spec berikutnya tak terganggu.
+  // kembali ke mode terbuka (users kosong), spec berikutnya tak terganggu.
   const mod = (await import("better-sqlite3")) as unknown as {
     default: typeof import("better-sqlite3").default;
   };

@@ -1,9 +1,9 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
 /**
- * TracePanel (P1-INF-4) — observability per turn: timeline langkah (model call,
+ * TracePanel (P1-INF-4), observability per turn: timeline langkah (model call,
  * tool, delegasi, approval, error) + token per turn dari ledger. Realtime via
- * prop `live` (SSE) — debounce 400ms. DS-1: ui/* + Tailwind + Phosphor.
+ * prop `live` (SSE), debounce 400ms. DS-1: ui/* + Tailwind + Phosphor.
  */
 import { useCallback, useEffect, useState } from "react";
 import type { SessionTrace } from "@yuika/contracts";
@@ -65,7 +65,7 @@ export function TracePanel({
   onBack,
 }: {
   sessionId: string | null;
-  /** Naik tiap event SSE baru (realtime) — refetch debounce, bukan polling buta. */
+  /** Naik tiap event SSE baru (realtime), refetch debounce, bukan polling buta. */
   live?: number;
   onBack: () => void;
 }) {
@@ -80,7 +80,7 @@ export function TracePanel({
         setTrace(await r.json());
         setMissing(false);
       } else if (r.status === 404) {
-        setMissing(true); // sesi terhapus (mis. hapus project) — jangan skeleton selamanya
+        setMissing(true); // sesi terhapus (mis. hapus project), jangan skeleton selamanya
       }
     } catch {
       /* coba lagi di tick berikutnya */
@@ -91,10 +91,10 @@ export function TracePanel({
     void load();
   }, [load]);
 
-  // Fix dev-10: REALTIME via SSE (prop `live` naik per event) — debounce 400ms
+  // Fix dev-10: REALTIME via SSE (prop `live` naik per event), debounce 400ms
   // supaya burst delta tidak menghujani endpoint; menggantikan polling 3 dtk.
   useEffect(() => {
-    if (!live) return; // 0 saat mount — initial load sudah dilakukan di atas
+    if (!live) return; // 0 saat mount, initial load sudah dilakukan di atas
     const t = setTimeout(() => void load(), 400);
     return () => clearTimeout(t);
   }, [live, load]);
@@ -113,7 +113,7 @@ export function TracePanel({
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-3">
       {sessionId === null ? (
         <p className={`${hint} flex items-center justify-center`}>
-          No active conversation yet — open or start a chat session first, then
+          No active conversation yet, open or start a chat session first, then
           come back here to see its step-by-step trace.
         </p>
       ) : missing ? (

@@ -1,4 +1,4 @@
-// Verifikasi menu Persona → CharacterStage (character-select screen) — manual:
+// Verifikasi menu Persona → CharacterStage (character-select screen), manual:
 //   npx playwright test e2e/persona-studio.spec.ts
 // Stack sama seperti smoke (mock :3299 · api :3291 · web :3990).
 import { expect, test } from "@playwright/test";
@@ -37,7 +37,7 @@ test("CharacterStage: constellation stage, carousel, gallery, shape, skills, mis
   await page.locator('[data-shape-tile="cloud"]').click();
   expect(await putDone, "PUT /api/personas/shapes harus 200").not.toBeNull();
   await expect(page.locator('[data-shape-tile="cloud"]')).toHaveAttribute("aria-pressed", "true");
-  await page.locator('[data-shape-tile="orb"]').click(); // kembali default — idempoten
+  await page.locator('[data-shape-tile="orb"]').click(); // kembali default, idempoten
   await page.waitForTimeout(250);
 
   // 5) Skill loadout (TANPA batas jumlah): hover → tooltip popup; klik tile

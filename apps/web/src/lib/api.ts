@@ -1,10 +1,10 @@
-// P0-INF-1: API hidup di proses TERPISAH (apps/api, Fastify — default
+// P0-INF-1: API hidup di proses TERPISAH (apps/api, Fastify, default
 // http://127.0.0.1:3211). Frontend tidak lagi fetch same-origin ke Next.
 // Override via NEXT_PUBLIC_API_BASE (build-time; prod di balik reverse proxy
 // bisa set "" untuk same-origin). Semua komponen WAJIB lewat apiUrl().
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:3211";
 
-/** `/api/x` → `${API_BASE}/api/x` (path tidak berubah — hanya base URL). */
+/** `/api/x` → `${API_BASE}/api/x` (path tidak berubah, hanya base URL). */
 export function apiUrl(path: string): string {
   return `${API_BASE}${path}`;
 }
@@ -16,7 +16,7 @@ export function setAuthToken(token: string): void {
   try {
     localStorage.setItem(TOKEN_KEY, token);
   } catch {
-    /* SSR / storage disable — abaikan */
+    /* SSR / storage disable, abaikan */
   }
 }
 
@@ -45,7 +45,7 @@ export function authFetch(input: string, init?: RequestInit): Promise<Response> 
   return fetch(input, { ...init, headers });
 }
 
-/** Token untuk URL (EventSource tak bisa set header — SSE pakai ?auth_token=). */
+/** Token untuk URL (EventSource tak bisa set header, SSE pakai ?auth_token=). */
 export function authTokenQuery(): string {
   const t = getAuthToken();
   return t ? `&auth_token=${encodeURIComponent(t)}` : "";

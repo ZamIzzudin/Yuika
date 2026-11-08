@@ -1,5 +1,5 @@
-// @yuika/core — path resolution (repo root dicari dengan berjalan naik sampai
-// turbo.json — tahan terhadap cwd Next.js/vitest/berbagai entrypoint).
+// @yuika/core, path resolution (repo root dicari dengan berjalan naik sampai
+// turbo.json, tahan terhadap cwd Next.js/vitest/berbagai entrypoint).
 import fs from "node:fs";
 import path from "node:path";
 

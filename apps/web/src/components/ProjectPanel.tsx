@@ -1,9 +1,9 @@
 "use client";
-// Panel Proyek (sidebar) — Batch 16: HANYA daftar + hapus. Membuat project
+// Panel Proyek (sidebar), Batch 16: HANYA daftar + hapus. Membuat project
 // pindah ke halaman HOME (kartu "New project" + form modal); workspace/
-// freespace dihapus total — semua sesi hidup di dalam project.
+// freespace dihapus total, semua sesi hidup di dalam project.
 // v0 (P1-PRJ-6): pilih · P1-PRJ-8: hapus project + artefak terkait
-// (sesi, file, memory project) — skill persona & metering DIPERTAHANKAN.
+// (sesi, file, memory project), skill persona & metering DIPERTAHANKAN.
 import { useState } from "react";
 import { DeleteProjectResult, type ProjectInfo } from "@yuika/contracts";
 import { Trash } from "@phosphor-icons/react";
@@ -46,9 +46,9 @@ export function ProjectPanel({
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
       setConfirmP(null);
       toastOk(
-        `“${p.name}” deleted — ${body.deleted.sessions} sessions, ${body.deleted.tasks} tasks cleaned up. Persona skills & metering are kept.`,
+        `“${p.name}” deleted, ${body.deleted.sessions} sessions, ${body.deleted.tasks} tasks cleaned up. Persona skills & metering are kept.`,
       );
-      // Project SUDAH terhapus server-side — kalau server API versi lama
+      // Project SUDAH terhapus server-side, kalau server API versi lama
       // belum mengirim field aditif (mis. deleted.workshop), jangan gagalkan
       // refresh UI hanya karena schema client lebih baru: pakai body apa adanya.
       const parsed = DeleteProjectResult.safeParse(body);

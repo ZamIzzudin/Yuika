@@ -1,13 +1,13 @@
-// @yuika/core — P2-STU-2: TerminalManager.
+// @yuika/core, P2-STU-2: TerminalManager.
 // Sesi terminal PERSISTEN yang SHARED antara user (tab Terminal via SSE) dan
-// agent (tool `terminal`). Satu sesi per workspace — keduanya menulis ke
+// agent (tool `terminal`). Satu sesi per workspace, keduanya menulis ke
 // stdin proses yang sama, output mengalir ke semua pendengar.
 //
 // Backend sesi (mode, urutan):
-//   docker  — `startSandboxSession("sh")`: shell DI DALAM container sandbox
-//             (egress allowlist utk npm — generalisasi run_command, P1-MCP-4).
-//   local   — fallback: shell host via pipes (cmd.exe / bin/sh) TANPA isolasi
-//             (catatan eksplisit; PTY asli menyusul — v1 pipe murni).
+//   docker , `startSandboxSession("sh")`: shell DI DALAM container sandbox
+//             (egress allowlist utk npm, generalisasi run_command, P1-MCP-4).
+//   local  , fallback: shell host via pipes (cmd.exe / bin/sh) TANPA isolasi
+//             (catatan eksplisit; PTY asli menyusul, v1 pipe murni).
 // Env:
 //   YUI_TERMINAL_MODE = auto (default: docker bila tersedia) | docker | local
 //   YUI_TERMINAL_CMD  = override perintah shell utk pengujian, mis.
@@ -49,7 +49,7 @@ let seq = 0;
 const sessions = new Map<string, Session>();
 
 // ── FLOW user 2026-11 (#7): log eksekusi run_command per workspace ──────────
-// run_command (node/npm/npx) TIDAK lewat sesi shell — output-nya hilang dari
+// run_command (node/npm/npx) TIDAK lewat sesi shell, output-nya hilang dari
 // tab Terminal. Log ini = sumber view "Commands" di panel terminal (browser
 // tab): setiap eksekusi tercatat (perintah, exit code, output tail).
 export interface CommandLogEntry {
@@ -68,12 +68,12 @@ let cmdSeq = 0;
 
 /** Catat eksekusi perintah (dipanggil tool run_command SETELAH eksekusi;
  *  stdout/stderr sudah di-redact oleh pemanggil).
- *  Batch 13b: persist ring ke JSONL per workspace (dir data terminal) —
+ *  Batch 13b: persist ring ke JSONL per workspace (dir data terminal),
  *  restart API tidak lagi mengosongkan view "Commands". */
 const commandLogFiles = new Map<string, string>();
 
 function logDir(): string {
-  // lazy (bukan module-const): env dibaca saat pemakaian — test/boot bisa
+  // lazy (bukan module-const): env dibaca saat pemakaian, test/boot bisa
   // men-setel YUI_TERMINAL_LOG_DIR kapan pun.
   return process.env.YUI_TERMINAL_LOG_DIR
     ? path.resolve(process.env.YUI_TERMINAL_LOG_DIR)
@@ -171,7 +171,7 @@ function fireExit(s: Session, code: number | null): void {
   for (const cb of s.exitCbs) cb(code);
 }
 
-/** Mulai (atau ambil) sesi terminal utk sebuah workspace — satu sesi aktif per
+/** Mulai (atau ambil) sesi terminal utk sebuah workspace, satu sesi aktif per
  * workspace (user & agent selalu bertemu di sesi yang sama). */
 export interface EnsureSessionOptions {
   /** Batch 13 (WKS-3): container workshop hidup → shell di dalamnya. */
@@ -205,9 +205,9 @@ export async function ensureSession(
   sessions.set(s.info.id, s);
 
   if (useDocker && opts.workshopContainer) {
-    // WKS-3: shell DI DALAM container workshop — env egress melekat di container
+    // WKS-3: shell DI DALAM container workshop, env egress melekat di container
     // (dibuat saat start workshop), stdin/stdout pipe murni (tanpa -t).
-    // cwd = /home/node/project (bind workspace — SAMA dunia dengan Files).
+    // cwd = /home/node/project (bind workspace, SAMA dunia dengan Files).
     const child = spawn("docker", ["exec", "-i", "-w", "/home/node/project", opts.workshopContainer, "sh"], { windowsHide: true });
     s.proc = child;
     child.stdout?.on("data", (d: Buffer) => push(s, d.toString("utf8")));
@@ -295,7 +295,7 @@ export async function closeAll(): Promise<void> {
 
 /** D31 (fix user "delete project → container tak ikut terhapus"): matikan
  * SEMUA sesi terminal yang workspace-nya berada di bawah `rootPath`.
- * Dipanggil runtime.deleteProject SEBELUM dir workspace di-rm — tanpa ini
+ * Dipanggil runtime.deleteProject SEBELUM dir workspace di-rm, tanpa ini
  * container sandbox `yui-ses-*` (backend docker) tetap hidup di host setelah
  * project dihapus, dan di Windows sesi local yang memegang cwd membuat
  * rmSync gagal EPERM. Return jumlah sesi yang dimatikan. */

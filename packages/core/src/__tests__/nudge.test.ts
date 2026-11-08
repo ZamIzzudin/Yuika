@@ -1,4 +1,4 @@
-// P1-MEM-2: learn nudge — aux call pasca-turn memutuskan 0/1 catatan.
+// P1-MEM-2: learn nudge, aux call pasca-turn memutuskan 0/1 catatan.
 // Provider palsu mengembalikan JSON; verifikasi: note → memory_append + event
 // memory.noted; none → tak ada tulisan; JSON rusak → skip aman; YUI_LEARN=0 → off.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";

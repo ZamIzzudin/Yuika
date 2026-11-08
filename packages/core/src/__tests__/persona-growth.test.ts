@@ -1,4 +1,4 @@
-// P1-PER-4: growth persona — level & statistik DIKURASI dari data nyata
+// P1-PER-4: growth persona, level & statistik DIKURASI dari data nyata
 // (sessions / events persona.state done / project_tasks done). Tidak ada
 // jalur menaikkan level selain benar-benar bekerja.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -62,7 +62,7 @@ describe("buildPersonaGrowth (P1-PER-4)", () => {
     expect(g.get("yui-scholar")!.sessions).toBe(1);
   });
 
-  it("hanya turn DONE yang dihitung — state running/cancelled tidak menaikkan", () => {
+  it("hanya turn DONE yang dihitung, state running/cancelled tidak menaikkan", () => {
     store.createSession("s_x", "yui-scribe", "SYS", []);
     for (const state of ["thinking", "working", "awaiting_input", "done", "error", "celebrating", "idle"]) {
       store.appendEvent("s_x", { type: "persona.state", personaId: "yui-scribe", state } as unknown as EventDraft);

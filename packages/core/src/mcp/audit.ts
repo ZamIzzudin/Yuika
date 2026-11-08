@@ -1,5 +1,5 @@
-// @yuika/core — MCP audit log (P1-MCP-3): setiap panggilan tool MCP dicatat
-// append-only (siapa/sesi, server, tool, hasil, durasi) — bahan trust analytics.
+// @yuika/core, MCP audit log (P1-MCP-3): setiap panggilan tool MCP dicatat
+// append-only (siapa/sesi, server, tool, hasil, durasi), bahan trust analytics.
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";

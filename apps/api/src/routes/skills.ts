@@ -1,4 +1,4 @@
-// @yuika/api — skills: draf/accept/reject + bindings (Dungeon) + eval buta.
+// @yuika/api, skills: draf/accept/reject + bindings (Dungeon) + eval buta.
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { YuiRuntime } from "@yuika/core";
@@ -11,10 +11,10 @@ const BindingUpdate = z.object({
 });
 
 export function registerSkillRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
-  /** GET /api/skills — draf (perlu validasi) + skill siap pakai. */
+  /** GET /api/skills, draf (perlu validasi) + skill siap pakai. */
   app.get("/api/skills", async () => getRt().listSkillsWithDrafts());
 
-  /** PUT /api/skills — edit draf (validasi user sebelum terima). */
+  /** PUT /api/skills, edit draf (validasi user sebelum terima). */
   app.put("/api/skills", async (req, reply) => {
     const body = DraftUpdate.parse(req.body);
     try {
@@ -25,7 +25,7 @@ export function registerSkillRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     }
   });
 
-  /** POST /api/skills — terima draf ({slug}) → lint + pindah ke skill aktif. */
+  /** POST /api/skills, terima draf ({slug}) → lint + pindah ke skill aktif. */
   app.post("/api/skills", async (req, reply) => {
     const { slug } = req.body as { slug: string };
     try {
@@ -35,7 +35,7 @@ export function registerSkillRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     }
   });
 
-  /** DELETE /api/skills?slug= — tolak draf (hapus). */
+  /** DELETE /api/skills?slug=, tolak draf (hapus). */
   app.delete("/api/skills", async (req, reply) => {
     const slug = (req.query as Record<string, string | undefined>).slug ?? "";
     try {
@@ -46,10 +46,10 @@ export function registerSkillRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     }
   });
 
-  /** GET — payload mapping skill↔persona (menu Dungeon tab "Mapping Skill"). */
+  /** GET, payload mapping skill↔persona (menu Dungeon tab "Mapping Skill"). */
   app.get("/api/skills/bindings", async () => getRt().getSkillBindings());
 
-  /** PUT — toggle satu skill untuk satu persona (persist skill-bindings.json). */
+  /** PUT, toggle satu skill untuk satu persona (persist skill-bindings.json). */
   app.put("/api/skills/bindings", async (req, reply) => {
     const parsed = BindingUpdate.safeParse(req.body);
     if (!parsed.success) {
@@ -63,7 +63,7 @@ export function registerSkillRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     }
   });
 
-  /** POST /api/skills/eval — P1-DUN-3: eval buta skill `tested` → lulus = ready.
+  /** POST /api/skills/eval, P1-DUN-3: eval buta skill `tested` → lulus = ready.
    *  Async (sesi hakim jalan di background); hasil di-polling field `eval`. */
   app.post("/api/skills/eval", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.body);

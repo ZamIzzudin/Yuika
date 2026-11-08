@@ -1,9 +1,9 @@
-// @yuika/core — P2-SCR-1 (Batch 14a): CDP client raw via global WebSocket
-// (Node 22+; dibuktikan probe SCR-0 di Windows+Edge). NOL dependensi baru —
+// @yuika/core, P2-SCR-1 (Batch 14a): CDP client raw via global WebSocket
+// (Node 22+; dibuktikan probe SCR-0 di Windows+Edge). NOL dependensi baru,
 // tanpa playwright/puppeteer. Flat protocol: pesan ke page target membawa
 // atribut `sessionId` langsung.
 //
-// Envelope: { id?, method, params, sessionId? } — balasan { id, result? , error? },
+// Envelope: { id?, method, params, sessionId? }, balasan { id, result? , error? },
 // event { method, params, sessionId? }.
 import { moduleLogger } from "../logger.js";
 
@@ -28,7 +28,7 @@ export class CdpConnection {
   private ws: WebSocket;
   private nextId = 0;
   private pending = new Map<number, Pending>();
-  /** event listener per (method, sessionId?) — wildcard sessionId=undefined = browser-level. */
+  /** event listener per (method, sessionId?), wildcard sessionId=undefined = browser-level. */
   private listeners = new Map<string, Set<(params: unknown, sessionId?: string) => void>>();
 
   constructor(wsUrl: string) {
@@ -64,7 +64,7 @@ export class CdpConnection {
     try {
       m = JSON.parse(String(ev.data));
     } catch {
-      return; // frame non-JSON tak diharapkan — abaikan
+      return; // frame non-JSON tak diharapkan, abaikan
     }
     if (typeof m.id === "number" && this.pending.has(m.id)) {
       const p = this.pending.get(m.id)!;
@@ -118,7 +118,7 @@ export class CdpConnection {
   }
 }
 
-/** Sesi page (flat protocol) — call + event terikat satu tab. */
+/** Sesi page (flat protocol), call + event terikat satu tab. */
 export class CdpPage {
   constructor(
     private conn: CdpConnection,

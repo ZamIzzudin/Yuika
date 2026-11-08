@@ -1,9 +1,9 @@
-// @yuika/core — konfigurasi terpusat & tervalidasi (P0-INF-2).
+// @yuika/core, konfigurasi terpusat & tervalidasi (P0-INF-2).
 // SEMUA env numerik/boolean YUI_* diparse DI SATU TEMPAT dengan zod:
 // nilai rusak (mis. YUI_MAX_ITER="abc") → FAIL-FAST saat modul ini pertama
 // diakses, bukan jadi NaN yang bocor ke runtime (dulu: Number(env) diam-diam
 // menghasilkan NaN → loop 0 iterasi / timeout 0). String (key/model/URL)
-// dibiarkan string — validasi bentuknya di masing-masing konsumen.
+// dibiarkan string, validasi bentuknya di masing-masing konsumen.
 import { z } from "zod";
 
 const int = (def: number, min: number, max: number) =>
@@ -15,14 +15,14 @@ const int = (def: number, min: number, max: number) =>
 const schema = z.object({
   /** Budget iterasi tool-round per turn. */
   maxIter: int(16, 1, 128),
-  /** Cap iterasi saat mode hardcore/auto-approve — selesaikan sampai tuntas. */
+  /** Cap iterasi saat mode hardcore/auto-approve, selesaikan sampai tuntas. */
   maxIterHardcore: int(64, 1, 1024),
   /** Deadline approval (ms); 0 = tanpa timeout. */
   approvalTimeoutMs: int(300_000, 0, 86_400_000),
-  /** Timeout provider (ms) — default 5 mnt: model reasoning + context MCP besar
+  /** Timeout provider (ms), default 5 mnt: model reasoning + context MCP besar
    *  bisa >120 dtk sampai token pertama (fix "Socket timeout" 2026-11). */
   providerTimeoutMs: int(300_000, 1_000, 600_000),
-  /** Estimasi jendela konteks model (token) — acuan kompresi (P0-CORE-4). */
+  /** Estimasi jendela konteks model (token), acuan kompresi (P0-CORE-4). */
   contextTokens: int(128_000, 4_000, 2_000_000),
   /** Kompresi: fraksi jendela pemicu ×1000 (700 = 70%). */
   compressThresholdPct: int(700, 10, 1000),
@@ -40,26 +40,26 @@ const schema = z.object({
     .optional(),
   /** Learn nudge pasca-turn (0 = matikan). */
   learn: z.preprocess((v) => v !== "0", z.boolean()),
-  /** P0-DATA-2: retensi events (hari) — lebih tua dari ini diarsipkan ke
+  /** P0-DATA-2: retensi events (hari), lebih tua dari ini diarsipkan ke
    *  events_archive (tabel aktif tetap ramping; bacaan UNION agar replay
    *  tetap utuh). 0 = housekeeping mati. */
   eventsRetentionDays: int(30, 0, 3650),
-  /** P0-SEC-1: mode eksekusi `node` via run_command — auto (docker bila ada,
+  /** P0-SEC-1: mode eksekusi `node` via run_command, auto (docker bila ada,
    * fallback lokal), docker (fail-closed), off (selalu lokal). Dibaca ulang
-   * per pemanggilan tool (hot-reload test) — validasi di sini = fail-fast boot. */
+   * per pemanggilan tool (hot-reload test), validasi di sini = fail-fast boot. */
   sandbox: z.enum(["auto", "docker", "off"]).default("auto"),
-  /** Image container sandbox (default node:24-bookworm-slim — basis sama dengan
+  /** Image container sandbox (default node:24-bookworm-slim, basis sama dengan
    *  Dockerfile repo, biasanya sudah ter-pull). */
   sandboxImage: z.string().min(1).optional(),
   /** Log manusia-vs-mesin: 1 (default) = baris pretty `YUI HH:MM:SS [mod] msg k=v`
-   *  di stdout — struktur stabil untuk find/tracing manual; 0 = JSON-lines asli
+   *  di stdout, struktur stabil untuk find/tracing manual; 0 = JSON-lines asli
    *  pino (dipakai docker-compose: agregator log grep per field). */
   logPretty: z.preprocess((v) => v !== "0" && v !== "false", z.boolean()),
-  /** P0-DATA-1: driver penyimpanan sesi — sqlite (default; embedded, desktop/
+  /** P0-DATA-1: driver penyimpanan sesi, sqlite (default; embedded, desktop/
    *  dev) atau postgres (server: multi-worker, skala besar). Lain-lain store
-   *  (project/memory/skills) tetap SQLite di workspace — menyusul bertahap. */
+   *  (project/memory/skills) tetap SQLite di workspace, menyusul bertahap. */
   dbDriver: z.enum(["sqlite", "postgres"]).default("sqlite"),
-  /** Koneksi Postgres — wajib bila dbDriver=postgres (divalidasi di bawah). */
+  /** Koneksi Postgres, wajib bila dbDriver=postgres (divalidasi di bawah). */
   databaseUrl: z.string().min(1).optional(),
 })
   .superRefine((v, ctx) => {

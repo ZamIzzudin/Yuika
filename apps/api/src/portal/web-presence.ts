@@ -1,13 +1,13 @@
-// @yuika/api — CP-5: web presence worker.
+// @yuika/api, CP-5: web presence worker.
 // Koneksi relay ringan memakai identitas WEB DEVICE (hasil auto-link SSO,
-// CP-4) — tanpa RelayHost (tidak menerima aksi): tujuannya presence (device
+// CP-4), tanpa RelayHost (tidak menerima aksi): tujuannya presence (device
 // tampil ONLINE di halaman Devices portal) + kanal bye 4001.
 //
 // bye 4001 (UNKNOWN_DEVICE) = device di-unlink dari portal → permanen:
-//   1. hentikan presence (SDK sudah stopped — tidak reconnect),
+//   1. hentikan presence (SDK sudah stopped, tidak reconnect),
 //   2. hapus row web_device (login berikutnya auto-link ulang via
 //      deviceToken CP-4),
-//   3. sign-out SEMUA sesi web milik portal account itu (sesi dicabut —
+//   3. sign-out SEMUA sesi web milik portal account itu (sesi dicabut,
 //      konsisten: akses portal-side dicabut, sisi Yuika ikut).
 import { RelayClient } from "@yuika/relay-client";
 import { ByeCode } from "@yuika/relay-client";
@@ -26,14 +26,14 @@ export class WebPresenceService {
   /** CP-5 guard: bye 4001 = unlink HANYA bila koneksi pernah authed di relay
    *  ini (device dikenal lalu dihapus). 4001 di auth PERTAMA = relay tidak
    *  mengenal device (env mismatch / relay lain) → stop diam, JANGAN cabut
-   *  sesi — coba lagi boot/login berikutnya. */
+   *  sesi, coba lagi boot/login berikutnya. */
   private everAuthed = false;
 
   get running(): boolean {
     return !!this.client;
   }
 
-  /** Mulai presence (idempotent per deviceId). Tidak melempar — kegagalan
+  /** Mulai presence (idempotent per deviceId). Tidak melempar, kegagalan
    *  koneksi ditangani SDK (retry backoff); caller boleh fire-and-forget. */
   async start(record: HostDeviceRecord): Promise<void> {
     if (this.client && this.record?.deviceId === record.deviceId) return;
@@ -61,7 +61,7 @@ export class WebPresenceService {
       await client.connect();
       console.log(`[web-presence] online sebagai ${record.deviceId} (akun ${record.accountId})`);
     } catch {
-      // permanen (connect() melempar hanya utk bye fatal) — bersihkan state.
+      // permanen (connect() melempar hanya utk bye fatal), bersihkan state.
       this.client = null;
       this.record = null;
     }
@@ -74,12 +74,12 @@ export class WebPresenceService {
     this.client = null;
     this.record = null;
     if (!this.everAuthed) {
-      // Relay ini tak pernah mengenal device (relay lain / db kosong) — bukan
+      // Relay ini tak pernah mengenal device (relay lain / db kosong), bukan
       // unlink: cukup berhenti, sesi & row tetap utuh.
-      console.warn(`[web-presence] relay tidak mengenal device (bye 4001: ${error}) — presence dimatikan tanpa mencabut sesi`);
+      console.warn(`[web-presence] relay tidak mengenal device (bye 4001: ${error}), presence dimatikan tanpa mencabut sesi`);
       return;
     }
-    console.warn(`[web-presence] device web di-unlink dari portal (bye 4001: ${error}) — sesi dicabut, login ulang akan auto-link`);
+    console.warn(`[web-presence] device web di-unlink dari portal (bye 4001: ${error}), sesi dicabut, login ulang akan auto-link`);
     clearWebDevice();
     if (accountId) signOutPortalAccount(accountId);
   }

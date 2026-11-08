@@ -1,9 +1,9 @@
-// @yuika/core — P1-MCP-4: egress allowlist proxy.
+// @yuika/core, P1-MCP-4: egress allowlist proxy.
 // Sandbox container default TANPA jaringan (--network none). Bila sebuah
 // eksekusi butuh akses jaringan terbatas (mis. `npm install` → registry),
 // container dijalankan dgn network + env HTTP(S)_PROXY diarahkan ke proxy
 // ini di host. Proxy hanya meneruskan CONNECT/absolute-request ke host yang
-// ada di allowlist (port 80/443) — selain itu 403. Jadi egress policy =
+// ada di allowlist (port 80/443), selain itu 403. Jadi egress policy =
 // SATU titik kebenatan di sisi host, bukan iptables per container.
 //
 // Allowlist per proyek (urutan pencarian):
@@ -62,7 +62,7 @@ export interface EgressProxy {
 const proxies = new Map<string, EgressProxy>();
 let proxySeq = 0;
 
-/** Proxy singleton per allowlist (sorted-join key) — dipakai lintas tool call;
+/** Proxy singleton per allowlist (sorted-join key), dipakai lintas tool call;
  * idle-close via closeAllEgressProxies() saat proses/API mati. */
 export async function getEgressProxy(allow: string[]): Promise<EgressProxy> {
   const key = [...allow].sort().join("|");
@@ -79,7 +79,7 @@ export async function closeAllEgressProxies(): Promise<void> {
 }
 
 /** Jalankan allowlist proxy di port acak (loopback). Opts.ports utk test
- * (default cuma 80/443 — egress web standar). */
+ * (default cuma 80/443, egress web standar). */
 export function startEgressProxy(allow: string[], opts: { ports?: number[] } = {}): Promise<EgressProxy> {
   return new Promise((resolve, reject) => {
     const conns = new Set<net.Socket>();
@@ -97,7 +97,7 @@ export function startEgressProxy(allow: string[], opts: { ports?: number[] } = {
       try {
         host = new URL(url).hostname;
       } catch {
-        /* relative — proxy ini bukan utk itu */
+        /* relative, proxy ini bukan utk itu */
       }
       if (!host || !hostAllowed(host, allow)) return deny(res, host || "(none)");
       if (conns.size >= connsMax) {
@@ -122,7 +122,7 @@ export function startEgressProxy(allow: string[], opts: { ports?: number[] } = {
       req.on("error", () => upstream.destroy());
     });
 
-    // CONNECT host:port — jalur utama (HTTPS). Tunnel buta: TLS tetap E2E ke
+    // CONNECT host:port, jalur utama (HTTPS). Tunnel buta: TLS tetap E2E ke
     // host tujuan; proxy hanya melihat SNI/Host di baris CONNECT.
     const portsOk = new Set(opts.ports ?? [80, 443]);
     server.on("connect", (req, clientSocket, head) => {
@@ -170,7 +170,7 @@ export function startEgressProxy(allow: string[], opts: { ports?: number[] } = {
             connsMax = 0;
             for (const c of conns) c.destroy();
             server.close(() => res());
-            res(); // jangan gantung pemanggil — socket di-destroy di atas
+            res(); // jangan gantung pemanggil, socket di-destroy di atas
           }),
       });
       log.info({ port: addr.port, allow: allow.length, id: ++proxySeq }, "egress proxy siap");

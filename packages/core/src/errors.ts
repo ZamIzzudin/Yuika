@@ -1,4 +1,4 @@
-// @yuika/core — error taxonomy konsisten (P0-INF-4): SEMUA error yang melintasi
+// @yuika/core, error taxonomy konsisten (P0-INF-4): SEMUA error yang melintasi
 // batas (provider → loop, tool → loop, internal) diklasifikasi ke SATU bentuk:
 //   kind  : kategori penanganan (provider | tool | mcp | budget | abort | internal)
 //   code  : string stabil untuk grep/alert (mis. PROVIDER_TIMEOUT, TOOL_EXEC)
@@ -12,14 +12,14 @@ import { ERROR_KINDS } from "@yuika/contracts";
 export type ErrorKind = (typeof ERROR_KINDS)[number];
 export { ERROR_KINDS };
 
-/** Kode error stabil (bukan daftar tertutup — sumber boleh menambah). */
+/** Kode error stabil (bukan daftar tertutup, sumber boleh menambah). */
 export const ErrorCodes = {
   // provider
   PROVIDER_TIMEOUT: "PROVIDER_TIMEOUT",
   PROVIDER_NETWORK: "PROVIDER_NETWORK",
   PROVIDER_RATE_LIMIT: "PROVIDER_RATE_LIMIT",
   PROVIDER_AUTH: "PROVIDER_AUTH",
-  PROVIDER_HTTP: "PROVIDER_HTTP", // status lain (4xx/5xx) — detail di message
+  PROVIDER_HTTP: "PROVIDER_HTTP", // status lain (4xx/5xx), detail di message
   PROVIDER_NO_RESPONSE: "PROVIDER_NO_RESPONSE",
   PROVIDER_UNKNOWN: "PROVIDER_UNKNOWN",
   // tool / mcp
@@ -34,7 +34,7 @@ export const ErrorCodes = {
 } as const;
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
 
-/** Error bermakna lintas batas — selalu punya kind+code+retryable. */
+/** Error bermakna lintas batas, selalu punya kind+code+retryable. */
 export class YuiError extends Error {
   override readonly name = "YuiError";
   constructor(
@@ -87,7 +87,7 @@ export function classifyError(err: unknown, fallbackKind: ErrorKind = "internal"
   const errName = err instanceof Error ? err.name : "";
   const rawCode = e?.code;
 
-  // 1) Abort user (P0-CORE-1) — BUKAN error; pemanggil wajib cek kind "abort".
+  // 1) Abort user (P0-CORE-1), BUKAN error; pemanggil wajib cek kind "abort".
   if (
     (typeof rawCode === "string" && (rawCode === "ABORT_ERR" || rawCode === "ABORTED")) ||
     errName === "AbortError" ||

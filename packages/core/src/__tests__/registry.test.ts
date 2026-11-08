@@ -75,7 +75,7 @@ describe("registry", () => {
     // boolean; bentuk angka dicek apa adanya.
     const n = (registry.toolSchemas()[0]!.parameters as any).properties.n;
     expect(n.exclusiveMinimum).toBe(0);
-    expect(n.maximum).toBe(100); // .max() inklusif — tetap maximum biasa
+    expect(n.maximum).toBe(100); // .max() inklusif, tetap maximum biasa
     expect(n.exclusiveMaximum).toBeUndefined();
     // cabang exclusiveMaximum/exclusiveMinimum bentuk angka & nested, diuji langsung
     const norm = normalizeToolSchema({

@@ -1,8 +1,8 @@
-// @yuika/relay-client/testing — SpecRelay: DOUBLE relay untuk unit test &
+// @yuika/relay-client/testing, SpecRelay: DOUBLE relay untuk unit test &
 // e2e gerbang P1-PRT-6. Mengimplementasi SPEC-PROTOCOL v1 secara fideli
 // (handshake, register_host + replace + batch remote_joined, list_hosts,
 // join dhPub, data mux buta, sticky host_offline/host_back, err 4104,
-// bye codes, limit frame & koneksi/akun). BUKAN relay produksi — produksi
+// bye codes, limit frame & koneksi/akun). BUKAN relay produksi, produksi
 // ada di repo yuika-portal (apps/relay); double ini mengecek KLIEN Yuika
 // terhadap semantik spec yang sama.
 //
@@ -62,7 +62,7 @@ export function createSpecRelay(opts: SpecRelayOpts) {
   const conns = new Set<Conn>();
   /** host online: hostDeviceId → Conn */
   const hosts = new Map<string, Conn>();
-  /** lampiran remote: hostDeviceId → Map(remoteDeviceId → Attached) —
+  /** lampiran remote: hostDeviceId → Map(remoteDeviceId → Attached),
    *  tetap hidup melewati host_offline selama sticky window (SPEC §4.6). */
   const attached = new Map<string, Map<string, Attached>>();
   const stickyTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -162,7 +162,7 @@ export function createSpecRelay(opts: SpecRelayOpts) {
         }
         lastSeen.set(hostId, Date.now());
         send(conn.ws, { t: "host_ready", hostId });
-        // batch remote_joined — termasuk saat host reconnect (SPEC §4.1)
+        // batch remote_joined, termasuk saat host reconnect (SPEC §4.1)
         for (const a of attachmentsOf(hostId).values()) {
           if (a.conn) a.conn.joinedHost = hostId;
           send(conn.ws, { t: "remote_joined", deviceId: a.deviceId, kind: a.kind, name: a.name, dhPub: a.dhPub });
@@ -187,7 +187,7 @@ export function createSpecRelay(opts: SpecRelayOpts) {
         if (!dev || dev.accountId !== conn.account) {
           return bye(conn, ByeCode.BAD_SIGNATURE, "host belongs to another account");
         }
-        // SPEC §4.3 + CP-2: join.dhPub wajib string PEM PUBLIC KEY — invalid
+        // SPEC §4.3 + CP-2: join.dhPub wajib string PEM PUBLIC KEY, invalid
         // → bye 4102 ("field wajib hilang/tidak valid"), sama dengan relay
         // produksi T1 (errata yang diusulkan).
         if (typeof msg.dhPub !== "string" || !msg.dhPub.includes("BEGIN PUBLIC KEY")) {
@@ -231,7 +231,7 @@ export function createSpecRelay(opts: SpecRelayOpts) {
         return send(host.ws, { t: "data", from: conn.deviceId, payload });
       }
       default:
-        return; // ignore-unknown (SPEC §2) — forward-compat
+        return; // ignore-unknown (SPEC §2), forward-compat
     }
   }
 

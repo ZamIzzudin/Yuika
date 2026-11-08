@@ -1,4 +1,4 @@
-// @yuika/api — approval decision (kartu persetujuan tool).
+// @yuika/api, approval decision (kartu persetujuan tool).
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { ApprovalDecisionRequest } from "@yuika/contracts";

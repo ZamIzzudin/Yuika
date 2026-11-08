@@ -1,4 +1,4 @@
-// @yuika/core — skill lifecycle manager (P1-MEM-3): pengalaman terbukti → skill.
+// @yuika/core, skill lifecycle manager (P1-MEM-3): pengalaman terbukti → skill.
 // Alur: agent `skill_propose` → DRAFT di <skillsDir>/drafts/<slug>/SKILL.md
 // (metadata.yui.status: draft) → user validasi di tab Skill (edit bebas) →
 // Terima = lint (parse ulang frontmatter) + pindah ke <skillsDir>/<slug>/ =
@@ -42,7 +42,7 @@ export function proposeSkill(skillsDir: string, name: string, description: strin
   const slug = slugify(name);
   if (!slug) throw new Error("nama skill kosong setelah disanitasi");
   const taken = new Set([...listSkills(skillsDir).map((s) => slugify(s.name)), ...listDrafts(skillsDir).map((s) => slugify(s.name))]);
-  if (taken.has(slug)) throw new Error(`skill '${slug}' sudah ada — usulkan nama lain atau minta user hapus dulu`);
+  if (taken.has(slug)) throw new Error(`skill '${slug}' sudah ada, usulkan nama lain atau minta user hapus dulu`);
   const dir = path.join(draftsDir(skillsDir), slug);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "SKILL.md"), skillMd(name, description, body, "draft", source), "utf-8");
@@ -75,9 +75,9 @@ export function acceptDraft(skillsDir: string, slug: string): { name: string; st
   const skill = loadSkill(from); // lint v0: frontmatter valid (throw → route 400)
   const to = path.join(skillsDir, slugify(skill.name));
   if (fs.existsSync(to)) throw new Error(`skill aktif '${slugify(skill.name)}' sudah ada`);
-  bumpUsage(from, "patches"); // accept = patch final (P1-MEM-4) — ikut pindah folder
+  bumpUsage(from, "patches"); // accept = patch final (P1-MEM-4), ikut pindah folder
   fs.renameSync(from, to);
-  // tulis ulang dengan status `tested` — P1-DUN-2: direview manusia, belum
+  // tulis ulang dengan status `tested`, P1-DUN-2: direview manusia, belum
   // lulus eval acceptance blind (P1-DUN-3 yang menaikkan ke `ready` otomatis).
   const fm = { ...skill.frontmatter } as { metadata?: { yui?: Record<string, unknown> } };
   fm.metadata = fm.metadata ?? {};
@@ -134,7 +134,7 @@ export function bumpUsage(dir: string, kind: "views" | "patches" | "used"): Skil
 function toYaml(fm: Record<string, unknown>): string {
   const { name, description, ...rest } = fm as { name: string; description: string };
   const lines = [`name: ${name}`, `description: ${description.replace(/\n/g, " ")}`];
-  // YAML.stringify({}) → "{}" (truthy!) — guard pakai jumlah key, bukan string.
+  // YAML.stringify({}) → "{}" (truthy!), guard pakai jumlah key, bukan string.
   const restYaml = Object.keys(rest).length ? YAML.stringify(rest).trim() : "";
   return `---\n${lines.join("\n")}${restYaml ? `\n${restYaml}` : ""}\n`;
 }

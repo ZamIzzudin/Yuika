@@ -1,15 +1,15 @@
-// @yuika/core — model smoke test (P1-MDL-2): verifikasi kecil per model sebelum
+// @yuika/core, model smoke test (P1-MDL-2): verifikasi kecil per model sebelum
 // dipercaya router. Tes = tool-call 2 langkah minimal: model HARUS memanggil
 // tool `ping_check`. Quirk schema GLM (draft 2020-12 vs openapi) dinetralkan
-// lewat normalizeToolSchema — pelajaran insiden GLM 1210 (PLAN §12).
+// lewat normalizeToolSchema, pelajaran insiden GLM 1210 (PLAN §12).
 import type { ProviderAdapter, ToolSchema } from "./adapter.js";
 import { normalizeToolSchema } from "../registry.js";
 import type { ModelSmokeResult } from "@yuika/contracts";
 
-/** Tool dummy smoke — schema sengaja minimal & sudah ternormalisasi. */
+/** Tool dummy smoke, schema sengaja minimal & sudah ternormalisasi. */
 const PING_TOOL: ToolSchema = {
   name: "ping_check",
-  description: "Health check. Panggil tool ini dengan v=1 — jangan menjawab dengan teks.",
+  description: "Health check. Panggil tool ini dengan v=1, jangan menjawab dengan teks.",
   parameters: normalizeToolSchema({
     type: "object",
     properties: { v: { type: "number", description: "isi 1" } },
@@ -25,7 +25,7 @@ export async function smokeModel(provider: ProviderAdapter, model: string, timeo
   const t = setTimeout(() => ac.abort(), timeoutMs);
   try {
     // race ganda: provider sungguhan menolak saat abort, tapi jangan bergantung
-    // padanya saja — timer ini menjamin smoke SELALU selesai (hang = gagal rapi).
+    // padanya saja, timer ini menjamin smoke SELALU selesai (hang = gagal rapi).
     const timeoutP = new Promise<never>((_, rej) => setTimeout(() => rej(new Error(`timeout ${timeoutMs}ms`)), timeoutMs));
     const done = await Promise.race([
       provider.chatStream(
@@ -38,7 +38,7 @@ export async function smokeModel(provider: ProviderAdapter, model: string, timeo
           tools: [PING_TOOL],
           signal: ac.signal,
         },
-        () => undefined, // chunk teks diabaikan — yang dinilai tool-call
+        () => undefined, // chunk teks diabaikan, yang dinilai tool-call
       ),
       timeoutP,
     ]);

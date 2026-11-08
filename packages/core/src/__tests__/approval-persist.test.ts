@@ -1,4 +1,4 @@
-// P0-DATA-3: approval persist — pending survive restart (→ expired + event),
+// P0-DATA-3: approval persist, pending survive restart (→ expired + event),
 // "Setujui & ingat" bertahan lintas restart via approval_memory.
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";

@@ -1,4 +1,4 @@
-// Batch 7 (RS-2) — robots.txt guard untuk fetch riset: fetch → parse → cache 1 jam.
+// Batch 7 (RS-2), robots.txt guard untuk fetch riset: fetch → parse → cache 1 jam.
 // Kesopanan riset: 404/timeout = diizinkan (standar umum), Disallow dihormati
 // untuk group "*". Wildcard * dan anchor $ didukung.
 const ROBOTS_TTL_MS = 60 * 60 * 1000;
@@ -15,7 +15,7 @@ export function clearRobotsCache(): void {
   cache.clear();
 }
 
-/** Ekstrak aturan group "*" (agent lain diabaikan — kita satu agen). */
+/** Ekstrak aturan group "*" (agent lain diabaikan, kita satu agen). */
 export function parseRobots(text: string): Array<{ allow: boolean; pattern: string }> | null {
   const rules: Array<{ allow: boolean; pattern: string }> = [];
   let inStar = false;

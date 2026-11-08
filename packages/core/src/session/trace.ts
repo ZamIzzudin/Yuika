@@ -1,5 +1,5 @@
-// @yuika/core — trace view per turn (P1-INF-4). Sumber: event store append-only
-// (sudah ada) + usage ledger (latensi/token per panggilan model) — TANPA tabel
+// @yuika/core, trace view per turn (P1-INF-4). Sumber: event store append-only
+// (sudah ada) + usage ledger (latensi/token per panggilan model), TANPA tabel
 // baru; join berdasarkan window waktu turn per sesi. (pino + tabel log terpisah
 // menyusul bersama deploy INF-5.)
 import type { SessionTrace, TraceStep, TraceTurn } from "@yuika/contracts";
@@ -89,7 +89,7 @@ export function buildTrace(store: ISessionStore, ledger: UsageLedger, sessionId:
     }
   }
 
-  // Join panggilan model (ledger) per turn via window waktu — langkah "model"
+  // Join panggilan model (ledger) per turn via window waktu, langkah "model"
   // disisipkan kronologis, latensi = kolom latencyMs ledger.
   const all = ledger.recent(500, { sessionId });
   for (const turn of turns) {
@@ -120,7 +120,7 @@ function summarizeArgs(args: Record<string, unknown>): string {
 
 // ── Project activity feed (Batch 14a++, user 2026-11) ────────────────────────
 // Logs tab = observability PROJECT-WIDE: semua langkah persona di semua sesi
-// project (tool calls, screen, vault, delegasi, approval) — bukan hanya sesi
+// project (tool calls, screen, vault, delegasi, approval), bukan hanya sesi
 // chat aktif. Digabung dengan browser visits di layer route.
 export interface ProjectActivityItem {
   at: number;

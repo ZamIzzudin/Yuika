@@ -1,11 +1,11 @@
-// P0-QA-1 — E2E smoke: skenario demo §2 (pilih Conductor → tugas riset →
+// P0-QA-1, E2E smoke: skenario demo §2 (pilih Conductor → tugas riset →
 // delegasi Scholar → selesai → replay tahan-refresh). Provider = mock lokal
-// (e2e/mock-provider.mjs) — deterministik, tanpa biaya, tanpa API key nyata.
+// (e2e/mock-provider.mjs), deterministik, tanpa biaya, tanpa API key nyata.
 import { expect, test } from "@playwright/test";
 
 const MOCK = "http://127.0.0.1:3299";
 
-/** Antri jawaban mock (FIFO — urutan panggilan provider). */
+/** Antri jawaban mock (FIFO, urutan panggilan provider). */
 async function enqueue(request: import("@playwright/test").APIRequestContext, scripts: unknown[]): Promise<void> {
   const r = await request.post(`${MOCK}/__script`, { data: scripts });
   expect(r.ok()).toBeTruthy();
@@ -33,13 +33,13 @@ test("demo §2: Conductor → riset → delegasi Scholar → selesai → replay"
   page.on("pageerror", (e) => logs.push(`[pageerror] ${String(e).slice(0, 300)}`));
   await page.goto("/");
   const sessionReady = page.waitForResponse((r) => r.url().endsWith("/api/sessions") && r.request().method() === "POST");
-  // Batch 16: freespace dihapus — sesi WAJIB di dalam project. Buat project
+  // Batch 16: freespace dihapus, sesi WAJIB di dalam project. Buat project
   // dari kartu HOME (modal), assign Maestro di TeamSetup, mulai sesi.
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByPlaceholder("Project Name").fill(`Smoke Flow ${Date.now()}`);
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.getByRole("button", { name: "Maestro Yui", exact: true }).click();
-  await page.getByRole("button", { name: "Start session" }).click();
+  await page.getByRole("button", { name: "Start Session" }).click();
   await expect(page.getByPlaceholder(/Describe a task/)).toBeVisible({ timeout: 30_000 });
 
   // 2. Kirim tugas riset
@@ -60,7 +60,7 @@ test("demo §2: Conductor → riset → delegasi Scholar → selesai → replay"
   // 4. Jawaban final Conductor tampil (message.done)
   await expect(page.getByText(/Laporan final terlampir/).first()).toBeVisible({ timeout: 60_000 });
 
-  // 5. Replay tahan-refresh: events sesi persist di DB — dibaca ulang via REST
+  // 5. Replay tahan-refresh: events sesi persist di DB, dibaca ulang via REST
   //    (UI reload kembali ke picker, jadi resume dibuktikan di lapisan data).
   const sess = (await (await sessionReady).json()) as { sessionId: string };
   expect(sess.sessionId).toBeTruthy();
@@ -74,7 +74,7 @@ test("demo §2: Conductor → riset → delegasi Scholar → selesai → replay"
   //    buka HOME (logo sidebar) → kartu New project (modal) → project dummy →
   //    tombol 🗑 (opacity-0 → includeHidden+force) → dialog “Delete project” →
   //    Cancel (popup tervalidasi, data tak berubah).
-  await page.getByRole("button", { name: "Home — all projects" }).click();
+  await page.getByRole("button", { name: "Home, all projects" }).click();
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByPlaceholder("Project Name").fill("Popup smoke check");
   await page.getByRole("button", { name: "Create", exact: true }).click();

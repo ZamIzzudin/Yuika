@@ -1,4 +1,4 @@
-// P2-FLOW-2/3 — workflow engine v0: fase sequential/parallel, gate antar fase,
+// P2-FLOW-2/3, workflow engine v0: fase sequential/parallel, gate antar fase,
 // event workflow.*, persist run + resume pasca-restart (step done tak diulang,
 // gate yang belum diputuskan ditanya ulang).
 // Acceptance FLOW-2: template 7 fase jalan E2E (provider fake tanpa script habis).
@@ -50,7 +50,7 @@ let store: SessionStore;
 let projects: ProjectStore;
 let events: YuiEvent[];
 let ws: string;
-/** Hygiene: bus global — semua subscription dibersihkan tiap test. */
+/** Hygiene: bus global, semua subscription dibersihkan tiap test. */
 const subs: Array<() => void> = [];
 
 beforeEach(() => {
@@ -87,7 +87,7 @@ async function waitFor(cond: () => boolean, ms = 15_000): Promise<void> {
   const t0 = Date.now();
   while (!cond()) {
     if (Date.now() - t0 > ms)
-      throw new Error(`waitFor timeout — events: ${events.map((e) => e.type).slice(-30).join(",")}`);
+      throw new Error(`waitFor timeout, events: ${events.map((e) => e.type).slice(-30).join(",")}`);
     await new Promise((r) => setTimeout(r, 25));
   }
 }
@@ -108,8 +108,8 @@ function autoApproveGates(engine: WorkflowEngine): void {
   );
 }
 
-describe("P2-FLOW-2 — engine v0", () => {
-  it("lead dari chat user (2026-11-08): sesi chat conductor dipakai sbg lead — konteks run di-inject, sesi baru TIDAK dibuat, sesi lintas-project ditolak", async () => {
+describe("P2-FLOW-2, engine v0", () => {
+  it("lead dari chat user (2026-11-08): sesi chat conductor dipakai sbg lead, konteks run di-inject, sesi baru TIDAK dibuat, sesi lintas-project ditolak", async () => {
     // sesi chat "user" (persona conductor) di project demo
     store.createSession("s_chatku", "yui-conductor", "system-prompt-chat", [], "p_demo");
     const engine = makeEngine(new EndlessProvider());
@@ -216,7 +216,7 @@ describe("P2-FLOW-2 — engine v0", () => {
   }, 30_000);
 });
 
-describe("P2-FLOW-3 — gate + resume", () => {
+describe("P2-FLOW-3, gate + resume", () => {
   const twoPhase = (): WorkflowDef => ({
     name: "gate",
     phases: [
@@ -265,12 +265,12 @@ describe("P2-FLOW-3 — gate + resume", () => {
     expect(run.leadSessionId).toBe(leadSessionId);
     expect(run.phaseStates[0]!.steps[0]!.ok).toBe(true); // hasil fase A utuh
     expect(run.phaseStates[1]!.steps[0]!.ok).toBe(true); // fase B jalan
-    // fase A hanya dijalankan SEKALI (engine 1) — resume tak mengulang
+    // fase A hanya dijalankan SEKALI (engine 1), resume tak mengulang
     expect(types().filter((t) => t === "step.started")).toHaveLength(2);
   }, 30_000);
 });
 
-// ── P2-FLOW-6: steering mid-run — steer / pause+resume / reassign ──────────
+// ── P2-FLOW-6: steering mid-run, steer / pause+resume / reassign ──────────
 const two = (): WorkflowDef => ({
   name: "two",
   phases: [
@@ -279,7 +279,7 @@ const two = (): WorkflowDef => ({
   ],
 });
 
-describe("P2-FLOW-6 — steering mid-run", () => {
+describe("P2-FLOW-6, steering mid-run", () => {
   it("steer: pesan user di sesi lead + event + instruksi masuk konteks fase berikut", async () => {
     const prov = new EndlessProvider();
     const engine = makeEngine(prov);
@@ -366,7 +366,7 @@ describe("P2-FLOW-6 — steering mid-run", () => {
 });
 
 // ── FLOW-8 (laporan user 2026-11): task fase = sumber kerja engine ──────────
-describe("FLOW-8 — task↔fase binding + sweep", () => {
+describe("FLOW-8, task↔fase binding + sweep", () => {
   /** Provider: step biasa = teks; saat instruksi sweep masuk → tool todo_update
    *  utk SEMUA task id yang muncul di instruksi (parse), lalu teks ringkasan. */
   class SweepProvider implements ProviderAdapter {
@@ -449,7 +449,7 @@ describe("FLOW-8 — task↔fase binding + sweep", () => {
     expect(sweeps.length).toBe(1);
     const t = projects.listTasks("p_demo").find((x) => x.id === "t_r1")!;
     expect(t.status).toBe("review");
-    // laporan sisa task ditempel ke sesi lead (audit — bukan dibiarkan diam)
+    // laporan sisa task ditempel ke sesi lead (audit, bukan dibiarkan diam)
     const msgs = JSON.stringify(store.getMessages(leadSessionId));
     expect(msgs).toContain("[workflow] Run selesai");
     expect(msgs).toContain("t_r1");
@@ -460,7 +460,7 @@ describe("FLOW-8 — task↔fase binding + sweep", () => {
     projects.createTask({ id: "t_d1", projectId: "p_demo", title: "Tulis guide", phase: "documentation" });
     const p = new SweepProvider();
     const engine = makeEngine(p);
-    // pakai provider langsung — alias dicek lewat run def id "docs"
+    // pakai provider langsung, alias dicek lewat run def id "docs"
     const def: WorkflowDef = {
       name: "Alias",
       description: "x",

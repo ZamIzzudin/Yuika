@@ -7,7 +7,7 @@ const API = "http://127.0.0.1:3291";
 test("auth: mode terbuka tanpa user → app langsung pakai; endpoint lokal 404", async ({ page, request }) => {
   test.setTimeout(90_000);
 
-  // 1) Mode terbuka (belum ada user): app terbuka tanpa login — orbit persona
+  // 1) Mode terbuka (belum ada user): app terbuka tanpa login, orbit persona
   //    + pill "Sign in" (portal) di pojok, TANPA gerbang/form.
   await page.goto("/");
   await expect(page.getByRole("button", { name: "New project" })).toBeVisible({ timeout: 30_000 });

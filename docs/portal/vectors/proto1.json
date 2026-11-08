@@ -1,6 +1,6 @@
 {
   "proto": 1,
-  "note": "Golden vectors protokol v1 — identik di yuika-portal & your-yui (mirror). Kunci PRIVAT di sini adalah material test PUBLIK. Verifikasi: lihat scripts/verify-vectors.mjs (portal) / spec mirror (your-yui).",
+  "note": "Golden vectors protokol v1, identik di yuika-portal & your-yui (mirror). Kunci PRIVAT di sini adalah material test PUBLIK. Verifikasi: lihat scripts/verify-vectors.mjs (portal) / spec mirror (your-yui).",
   "keys": {
     "alice": {
       "deviceId": "dev_0f59d11785fecd55",

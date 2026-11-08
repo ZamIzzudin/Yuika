@@ -1,4 +1,4 @@
-// W4-A1/A2 + W3 (TASKS.md): delegation — child persona, events ke parent,
+// W4-A1/A2 + W3 (TASKS.md): delegation, child persona, events ke parent,
 // approval anak diteruskan ke parent stream (blocker skenario demo §2 langkah 6).
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";
@@ -168,7 +168,7 @@ describe("delegation runner", () => {
     resolvePendingApproval(req.requestId, false);
     await handle.summary;
     expect(fs.existsSync(path.join(ws, "notes", "ditolak.txt"))).toBe(false);
-    // pesan tool berisi error — cek messages sesi anak
+    // pesan tool berisi error, cek messages sesi anak
     const childMsgs = store.getMessages(handle.childSessionId);
     const toolMsg = childMsgs.find((m) => m.role === "tool");
     expect(toolMsg?.content).toContain("denied by user");
@@ -183,9 +183,9 @@ describe("delegation runner", () => {
     store.close();
   });
 
-  it("P1-DEL-1: cap per plan — delegation.max_concurrent pendelegasi lebih ketat dari budget", async () => {
+  it("P1-DEL-1: cap per plan, delegation.max_concurrent pendelegasi lebih ketat dari budget", async () => {
     const deps = { ...makeDeps(new FakeProvider([])), maxChildren: () => 5 };
-    // parent = yui-planner (delegation.yaml: max_concurrent: 2 — consult 2 arah
+    // parent = yui-planner (delegation.yaml: max_concurrent: 2, consult 2 arah
     // paralel tetap jalan) walau budget cap 5: anak ke-3 ditolak.
     store.createSession("s_plan", "yui-planner", "SYS", ["delegate_task"]);
     const emitPlan = (d: EventDraft) => store.appendEvent("s_plan", d);
@@ -202,13 +202,13 @@ describe("delegation runner", () => {
       runChildPersona(deps, { sessionId: parentSession, turnId: "tp2" }, "yui-scribe", g, null, emit2));
     expect(() =>
       runChildPersona(deps, { sessionId: parentSession, turnId: "tp2" }, "yui-scribe", "d", null, emit2),
-    ).toThrow(/batas delegation paralel \(3\) tercapai — plan yui-conductor: max_concurrent=3/);
+    ).toThrow(/batas delegation paralel \(3\) tercapai, plan yui-conductor: max_concurrent=3/);
     for (const h of hs) void h.summary.catch(() => undefined);
     await Promise.allSettled([...hp, ...hs].map((h) => h.summary)); // cleanup: activeChildren kembali 0
   });
 
-  it("P1-CRED-3: cap delegasi paralel dinamis (maxChildren) — spawn di atas cap ditolak", async () => {
-    const slow = new FakeProvider([]); // tak beres dalam test — anak 1 tetap "aktif"
+  it("P1-CRED-3: cap delegasi paralel dinamis (maxChildren), spawn di atas cap ditolak", async () => {
+    const slow = new FakeProvider([]); // tak beres dalam test, anak 1 tetap "aktif"
     const deps = { ...makeDeps(slow), maxChildren: () => 1 };
     const h1 = runChildPersona(deps, { sessionId: parentSession, turnId: "t5" }, "yui-scribe", "ringkas", null, makeEmit());
     expect(() =>
@@ -221,9 +221,9 @@ describe("delegation runner", () => {
 });
 
 // Fix dev-10 ("kartu delegasi statis menit-lamanya"): delta teks/pikiran/aktivitas
-// tool anak diteruskan LIVE ke parent sebagai delegation.delta — bukan hanya
+// tool anak diteruskan LIVE ke parent sebagai delegation.delta, bukan hanya
 // persona.state + done. Ini yang membuat provider call anak 2–9 menit terasa hidup.
-describe("delegation.delta — live feed anak → parent", () => {
+describe("delegation.delta, live feed anak → parent", () => {
   it("text/reasoning/tool anak muncul sebagai delegation.delta di sesi parent", async () => {
     class DeltaProvider implements ProviderAdapter {
       readonly id = "delta-fake";

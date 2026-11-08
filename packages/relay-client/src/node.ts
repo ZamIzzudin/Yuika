@@ -1,11 +1,11 @@
-// @yuika/relay-client — binding Node: crypto @yuika/crypto (node) + socket `ws`.
+// @yuika/relay-client, binding Node: crypto @yuika/crypto (node) + socket `ws`.
 // Browser: pakai entry "." (core) dengan WebSocket global + @yuika/crypto/web.
 import { open as nodeOpen, seal as nodeSeal, signChallenge as nodeSign } from "@yuika/crypto";
 import WS from "ws";
 import type { CryptoAdapter, WsLike } from "./core.js";
 import { RelayClient, type RelayClientOpts } from "./core.js";
 
-/** Adapter crypto node (sync dibungkus Promise — menyamakan antarmuka web). */
+/** Adapter crypto node (sync dibungkus Promise, menyamakan antarmuka web). */
 export const nodeCrypto: CryptoAdapter = {
   signChallenge: async (priv, deviceId, nonce) => nodeSign(priv, deviceId, nonce),
   seal: async (from, to, pt) => nodeSeal(from, to, pt),

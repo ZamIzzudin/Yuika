@@ -1,10 +1,10 @@
-// @yuika/core — workflow engine v0 (P2-FLOW-2/3, PLAN §13.2–13.3).
+// @yuika/core, workflow engine v0 (P2-FLOW-2/3, PLAN §13.2–13.3).
 // Run = DAG → job graph: fase berjalan BERURUTAN; fase sequential satu-per-satu
 // (output fase = konteks fase berikut), fase parallel N delegation anak dengan
 // scheduling topo-wave by depends_on + cap paralel. Gate antar fase = status
-// `awaiting_gate` + janji resolve (approve/reject) — run berhenti sampai user
+// `awaiting_gate` + janji resolve (approve/reject), run berhenti sampai user
 // memutuskan. Semua transisi lewat event `workflow.*` di sesi LEAD (Conductor)
-// — board & replay gratis via stream sesi; state run persist di ProjectStore
+//, board & replay gratis via stream sesi; state run persist di ProjectStore
 // (workflow_runs) → resume pasca-restart = lanjut fase terakhir yang belum
 // selesai, step yang sudah done tidak diulang.
 import { randomUUID } from "node:crypto";
@@ -24,7 +24,7 @@ const MAX_SUMMARY_CHARS = 800;
 const MAX_CONTEXT_CHARS = 4_000;
 
 /** FLOW-8 (laporan user 2026-11): alias id fase template lama ↔ enum phase
- *  TaskItem (dokumentasi/delivery) — run lama tetap ter-bind pasca-rename. */
+ *  TaskItem (dokumentasi/delivery), run lama tetap ter-bind pasca-rename. */
 const PHASE_ALIASES: Record<string, string> = {
   docs: "documentation",
   deliverable: "delivery",
@@ -33,7 +33,7 @@ function taskPhaseOf(phaseId: string): string {
   return PHASE_ALIASES[phaseId] ?? phaseId;
 }
 
-/** Sweep maksimum per fase: task sisa di-dispatch ulang maks 2 putaran —
+/** Sweep maksimum per fase: task sisa di-dispatch ulang maks 2 putaran,
  *  task yang butuh keputusan owner ditandai `review` (bukan dipaksa done). */
 const MAX_SWEEP_ROUNDS = 2;
 
@@ -45,7 +45,7 @@ export interface StartRunOptions {
   projectId: string;
   workflow: WorkflowDef;
   brief?: string;
-  /** Sesi chat conductor sebagai lead (kendali workflow via chat — keputusan
+  /** Sesi chat conductor sebagai lead (kendali workflow via chat, keputusan
    *  user 2026-11-08: brief/steer/gate di tab Chat). Kosong = engine membuat
    *  sesi lead sendiri (perilaku lama). */
   leadSessionId?: string;
@@ -67,7 +67,7 @@ interface RunHandle {
   projectId: string;
   leadSessionId: string;
   brief: string;
-  /** Instruksi steering user (urutan masuk) — masuk konteks fase berikutnya. */
+  /** Instruksi steering user (urutan masuk), masuk konteks fase berikutnya. */
   steers: string[];
 }
 
@@ -87,7 +87,7 @@ export class WorkflowEngine {
 
   constructor(private readonly deps: WorkflowEngineDeps) {}
 
-  /** Mulai run baru (fire-and-forget drive). Lead session = Conductor —
+  /** Mulai run baru (fire-and-forget drive). Lead session = Conductor,
    *  parent semua delegation anak step (event run hidup di sesi ini).
    *  leadSessionId opsional: sesi chat conductor user dipakai sebagai lead
    *  supaya kendali run (brief/steer/gate) hidup di chat-nya sendiri. */
@@ -95,7 +95,7 @@ export class WorkflowEngine {
     const def = validated(opts.workflow);
     if (!this.deps.projects.getProject(opts.projectId)) throw new Error(`project tidak ditemukan: ${opts.projectId}`);
     // Batch 16 (Team Assembly): satu workflow run = SELURUH tim ter-assign
-    // otomatis (merge — entry roster custom tak tersentuh).
+    // otomatis (merge, entry roster custom tak tersentuh).
     this.deps.ensureFullRoster?.(opts.projectId);
     const runId = `wf_${randomUUID().slice(0, 8)}`;
 
@@ -109,7 +109,7 @@ export class WorkflowEngine {
     if (provided && provided.projectId !== opts.projectId)
       throw new Error("sesi lead bukan milik project ini");
     if (provided) {
-      // sesi chat sudah punya system prompt conductor — injeksikan konteks run
+      // sesi chat sudah punya system prompt conductor, injeksikan konteks run
       // sebagai pesan berprefix (pola sama dgn [steering])
       leadSessionId = provided.id;
       this.deps.store.appendMessage(leadSessionId, {
@@ -176,7 +176,7 @@ export class WorkflowEngine {
 
   /** Pause di batas step berikutnya (step yang sedang jalan diselesaikan).
    *  Saat awaiting_gate: status `paused` LANGSUNG (eksekusi memang berhenti;
-   *  keputusan gate tetap boleh — berlaku setelah resume). */
+   *  keputusan gate tetap boleh, berlaku setelah resume). */
   pauseRun(runId: string): boolean {
     const h = this.runs.get(runId);
     if (!h || this.stopped.has(runId)) return false;
@@ -233,7 +233,7 @@ export class WorkflowEngine {
     this.pauseWaiters.delete(runId);
   }
 
-  /** Boot resume (FLOW-3): lanjutkan run yang belum tamat — fase done
+  /** Boot resume (FLOW-3): lanjutkan run yang belum tamat, fase done
    *  dilewati, step done tidak diulang (state dari workflow_runs). */
   resumeRuns(): string[] {
     const resumed: string[] = [];
@@ -273,7 +273,7 @@ export class WorkflowEngine {
         const phase = def.phases[i]!;
         const st = states[i] ?? (states[i] = { phaseId: phase.id, status: "pending", steps: [] });
         if (st.status === "done") {
-          // resume: fase selesai — tapi gate yang BELUM diputuskan ditanya ulang
+          // resume: fase selesai, tapi gate yang BELUM diputuskan ditanya ulang
           // (keputusan human tidak boleh hilang pasca-restart)
           if (phase.gate && !st.gatePassed && i < def.phases.length - 1) {
             await this.awaitGate(runId, phase.id, states, i, e);
@@ -286,7 +286,7 @@ export class WorkflowEngine {
         persist();
         e({ type: "phase.entered", runId, phaseId: phase.id, mode: phase.mode });
 
-        // FLOW-8: task fase = sumber kerja — tandai doing saat fase berjalan
+        // FLOW-8: task fase = sumber kerja, tandai doing saat fase berjalan
         // (board live: "tiba-tiba done" tak terjadi lagi) & konteks step diberi
         // daftar task fase-nya (persona tak bingung oleh task fase lain).
         const taskPhase = taskPhaseOf(phase.id);
@@ -301,7 +301,7 @@ export class WorkflowEngine {
           .map((t) => `- ${t.id} · ${t.title} · ${t.status}${t.assignee ? ` · ${t.assignee}` : ""}`)
           .join("\n");
         const phaseContext = taskLines
-          ? `${baseContext ? `${baseContext}\n\n` : ""}Task fase "${phase.name}" (todo_update: doing saat mulai, done saat selesai) — kerjakan dari daftar ini; task fase LAIN abaikan dulu:\n${taskLines}`
+          ? `${baseContext ? `${baseContext}\n\n` : ""}Task fase "${phase.name}" (todo_update: doing saat mulai, done saat selesai), kerjakan dari daftar ini; task fase LAIN abaikan dulu:\n${taskLines}`
           : baseContext;
         const stepDefs = phase.steps.map((s, idx) => ({
           def: s,
@@ -323,7 +323,7 @@ export class WorkflowEngine {
             if (this.stopped.has(runId)) throw new StopRun();
             await this.waitWhilePaused(runId, e);
             const { def: step } = stepDefs[idx]!;
-            if (stepDefs[idx]!.state.ok !== null) continue; // resume: step done diulang? tidak — dilewati
+            if (stepDefs[idx]!.state.ok !== null) continue; // resume: step done diulang? tidak, dilewati
             e({ type: "step.started", runId, phaseId: phase.id, stepId: step.id, personaId: step.persona, task: step.task });
             try {
               const summary = await this.runStep(leadSessionId, turnId, step.persona, step.task, phaseContext);
@@ -364,7 +364,7 @@ export class WorkflowEngine {
         }
 
         // FLOW-8 sweep: fase belum boleh selesai selama masih ada task fase-nya
-        // yang belum dikerjakan — dispatch ulang (pseudo-step sweep-N) sampai
+        // yang belum dikerjakan, dispatch ulang (pseudo-step sweep-N) sampai
         // done, atau review utk task yang butuh keputusan owner.
         const sweepsDone = () => st.steps.filter((s) => s.id.startsWith("sweep-")).length;
         while (sweepsDone() < MAX_SWEEP_ROUNDS) {
@@ -400,7 +400,7 @@ export class WorkflowEngine {
             sw.summary = (err instanceof Error ? err.message : String(err)).slice(0, MAX_SUMMARY_CHARS);
             persist();
             e({ type: "step.done", runId, phaseId: phase.id, stepId, personaId: sweeper, ok: false, summary: sw.summary });
-            break; // sweep gagal (mis. provider) — run lanjut, sisa task dilaporkan
+            break; // sweep gagal (mis. provider), run lanjut, sisa task dilaporkan
           }
         }
 
@@ -419,19 +419,19 @@ export class WorkflowEngine {
       e({ type: "workflow.done", runId, projectId, ok: true });
 
       // FLOW-8: sisa task (kalau sweep pun tak habiskan, mis. butuh owner)
-      // dilaporkan eksplisit ke lead — bukan dibiarkan menggantung diam-diam.
+      // dilaporkan eksplisit ke lead, bukan dibiarkan menggantung diam-diam.
       const after = this.deps.projects.listTasks(projectId);
       const unfinished = after.filter((t) => t.status === "todo" || t.status === "doing");
       const awaiting = after.filter((t) => t.status === "review");
       if (unfinished.length || awaiting.length) {
         const lines = [
           ...unfinished.map((t) => `- ${t.id} · ${t.title} (${t.phase ?? "-"}, ${t.status})`),
-          ...awaiting.map((t) => `- ${t.id} · ${t.title} (${t.phase ?? "-"}, review — menunggu keputusan Anda)`),
+          ...awaiting.map((t) => `- ${t.id} · ${t.title} (${t.phase ?? "-"}, review, menunggu keputusan Anda)`),
         ];
         this.deps.store.appendMessage(leadSessionId, {
           role: "user",
           content:
-            `[workflow] Run selesai. Task belum selesai (${unfinished.length + awaiting.length}) — cek tab Task:\n` +
+            `[workflow] Run selesai. Task belum selesai (${unfinished.length + awaiting.length}), cek tab Task:\n` +
             lines.join("\n"),
         });
       }
@@ -443,7 +443,7 @@ export class WorkflowEngine {
       this.deps.projects.updateWorkflowRun(runId, { status });
       e({ type: "workflow.done", runId, projectId, ok: false, error: message });
     } finally {
-      // bersihkan registry steering — run tamat (done/failed/stopped)
+      // bersihkan registry steering, run tamat (done/failed/stopped)
       this.runs.delete(runId);
       this.paused.delete(runId);
       this.pauseWaiters.delete(runId);
@@ -451,7 +451,7 @@ export class WorkflowEngine {
   }
 
   /** Titik jeda steering: selama paused (dan tidak di-stop) tahan eksekusi
-   *  di sini — step yang sedang berjalan tetap diselesaikan. */
+   *  di sini, step yang sedang berjalan tetap diselesaikan. */
   private async waitWhilePaused(runId: string, e: Emit): Promise<void> {
     while (this.paused.has(runId) && !this.stopped.has(runId)) {
       this.deps.projects.updateWorkflowRun(runId, { status: "paused" });
@@ -485,7 +485,7 @@ export class WorkflowEngine {
     return decision;
   }
 
-  /** Satu step = satu delegation anak persona (loop anak yang sudah ada —
+  /** Satu step = satu delegation anak persona (loop anak yang sudah ada,
    *  cap, kontrol, metering, event delegation.* semuanya reuse). parentEmit =
    *  emitter sesi lead → delta/status anak live di stream run (board). */
   private async runStep(
@@ -529,7 +529,7 @@ function freshPhaseStates(def: NormalizedWorkflowDef): WorkflowPhaseState[] {
 }
 
 /** Konteks fase = brief + ringkasan semua step fase sebelumnya (terpotong)
- *  + instruksi steering user (FLOW-6 — ditaruh paling bawah: paling menonjol). */
+ *  + instruksi steering user (FLOW-6, ditaruh paling bawah: paling menonjol). */
 function buildContext(brief: string, steers: string[], def: NormalizedWorkflowDef, states: WorkflowPhaseState[], upto: number): string | null {
   const parts: string[] = [];
   if (brief) parts.push(`Brief:\n${brief}`);

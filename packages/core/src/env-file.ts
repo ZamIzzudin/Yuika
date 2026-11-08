@@ -1,9 +1,9 @@
-// @yuika/core — .env updater (Settings): ganti/tambah KEY=VALUE dengan
+// @yuika/core, .env updater (Settings): ganti/tambah KEY=VALUE dengan
 // mempertahankan baris & komentar lain. Fail-safe: file hilang → buat baru.
 import fs from "node:fs";
 
 /** Update .env: replace KEY=… bila ada (pertama), else append. Value NULL =
- *  HAPUS baris key itu (dipakai Settings saat field dikosongkan — tanpa ini
+ *  HAPUS baris key itu (dipakai Settings saat field dikosongkan, tanpa ini
  *  nilai lama "hidup lagi" setelah restart). Return isi baru. */
 export function updateEnvFile(file: string, values: Record<string, string | null>): string {
   const lines = fs.existsSync(file) ? fs.readFileSync(file, "utf-8").split(/\r?\n/) : [];

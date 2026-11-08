@@ -1,4 +1,4 @@
-// Batch 7 (RS-2) — pipeline fetch halaman riset:
+// Batch 7 (RS-2), pipeline fetch halaman riset:
 //   SSRF/policy guard (browser/reader) → robots.txt → throttle domain →
 //   fetch (redirect tervalidasi) → cap ukuran → Readability→markdown (fallback plain).
 // Cache halaman 72 jam; budget page per sesi (cache hit tidak dihitung).
@@ -23,7 +23,7 @@ const turndown = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fen
 turndown.remove(["script", "style", "noscript", "iframe"]);
 
 /** Policy riset utk workspace project: file .yuika/browser.json dipakai bila ADA
- *  (pilihan eksplisit project — berbagi dgn tab Browser); tanpa file = web terbuka.
+ *  (pilihan eksplisit project, berbagi dgn tab Browser); tanpa file = web terbuka.
  *  SSRF guard (IP private/loopback) JALAN TERUS di kedua kasus. */
 export function researchPolicyFor(workspacePath: string): { allow: string[]; allowAll: boolean; allowPrivate?: boolean } {
   const allowPrivate = /^(1|true)$/i.test(process.env.YUI_BROWSER_ALLOW_PRIVATE ?? ""); // dev/test (sama dgn reader)
@@ -37,7 +37,7 @@ export function researchPolicyFor(workspacePath: string): { allow: string[]; all
   return { allow: [], allowAll: true, allowPrivate };
 }
 
-/** Readability di atas linkedom — gagal/kosong → null (fallback plain). */
+/** Readability di atas linkedom, gagal/kosong → null (fallback plain). */
 function extractReadable(html: string, url: string): { title: string; markdown: string } | null {
   try {
     // Cast structural: linkedom Document ≠ lib.dom Document (api env tanpa DOM lib).
@@ -87,12 +87,12 @@ export async function researchFetch(rawUrl: string, opts: FetchOpts): Promise<Fe
   if (opts.sessionId && opts.budget) {
     const b = opts.budget.consume(opts.sessionId, "page", opts.now);
     if (!b.ok) {
-      throw new ResearchError("budget_exceeded", `research page budget exhausted (${b.limit}/hour per session) — wait a bit or fetch fewer pages`);
+      throw new ResearchError("budget_exceeded", `research page budget exhausted (${b.limit}/hour per session), wait a bit or fetch fewer pages`);
     }
   }
 
   const policy = { allow: opts.policy.allow, allowAll: opts.policy.allowAll, allowPrivate: opts.policy.allowPrivate };
-  // Reader melempar BrowserReadError — bungkus jadi ResearchError (kode sama) supaya
+  // Reader melempar BrowserReadError, bungkus jadi ResearchError (kode sama) supaya
   // pesan tool konsisten dari satu lapisan.
   const guarded = (raw: string): Promise<URL> =>
     assertBrowserUrlAllowed(raw, policy).catch((e: unknown) => {
@@ -101,10 +101,10 @@ export async function researchFetch(rawUrl: string, opts: FetchOpts): Promise<Fe
     });
   let url = await guarded(rawUrl);
 
-  // robots: selalu dicek (server tanpa robots.txt = 404 = diizinkan — dev server aman;
+  // robots: selalu dicek (server tanpa robots.txt = 404 = diizinkan, dev server aman;
   // hasil di-cache 1 jam). Cache research (hit) melewati tahap ini.
   if (!(await isAllowedByRobots(url, opts.now))) {
-    throw new ResearchError("robots_denied", `robots.txt on ${url.hostname} disallows fetching ${url.pathname} — use the search snippet or find another source`);
+    throw new ResearchError("robots_denied", `robots.txt on ${url.hostname} disallows fetching ${url.pathname}, use the search snippet or find another source`);
   }
 
   await domainThrottle(url.hostname, opts.domainDelayMs ?? 1_000);

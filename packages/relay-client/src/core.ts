@@ -1,4 +1,4 @@
-// @yuika/relay-client — core transport & crypto-agnostic (browser-safe).
+// @yuika/relay-client, core transport & crypto-agnostic (browser-safe).
 // Siklus: connect → hello{nonce} → auth{sig} → auth_ok → (role layer).
 // Reconnect otomatis exponential backoff 250ms→16s + jitter (SPEC §10) lalu
 // handshake penuh ulang; outbox menahan pesan selama putus.
@@ -11,14 +11,14 @@ import {
   type ServerMsg,
 } from "./wire.js";
 
-/** Adapter crypto — backend node (@yuika/crypto) atau web (@yuika/crypto/web). */
+/** Adapter crypto, backend node (@yuika/crypto) atau web (@yuika/crypto/web). */
 export interface CryptoAdapter {
   signChallenge(signPrivPem: string, deviceId: string, nonce: string): Promise<string>;
   seal(from: { deviceId: string; dhPriv: string }, to: { deviceId: string; dhPub: string }, plaintext: string): Promise<string>;
   open(to: { deviceId: string; dhPriv: string }, from: { deviceId: string; dhPub: string }, boxB64: string): Promise<string>;
 }
 
-/** Socket minimal — node `ws` & browser WebSocket sama-sama memenuhi. */
+/** Socket minimal, node `ws` & browser WebSocket sama-sama memenuhi. */
 export interface WsLike {
   send(data: string): void;
   close(code?: number, reason?: string): void;
@@ -48,7 +48,7 @@ export interface RelayHandlers {
   onErr?: (code: number, error: string) => void;
   onData?: (from: string, payload: string) => void;
   /** pesan server lain (hosts / joined / remote_joined / remote_left /
-   *  host_offline / host_back) — role layer berlangganan. */
+   *  host_offline / host_back), role layer berlangganan. */
   onServerMsg?: (msg: ServerMsg) => void;
   onStateChange?: (state: RelayState) => void;
 }
@@ -122,7 +122,7 @@ export class RelayClient {
     this.ws = ws;
 
     ws.onopen = () => {
-      // hello dikirim server saat connect — tunggu di onmessage.
+      // hello dikirim server saat connect, tunggu di onmessage.
       this.log("ws open", { isReconnect });
     };
     ws.onmessage = (ev) => {
@@ -131,7 +131,7 @@ export class RelayClient {
       try {
         msg = JSON.parse(ev.data) as ServerMsg;
       } catch {
-        this.log("bad frame — ignore");
+        this.log("bad frame, ignore");
         return;
       }
       void this.handle(msg);
@@ -160,7 +160,7 @@ export class RelayClient {
       case "hello": {
         if (msg.proto > PROTO) {
           // SPEC §3: klien tak mendukung versi relay → bye 4200 + close.
-          this.stopped = true; // permanen — jangan reconnect ke server yang sama
+          this.stopped = true; // permanen, jangan reconnect ke server yang sama
           this.sendRaw({ t: "bye", code: ByeCode.PROTO_UNSUPPORTED, error: "proto version unsupported" } as unknown as ClientMsg);
           this.ws?.close();
           this.failAuthWaiters({ t: "bye", code: ByeCode.PROTO_UNSUPPORTED, error: "proto version unsupported" });
@@ -187,7 +187,7 @@ export class RelayClient {
         this.log("bye", msg.code, msg.error);
         this.handlers.onBye?.(msg.code, msg.error);
         // 4000 replaced / 4200 proto / 4201 account-limit = permanen (retry
-        // tak mengubah apa pun — hanya menambah beban relay); 4001
+        // tak mengubah apa pun, hanya menambah beban relay); 4001
         // unknown-device permanen sejak CP-5: device di-unlink dari portal →
         // row device hilang, retry tidak akan pernah berhasil.
         // Lainnya transien → reconnect backoff + handshake ulang (SPEC §10),
@@ -231,7 +231,7 @@ export class RelayClient {
     this.ws?.send(JSON.stringify(msg));
   }
 
-  /** Tutup disengaja — tanpa reconnect. */
+  /** Tutup disengaja, tanpa reconnect. */
   close(): void {
     this.stopped = true;
     this.ws?.close(1000, "client close");

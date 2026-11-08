@@ -1,4 +1,4 @@
-// @yuika/contracts — Memory (P1-MEM-1): dua dokumen editable milik user —
+// @yuika/contracts, Memory (P1-MEM-1): dua dokumen editable milik user,
 // USER.md (workspace, lintas project) & MEMORY.md (per project).
 // Agent hanya append terkurasi via tool memory_append; user bisa menimpa utuh.
 import { z } from "zod";
@@ -15,6 +15,6 @@ export const MemoryDoc = z.object({
 });
 export type MemoryDoc = z.infer<typeof MemoryDoc>;
 
-/** PUT /api/memory — cap 1MB utk payload input (mitigasi GHSA zod <4.6.6). */
+/** PUT /api/memory, cap 1MB utk payload input (mitigasi GHSA zod <4.6.6). */
 export const SaveMemoryRequest = MemoryDoc.extend({ content: z.string().max(1_000_000) });
 export type SaveMemoryRequest = z.infer<typeof SaveMemoryRequest>;

@@ -1,4 +1,4 @@
-// CP-3 SSO via portal — kontrak & alur lengkap apps/api:
+// CP-3 SSO via portal, kontrak & alur lengkap apps/api:
 // start (PKCE S256 + state-attempt) → complete (tukar code di double portal
 // /api/oauth/token) → sesi Yuika. Double portal minimal inline (semantik
 // sama dengan e2e/portal-double.mts + portal nyata CP-3).
@@ -72,7 +72,7 @@ beforeAll(async () => {
       });
       return;
     }
-    // CP-4 double: claim device (deviceId deterministik dari signPub — id stabil)
+    // CP-4 double: claim device (deviceId deterministik dari signPub, id stabil)
     if (req.method === "POST" && req.url === "/api/devices/claim") {
       let body = "";
       req.on("data", (c) => (body += c));
@@ -134,7 +134,7 @@ async function start(): Promise<{ authorizeUrl: string; state: string; challenge
   const state = u.searchParams.get("state") ?? "";
   expect(state).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
   // challenge di URL HARUS deterministik dari verifier test (kita tak tahu
-  // verifier server — jadi ambil challenge DARI URL utk issue code; verifier
+  // verifier server, jadi ambil challenge DARI URL utk issue code; verifier
   // tetap milik server, kita hanya menguji happy path via double yang
   // memverifikasi challenge vs yang dikirim server… → utk happy path, issue
   // code dengan challenge dari URL TIDAK cukup (double cek verifier server).
@@ -167,7 +167,7 @@ describe("CP-3 SSO via portal", () => {
     expect(body.user.email).toBe("sso@yuika.test");
     const me = await app.inject({ method: "GET", url: "/api/auth/me", headers: { authorization: `Bearer ${body.token}` } });
     expect((me.json() as { user: { email: string } }).user.email).toBe("sso@yuika.test");
-    // CP-4: auto-link — browser diklaim sebagai device web; kunci STABIL
+    // CP-4: auto-link, browser diklaim sebagai device web; kunci STABIL
     expect(claims).toHaveLength(1);
     expect(claims[0]!.kind).toBe("web");
     const web = getWebDevice();
@@ -197,7 +197,7 @@ describe("CP-3 SSO via portal", () => {
     const st = await start();
     const code = issueCode(new URL(st.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_fail", "fail@yuika.test");
     const r = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code, state: st.state } });
-    expect(r.statusCode).toBe(200); // login jalan — device bisa di-link nanti
+    expect(r.statusCode).toBe(200); // login jalan, device bisa di-link nanti
     failClaims = false;
   });
 
@@ -213,7 +213,7 @@ describe("CP-3 SSO via portal", () => {
     const ok = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code, state: st.state } });
     expect(ok.statusCode).toBe(200);
     const replay = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code, state: st.state } });
-    expect(replay.statusCode).toBe(400); // attempt sekali pakai — replay state tak dikenal
+    expect(replay.statusCode).toBe(400); // attempt sekali pakai, replay state tak dikenal
   });
 
   it("verifier mismatch (double menolak) → 401 dengan pesan portal", async () => {
@@ -238,7 +238,7 @@ describe("CP-3 SSO via portal", () => {
     expect((r2.json() as { user: { id: string } }).user.id).toBe(id1);
 
     // Account portal BEDA dgn email SAMA → 409 (anti takeover: email sudah
-    // milik akun portal lain — identitas = portalAccountId).
+    // milik akun portal lain, identitas = portalAccountId).
     const st3 = await start();
     const c3 = issueCode(new URL(st3.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_link_2", "linked@yuika.test");
     const r3 = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: c3, state: st3.state } });

@@ -1,6 +1,6 @@
 "use client";
 
-// Batch 14a++ (user 2026-11): tab Browser dibongkar — reader + Live pindah
+// Batch 14a++ (user 2026-11): tab Browser dibongkar, reader + Live pindah
 // (reader dihapus; live screen = floating window via bubble chat). Tab ini
 // kini TERMINAL PENUH: Shell (xterm, sesi shared agent) | Commands (log
 // run_command). View pilihan persist localStorage yui.termView.
@@ -58,7 +58,7 @@ function CommandsView({ projectId }: { projectId: string }) {
   if (cmds.length === 0)
     return (
       <div className="flex h-full items-center justify-center p-4 text-center text-caption text-dim">
-        No agent commands yet — every run_command (node / npm / npx) shows up
+        No agent commands yet, every run_command (node / npm / npx) shows up
         here live while a workflow or delegation works.
       </div>
     );
@@ -112,7 +112,7 @@ function CommandsView({ projectId }: { projectId: string }) {
   );
 }
 
-/** D31: switcher Shell/Commands — dipasang di POJOK KANAN baris status
+/** D31: switcher Shell/Commands, dipasang di POJOK KANAN baris status
  *  (sebaris dengan pill "● live"), bukan header terpisah di atas. */
 function ViewSwitcher({
   view,

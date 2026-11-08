@@ -1,7 +1,7 @@
-// @yuika/contracts — metering (P1-CRED-1): ledger pemakaian per panggilan LLM.
+// @yuika/contracts, metering (P1-CRED-1): ledger pemakaian per panggilan LLM.
 // Satu UsageEvent = SATU panggilan model sukses (iterasi loop / langkah delegasi
-// anak) — rollup per turn/persona/model dihitung dari sini (P1-CRED-4 burn-rate).
-// Invariant: angka HANYA dari `usage` yang dilaporkan provider — tidak ada
+// anak), rollup per turn/persona/model dihitung dari sini (P1-CRED-4 burn-rate).
+// Invariant: angka HANYA dari `usage` yang dilaporkan provider, tidak ada
 // estimasi (akurasi <2% vs tagihan provider = P1-CRED-6).
 
 import { z } from "zod";
@@ -15,7 +15,7 @@ export const UsageEvent = z.object({
   model: z.string().min(1),
   promptTokens: z.number().int().nonnegative(),
   outputTokens: z.number().int().nonnegative(),
-  /** Durasi panggilan provider (ms) — bukti latensi per model. */
+  /** Durasi panggilan provider (ms), bukti latensi per model. */
   latencyMs: z.number().int().nonnegative(),
   at: z.number().int().positive(),
 });
@@ -26,7 +26,7 @@ export const UsageFilter = z.object({
   projectId: z.string().optional(),
   sessionId: z.string().optional(),
   personaId: z.string().optional(),
-  /** Hanya event `at >= since` (epoch ms) — window burn-rate. */
+  /** Hanya event `at >= since` (epoch ms), window burn-rate. */
   since: z.number().int().nonnegative().optional(),
 });
 export type UsageFilter = z.infer<typeof UsageFilter>;
@@ -45,7 +45,7 @@ export const UsageSummary = z.object({
   outputTokens: z.number().int().nonnegative(),
   byPersona: z.array(UsageRollup),
   byModel: z.array(UsageRollup),
-  /** Epoch ms event termuda dalam hasil (null = kosong) — dipakai UI "per X jam". */
+  /** Epoch ms event termuda dalam hasil (null = kosong), dipakai UI "per X jam". */
   windowStart: z.number().nullable(),
 });
 export type UsageSummary = z.infer<typeof UsageSummary>;

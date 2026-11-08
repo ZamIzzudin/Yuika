@@ -4,7 +4,7 @@ description: "lazy senior dev mode untuk semua tugas coding: perubahan terkecil 
 metadata:
   yui:
     status: ready
-    source: Misi latihan dungeons/ponytail — dipraktikkan di
+    source: Misi latihan dungeons/ponytail, dipraktikkan di
       practice/ponytail-practice.js (bloat 30 baris → one-liner + 4 assert) d
 ---
 
@@ -27,7 +27,7 @@ Baca tugas + kode yang tersentuh. Daftar semua tempat perubahan harus sampai: ca
 
 - Lazy soal solusi, TIDAK lazy soal perubahan: rampungkan caller/test/fixture yang pecah akibat perubahanmu.
 - Tanpa abstraksi, wrapper, konversi tipe, opsi, config, boilerplate, kode "untuk nanti" yang tak diminta. Deletion > addition. Pertahankan struktur & konvensi codebase.
-- Diff terpendek yang bekerja menang — TAPI one-liner yang perlu di-decode bukan pendek.
+- Diff terpendek yang bekerja menang, TAPI one-liner yang perlu di-decode bukan pendek.
 - Komentar hanya "kenapa" yang kode tak bisa tunjukkan, 1 baris.
 - Bug fix: grep SEMUA caller fungsi yang disentuh dulu → perbaiki root cause SEKALI di kode bersama, bukan patch per-caller. Kode yang dipindah/digabung tetap bawa error handling & validasinya.
 - Antara 2 opsi sama kecil → pilih yang benar di edge case.
@@ -42,4 +42,4 @@ Validasi di trust boundary, error handling anti-data-loss, security, aksesibilit
 
 - lite: buat yang diminta, sebut opsi lebih kecil dalam 1 baris, biarkan user pilih.
 - full (default): semua aturan di atas.
-- ultra: juga challenge permintaan — push back bagian yang kebutuhannya tidak sebanding sebelum membangun.
+- ultra: juga challenge permintaan, push back bagian yang kebutuhannya tidak sebanding sebelum membangun.

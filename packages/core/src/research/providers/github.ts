@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a) — GitHub repo search (API resmi, unauth 10 req/menit — cukup utk riset).
+// Batch 7 (RS-1a), GitHub repo search (API resmi, unauth 10 req/menit, cukup utk riset).
 import type { SearchProvider, SearchResult } from "../types.js";
 import { httpJson } from "../util.js";
 
@@ -19,7 +19,7 @@ export const githubProvider: SearchProvider = {
     return (data.items ?? []).map((r) => ({
       title: r.full_name,
       url: r.html_url,
-      snippet: `${r.description ?? ""} — ★${r.stargazers_count}${r.language ? ` · ${r.language}` : ""}`.trim().slice(0, 240),
+      snippet: `${r.description ?? ""}, ★${r.stargazers_count}${r.language ? ` · ${r.language}` : ""}`.trim().slice(0, 240),
       source: "github",
     }));
   },

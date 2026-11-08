@@ -1,6 +1,6 @@
-// @yuika/core — Google Gemini adapter (P1-INF-2): streamGenerateContent (alt=sse)
+// @yuika/core, Google Gemini adapter (P1-INF-2): streamGenerateContent (alt=sse)
 // via fetch. Perbedaan besar vs OpenAI: functionCall TANPA id (nama fungsi =
-// identitas) & hasil tool dikirim sebagai functionResponse di role user —
+// identitas) & hasil tool dikirim sebagai functionResponse di role user,
 // mapping id→nama dibangun saat konversi (urutan pesan internal tetap).
 import { randomUUID } from "node:crypto";
 import type { ChatRequest, InternalMessage, ProviderAdapter, ProviderChunk, ProviderDone, ToolCallRequest } from "./adapter.js";
@@ -61,7 +61,7 @@ function safeJson(text: string): unknown {
   try {
     return JSON.parse(text) as unknown;
   } catch {
-    return { result: text }; // Gemini butuh object — teks non-JSON dibungkus
+    return { result: text }; // Gemini butuh object, teks non-JSON dibungkus
   }
 }
 

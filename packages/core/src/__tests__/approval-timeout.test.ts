@@ -1,4 +1,4 @@
-// P0-SEC-4: approval timeout + auto-deny — approval yang diabaikan tidak
+// P0-SEC-4: approval timeout + auto-deny, approval yang diabaikan tidak
 // menggantung selamanya; setelah deadline turn dilanjutkan FAIL-CLOSED
 // (denied), baris DB di-settle "expired", event approval.expired ke UI.
 // Resolve tepat waktu → timer mati, tidak ada expiry ganda.

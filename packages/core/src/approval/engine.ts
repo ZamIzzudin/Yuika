@@ -1,9 +1,9 @@
-// @yuika/core — approval engine: pause turn → approval.requested → tunggu keputusan user
-// (pola server_requests Hermes; di SaaS nanti bisa via push notification — PLAN §4.11).
-// P0-DATA-3: pending approval & "Setujui & ingat" PERSIST di SQLite — permintaan
+// @yuika/core, approval engine: pause turn → approval.requested → tunggu keputusan user
+// (pola server_requests Hermes; di SaaS nanti bisa via push notification, PLAN §4.11).
+// P0-DATA-3: pending approval & "Setujui & ingat" PERSIST di SQLite, permintaan
 // yang menggantung saat server restart ditandai expired (event approval.expired),
 // bukan menghilang diam-diam; remembered tool dimuat ulang tiap engine baru.
-// P0-SEC-4: deadline + auto-deny — approval yang diabaikan user TIDAK menggantung
+// P0-SEC-4: deadline + auto-deny, approval yang diabaikan user TIDAK menggantung
 // selamanya; setelah `YUI_APPROVAL_TIMEOUT_MS` (default 5 menit; 0 = nonaktif utk
 // test) turn dilanjutkan FAIL-CLOSED (denied), event approval.expired ke UI.
 import { randomUUID } from "node:crypto";
@@ -12,11 +12,11 @@ import type { ISessionStore } from "../session/store.js";
 
 /**
  * Registry pending lintas engine: satu engine per turn, tapi route handler
- * hanya tahu requestId. Live promise hanya hidup selama proses — statusnya
+ * hanya tahu requestId. Live promise hanya hidup selama proses, statusnya
  * yang permanen ada di tabel `approvals` (P0-DATA-3).
  *
  * QUIRK dev (dipelajari dev-10, fix bug user "approval 404 saat disetujui"):
- * Next.js dev membundel @yuika/core TERPISAH per route — route approvals mendapat
+ * Next.js dev membundel @yuika/core TERPISAH per route, route approvals mendapat
  * copy modul sendiri. Map module-local → map KOSONG di copy route → resolve 404
  * "sudah selesai" padahal approval hidup. Sama seperti bus emitter: map WAJIB
  * di-cache di globalThis agar semua module-instance berbagi.
@@ -29,7 +29,7 @@ const pendingEngines = (approvalGlobal.__yuiPendingApprovalEngines ??= new Map<s
 
 /** Mode cepat (fix dev-10 user: approval kedaluwarsa → proses terasa stuck):
  *  "auto" = tulis file & jalankan kode disetujui otomatis; tool lain (MCP,
- *  dst.) tetap minta persetujuan. Global lintas sesi & lintas delegasi —
+ *  dst.) tetap minta persetujuan. Global lintas sesi & lintas delegasi,
  *  di-cache di globalThis (tahan HMR) + dipersist runtime. */
 export type ApprovalMode = "ask" | "auto";
 const AUTO_APPROVE_TOOLS = new Set(["write_file", "run_command"]);
@@ -64,7 +64,7 @@ export interface ApprovalPersistOptions {
 
 export class ApprovalEngine {
   private pending = new Map<string, { tool: string; resolve: (approved: boolean) => void; clearTimeout: () => void }>();
-  /** Tool yang di-approve + "ingat" — skip approval sesi ini (mengurangi round-trip user).
+  /** Tool yang di-approve + "ingat", skip approval sesi ini (mengurangi round-trip user).
    *  Persist di approval_memory → bertahan restart server (P0-DATA-3). */
   private remembered = new Set<string>();
 
@@ -76,7 +76,7 @@ export class ApprovalEngine {
   }
 
   request(tool: string, args: Record<string, unknown>, reason: string): Promise<boolean> {
-    // Mode cepat: tulis file & jalankan kode disetujui otomatis (fix dev-10 —
+    // Mode cepat: tulis file & jalankan kode disetujui otomatis (fix dev-10,
     // tanpa kartu approval; event resolved tetap muncul supaya jujur/traceable).
     if (getApprovalMode() === "auto" && AUTO_APPROVE_TOOLS.has(tool)) {
       this.emit({ type: "approval.resolved", requestId: `apr_auto_${tool}`, tool, approved: true });
@@ -91,7 +91,7 @@ export class ApprovalEngine {
     this.persist?.store.insertApproval({ requestId, sessionId: this.persist.sessionId, tool, args, reason });
     pendingEngines.set(requestId, this);
     return new Promise<boolean>((resolve) => {
-      // P0-SEC-4: deadline auto-deny — fail-closed, turn tidak menggantung tanpa batas.
+      // P0-SEC-4: deadline auto-deny, fail-closed, turn tidak menggantung tanpa batas.
       const timeoutMs = APPROVAL_TIMEOUT_MS();
       const timer = timeoutMs > 0 ? setTimeout(() => this.expire(requestId), timeoutMs) : null;
       timer?.unref?.(); // jangan tahan proses hidup hanya karena timer approval
@@ -115,14 +115,14 @@ export class ApprovalEngine {
     entry.resolve(false);
   }
 
-  /** Dipanggil dari POST /api/approvals/:id — `remember` menandai tool bebas-approval
+  /** Dipanggil dari POST /api/approvals/:id, `remember` menandai tool bebas-approval
    *  untuk sisa sesi engine ini + persist (kartu "Setujui & ingat"). */
   resolve(requestId: string, approved: boolean, remember = false): boolean {
     const entry = this.pending.get(requestId);
     if (!entry) return false;
     this.pending.delete(requestId);
     pendingEngines.delete(requestId);
-    entry.clearTimeout(); // P0-SEC-4: user menjawab sebelum deadline — matikan timer
+    entry.clearTimeout(); // P0-SEC-4: user menjawab sebelum deadline, matikan timer
     if (approved && remember) {
       this.remembered.add(entry.tool);
       this.persist?.store.rememberApproval(this.persist.sessionId, entry.tool);

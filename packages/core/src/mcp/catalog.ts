@@ -1,8 +1,8 @@
-// @yuika/core — Katalog MCP internal (P1-MCP-1): daftar kurasi ~20 server yang
+// @yuika/core, Katalog MCP internal (P1-MCP-1): daftar kurasi ~20 server yang
 // bisa dipasang lewat UI. Install = menulis deklarasi ke `mcp.json` (stdio npx).
 // Tetap fail-closed (P1-MCP-3): setelah install user masih harus Trust server
 // sebelum dihubungkan; deny list per-tool tersedia di panel MCP.
-// Env yang diisi user hanya disimpan lokal di mcp.json — jangan commit key.
+// Env yang diisi user hanya disimpan lokal di mcp.json, jangan commit key.
 import type { McpCatalogEntry } from "@yuika/contracts";
 
 const ws = "{workspace}";
@@ -12,14 +12,14 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
     id: "tailscale",
     name: "Tailscale Tunnel",
     description:
-      "Ekspos dev lokal ke tailnet VPN (serve) atau Internet publik (funnel) — mis. localhost:3000 jadi https://<host>.ts.net. Membungkus CLI tailscale.",
+      "Ekspos dev lokal ke tailnet VPN (serve) atau Internet publik (funnel), mis. localhost:3000 jadi https://<host>.ts.net. Membungkus CLI tailscale.",
     category: "dev",
     risk: "tinggi",
     command: "node",
     args: [`${ws}/../mcp-servers/tailscale/index.mjs`],
     envKeys: [],
     setupNote:
-      "Butuh Tailscale terpasang & login (tailscale up). Funnel (akses publik) harus diizinkan admin tailnet — risiko tinggi, gunakan sadar.",
+      "Butuh Tailscale terpasang & login (tailscale up). Funnel (akses publik) harus diizinkan admin tailnet, risiko tinggi, gunakan sadar.",
     docsUrl: "https://tailscale.com/kb/1242/tailscale-serve",
   },
   {
@@ -60,7 +60,7 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
   {
     id: "memory",
     name: "Memory (knowledge graph)",
-    description: "Graph memori persist: entitas, relasi, observasi — lintas sesi.",
+    description: "Graph memori persist: entitas, relasi, observasi, lintas sesi.",
     category: "memori",
     risk: "rendah",
     command: "npx",
@@ -82,7 +82,7 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
   {
     id: "everything",
     name: "Everything (test)",
-    description: "Server demo untuk menguji semua fitur MCP — pasang hanya untuk tes.",
+    description: "Server demo untuk menguji semua fitur MCP, pasang hanya untuk tes.",
     category: "dev",
     risk: "rendah",
     command: "npx",
@@ -126,7 +126,7 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
   {
     id: "github",
     name: "GitHub",
-    description: "Repo, issue, PR, file — akses via personal access token.",
+    description: "Repo, issue, PR, file, akses via personal access token.",
     category: "dev",
     risk: "tinggi",
     command: "npx",
@@ -148,7 +148,7 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
   {
     id: "google-maps",
     name: "Google Maps",
-    description: "Geocoding, places, rute — butuh Google Maps API key.",
+    description: "Geocoding, places, rute, butuh Google Maps API key.",
     category: "web",
     risk: "sedang",
     command: "npx",
@@ -181,7 +181,7 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
   {
     id: "context7",
     name: "Context7 (docs terkini)",
-    description: "Dokumentasi library versi terbaru untuk agent — kurangi halusinasi API.",
+    description: "Dokumentasi library versi terbaru untuk agent, kurangi halusinasi API.",
     category: "dev",
     risk: "rendah",
     command: "npx",

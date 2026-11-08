@@ -1,8 +1,8 @@
 "use client";
 
-// Batch 14a++ (user 2026-11): tab Logs = observability PROJECT-WIDE — dua view:
+// Batch 14a++ (user 2026-11): tab Logs = observability PROJECT-WIDE, dua view:
 //   Activity      : feed semua persona di project ini (tool calls, browser,
-//                   vault, delegasi, approval, browsing history) — realtime
+//                   vault, delegasi, approval, browsing history), realtime
 //                   via poll ringan 2.5s; TIDAK lagi terikat sesi chat aktif.
 //   Session Trace : timeline per turn sesi aktif (lama, P1-INF-4).
 import { useCallback, useEffect, useState } from "react";
@@ -35,7 +35,7 @@ const KIND_TONE: Record<
   vault: "warn",
   delegation: "info",
   approval: "warn",
-  qa: "ok", // SCR-6: QA check — fail di-render danger via isError
+  qa: "ok", // SCR-6: QA check, fail di-render danger via isError
   visit: "muted",
 };
 
@@ -119,7 +119,7 @@ export function LogsTab({
 }: {
   projectId: string;
   sessionId: string | null;
-  /** Naik tiap event SSE baru — dipakai Session Trace (refetch debounce). */
+  /** Naik tiap event SSE baru, dipakai Session Trace (refetch debounce). */
   live?: number;
   onBack: () => void;
 }) {

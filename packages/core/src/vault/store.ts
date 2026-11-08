@@ -1,12 +1,12 @@
-// @yuika/core — vault store (Batch 12 / P2-VLT-1, D27; pola rokazo bot-secrets
+// @yuika/core, vault store (Batch 12 / P2-VLT-1, D27; pola rokazo bot-secrets
 // + scrub): SQLite terpisah `vault.db` (isolasi dari demo.db), tiap record
 // dienkripsi AES-256-GCM dengan master key (env YUI_VAULT_KEY → file
-// <data>/vault.key 0600). AAD = metadata record — rename/tamper kolom membuat
+// <data>/vault.key 0600). AAD = metadata record, rename/tamper kolom membuat
 // record gagal dibuka (bukan diam-diam terbaca).
 //
 // THREAT MODEL (jujur, lihat PLAN-WORKSHOP-LIVESCREEN-VAULT §3): key + ciphertext
 // di disk yang sama ≠ proteksi dari attacker yang sudah baca filesystem. Nilai
-// sesungguhnya: nilai TIDAK PERNAH lewat jalur model/API/event — jalur bocor
+// sesungguhnya: nilai TIDAK PERNAH lewat jalur model/API/event, jalur bocor
 // klasik (context, trace, log, SSE) tertutup by-construction.
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -20,7 +20,7 @@ export interface VaultPutInput {
   scope: VaultScope;
   projectId?: string | null;
   personaId?: string | null;
-  /** Turn id — non-null = run-only (dihapus saat run lain mulai / dispose). */
+  /** Turn id, non-null = run-only (dihapus saat run lain mulai / dispose). */
   runId?: string | null;
   value: string;
 }
@@ -107,7 +107,7 @@ export class VaultStore {
     `);
   }
 
-  /** Upsert by name (nama unik global v0 — ambigu scope dicegah untuk agent). */
+  /** Upsert by name (nama unik global v0, ambigu scope dicegah untuk agent). */
   put(input: VaultPutInput): VaultRecord {
     const now = Date.now();
     const prev = this.db.prepare("SELECT * FROM vault_secrets WHERE name = ?").get(input.name) as Record<string, unknown> | undefined;
@@ -141,7 +141,7 @@ export class VaultStore {
     return row ? this.hydrate(row) : undefined;
   }
 
-  /** Dekripsi — dipanggil HANYA oleh manager jalur pakai (secret_http /
+  /** Dekripsi, dipanggil HANYA oleh manager jalur pakai (secret_http /
    *  run_command env); hasil tak pernah dikembalikan ke model. */
   decrypt(rec: VaultRecord): string {
     return open(this.key, rec);
@@ -175,7 +175,7 @@ export class VaultStore {
     return r.changes > 0;
   }
 
-  /** Hapus secret run-only — dipanggil saat turn baru mulai & dispose:
+  /** Hapus secret run-only, dipanggil saat turn baru mulai & dispose:
    *  sisa run lain (turn sudah selesai/crash) dibersihkan. */
   purgeRunOnly(exceptRunId?: string): number {
     const r = exceptRunId

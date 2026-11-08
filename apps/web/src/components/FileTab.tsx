@@ -1,11 +1,11 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
 // Tab File (P2-STU-3 v0 → merge Docs P2-STU-7, 2026-11-08): SATU konsep
-// "artefak project" — tree file kiri (+ seksi Run reports di atasnya) dan
+// "artefak project", tree file kiri (+ seksi Run reports di atasnya) dan
 // viewer kanan. File .md default ter-render (toggle Rendered/Source),
 // revisi & diff tetap utk file asli; run report workflow disintesis
 // markdown lokal. Semua request memakai authFetch (FIX bug user:
-// "authentication required" saat buka file — fetch polos tanpa token).
+// "authentication required" saat buka file, fetch polos tanpa token).
 // D29: tree profesional-minimalis (indent guides + ikon per tipe file),
 // preview kode = CodeBlock Shiki (highlight + nomor baris + copy), markdown
 // = varian "doc" (heading skenal dokumen, fenced code ikut di-highlight).
@@ -106,7 +106,7 @@ function fmtSize(n: number): string {
 const DirIcon: Icon = FolderSimple;
 const DirOpenIcon: Icon = FolderOpen;
 
-/** Ikon + warna muted per tipe file — identitas visual tanpa ramai. */
+/** Ikon + warna muted per tipe file, identitas visual tanpa ramai. */
 function fileIconOf(name: string): { Icon: Icon; cls: string } {
   const ext = name.toLowerCase().split(".").pop() ?? "";
   if (ext === "ts" || ext === "tsx" || ext === "mts" || ext === "cts")
@@ -136,7 +136,7 @@ function fileIconOf(name: string): { Icon: Icon; cls: string } {
   return { Icon: FileDoc, cls: "text-dim" };
 }
 
-/** Urutkan stabil: folder dulu, lalu file — alfabetis case-insensitive. */
+/** Urutkan stabil: folder dulu, lalu file, alfabetis case-insensitive. */
 function sortNodes(nodes: FileNode[]): FileNode[] {
   return [...nodes].sort((a, b) => {
     if (a.dir !== b.dir) return a.dir ? -1 : 1;
@@ -144,7 +144,7 @@ function sortNodes(nodes: FileNode[]): FileNode[] {
   });
 }
 
-/** Total file (rekursif) — badge jumlah di header Files. */
+/** Total file (rekursif), badge jumlah di header Files. */
 function countFiles(nodes: FileNode[]): number {
   let n = 0;
   for (const x of nodes) {
@@ -154,12 +154,12 @@ function countFiles(nodes: FileNode[]): number {
   return n;
 }
 
-/** Run → laporan markdown (ringkasan fase + step + gate) — dari DocsTab lama. */
+/** Run → laporan markdown (ringkasan fase + step + gate), dari DocsTab lama. */
 function runToMarkdown(run: RunRow): string {
   const label = (pid: string) =>
     run.workflow.phases?.find((p) => p.id === pid)?.label ?? pid;
   const lines: string[] = [];
-  lines.push(`# Run report — ${run.workflow.name ?? "workflow"}`, "");
+  lines.push(`# Run report, ${run.workflow.name ?? "workflow"}`, "");
   lines.push(
     `**Run** \`${run.id}\` · **Status** ${run.status} · ${new Date(run.createdAt).toLocaleString()} – ${new Date(run.updatedAt).toLocaleString()}`,
     "",
@@ -171,14 +171,14 @@ function runToMarkdown(run: RunRow): string {
         : ph.gatePassed
           ? " · gate approved"
           : "";
-    lines.push(`## ${label(ph.phaseId)} — ${ph.status}${gate}`, "");
+    lines.push(`## ${label(ph.phaseId)}, ${ph.status}${gate}`, "");
     if (!ph.steps.length) {
       lines.push("_No steps recorded._", "");
       continue;
     }
     for (const st of ph.steps) {
       const mark = st.ok === true ? "x" : st.ok === false ? " " : "·";
-      const summary = st.summary ? ` — ${st.summary.replace(/\n+/g, " ")}` : "";
+      const summary = st.summary ? `, ${st.summary.replace(/\n+/g, " ")}` : "";
       lines.push(`- [${mark}] **${st.id}** (${st.personaId})${summary}`);
     }
     lines.push("");
@@ -272,7 +272,7 @@ function TreeRow({
           </small>
         )}
       </button>
-      {/* indent guide — garis vertikal tipis menandai kedalaman (editor-like) */}
+      {/* indent guide, garis vertikal tipis menandai kedalaman (editor-like) */}
       {isDir && open && (
         <div
           className="ml-[11px] border-l border-line/60 pl-0.5"
@@ -327,7 +327,7 @@ export function FileTab({ projectId }: { projectId: string }) {
       toastErr("could not reach the server");
     }
     // sinkronkan file yang sedang dibuka bila ditimpa agent di background
-    // (FIX: authFetch — dulu fetch polos → 401 "authentication required")
+    // (FIX: authFetch, dulu fetch polos → 401 "authentication required")
     if (sel?.kind === "file") {
       try {
         const [c, rv] = await Promise.all([
@@ -357,7 +357,7 @@ export function FileTab({ projectId }: { projectId: string }) {
   const loadTreeRef = useRef(loadTree);
   loadTreeRef.current = loadTree;
 
-  // Reset hanya saat GANTI PROJECT — jangan ikut identitas loadTree (dep `sel`):
+  // Reset hanya saat GANTI PROJECT, jangan ikut identitas loadTree (dep `sel`):
   // FIX test user #2: klik file → sel berubah → loadTree baru → effect lama
   // me-reset sel ke null → pane kanan tak pernah menampilkan isi file.
   useEffect(() => {
@@ -371,7 +371,7 @@ export function FileTab({ projectId }: { projectId: string }) {
     void loadTreeRef.current();
   }, [projectId]);
 
-  // FIX test user: file baru hasil agent tidak muncul — refresh berkala saat tab
+  // FIX test user: file baru hasil agent tidak muncul, refresh berkala saat tab
   // terbuka + saat jendela kembali fokus (write_file bisa terjadi di background).
   useEffect(() => {
     const poll = setInterval(() => void loadTree(), 5_000);
@@ -464,7 +464,7 @@ export function FileTab({ projectId }: { projectId: string }) {
     sel?.kind === "file"
       ? sel.path
       : sel?.kind === "run"
-        ? `Run report — ${runs?.find((x) => x.id === sel.id)?.workflow.name ?? sel.id.slice(0, 8)}`
+        ? `Run report, ${runs?.find((x) => x.id === sel.id)?.workflow.name ?? sel.id.slice(0, 8)}`
         : null;
   const isMd =
     (selPath?.toLowerCase().endsWith(".md") ?? false) || sel?.kind === "run";
@@ -487,7 +487,7 @@ export function FileTab({ projectId }: { projectId: string }) {
       );
       return;
     }
-    toastOk(`${f.name} uploaded — ask Poe Yui to read it via doc_read.`);
+    toastOk(`${f.name} uploaded, ask Poe Yui to read it via doc_read.`);
     await loadTree();
   }
 
@@ -526,7 +526,7 @@ export function FileTab({ projectId }: { projectId: string }) {
       </div>
       <div className="grid min-h-80 grid-cols-[minmax(210px,290px)_minmax(0,1fr)] gap-3 h-[85dvh]">
         <div className={pane} role="tree">
-          {/* Run reports — diserap dari tab Docs (P2-STU-7 merge, 2026-11-08) */}
+          {/* Run reports, diserap dari tab Docs (P2-STU-7 merge, 2026-11-08) */}
           <h3 className="flex items-center gap-1.5 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-dim">
             Run reports
             {runs !== null && runs.length > 0 && (
@@ -572,7 +572,7 @@ export function FileTab({ projectId }: { projectId: string }) {
             <SkeletonRows rows={5} />
           ) : tree.length === 0 ? (
             <p className="px-1.5 text-caption text-dim">
-              No files yet — the team writes artefacts here.
+              No files yet, the team writes artefacts here.
             </p>
           ) : (
             <>
@@ -601,7 +601,7 @@ export function FileTab({ projectId }: { projectId: string }) {
           {loadingContent && <SkeletonRows rows={4} />}
           {!loadingContent && sel?.kind === "file" && content?.truncated && (
             <p className="text-caption text-dim">
-              File too large to preview ({fmtSize(content.size)} &gt; 256 KB) —
+              File too large to preview ({fmtSize(content.size)} &gt; 256 KB),
               open it in the file explorer.
             </p>
           )}
@@ -611,7 +611,7 @@ export function FileTab({ projectId }: { projectId: string }) {
             !content.truncated &&
             !isText && (
               <p className="text-caption text-dim">
-                Binary file ({fmtSize(content.size)}) — text preview is not
+                Binary file ({fmtSize(content.size)}), text preview is not
                 available.
               </p>
             )}

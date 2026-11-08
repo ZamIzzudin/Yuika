@@ -1,4 +1,4 @@
-// P1 fix 2026-11 — kegagalan connect MCP saat STARTUP kini masuk reconnect
+// P1 fix 2026-11, kegagalan connect MCP saat STARTUP kini masuk reconnect
 // backoff (scheduleMcpRetry), bukan mati permanen sampai restart proses.
 // Sebelum fix: satu warn log → state "off" selamanya (cold start `uvx` yang
 // timeout -32001 tak pernah dicoba ulang walau cache paket sudah terisi).
@@ -29,7 +29,7 @@ describe("MCP startup failure → reconnect backoff (fix 2026-11)", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-mcpretry-"));
     const runtime = makeRuntime(dir, { broken: { command: "yui-definitely-missing-cmd", args: [] } });
 
-    // startup connect async — beri jendela untuk ENOENT + scheduleMcpRetry
+    // startup connect async, beri jendela untuk ENOENT + scheduleMcpRetry
     await new Promise((r) => setTimeout(r, 800));
     const st = runtime.mcpServerStatuses().find((s) => s.name === "broken");
     expect(st?.state).toBe("reconnecting");

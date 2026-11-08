@@ -1,4 +1,4 @@
-// P1-INF-4: trace view — event store + ledger digabung jadi timeline per turn.
+// P1-INF-4: trace view, event store + ledger digabung jadi timeline per turn.
 // Catatan: store menstempel ts/id sendiri → test memakai ts dari appendEvent.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -49,7 +49,7 @@ describe("buildTrace", () => {
     expect(model.label).toContain("glm/glm-5.1");
   });
 
-  it("turn kedua error — panggilan model turn pertama TIDAK ikut", () => {
+  it("turn kedua error, panggilan model turn pertama TIDAK ikut", () => {
     const t0 = push({ type: "turn.started", turnId: "t1" } as EventDraft);
     ledger.record({ sessionId: sid, projectId: null, personaId: "p", model: "m", promptTokens: 10, outputTokens: 5, latencyMs: 100, at: t0.ts });
     push({ type: "persona.state", personaId: "p", state: "done" } as EventDraft);

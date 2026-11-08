@@ -6,7 +6,7 @@ import { Modal } from "./surface";
 export { ConfirmDialog };
 
 /**
- * Popup konfirmasi aksi destruktif (delete/uninstall) — satu pola seragam
+ * Popup konfirmasi aksi destruktif (delete/uninstall), satu pola seragam
  * untuk semua fitur delete di aplikasi (DS-1): Modal ui (Escape + aria
  * dialog) + tombol Cancel / Confirm (danger).
  */

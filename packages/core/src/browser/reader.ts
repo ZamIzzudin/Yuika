@@ -1,14 +1,14 @@
-// @yuika/core — P2-STU-4: browser reader read-only (security review = gerbang).
+// @yuika/core, P2-STU-4: browser reader read-only (security review = gerbang).
 // Proxy server-side utk tab Browser: fetch HTML utk DIRENDER (user melihat apa
 // yang agent riset), BUKAN eksekusi. Pertahanan berlapis:
 //   1. Allowlist domain per project (`.yuika/browser.json` → env → default)
 //   2. SSRF guard: host private/loopback/link-local/metadata diblok KECUALI
 //      YUI_BROWSER_ALLOW_PRIVATE=1 (dev/test eksplisit)
-//   3. Redirect manual (max 4 hop) — SETIAP hop divalidasi ulang (SSRF via redirect)
+//   3. Redirect manual (max 4 hop), SETIAP hop divalidasi ulang (SSRF via redirect)
 //   4. Content-type whitelist (hanya text/html & text/plain) + size cap 2 MB
 //   5. Sanitizer: script/iframe/object/embed/form dihapus, on*= & javascript:
 //      dinetralkan, URL relatif di-rewrite absolut (img/a/link)
-// Render tetap di iframe sandbox kosong (tanpa allow-scripts/same-origin) —
+// Render tetap di iframe sandbox kosong (tanpa allow-scripts/same-origin),
 // pertahanan ke-6 di sisi klien.
 import dns from "node:dns/promises";
 import fs from "node:fs";
@@ -18,7 +18,7 @@ import path from "node:path";
 export const BROWSER_DEFAULT_ALLOW = ["example.com"];
 
 /** Policy browser per-project (FLOW user 2026-11: "semua URL bisa diakses").
- *  allowAll = lewati cek host (SSRF guard IP-private TETAP jalan — pertahanan
+ *  allowAll = lewati cek host (SSRF guard IP-private TETAP jalan, pertahanan
  *  non-negotiable). Disimpan `.yuika/browser.json` → { allow, allowAll }. */
 export interface BrowserPolicy {
   allow: string[];
@@ -107,12 +107,12 @@ export function isPrivateIp(ip: string): boolean {
 }
 
 /** Hostname (nama DNS) resolve → semua alamat private diblok (guard SSRF dasar;
- *  rebinding penuh butuh pinning koneksi — catat di security review v0). */
+ *  rebinding penuh butuh pinning koneksi, catat di security review v0). */
 export async function hostnameIsPrivate(host: string): Promise<boolean> {
   if (net.isIP(host)) return isPrivateIp(host);
   if (host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) return true;
   try {
-    // dns.lookup Node TIDAK punya timeout bawaan — resolver bermasalah (VPN/ISP)
+    // dns.lookup Node TIDAK punya timeout bawaan, resolver bermasalah (VPN/ISP)
     // bisa menggantung call selamanya (bug nyata: turn Scholar mati 2026-11).
     // Race 5 dtk; gagal resolve → anggap bukan private (fetch akan melaporkan error jaringan).
     const lookup = dns.lookup(host, { all: true });

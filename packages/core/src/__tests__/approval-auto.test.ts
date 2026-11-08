@@ -1,6 +1,6 @@
 // Mode approval "auto" (fix dev-10 user: approval kedaluwarsa → turn terasa
 // stuck; alur tulis+jalankan kode jadi tersendat). "auto" = write_file &
-// run_command disetujui otomatis (event resolved tetap muncul — jujur &
+// run_command disetujui otomatis (event resolved tetap muncul, jujur &
 // traceable); tool lain tetap minta kartu persetujuan.
 import { describe, expect, it, afterEach } from "vitest";
 import { ApprovalEngine, getApprovalMode, setApprovalMode, resolvePendingApproval } from "../approval/engine.js";

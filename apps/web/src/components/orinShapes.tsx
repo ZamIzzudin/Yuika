@@ -2,14 +2,14 @@ import { useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 
 /**
- * Orin v8 — definisi bentuk maskot (docs/orin_v8_larger_star.html).
+ * Orin v8, definisi bentuk maskot (docs/orin_v8_larger_star.html).
  * Satu rig mata dipakai semua bentuk; identitas persona = BENTUK (bukan tint).
- * 15 bentuk (urutan SHAPE_ORDER = urutan resmi pemakaian di UI) — geometri
+ * 15 bentuk (urutan SHAPE_ORDER = urutan resmi pemakaian di UI), geometri
  * v6 "Round Orb & Soft Star": kontur membulat organik, SEMUA bentuk path filled
  * (tidak ada lagi stroke-based v4).
  * Parameter per bentuk: fy (offset wajah Y), gs (skala jarak mata), es (skala
- * mata), gr (rentang tatapan), bodyScale (skala siluet — v8: bintang 1.18×,
- * WAJAH TIDAK ikut diskalakan) — dipakai OrinPortrait & PersonaFace.
+ * mata), gr (rentang tatapan), bodyScale (skala siluet, v8: bintang 1.18×,
+ * WAJAH TIDAK ikut diskalakan), dipakai OrinPortrait & PersonaFace.
  */
 export type OrinShapeKey =
   | "orb"
@@ -39,7 +39,7 @@ export interface OrinShape {
   gr: number;
   /** v8: skala grup siluet badan (1 = normal). Wajah/rig TIDAK ikut diskalakan. */
   bodyScale?: number;
-  /** Geometri badan (fill ditentukan parent) — koordinat pusat 0,0, radius ±130 */
+  /** Geometri badan (fill ditentukan parent), koordinat pusat 0,0, radius ±130 */
   geom: ReactNode;
 }
 
@@ -139,7 +139,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
     gs: 0.78,
     es: 0.8,
     gr: 0.5,
-    // v8: body bintang diperbesar 1.18× agar seimbang dgn bentuk lain —
+    // v8: body bintang diperbesar 1.18× agar seimbang dgn bentuk lain,
     // HANYA siluet; wajah/rig mata tidak diskalakan (rig bersama konsisten).
     bodyScale: 1.18,
     geom: (
@@ -214,7 +214,7 @@ export const SHAPES: Record<OrinShapeKey, OrinShape> = {
   },
 };
 
-/** Urutan resmi bentuk (dipakai CharacterStage & pemilih bentuk; JANGAN diubah — tersimpan di override user). */
+/** Urutan resmi bentuk (dipakai CharacterStage & pemilih bentuk; JANGAN diubah, tersimpan di override user). */
 export const SHAPE_ORDER: OrinShapeKey[] = [
   "orb",
   "cloud",
@@ -233,8 +233,8 @@ export const SHAPE_ORDER: OrinShapeKey[] = [
   "tube",
 ];
 
-/** Bentuk per persona — identitas visual maskot (Orin v4→v8).
- *  Bentuk bebas untuk persona mendatang (Analyst/Operator — P1-PER-6, dst.):
+/** Bentuk per persona, identitas visual maskot (Orin v4→v8).
+ *  Bentuk bebas untuk persona mendatang (Analyst/Operator, P1-PER-6, dst.):
  *  pill, bean, drop, star, flower, hex, trap, diamond, dome, tube. */
 export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
   "yui-conductor": "orb",
@@ -242,14 +242,14 @@ export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
   "yui-scribe": "blob",
   "yui-coder": "square",
   "yui-designer": "tri",
-  "yui-analyst": "diamond", // P1-PER-6: prisma — potongan data
-  "yui-operator": "hex", // P1-PER-6: baut — mesin/otomasi
-  "yui-planner": "star", // P2-PM-1 (D22): bintang — target & metrik PM
+  "yui-analyst": "diamond", // P1-PER-6: prisma, potongan data
+  "yui-operator": "hex", // P1-PER-6: baut, mesin/otomasi
+  "yui-planner": "star", // P2-PM-1 (D22): bintang, target & metrik PM
 };
 
 const FALLBACK: OrinShape = { ...SHAPES.orb, color: "#9A9A9A" };
 
-/** Wajah mini persona — rig mata kapsul v8 yang sama dengan OrinPortrait
+/** Wajah mini persona, rig mata kapsul v8 yang sama dengan OrinPortrait
  *  (mood idle, posisi statis): dipakai thumbnail galeri & tile bentuk di
  *  menu Persona supaya mini persona bermata seperti di workspace. */
 export function MiniFace({ shape }: { shape: OrinShape }) {
@@ -290,7 +290,7 @@ export function MiniFace({ shape }: { shape: OrinShape }) {
   );
 }
 
-/** Kunci bentuk persona (fallback: orb) — dipakai aturan khusus per bentuk
+/** Kunci bentuk persona (fallback: orb), dipakai aturan khusus per bentuk
  *  (v8: bola diskalakan seragam saat squash-stretch agar tetap bulat). */
 function personaShapeKey(personaId?: string): OrinShapeKey {
   if (!personaId) return "orb";
@@ -298,14 +298,14 @@ function personaShapeKey(personaId?: string): OrinShapeKey {
 }
 
 /** ===== Override bentuk per persona (menu Persona) =====
- *  User dapat mengganti geometri maskot via PUT /api/personas/shapes —
+ *  User dapat mengganti geometri maskot via PUT /api/personas/shapes,
  *  persist workspace/persona-shapes.json (core). Override di sini:
  *  module-store + useSyncExternalStore → semua PersonaFace/OrinPortrait
  *  langsung ikut berubah (tanpa reload). */
 let shapeOverrides: Record<string, OrinShapeKey> = {};
 const shapeListeners = new Set<() => void>();
 
-/** Set peta override (dari GET /api/personas/shapes) — mengganti seluruh peta. */
+/** Set peta override (dari GET /api/personas/shapes), mengganti seluruh peta. */
 export function setShapeOverrides(map: Record<string, OrinShapeKey>): void {
   shapeOverrides = { ...map };
   shapeListeners.forEach((l) => l());
@@ -317,23 +317,30 @@ export function subscribeShapeOverrides(cb: () => void): () => void {
 }
 
 function useShapeOverrides(): Record<string, OrinShapeKey> {
-  return useSyncExternalStore(subscribeShapeOverrides, () => shapeOverrides, () => shapeOverrides);
+  return useSyncExternalStore(
+    subscribeShapeOverrides,
+    () => shapeOverrides,
+    () => shapeOverrides,
+  );
 }
 
-/** Map override lengkap (reaktif) — untuk daftar item (galeri) tanpa hook per item. */
+/** Map override lengkap (reaktif), untuk daftar item (galeri) tanpa hook per item. */
 export function useShapeOverridesMap(): Record<string, OrinShapeKey> {
   return useShapeOverrides();
 }
 
-/** Bentuk AKTIF persona: override user > default PERSONA_SHAPE. Reaktif —
+/** Bentuk AKTIF persona: override user > default PERSONA_SHAPE. Reaktif,
  *  dipakai PersonaFace & OrinPortrait (identitas visual konsisten seketika). */
-export function usePersonaShape(personaId?: string): { key: OrinShapeKey; shape: OrinShape } {
+export function usePersonaShape(personaId?: string): {
+  key: OrinShapeKey;
+  shape: OrinShape;
+} {
   const ov = useShapeOverrides();
   const key = (personaId && ov[personaId]) || personaShapeKey(personaId);
   return { key, shape: key in SHAPES ? SHAPES[key] : FALLBACK };
 }
 
-/** Campur dua warna hex (v8 paintBody) — untuk stop gradient badan:
+/** Campur dua warna hex (v8 paintBody), untuk stop gradient badan:
  *  terang (→ putih 48%) & bayangan (→ tinta gelap 34%). */
 export function mixHex(hex: string, other: string, amount: number): string {
   const p = (h: string) => [

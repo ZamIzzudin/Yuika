@@ -1,4 +1,4 @@
-// @yuika/contracts — P2-PM-3: validator task list (Planner).
+// @yuika/contracts, P2-PM-3: validator task list (Planner).
 // Pure function browser-safe: DAG (dependsOn valid + tanpa siklus) + coverage
 // fase (setiap fase wajib ter-cover ≥1 task) + kelengkapan detail
 // (acceptance/assignee/estimate) sebagai warning.
@@ -50,7 +50,7 @@ export function lintTaskList(tasks: TaskItem[], opts: { requiredPhases?: string[
   };
   for (const t of tasks) visit(t.id, []);
 
-  // 2) coverage fase — setiap fase wajib ≥1 task
+  // 2) coverage fase, setiap fase wajib ≥1 task
   const required = opts.requiredPhases ?? WORKFLOW_PHASES;
   const counts = new Map<string, number>(required.map((p) => [p, 0]));
   for (const t of tasks) {
@@ -60,7 +60,7 @@ export function lintTaskList(tasks: TaskItem[], opts: { requiredPhases?: string[
     if (n === 0) errors.push(`fase "${phase}" tidak ter-cover task apa pun`);
   }
 
-  // 3) kelengkapan detail (warning — task boleh dibuat dulu, diisi kemudian)
+  // 3) kelengkapan detail (warning, task boleh dibuat dulu, diisi kemudian)
   let withAcceptance = 0;
   let withAssignee = 0;
   let withEstimate = 0;

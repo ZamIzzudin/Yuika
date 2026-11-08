@@ -1,7 +1,7 @@
-// @yuika/core — model router (P1-MDL-1 + P0-CORE-2): model & fallback PER PERSONA.
+// @yuika/core, model router (P1-MDL-1 + P0-CORE-2): model & fallback PER PERSONA.
 // Sumber resolusi (urut): override file (Settings UI) → persona.yaml
 // (model.primary.name / .fallback) → default env (YUI_MODEL + YUI_MODEL_FALLBACK).
-// Cooldown: model yang gagal dicap "unhealthy" 5 menit — resolve berikutnya
+// Cooldown: model yang gagal dicap "unhealthy" 5 menit, resolve berikutnya
 // langsung ke fallback tanpa mencoba model yang sekarat lagi.
 import fs from "node:fs";
 import path from "node:path";
@@ -38,7 +38,7 @@ export function saveModelOverride(file: string, personaId: string, override: Mod
   return all;
 }
 
-/** Route persona.yaml: model.primary {name?, fallback?} (opsional — kosong = default). */
+/** Route persona.yaml: model.primary {name?, fallback?} (opsional, kosong = default). */
 function personaRoute(personasDir: string, personaId: string): ModelRoute {
   const p = listPersonas(personasDir).find((x) => x.manifest.id === personaId);
   const primary = p?.manifest.model?.primary as { name?: string; fallback?: string } | undefined;

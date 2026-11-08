@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// DX: Next.js hanya meload .env dari apps/web/ — sementara .env.example ada di root.
+// DX: Next.js hanya meload .env dari apps/web/, sementara .env.example ada di root.
 // Forward .env repo root (tanpa dependency): set hanya jika belum ada, sehingga
 // apps/web/.env tetap menang jika dipakai.
 function loadRootEnv() {
@@ -22,7 +22,7 @@ loadRootEnv();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Docker (P0-INF-5): standalone saat build image — bundle minimal tanpa devDeps;
+  // Docker (P0-INF-5): standalone saat build image, bundle minimal tanpa devDeps;
   // lokal & CI tetap default (next dev/start biasa).
   output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
   // distDir bisa dipisah (NEXT_DIST_DIR=.next-pi) agar verifikasi/CI paralel
@@ -32,7 +32,7 @@ const nextConfig = {
   transpilePackages: ["@yuika/contracts", "@yuika/core", "@yuika/crypto", "@yuika/relay-client"],
   serverExternalPackages: ["better-sqlite3"],
   // Workspace packages pakai specifier ESM TS ("./foo.js" → foo.ts); webpack butuh
-  // extensionAlias agar bisa resolve ke sumber .ts — standar untuk monorepo Next.js.
+  // extensionAlias agar bisa resolve ke sumber .ts, standar untuk monorepo Next.js.
   webpack: (config) => {
     config.resolve.extensionAlias = {
       ...config.resolve.extensionAlias,

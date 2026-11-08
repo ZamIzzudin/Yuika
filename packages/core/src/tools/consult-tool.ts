@@ -1,6 +1,6 @@
-// @yuika/core — consult (P2-PM-2, D22): brainstorm multi-persona TERSTRUKTUR.
+// @yuika/core, consult (P2-PM-2, D22): brainstorm multi-persona TERSTRUKTUR.
 // Planner mengajukan SATU pertanyaan tajam ke 2–3 persona spesialis secara
-// PARALEL (via delegation runner yang sudah ada — metering, cap, event, audit
+// PARALEL (via delegation runner yang sudah ada, metering, cap, event, audit
 // ikut jalan), lalu menerima jawaban berlabel per persona untuk disintesis.
 // Bukan chat bebas: prompt anak memaksa format tetap (pendapat/risiko/saran/
 // asumsi) agar hasil bisa dikutip di dokumen perencanaan.
@@ -23,7 +23,7 @@ export function registerConsultTool(deps: DelegationDeps): void {
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
       const uniq = [...new Set(args.personas)];
-      // Paralel via runner yang sama dengan delegate_task (cap maxChildren tetap berlaku —
+      // Paralel via runner yang sama dengan delegate_task (cap maxChildren tetap berlaku,
       // kelebihan anak akan throw di runner, pesannya menjelaskan cara menaikkan cap).
       const handles = uniq.map((personaId) =>
         runChildPersona(
@@ -42,7 +42,7 @@ export function registerConsultTool(deps: DelegationDeps): void {
         result: {
           question: args.question,
           answers,
-          // instruksi sintesis untuk Planner (pemanggil) — bukan jawaban final
+          // instruksi sintesis untuk Planner (pemanggil), bukan jawaban final
           guidance:
             "Sintesis jawaban di atas: ambil posisi per topik, catat perbedaan pendapat sebagai keputusan terbuka (butuh user), kutip persona per keputusan.",
         },

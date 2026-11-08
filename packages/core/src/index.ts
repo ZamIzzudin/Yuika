@@ -1,4 +1,4 @@
-// @yuika/core — public entry
+// @yuika/core, public entry
 import { createYuiRuntime } from "./runtime.js";
 
 export type YuiRuntime = ReturnType<typeof createYuiRuntime>;
@@ -28,7 +28,7 @@ export { runChildPersona, type DelegationDeps } from "./delegation/runner.js";
 export { registerTodoTools } from "./tools/todo-tools.js";
 // P2-STU-4: browser reader read-only (allowlist + SSRF guard + sanitizer).
 export { BrowserReadError, readBrowserAllow, readBrowserPolicy, writeBrowserPolicy, readBrowserPage, assertBrowserUrlAllowed, hostAllowedBrowser, isPrivateIp, sanitizeBrowserHtml } from "./browser/reader.js";
-// Batch 7 (RS): Research Engine — web_search provider chain + web_fetch pipeline
+// Batch 7 (RS): Research Engine, web_search provider chain + web_fetch pipeline
 // (SSRF/robots/throttle/Readability, cache SQLite, budget per sesi).
 export {
   researchSearch, researchFetch, researchConfig, researchPolicyFor, getResearchBudget,
@@ -37,7 +37,7 @@ export {
   DEFAULT_PROVIDERS, SEARCH_TTL_MS, PAGE_TTL_MS,
   type SearchResult, type FetchedPage, type SearchProvider, type SearchOutcome, type FetchOutcome, type ResearchConfig,
 } from "./research/index.js";
-// Batch 12 (P2-VLT, D27): vault kredensial — AES-256-GCM per record, nilai tak
+// Batch 12 (P2-VLT, D27): vault kredensial, AES-256-GCM per record, nilai tak
 // pernah lewat jalur model/API/event; redaksi nilai aktif proses-wide.
 export {
   VaultStore, loadVaultMasterKey, type VaultRecord, type VaultPutInput,
@@ -51,7 +51,7 @@ export {
   activeSecretCount, resetActiveSecretsForTests, VAULT_REDACTED,
 } from "./vault/redact.js";
 export { registerVaultTools } from "./tools/vault-tools.js";
-// P2-STU-2: terminal manager — sesi shared user (SSE api) & agent (tool).
+// P2-STU-2: terminal manager, sesi shared user (SSE api) & agent (tool).
 export {
   ensureSession as ensureTerminalSession,
   type EnsureSessionOptions,
@@ -75,7 +75,7 @@ export { WorkshopStore } from "./workshop/store.js";
 export { registerWorkshopTool } from "./tools/workshop-tool.js";
 export { WorkflowEngine, type WorkflowEngineDeps, type StartRunOptions, type StartRunResult } from "./workflow/engine.js";
 
-// Batch 14a (P2-SCR, D25): shared live screen — lease fence (rokazo), CDP raw
+// Batch 14a (P2-SCR, D25): shared live screen, lease fence (rokazo), CDP raw
 // (global WebSocket Node 22+), manager Chromium per project×persona, takeover.
 export { screenLeaseId, parseScreenLeaseId, canTakeScreenLease, canReleaseScreenLease } from "./screen/lease.js";
 export {

@@ -1,5 +1,5 @@
-// @yuika/core — roster project (P1-PRJ-3, PLAN §13.4): siapa mengerjakan apa di project.
-// Sumber kebenaran = `project.yaml` di root project (deklaratif, ter-replay via file —
+// @yuika/core, roster project (P1-PRJ-3, PLAN §13.4): siapa mengerjakan apa di project.
+// Sumber kebenaran = `project.yaml` di root project (deklaratif, ter-replay via file,
 // bukan state DB kedua). Binding MCP di file yang sama dipakai P1-PRJ-5 (D17).
 import fs from "node:fs";
 import path from "node:path";
@@ -19,7 +19,7 @@ export function loadRoster(projectRoot: string): RosterEntry[] {
   return manifest.roster;
 }
 
-/** Tulis roster utuh ke project.yaml (replace — bentuk deklaratif sederhana). */
+/** Tulis roster utuh ke project.yaml (replace, bentuk deklaratif sederhana). */
 export function saveRoster(projectRoot: string, roster: RosterEntry[]): void {
   const manifest = ProjectManifest.parse({ roster });
   fs.mkdirSync(projectRoot, { recursive: true });

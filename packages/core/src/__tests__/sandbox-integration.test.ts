@@ -1,5 +1,5 @@
-// P0-SEC-1 — integrasi SANDBOX NYATA (docker run sungguhan).
-// Gate: hanya jalan bila YUI_SANDBOX_IT=1 — menjaga CI/laptop tanpa Docker
+// P0-SEC-1, integrasi SANDBOX NYATA (docker run sungguhan).
+// Gate: hanya jalan bila YUI_SANDBOX_IT=1, menjaga CI/laptop tanpa Docker
 // tetap hijau. Docker tak hidup → skip dinamis (probe async, bukan skipIf
 // statis yang dievaluasi sebelum hooks). Jalankan manual:
 //   YUI_SANDBOX_IT=1 npx vitest run src/__tests__/sandbox-integration.test.ts

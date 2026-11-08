@@ -1,11 +1,11 @@
-// @yuika/core — redaction secrets (P0-SEC-2, pola `redact` Hermes): nilai yang
+// @yuika/core, redaction secrets (P0-SEC-2, pola `redact` Hermes): nilai yang
 // terlihat seperti kunci/token RAHASIA disamarkan SEBELUM masuk konteks agent
 // (tool result → history → dikirim ke provider). Fail-closed: ragu-ragu →
 // redact; teks normal tidak boleh berubah.
 //
 // Mengapa di tool result: stdout run_command & isi file adalah vektor bocor
 // paling umum (script yang print env, file .env terbaca, grep menyentuh baris
-// kunci). INPUT user/agent (write_file) TIDAK di-redact — memang ada isinya.
+// kunci). INPUT user/agent (write_file) TIDAK di-redact, memang ada isinya.
 
 export const REDACTED = "«redacted»";
 
@@ -22,7 +22,7 @@ const TOKEN_PATTERNS: Array<{ re: RegExp; label: string }> = [
   { re: /\bBearer\s+[A-Za-z0-9._-]{16,}/gi, label: "Bearer token" },
 ];
 
-// Assignment eksplisit: KEY=… / "secret": … — nama rahasia jelas, nilai panjang.
+// Assignment eksplisit: KEY=… / "secret": …, nama rahasia jelas, nilai panjang.
 const ASSIGN_RE =
   /\b(api[_-]?key|apikey|secret|client[_-]?secret|access[_-]?token|auth[_-]?token|refresh[_-]?token|password|passwd)\b(["']?\s*[=:]\s*["']?)([^\s"']{8,})/gi;
 

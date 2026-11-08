@@ -1,18 +1,37 @@
-
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
 // Panel MCP (P1-MCP-3 + P1-MCP-1): trust gate workspace + status koneksi live
 // + audit tail + KATALOG server (install → mcp.json, uninstall). Fail-closed:
-// install TIDAK menghubungkan — user harus Trust dulu (toggle di atas).
+// install TIDAK menghubungkan, user harus Trust dulu (toggle di atas).
 // DS-1: ui/* + Tailwind + Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
-import type { McpAuditEntry, McpCatalogEntry, McpServerStatus } from "@yuika/contracts";
-import { ArrowsClockwise, ArrowClockwise, Check, Warning, X } from "@phosphor-icons/react";
+import type {
+  McpAuditEntry,
+  McpCatalogEntry,
+  McpServerStatus,
+} from "@yuika/contracts";
+import {
+  ArrowsClockwise,
+  ArrowClockwise,
+  Check,
+  Warning,
+  X,
+} from "@phosphor-icons/react";
 import { SkeletonRows } from "./Skeleton";
-import { Button, Chip, ConfirmDialog, Dot, SectionTitle, TextInput } from "./ui";
+import {
+  Button,
+  Chip,
+  ConfirmDialog,
+  Dot,
+  SectionTitle,
+  TextInput,
+} from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
-const RISK_LABEL: Record<string, { label: string; tone: "ok" | "warn" | "danger" }> = {
+const RISK_LABEL: Record<
+  string,
+  { label: string; tone: "ok" | "warn" | "danger" }
+> = {
   rendah: { label: "safe", tone: "ok" },
   sedang: { label: "caution", tone: "warn" },
   tinggi: { label: "account access", tone: "danger" },
@@ -41,10 +60,20 @@ export function McpPanel() {
         authFetch(apiUrl("/api/mcp/catalog")),
         authFetch(apiUrl("/api/mcp/runtime")),
       ]);
-      if (s.ok) setServers(((await s.json()) as { servers: McpServerStatus[] }).servers);
-      if (a.ok) setAudit(((await a.json()) as { entries: McpAuditEntry[] }).entries);
-      if (c.ok) setCatalog(((await c.json()) as { catalog: McpCatalogEntry[] }).catalog);
-      if (rt.ok) setUvx((((await rt.json()) as { uvxPath: string | null }).uvxPath) ?? null);
+      if (s.ok)
+        setServers(
+          ((await s.json()) as { servers: McpServerStatus[] }).servers,
+        );
+      if (a.ok)
+        setAudit(((await a.json()) as { entries: McpAuditEntry[] }).entries);
+      if (c.ok)
+        setCatalog(
+          ((await c.json()) as { catalog: McpCatalogEntry[] }).catalog,
+        );
+      if (rt.ok)
+        setUvx(
+          ((await rt.json()) as { uvxPath: string | null }).uvxPath ?? null,
+        );
     } catch {
       /* refresh berikutnya */
     }
@@ -53,24 +82,31 @@ export function McpPanel() {
   useEffect(() => {
     void refresh();
     // P1-MCP-6: daftar tool server bisa berubah kapan pun (notifikasi
-    // tools/list_changed di core) — poll ringan agar panel selalu segar.
+    // tools/list_changed di core), poll ringan agar panel selalu segar.
     const t = setInterval(() => void refresh(), 10_000);
     return () => clearInterval(t);
   }, [refresh]);
 
-  /** One-click install uv (installer resmi astral.sh) — konfirmasi eksplisit UI. */
+  /** One-click install uv (installer resmi astral.sh), konfirmasi eksplisit UI. */
   async function installUv() {
     setUvInstalling(true);
     setUvLog(null);
     try {
-      const res = await authFetch(apiUrl("/api/mcp/runtime"), { method: "POST" });
-      const j = (await res.json()) as { ok: boolean; uvxPath: string | null; log: string };
+      const res = await authFetch(apiUrl("/api/mcp/runtime"), {
+        method: "POST",
+      });
+      const j = (await res.json()) as {
+        ok: boolean;
+        uvxPath: string | null;
+        log: string;
+      };
       if (j.ok) {
         setUvx(j.uvxPath ?? "uvx");
-        toastOk("uv installed — Python/uvx servers are ready to use.");
-      }
-      else {
-        toastErr("installer finished but uvx was not detected — try restarting the dev server");
+        toastOk("uv installed, Python/uvx servers are ready to use.");
+      } else {
+        toastErr(
+          "installer finished but uvx was not detected, try restarting the dev server",
+        );
         setUvLog(j.log || null);
       }
       setUvConfirm(false);
@@ -87,9 +123,16 @@ export function McpPanel() {
       const res = await authFetch(apiUrl("/api/mcp/servers"), {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ server: s.name, trusted: !s.trusted, denyTools: s.denyTools }),
+        body: JSON.stringify({
+          server: s.name,
+          trusted: !s.trusted,
+          denyTools: s.denyTools,
+        }),
       });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
+      if (!res.ok)
+        toastErr(
+          ((await res.json()) as { error?: string }).error ?? "request failed",
+        );
       await refresh();
     } finally {
       setBusy(null);
@@ -105,7 +148,11 @@ export function McpPanel() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ server: name }),
       });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "reconnect failed");
+      if (!res.ok)
+        toastErr(
+          ((await res.json()) as { error?: string }).error ??
+            "reconnect failed",
+        );
       await refresh();
     } finally {
       setBusy(null);
@@ -120,11 +167,14 @@ export function McpPanel() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ catalogId: c.id, env: envVals }),
       });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
+      if (!res.ok)
+        toastErr(
+          ((await res.json()) as { error?: string }).error ?? "request failed",
+        );
       else {
         setOpenForm(null);
         setEnvVals({});
-        toastOk(`${c.name} added to mcp.json — Trust it to connect.`);
+        toastOk(`${c.name} added to mcp.json, Trust it to connect.`);
       }
       await refresh();
     } finally {
@@ -135,8 +185,14 @@ export function McpPanel() {
   async function uninstall(c: McpCatalogEntry) {
     setBusy(c.id);
     try {
-      const res = await authFetch(apiUrl(`/api/mcp/install?name=${encodeURIComponent(c.id)}`), { method: "DELETE" });
-      if (!res.ok) toastErr(((await res.json()) as { error?: string }).error ?? "request failed");
+      const res = await authFetch(
+        apiUrl(`/api/mcp/install?name=${encodeURIComponent(c.id)}`),
+        { method: "DELETE" },
+      );
+      if (!res.ok)
+        toastErr(
+          ((await res.json()) as { error?: string }).error ?? "request failed",
+        );
       else toastOk(`${c.name} removed from mcp.json.`);
       setConfirmUn(null);
       await refresh();
@@ -145,11 +201,17 @@ export function McpPanel() {
     }
   }
 
-  const declared = new Set(servers.filter((s) => s.declared).map((s) => s.name));
+  const declared = new Set(
+    servers.filter((s) => s.declared).map((s) => s.name),
+  );
   const booting = servers.length === 0 && catalog.length === 0;
   const q = query.trim().toLowerCase();
   const shown = catalog.filter(
-    (c) => !q || c.name.toLowerCase().includes(q) || c.description.toLowerCase().includes(q) || c.category.includes(q),
+    (c) =>
+      !q ||
+      c.name.toLowerCase().includes(q) ||
+      c.description.toLowerCase().includes(q) ||
+      c.category.includes(q),
   );
 
   const rowBtn = "h-7 shrink-0 whitespace-nowrap px-2.5 text-caption";
@@ -158,7 +220,12 @@ export function McpPanel() {
     <section aria-label="MCP servers" className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <SectionTitle>MCP</SectionTitle>
-        <Button size="sm" onClick={() => void refresh()} aria-label="Refresh MCP" title="Reload MCP status">
+        <Button
+          size="sm"
+          onClick={() => void refresh()}
+          aria-label="Refresh MCP"
+          title="Reload MCP status"
+        >
           <ArrowsClockwise size={12} aria-hidden />
         </Button>
       </div>
@@ -167,7 +234,9 @@ export function McpPanel() {
       ) : (
         <>
           {servers.length === 0 && (
-            <p className="text-caption leading-5 text-dim">No MCP servers declared — install one from the catalog below.</p>
+            <p className="text-caption leading-5 text-dim">
+              No MCP servers declared, install one from the catalog below.
+            </p>
           )}
           <ul className="flex flex-col gap-1.5">
             {servers.map((s) => (
@@ -175,14 +244,29 @@ export function McpPanel() {
                 key={s.name}
                 className={`flex items-center gap-2.5 rounded-lg2 border px-3 py-2 ${s.trusted ? "border-accent/30 bg-accent-soft/30" : "border-line bg-surface"}`}
               >
-                <Dot tone={s.connected ? "ok" : s.state === "parked" ? "danger" : s.trusted ? "accent" : "muted"} pulse={!s.connected && (s.state === "reconnecting" || s.trusted)} />
+                <Dot
+                  tone={
+                    s.connected
+                      ? "ok"
+                      : s.state === "parked"
+                        ? "danger"
+                        : s.trusted
+                          ? "accent"
+                          : "muted"
+                  }
+                  pulse={
+                    !s.connected && (s.state === "reconnecting" || s.trusted)
+                  }
+                />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <b className="text-body font-semibold text-primary">{s.name}</b>
+                  <b className="text-body font-semibold text-primary">
+                    {s.name}
+                  </b>
                   <small className="text-caption text-muted">
                     {s.state === "reconnecting"
                       ? `reconnecting… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}s)` : ""}`
                       : s.state === "parked"
-                        ? "parked — 5× failed"
+                        ? "parked, 5× failed"
                         : s.connected
                           ? `${s.toolCount} tools`
                           : s.trusted
@@ -193,12 +277,19 @@ export function McpPanel() {
                   </small>
                   {s.lastError && s.state !== "connected" && (
                     <small className="flex items-center gap-1 text-caption leading-4 text-danger">
-                      <Warning size={11} aria-hidden className="shrink-0" /> {s.lastError.slice(0, 64)}
+                      <Warning size={11} aria-hidden className="shrink-0" />{" "}
+                      {s.lastError.slice(0, 64)}
                     </small>
                   )}
                 </span>
                 {(s.state === "parked" || s.state === "reconnecting") && (
-                  <Button size="sm" className={rowBtn} disabled={busy === s.name} onClick={() => void retry(s.name)} title="Try reconnecting now">
+                  <Button
+                    size="sm"
+                    className={rowBtn}
+                    disabled={busy === s.name}
+                    onClick={() => void retry(s.name)}
+                    title="Try reconnecting now"
+                  >
                     <ArrowClockwise size={12} aria-hidden />
                   </Button>
                 )}
@@ -208,7 +299,11 @@ export function McpPanel() {
                   variant={s.trusted ? "secondary" : "primary"}
                   onClick={() => void toggle(s)}
                   disabled={busy === s.name || (s.trusted && !s.declared)}
-                  title={s.trusted ? "Disconnect & revoke trust (fail-closed)" : "Trust this server in the workspace"}
+                  title={
+                    s.trusted
+                      ? "Disconnect & revoke trust (fail-closed)"
+                      : "Trust this server in the workspace"
+                  }
                 >
                   {busy === s.name ? "…" : s.trusted ? "Untrust" : "Trust"}
                 </Button>
@@ -220,10 +315,26 @@ export function McpPanel() {
               <SectionTitle>Audit</SectionTitle>
               <ul className="flex flex-col gap-0.5">
                 {audit.map((a) => (
-                  <li key={a.id} className={`flex items-center gap-1.5 text-caption ${a.ok ? "text-muted" : "text-danger"}`}>
-                    {a.ok ? <Check size={11} weight="bold" aria-hidden className="text-success" /> : <X size={11} weight="bold" aria-hidden />}
+                  <li
+                    key={a.id}
+                    className={`flex items-center gap-1.5 text-caption ${a.ok ? "text-muted" : "text-danger"}`}
+                  >
+                    {a.ok ? (
+                      <Check
+                        size={11}
+                        weight="bold"
+                        aria-hidden
+                        className="text-success"
+                      />
+                    ) : (
+                      <X size={11} weight="bold" aria-hidden />
+                    )}
                     <code className="font-mono">{a.tool}</code>
-                    {a.error ? <span className="truncate text-dim"> — {a.error.slice(0, 46)}</span> : null}
+                    {a.error ? (
+                      <span className="truncate text-dim">
+                        , {a.error.slice(0, 46)}
+                      </span>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -231,24 +342,43 @@ export function McpPanel() {
           )}
 
           <div className="flex flex-col gap-2.5 border-t border-line pt-3">
-            <SectionTitle>Catalog {booting ? "" : `(${catalog.length})`}</SectionTitle>
+            <SectionTitle>
+              Catalog {booting ? "" : `(${catalog.length})`}
+            </SectionTitle>
             <div className="flex flex-wrap items-center gap-2 rounded-md2 border border-line bg-inset px-3 py-2">
               {uvx === "loading" ? (
-                <small className="text-caption text-dim">checking Python runtime (uvx)…</small>
+                <small className="text-caption text-dim">
+                  checking Python runtime (uvx)…
+                </small>
               ) : uvx ? (
                 <small className="flex items-center gap-1.5 text-caption text-secondary">
-                  <Check size={12} weight="bold" aria-hidden className="text-success" /> Python/uvx ready —{" "}
-                  <code className="font-mono text-dim">{uvx === "uvx" ? "on PATH" : uvx}</code>
+                  <Check
+                    size={12}
+                    weight="bold"
+                    aria-hidden
+                    className="text-success"
+                  />{" "}
+                  Python/uvx ready,{" "}
+                  <code className="font-mono text-dim">
+                    {uvx === "uvx" ? "on PATH" : uvx}
+                  </code>
                 </small>
               ) : uvInstalling ? (
-                <small className="text-caption text-muted">running the official astral.sh installer… (±30–120s)</small>
+                <small className="text-caption text-muted">
+                  running the official astral.sh installer… (±30–120s)
+                </small>
               ) : uvConfirm ? (
                 <>
                   <small className="flex-1 text-caption leading-5 text-secondary">
-                    <b>Install uv?</b> This runs the official <code className="font-mono">astral.sh/uv</code> installer on
+                    <b>Install uv?</b> This runs the official{" "}
+                    <code className="font-mono">astral.sh/uv</code> installer on
                     this machine (~30 MB, user profile). Continue?
                   </small>
-                  <Button size="sm" variant="primary" onClick={() => void installUv()}>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => void installUv()}
+                  >
                     Yes, install
                   </Button>
                   <Button size="sm" onClick={() => setUvConfirm(false)}>
@@ -258,7 +388,8 @@ export function McpPanel() {
               ) : (
                 <>
                   <small className="flex-1 text-caption leading-5 text-dim">
-                    Python/uvx: not installed — the Git/Time servers need it (the other 18 don't)
+                    Python/uvx: not installed, the Git/Time servers need it (the
+                    other 18 don't)
                   </small>
                   <Button size="sm" onClick={() => setUvConfirm(true)}>
                     Install uv
@@ -266,7 +397,11 @@ export function McpPanel() {
                 </>
               )}
             </div>
-            {uvLog && <small className="text-caption text-dim">installer log: {uvLog}</small>}
+            {uvLog && (
+              <small className="text-caption text-dim">
+                installer log: {uvLog}
+              </small>
+            )}
             <TextInput
               placeholder="Search servers… (web, data, github…)"
               value={query}
@@ -288,24 +423,50 @@ export function McpPanel() {
                         <b className="flex flex-wrap items-center gap-1.5 text-body font-semibold text-primary">
                           {c.name} <Chip tone={risk.tone}>{risk.label}</Chip>
                           {c.runtime === "python" && (
-                            <span title={c.setupNote ?? "This server is Python-based (uvx)"}>
+                            <span
+                              title={
+                                c.setupNote ??
+                                "This server is Python-based (uvx)"
+                              }
+                            >
                               <Chip tone="muted">Python/uvx</Chip>
                             </span>
                           )}
                         </b>
-                        <small className="text-caption leading-5 text-muted">{c.description}</small>
+                        <small className="text-caption leading-5 text-muted">
+                          {c.description}
+                        </small>
                         {c.runtime === "python" && c.setupNote && (
                           <small className="flex items-center gap-1 text-caption leading-4 text-warn">
-                            <Warning size={11} aria-hidden className="shrink-0" /> {c.setupNote}
+                            <Warning
+                              size={11}
+                              aria-hidden
+                              className="shrink-0"
+                            />{" "}
+                            {c.setupNote}
                           </small>
                         )}
                       </span>
                       {isInstalled ? (
-                        <Button size="sm" className={rowBtn} onClick={() => setConfirmUn(c)} disabled={busy === c.id} title="Remove from mcp.json (disconnects)">
+                        <Button
+                          size="sm"
+                          className={rowBtn}
+                          onClick={() => setConfirmUn(c)}
+                          disabled={busy === c.id}
+                          title="Remove from mcp.json (disconnects)"
+                        >
                           {busy === c.id ? "…" : "Remove"}
                         </Button>
                       ) : c.runtime === "python" && uvx === null ? (
-                        <Button size="sm" className={rowBtn} disabled title={c.setupNote ?? "Requires uv (Python) — click Install uv above"}>
+                        <Button
+                          size="sm"
+                          className={rowBtn}
+                          disabled
+                          title={
+                            c.setupNote ??
+                            "Requires uv (Python), click Install uv above"
+                          }
+                        >
                           Needs uv
                         </Button>
                       ) : openForm === c.id ? (
@@ -317,14 +478,24 @@ export function McpPanel() {
                               className="h-7 w-44"
                               placeholder={`${k.label}${k.required ? " *" : ""}`}
                               value={envVals[k.key] ?? ""}
-                              onChange={(e) => setEnvVals({ ...envVals, [k.key]: e.target.value })}
+                              onChange={(e) =>
+                                setEnvVals({
+                                  ...envVals,
+                                  [k.key]: e.target.value,
+                                })
+                              }
                             />
                           ))}
                           <Button
                             size="sm"
                             variant="primary"
                             onClick={() => void install(c)}
-                            disabled={busy === c.id || c.envKeys.some((k) => k.required && !envVals[k.key]?.trim())}
+                            disabled={
+                              busy === c.id ||
+                              c.envKeys.some(
+                                (k) => k.required && !envVals[k.key]?.trim(),
+                              )
+                            }
                           >
                             Install
                           </Button>
@@ -341,7 +512,11 @@ export function McpPanel() {
                             setEnvVals({});
                           }}
                           disabled={busy === c.id}
-                          title={c.envKeys.length > 0 ? "Requires API key" : "Install now"}
+                          title={
+                            c.envKeys.length > 0
+                              ? "Requires API key"
+                              : "Install now"
+                          }
                         >
                           {c.envKeys.length > 0 ? "Set up…" : "Install"}
                         </Button>

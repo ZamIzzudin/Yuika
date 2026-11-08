@@ -1,4 +1,4 @@
-// @yuika/core — diff baris sederhana (LCS DP) untuk viewer revisi file (P2-STU-3).
+// @yuika/core, diff baris sederhana (LCS DP) untuk viewer revisi file (P2-STU-3).
 // Cukup untuk diff read-only di UI; cap 2000 baris per sisi agar DP tidak meledak.
 export type DiffOp = { t: "=" | "+" | "-"; line: string };
 

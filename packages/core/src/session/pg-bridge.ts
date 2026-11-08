@@ -1,10 +1,10 @@
-// @yuika/core — P0-DATA-1: sync-bridge SessionStore → worker PostgreSQL.
-// Main thread memanggil metode SINKRON (identik API better-sqlite3) — panggilan
+// @yuika/core, P0-DATA-1: sync-bridge SessionStore → worker PostgreSQL.
+// Main thread memanggil metode SINKRON (identik API better-sqlite3), panggilan
 // dikirim ke worker (pg-worker.ts), lalu main memblokir via Atomics.wait sampai
 // hasil ditulis worker ke SharedArrayBuffer. Blokir event loop per query ==
 // perilaku better-sqlite3 (DB lokal; PG disarankan co-located dengan api).
 //
-// File ini hanya mengimpor node:worker_threads — TIDAK memuat `postgres`
+// File ini hanya mengimpor node:worker_threads, TIDAK memuat `postgres`
 // (paket itu hidup di worker; bundle web & proses utama tetap bersih).
 import { Worker } from "node:worker_threads";
 import type { ISessionStore } from "./store.js";
@@ -29,7 +29,7 @@ class PgSyncStore {
     const url = process.env.YUI_PG_URL ?? process.env.DATABASE_URL ?? "";
     if (!url) throw new Error("[yui] YUI_DB_DRIVER=postgres tapi DATABASE_URL kosong (lihat .env.example)");
     this.worker = new Worker(new URL("./pg-worker.ts", import.meta.url), {
-      // warisi execArgv (tsx loader dll.) — penting agar .TS worker termuat
+      // warisi execArgv (tsx loader dll.), penting agar .TS worker termuat
       execArgv: process.execArgv,
       env: { ...process.env, YUI_PG_URL: url },
     });
@@ -44,7 +44,7 @@ class PgSyncStore {
     this.worker.postMessage({ method, args, header, body });
     for (;;) {
       const r = Atomics.wait(header, 0, 0, WAIT_TIMEOUT_MS);
-      if (r === "timed-out") throw new Error(`[pg-bridge] ${method} timeout ${WAIT_TIMEOUT_MS}ms — cek konektivitas Postgres`);
+      if (r === "timed-out") throw new Error(`[pg-bridge] ${method} timeout ${WAIT_TIMEOUT_MS}ms, cek konektivitas Postgres`);
       const status = Atomics.load(header, 0);
       if (status === 1 || status === 3) {
         const len = Atomics.load(header, 1);
@@ -53,7 +53,7 @@ class PgSyncStore {
         if (status === 3) throw new Error(`[pg-bridge] ${method}: ${parsed.err ?? "unknown"}`);
         return parsed.ok ?? null;
       }
-      // status masih 0 (spurious wake) — tunggu lagi
+      // status masih 0 (spurious wake), tunggu lagi
     }
   }
 
@@ -62,9 +62,9 @@ class PgSyncStore {
   }
 }
 
-/** Factory sinkron driver Postgres — dipanggil createSessionStore() saat
+/** Factory sinkron driver Postgres, dipanggil createSessionStore() saat
  *  YUI_DB_DRIVER=postgres. Metode dibangkitkan dari daftar METHODS (satu sumber
- *  kebenaran bersama kontrak ISessionStore — selisih terdeteksi typecheck). */
+ *  kebenaran bersama kontrak ISessionStore, selisih terdeteksi typecheck). */
 export function createPgStore(): ISessionStore {
   const s = new PgSyncStore();
   const out: Record<string, unknown> = {};

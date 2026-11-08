@@ -1,7 +1,7 @@
-// @yuika/core — override bentuk geometri maskot persona (menu Persona).
-// Persist: `workspace/persona-shapes.json` — peta personaId → OrinShapeKey.
+// @yuika/core, override bentuk geometri maskot persona (menu Persona).
+// Persist: `workspace/persona-shapes.json`, peta personaId → OrinShapeKey.
 // Tanpa entri = default (PERSONA_SHAPE web / manifest). Fail-closed: persona
-// tak dikenal atau bentuk di luar 15 → error (jangan diam-diam fallback —
+// tak dikenal atau bentuk di luar 15 → error (jangan diam-diam fallback,
 // UI harus tahu pilihan tidak valid).
 import fs from "node:fs";
 import path from "node:path";
@@ -11,7 +11,7 @@ export function personaShapesPath(workspacePath: string): string {
   return path.join(workspacePath, "persona-shapes.json");
 }
 
-/** Baca semua override (file hilang/korup → {} — default manifest menang). */
+/** Baca semua override (file hilang/korup → {}, default manifest menang). */
 export function loadPersonaShapes(workspacePath: string): Record<string, string> {
   const file = personaShapesPath(workspacePath);
   if (!fs.existsSync(file)) return {};
@@ -32,7 +32,7 @@ function persist(workspacePath: string, map: Record<string, string>): PersonaSha
 }
 
 /** Set/ganti bentuk persona. Validasi: persona harus terdaftar (loader) & bentuk
- *  salah satu dari 15. `shape === defaultShape` tetap ditulis (eksplisit) —
+ *  salah satu dari 15. `shape === defaultShape` tetap ditulis (eksplisit),
  *  pemanggil boleh memilih untuk tidak menulis bila sama dengan default. */
 export function savePersonaShape(
   workspacePath: string,

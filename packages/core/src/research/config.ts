@@ -1,11 +1,11 @@
-// Batch 7 (RS-5) — config riset dari env (kill-switch + searxng opsional + limit).
-// Budget singleton per proses (tahan HMR via globalThis — pattern runtime).
+// Batch 7 (RS-5), config riset dari env (kill-switch + searxng opsional + limit).
+// Budget singleton per proses (tahan HMR via globalThis, pattern runtime).
 import { ResearchBudget } from "./budget.js";
 
 export interface ResearchConfig {
   /** YUI_RESEARCH_OFF=1 → web_search/web_fetch riset dimatikan total */
   off: boolean;
-  /** YUI_SEARXNG_URL — kosong = hanya ddg fallback sebagai engine umum */
+  /** YUI_SEARXNG_URL, kosong = hanya ddg fallback sebagai engine umum */
   searxngUrl: string;
   /** YUI_RESEARCH_DDG=0 → matikan endpoint nonofficial */
   ddgEnabled: boolean;

@@ -1,4 +1,4 @@
-# P0-INF-5 — build context minimal (mempercepat build & menjaga secrets keluar).
+# P0-INF-5, build context minimal (mempercepat build & menjaga secrets keluar).
 # Yang TIDAK masuk image: .env (dilewatkan via env_file compose), data user,
 # artefak lokal, VCS, docs.
 .git

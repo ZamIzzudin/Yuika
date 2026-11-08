@@ -1,4 +1,4 @@
-// @yuika/core — persona loader: gabungkan persona.yaml + PERSONA.md + toolsets.yaml
+// @yuika/core, persona loader: gabungkan persona.yaml + PERSONA.md + toolsets.yaml
 // + skills.yaml + delegation.yaml menjadi Persona tervalidasi (PLAN §7.2).
 import fs from "node:fs";
 import path from "node:path";

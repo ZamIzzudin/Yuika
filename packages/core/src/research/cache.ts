@@ -1,5 +1,5 @@
-// Batch 7 (RS-4) — cache riset: SQLite table research_cache, lintas project.
-// TTL beda per kind (search 12 jam, halaman 72 jam) — konsumen yang menentukan.
+// Batch 7 (RS-4), cache riset: SQLite table research_cache, lintas project.
+// TTL beda per kind (search 12 jam, halaman 72 jam), konsumen yang menentukan.
 // dbPath kosong → fallback in-memory (tests / runtime tanpa disk).
 import Database from "better-sqlite3";
 import fs from "node:fs";

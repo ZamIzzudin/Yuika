@@ -1,14 +1,18 @@
 "use client";
-// 🌌 CharacterStage — character-select screen satu layar (spec user 2026-11):
-// tiga lapis — (1) latar konstelasi SVG, (2) maskot hero di tengah + dua card
+// 🌌 CharacterStage, character-select screen satu layar (spec user 2026-11):
+// tiga lapis, (1) latar konstelasi SVG, (2) maskot hero di tengah + dua card
 // kaca melayang (identitas kiri · stats+skill kanan), (3) galeri dock bawah.
 // Aksen tunggal --c (warna wujud aktif) dipakai rasi, radar, ring skill, pil,
-// progress bar & galeri — otomatis ikut saat karakter/wujud diganti.
+// progress bar & galeri, otomatis ikut saat karakter/wujud diganti.
 // DATA: persona/growth/skill-bindings NYATA dari API; radar & bonus skill =
 // lapisan kosmetik deterministik (hash id/nama), BUKAN hasil evaluasi.
 // DS-1: utility Tailwind + token semantik; tanpa file CSS baru (keyframes di globals).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PersonaGrowth, PersonaInfo, PersonaState } from "@yuika/contracts";
+import type {
+  PersonaGrowth,
+  PersonaInfo,
+  PersonaState,
+} from "@yuika/contracts";
 import {
   BookOpen,
   Brain,
@@ -45,7 +49,7 @@ import { toastErr, toastOk } from "./ui/toast";
 import { apiUrl, authFetch } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
-// Util deterministik — lapisan kosmetik game (bukan data evaluasi).
+// Util deterministik, lapisan kosmetik game (bukan data evaluasi).
 // ---------------------------------------------------------------------------
 function hashStr(s: string): number {
   let h = 2166136261;
@@ -66,7 +70,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** Radar 6 sumbu — urutan dari atas, searah jarum jam. */
+/** Radar 6 sumbu, urutan dari atas, searah jarum jam. */
 const AXES = [
   "Logic",
   "Craft",
@@ -88,13 +92,13 @@ const TYPE_TAGS: Record<string, [string, string]> = {
   orchestration: ["Maestro", "Orchestration"],
 };
 
-/** Stat dasar persona: deterministik dari id (3..9) — feel game, bukan skor nyata. */
+/** Stat dasar persona: deterministik dari id (3..9), feel game, bukan skor nyata. */
 function baseStats(id: string): number[] {
   const rnd = mulberry32(hashStr(id));
   return AXES.map(() => 3 + Math.floor(rnd() * 7));
 }
 
-/** Bonus skill: 1–2 sumbu, +1/+2 — deterministik dari nama skill. */
+/** Bonus skill: 1–2 sumbu, +1/+2, deterministik dari nama skill. */
 function skillBonus(name: string): Array<[number, number]> {
   const rnd = mulberry32(hashStr("skill:" + name));
   const n = rnd() < 0.6 ? 1 : 2;
@@ -109,7 +113,7 @@ function skillBonus(name: string): Array<[number, number]> {
   return out;
 }
 
-/** Glyph ikon skill — deterministik dari nama (grid 5 kolom, tanpa teks panjang). */
+/** Glyph ikon skill, deterministik dari nama (grid 5 kolom, tanpa teks panjang). */
 const SKILL_GLYPHS = [
   Brain,
   Code,
@@ -140,7 +144,7 @@ const EMOTES: { state: PersonaState; label: string }[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Bindings (dipakai panel skill — attach/detach + accept draft).
+// Bindings (dipakai panel skill, attach/detach + accept draft).
 // ---------------------------------------------------------------------------
 interface BindingPersona {
   id: string;
@@ -244,7 +248,7 @@ function useBindings() {
 }
 
 // ---------------------------------------------------------------------------
-// Radar heksagonal — dasar vs. setelah bonus skill (real-time).
+// Radar heksagonal, dasar vs. setelah bonus skill (real-time).
 // ---------------------------------------------------------------------------
 function RadarChart({
   base,
@@ -278,7 +282,7 @@ function RadarChart({
       aria-label="Stat radar"
       focusable="false"
     >
-      {/* grid heksagonal: cincin + jari-jari — kontras jelas sebagai latar radar */}
+      {/* grid heksagonal: cincin + jari-jari, kontras jelas sebagai latar radar */}
       {[2.5, 5, 7.5, 10].map((v) => (
         <polygon
           key={v}
@@ -368,7 +372,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   const [busyShape, setBusyShape] = useState<OrinShapeKey | null>(null);
   const [greeted, setGreeted] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
-  // Tooltip skill melayang (layer stage — tak terpotong scroll card):
+  // Tooltip skill melayang (layer stage, tak terpotong scroll card):
   // posisi = pusat-atas tile, relatif stage.
   const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(
     null,
@@ -386,7 +390,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
 
   const boxRef = useRef<HTMLDivElement | null>(null);
 
-  /** Ganti karakter (carousel loop) — reset emote & sapaan. */
+  /** Ganti karakter (carousel loop), reset emote & sapaan. */
   const go = useCallback(
     (dir: -1 | 1) => {
       setSelId((cur) => {
@@ -469,8 +473,8 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     }
   }
 
-  /** Pasang/lepas skill — maks 3 slot; penuh → tooltip pesan (bukan error). */
-  /** Pasang/lepas skill — klik tile: terpasang → lepas, belum → pasang.
+  /** Pasang/lepas skill, maks 3 slot; penuh → tooltip pesan (bukan error). */
+  /** Pasang/lepas skill, klik tile: terpasang → lepas, belum → pasang.
    *  Tanpa batasan jumlah (permintaan user): semua skill boleh aktif serentak. */
   function toggleSkill(name: string) {
     if (!bp) return;
@@ -484,7 +488,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   if (!persona)
     return (
       <div className="grid h-full place-items-center text-muted">
-        <p>No personas yet — loaded from packages/personas.</p>
+        <p>No personas yet, loaded from packages/personas.</p>
       </div>
     );
 
@@ -519,7 +523,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       className="relative isolate h-[88dvh] min-h-[560px] w-full overflow-hidden max-[1099px]:flex max-[1099px]:flex-col max-[1099px]:gap-4 max-[1099px]:overflow-visible max-[1099px]:pb-2"
       style={{ "--c": accent } as React.CSSProperties}
     >
-      {/* latar: OVAL BERLAPIS — konsep sama dengan orbit workspace
+      {/* latar: OVAL BERLAPIS, konsep sama dengan orbit workspace
           (PersonaPicker): cincin elips konsentris di belakang maskot. */}
       <div
         aria-hidden
@@ -530,7 +534,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         <div className="absolute top-[44%] left-1/2 h-[270px] w-[min(320px,32vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
       </div>
 
-      {/* ===== HERO — maskot di tengah panggung ===== */}
+      {/* ===== HERO, maskot di tengah panggung ===== */}
       <div className="absolute left-1/2 top-[44%] z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[26px] max-[1099px]:static max-[1099px]:mt-2 max-[1099px]:translate-x-0 max-[1099px]:translate-y-0">
         <div key={persona.id} className="pop-yui flex flex-col items-center">
           <button
@@ -590,14 +594,14 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         <CaretRight size={22} aria-hidden />
       </button>
 
-      {/* ===== CARD KIRI — identitas ===== */}
+      {/* ===== CARD KIRI, identitas ===== */}
       <aside
         className={
           cardCls +
           " relative min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
         }
       >
-        {/* setup model persona — pojok kiri atas card */}
+        {/* setup model persona, pojok kiri atas card */}
         <button
           type="button"
           data-model-gear=""
@@ -702,7 +706,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </div>
       </aside>
 
-      {/* ===== CARD KANAN — stats & skill: radar TETAP (tidak ikut scroll),
+      {/* ===== CARD KANAN, stats & skill: radar TETAP (tidak ikut scroll),
           hanya list skill yang menggulir bila panjang ===== */}
       <aside
         className={
@@ -727,7 +731,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
                   type="button"
                   data-skill-tile={s.name}
                   aria-pressed={on}
-                  aria-label={`${s.name} — ${s.description}`}
+                  aria-label={`${s.name}, ${s.description}`}
                   onFocus={(e) => tipAt(s.name, e.currentTarget)}
                   onMouseEnter={(e) => tipAt(s.name, e.currentTarget)}
                   onMouseLeave={() => setTip(null)}
@@ -748,7 +752,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </div>
       </aside>
 
-      {/* ===== Tooltip skill — popup di layer stage (tak terpotong scroll card) ===== */}
+      {/* ===== Tooltip skill, popup di layer stage (tak terpotong scroll card) ===== */}
       {detail && tip && (
         <div
           role="tooltip"
@@ -772,7 +776,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </div>
       )}
 
-      {/* ===== DOCK — galeri karakter ===== */}
+      {/* ===== DOCK, galeri karakter ===== */}
       <div className="absolute inset-x-0 bottom-5 z-[4] flex flex-col items-center gap-2 max-[1099px]:sticky max-[1099px]:bottom-0 max-[1099px]:mt-auto max-[1099px]:translate-y-0">
         <div
           data-dock=""
@@ -829,7 +833,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </div>
       </div>
 
-      {/* setup model per persona — dipindah dari SettingsModal */}
+      {/* setup model per persona, dipindah dari SettingsModal */}
       {modelOpen && persona && (
         <PersonaModelModal
           personaId={persona.id}
@@ -842,7 +846,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Growth map — poll ringan (levels & stats nyata dari kerja persona).
+// Growth map, poll ringan (levels & stats nyata dari kerja persona).
 // ---------------------------------------------------------------------------
 function useGrowthMap(): Map<string, PersonaGrowth> {
   const [map, setMap] = useState<Map<string, PersonaGrowth>>(new Map());

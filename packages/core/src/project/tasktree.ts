@@ -1,5 +1,5 @@
-// @yuika/core — TaskTree projector (P1-PRJ-7, PLAN §13.7/D19): hierarki pemantauan
-// delegasi DIPROYEKSIKAN dari event stream project (append-only) — bukan state kedua.
+// @yuika/core, TaskTree projector (P1-PRJ-7, PLAN §13.7/D19): hierarki pemantauan
+// delegasi DIPROYEKSIKAN dari event stream project (append-only), bukan state kedua.
 // Replay = fold ulang seluruh event → pohon utuh; refresh/reconnect gratis.
 import type { ProjectEvent, TaskNode } from "@yuika/contracts";
 
@@ -30,7 +30,7 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
       order.push(e.taskId);
     } else {
       const n = nodes.get(e.taskId);
-      if (!n) continue; // event untuk task pra-TaskTree — skip
+      if (!n) continue; // event untuk task pra-TaskTree, skip
       if (e.title !== undefined) n.title = e.title;
       if (e.status !== undefined) {
         // catat transisi waktu untuk durasi (tab Pohon: "running Xm Ys")
@@ -41,7 +41,7 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
       if (e.assignee !== undefined) n.assignee = e.assignee;
       if (e.addRefs?.length) n.refs = [...new Set([...n.refs, ...e.addRefs])];
       if (e.addArtefak?.length) n.artefak = [...new Set([...n.artefak, ...e.addArtefak])];
-      // P2-PM-3: detail — replace-semantik
+      // P2-PM-3: detail, replace-semantik
       if (e.description !== undefined) n.description = e.description;
       if (e.acceptance !== undefined) n.acceptance = e.acceptance;
       if (e.dependsOn !== undefined) n.dependsOn = e.dependsOn;
@@ -60,7 +60,7 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
   return roots;
 }
 
-/** Proyeksi flat (TaskList board) dari tree — urut kedalaman-lalu-penciptaan. */
+/** Proyeksi flat (TaskList board) dari tree, urut kedalaman-lalu-penciptaan. */
 export function flattenTree(nodes: TaskNode[], depth = 0): { node: TaskNode; depth: number }[] {
   return nodes.flatMap((n) => [{ node: n, depth }, ...flattenTree(n.children, depth + 1)]);
 }

@@ -1,4 +1,4 @@
-// Batch 7 (RS-1b) — News: Google News RSS (publik & stabil, tanpa key).
+// Batch 7 (RS-1b), News: Google News RSS (publik & stabil, tanpa key).
 // Menjawab use case "kasus berita / jadwal acara / kondisi terkini".
 import type { SearchProvider, SearchResult } from "../types.js";
 import { decodeEntities, htmlToPlain, httpText } from "../util.js";
@@ -17,7 +17,7 @@ export function parseNewsRss(xml: string, limit: number): SearchResult[] {
     if (!title || !link) continue;
     const pub = extract("pubDate", item);
     const desc = htmlToPlain(extract("description", item)).slice(0, 180);
-    out.push({ title, url: link, snippet: `${desc}${pub ? ` — ${pub}` : ""}`.slice(0, 240), source: "news" });
+    out.push({ title, url: link, snippet: `${desc}${pub ? `, ${pub}` : ""}`.slice(0, 240), source: "news" });
     if (out.length >= limit) break;
   }
   return out;

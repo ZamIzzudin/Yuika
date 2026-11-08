@@ -44,7 +44,7 @@ describe("model router (P1-MDL-1 + P0-CORE-2)", () => {
     expect(r.route("yui-coder").model).toBe("glm/glm-5"); // kembali ke persona.yaml
   });
 
-  it("defaultModel getter — swap panas via Settings terbaca tanpa rebuild", () => {
+  it("defaultModel getter, swap panas via Settings terbaca tanpa rebuild", () => {
     setup();
     let cur = "glm/glm-5.1";
     const r = buildModelRouter({ defaultModel: () => cur, personasDir: personas, overridesFile });

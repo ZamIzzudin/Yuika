@@ -1,7 +1,7 @@
-// @yuika/core — run_command: `ls`/`echo` dieksekusi INTERNAL (readdir/print —
+// @yuika/core, run_command: `ls`/`echo` dieksekusi INTERNAL (readdir/print,
 // aman & lintas-OS, bebas approval), `node` dieksekusi di SANDBOX container
 // sekali-pakai (P0-SEC-1: network default-deny, resource cap, timeout, rootfs
-// ro — detail tools/sandbox.ts). Fallback `off`/`auto-tanpa-docker` = execFile
+// ro, detail tools/sandbox.ts). Fallback `off`/`auto-tanpa-docker` = execFile
 // lokal. P0-SEC-2: stdout/stderr di-redact sebelum masuk konteks agent.
 import { execFile } from "node:child_process";
 import fs from "node:fs";
@@ -18,7 +18,7 @@ import * as egressMod from "./egress.js";
 
 const TIMEOUT_MS = 20_000;
 
-/** Subperintah npm yang diizinkan (sisanya ditolak di validasi — `publish`,
+/** Subperintah npm yang diizinkan (sisanya ditolak di validasi, `publish`,
  * `access`, `owner` dsb. berbahaya utk agent). */
 const NPM_SUB = new Set(["install", "ci", "run", "run-script", "exec", "test", "ls", "outdated", "view", "fund", "doctor"]);
 
@@ -26,26 +26,26 @@ const schema = z.object({
   command: z.enum(["node", "npm", "npx", "ls", "echo"]),
   args: z.array(z.string()).default([]),
   /** P2-VLT-3 command variables: env utk proses anak. NILAI WAJIB referensi
-   *  vault (`vault:<name>`) — nilai polos TIDAK diterima supaya rahasia tak
+   *  vault (`vault:<name>`), nilai polos TIDAK diterima supaya rahasia tak
    *  pernah lewat konteks model. Nama reserved ditolak. */
   env: z.record(z.string(), z.string()).optional(),
 }).superRefine((v, ctx) => {
   if (v.command === "npm") {
     const sub = v.args[0];
     if (!sub || !NPM_SUB.has(sub)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `subperintah npm tidak diizinkan: ${sub ?? "(kosong)"} — pakai salah satu: ${[...NPM_SUB].join(", ")}` });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `subperintah npm tidak diizinkan: ${sub ?? "(kosong)"}, pakai salah satu: ${[...NPM_SUB].join(", ")}` });
     }
   }
   for (const [k, val] of Object.entries(v.env ?? {})) {
     if (!/^[A-Z][A-Z0-9_]{0,63}$/.test(k)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env name "${k}" invalid — UPPER_SNAKE_CASE only` });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env name "${k}" invalid, UPPER_SNAKE_CASE only` });
       continue;
     }
     if (RESERVED_ENV.has(k) || RESERVED_ENV_PREFIX.some((p) => k.startsWith(p))) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env name "${k}" is reserved and cannot be set via run_command` });
     }
     if (!val.startsWith("vault:")) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env "${k}" value must be a vault reference (vault:<name>) — plain secrets are rejected so values never pass through the model` });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `env "${k}" value must be a vault reference (vault:<name>), plain secrets are rejected so values never pass through the model` });
     }
   }
 });
@@ -57,7 +57,7 @@ const RESERVED_ENV = new Set([
 ]);
 const RESERVED_ENV_PREFIX = ["LD_", "GIT_", "NPM_CONFIG_", "YUI_"];
 
-/** `ls` internal: daftar direktori (nama + tanda d/f) — tidak spawn proses. */
+/** `ls` internal: daftar direktori (nama + tanda d/f), tidak spawn proses. */
 function lsInternal(dir: string, args: string[]): unknown {
   const target = path.resolve(dir, ...(args.filter((a) => !a.startsWith("-")) || ["."]));
   const entries = fs.readdirSync(target, { withFileTypes: true });
@@ -67,7 +67,7 @@ function lsInternal(dir: string, args: string[]): unknown {
   return { cwd: target, entries: lines.slice(0, 500) };
 }
 
-/** Eksekusi lokal (mode off / auto-tanpa-docker) — JALAN DI HOST TANPA ISOLASI. */
+/** Eksekusi lokal (mode off / auto-tanpa-docker), JALAN DI HOST TANPA ISOLASI. */
 function runLocal(command: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv): Promise<{ stdout: string; stderr: string; err: string }> {
   return new Promise((resolve) => {
     execFile(command, args, { cwd, timeout: TIMEOUT_MS, maxBuffer: 1_000_000, ...(env ? { env } : {}) }, (err, stdout, stderr) => {
@@ -81,7 +81,7 @@ function runLocal(command: string, args: string[], cwd: string, env?: NodeJS.Pro
 }
 
 /** P2-VLT-3: resolve `vault:<name>` refs → nilai env asli (backend-only).
- *  Return { env, releases } — caller WAJIB memanggil semua releases setelah
+ *  Return { env, releases }, caller WAJIB memanggil semua releases setelah
  *  proses selesai (nilai keluar dari registry redaksi aktif). */
 function resolveVaultEnv(
   env: Record<string, string> | undefined,
@@ -94,7 +94,7 @@ function resolveVaultEnv(
   for (const [k, ref] of Object.entries(env)) {
     const name = ref.slice("vault:".length);
     const s = getVault().resolveForUse(name, viewer);
-    if (!s) throw new Error(`vault credential "${name}" not found — call vault_request first`);
+    if (!s) throw new Error(`vault credential "${name}" not found, call vault_request first`);
     out[k] = s.value;
     names.push(name);
     releases.push(s.release);
@@ -106,7 +106,7 @@ export function registerRunCommandTool(): void {
   registry.register({
     name: "run_command",
     description:
-      "Jalankan perintah: `ls` (daftar direktori — internal, aman, tanpa approval), `echo`, `node <file.js>` (sandbox terisolasi, TANPA jaringan, timeout 20 dtk), `npm <install|ci|run|test|...>` (install/ci mendapat egress TERBATAS ke registry npm via allowlist — default registry.npmjs.org dsb., bisa diubah per proyek di .yuika/egress.json), atau `npx <pkg>` (egress sama seperti npm install). Semua kecuali ls/echo butuh approval dan jalan di container sandbox (cwd = root proyek).",
+      "Jalankan perintah: `ls` (daftar direktori, internal, aman, tanpa approval), `echo`, `node <file.js>` (sandbox terisolasi, TANPA jaringan, timeout 20 dtk), `npm <install|ci|run|test|...>` (install/ci mendapat egress TERBATAS ke registry npm via allowlist, default registry.npmjs.org dsb., bisa diubah per proyek di .yuika/egress.json), atau `npx <pkg>` (egress sama seperti npm install). Semua kecuali ls/echo butuh approval dan jalan di container sandbox (cwd = root proyek).",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
       // ls/echo dieksekusi in-process: hasil identik di Windows/Unix, tanpa risiko
@@ -142,11 +142,11 @@ export function registerRunCommandTool(): void {
           ...(egress.length ? { egress } : {}),
           ...(vEnv.env ? { env: vEnv.env } : {}),
         });
-        // exit 125 = docker daemon error (image tak ada dsb.) — pesan jelas utk agent
+        // exit 125 = docker daemon error (image tak ada dsb.), pesan jelas utk agent
         const dockerErr = r.exitCode === 125 || r.exitCode === null;
         const out = redactActive(redactSecrets(r.stdout.slice(0, 8_000)));
         const errOut = redactActive(redactSecrets(
-          (r.timedOut ? "[sandbox] timeout — container dimatikan\n" : "") + r.stderr.slice(0, 2_000),
+          (r.timedOut ? "[sandbox] timeout, container dimatikan\n" : "") + r.stderr.slice(0, 2_000),
         ));
         // FLOW #7: eksekusi terlihat di panel terminal (view "Commands")
         logCommand(ctx.workspacePath, {
@@ -172,7 +172,7 @@ export function registerRunCommandTool(): void {
 
       // fail-open hanya di mode auto: Docker tak ada → jalankan lokal + catatan
       // eksplisit agar agent & user tahu eksekusi TIDAK terisolasi (egress pun
-      // TIDAK ditegakkan — proxy hanya jalan di dalam container).
+      // TIDAK ditegakkan, proxy hanya jalan di dalam container).
       const out = await runLocal(args.command, args.args, ctx.workspacePath, vEnv.env);
       logCommand(ctx.workspacePath, {
         command: args.command,
@@ -185,7 +185,7 @@ export function registerRunCommandTool(): void {
       return {
         result: {
           sandbox: false,
-          note: "docker tidak tersedia — eksekusi lokal TANPA isolasi (YUI_SANDBOX=off/auto)",
+          note: "docker tidak tersedia, eksekusi lokal TANPA isolasi (YUI_SANDBOX=off/auto)",
           ...out,
         },
       };

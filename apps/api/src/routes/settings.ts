@@ -1,4 +1,4 @@
-// @yuika/api — settings: approval mode, budget/admission, model routes & prices,
+// @yuika/api, settings: approval mode, budget/admission, model routes & prices,
 // provider (swap panas + persist .env), model smoke.
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
@@ -21,7 +21,7 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
 
   app.put("/api/settings/budget", async (req) => getRt().updateBudget(UpdateBudgetRequest.parse(req.body)));
 
-  /** GET/PUT /api/settings/models — route model per persona (P1-MDL-1). */
+  /** GET/PUT /api/settings/models, route model per persona (P1-MDL-1). */
   app.get("/api/settings/models", async () => getRt().getModelRoutes());
 
   app.put("/api/settings/models", async (req, reply) => {
@@ -34,7 +34,7 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
     }
   });
 
-  /** GET/PUT /api/settings/models/prices — price book (P1-MDL-3). */
+  /** GET/PUT /api/settings/models/prices, price book (P1-MDL-3). */
   app.get("/api/settings/models/prices", async () => getRt().getModelPrices());
 
   app.put("/api/settings/models/prices", async (req, reply) => {
@@ -68,7 +68,7 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
     return { running: false, results };
   });
 
-  /** P0-DATA-2: jalankan housekeeping retention sekarang (manual/diagnosa —
+  /** P0-DATA-2: jalankan housekeeping retention sekarang (manual/diagnosa,
    *  otomatis: boot + interval harian; retensi YUI_EVENTS_RETENTION_DAYS). */
   app.post("/api/settings/housekeeping", async () => getRt().housekeepEvents());
 }

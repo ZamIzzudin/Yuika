@@ -1,12 +1,12 @@
-// @yuika/core — mapping skill → persona manual (feedback user dev-10: "di menu
+// @yuika/core, mapping skill → persona manual (feedback user dev-10: "di menu
 // dungeon, pilih persona lalu attach skill yang sudah ada secara mandiri").
 // Sumber binding TIGA lapis: (1) bawaan persona `skills.yaml` (bundled),
 // (2) lampiran manual user di `skill-bindings.json` (attached), (3) lepas
-// manual (detached — bisa melepas bawaan juga).
+// manual (detached, bisa melepas bawaan juga).
 //   effective = (bundled ∪ attached ∪ global) \ detached
-// Persist file JSON di data/ (pola model-prices/approval-mode) — survive
+// Persist file JSON di data/ (pola model-prices/approval-mode), survive
 // restart. Dipakai createSessionWithPrompt: skill attached masuk INDEX prompt
-// sesi baru (progressive disclosure — tetap bukan tool; skill_view tetap bisa
+// sesi baru (progressive disclosure, tetap bukan tool; skill_view tetap bisa
 // membaca skill apa pun tanpa binding).
 import fs from "node:fs";
 import path from "node:path";

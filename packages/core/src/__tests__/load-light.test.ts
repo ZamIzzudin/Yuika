@@ -1,4 +1,4 @@
-// P0-QA-2: load ringan — 10 sesi paralel × 5 turn TANPA deadlock/leak.
+// P0-QA-2: load ringan, 10 sesi paralel × 5 turn TANPA deadlock/leak.
 // Provider fake instan; fokus: concurrency loop + store + cap delegasi konsisten,
 // semua turn selesai dengan utuh & urutan history benar per sesi.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -10,7 +10,7 @@ import { SessionStore } from "../session/store.js";
 import { AgentLoop } from "../loop.js";
 import type { ProviderAdapter, ProviderChunk, ChatRequest, ProviderDone } from "../provider/adapter.js";
 
-/** Provider instan dengan jitter kecil — meniru I/O async tanpa I/O nyata. */
+/** Provider instan dengan jitter kecil, meniru I/O async tanpa I/O nyata. */
 class JitterProvider implements ProviderAdapter {
   id = "fake";
   calls = 0;

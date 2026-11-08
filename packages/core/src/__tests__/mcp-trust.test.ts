@@ -58,7 +58,7 @@ describe("MCP audit store", () => {
   });
 });
 
-describe("P1-PRJ-5 — binding MCP project×persona (applyMcpBinding)", () => {
+describe("P1-PRJ-5, binding MCP project×persona (applyMcpBinding)", () => {
   const schemas = [
     { name: "read_file" },
     { name: "mcp__filesystem__list_directory" },

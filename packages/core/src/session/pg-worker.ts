@@ -1,6 +1,6 @@
-// @yuika/core — P0-DATA-1: WORKER driver PostgreSQL. Dimuat lewat worker_threads
+// @yuika/core, P0-DATA-1: WORKER driver PostgreSQL. Dimuat lewat worker_threads
 // dari pg-bridge.ts (proses utama TIDAK mengimpor paket `postgres`).
-// Protokol: hasil dikirim lewat SharedArrayBuffer (growable) + Atomics —
+// Protokol: hasil dikirim lewat SharedArrayBuffer (growable) + Atomics,
 // main thread memblokir dengan Atomics.wait (paritas semantik better-sqlite3).
 import { parentPort } from "node:worker_threads";
 import { PgSessionStore } from "./pg-session.js";
@@ -13,8 +13,8 @@ await store.migrate();
 interface Job {
   method: string;
   args: unknown[];
-  header: Int32Array; // [status, byteLen] — 0 pending · 1 ok · 3 error
-  body: SharedArrayBuffer; // growable — bytes hasil JSON
+  header: Int32Array; // [status, byteLen], 0 pending · 1 ok · 3 error
+  body: SharedArrayBuffer; // growable, bytes hasil JSON
 }
 
 // status: 0=pending 1=ok 3=error

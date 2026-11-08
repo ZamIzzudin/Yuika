@@ -1,4 +1,4 @@
-// @yuika/core — dungeon runner (P1-DUN-1): jalankan MISI sebagai sesi sandbox.
+// @yuika/core, dungeon runner (P1-DUN-1): jalankan MISI sebagai sesi sandbox.
 // Ruangan = project kind="dungeon" (root workspace/dungeons/<id>) → semua file
 // tools persona terisolasi di sana. Run bersifat async: status dipolling UI
 // (running/done/failed) & dipersist di <dungeon>/runs.json (restart → failed).
@@ -11,7 +11,7 @@ import { missionDir } from "./mission.js";
 /** Prompt misi: agent tahu goal, sumber, acceptance, dan WAJIB menutup dengan
  *  skill_propose (skill hasil latihan → draf P1-MEM-3, milik persona ini). */
 export function buildMissionPrompt(m: Mission): string {
-  const res = m.resources.length ? m.resources.map((r) => `  - ${r}`).join("\n") : "  (tidak ada — cari sumber sendiri via web research)";
+  const res = m.resources.length ? m.resources.map((r) => `  - ${r}`).join("\n") : "  (tidak ada, cari sumber sendiri via web research)";
   const acc = m.acceptance.map((a) => `  - ${a}`).join("\n");
   return [
     `MISI LATIHAN: ${m.title}`,
@@ -24,15 +24,15 @@ export function buildMissionPrompt(m: Mission): string {
     "KRITERIA LULUS (acceptance):",
     acc,
     "",
-    `SKILL TARGET: "${m.targetSkill.name}" — ${m.targetSkill.description}`,
+    `SKILL TARGET: "${m.targetSkill.name}", ${m.targetSkill.description}`,
     "",
     "CARA KERJA:",
     "1. Sumber di atas bisa URL (ambil via web_fetch) ATAU path file di folder misi",
     "   ini (file teks → read_file; PDF/Excel → doc_read bila tool tersedia).",
-    "2. Pelajari sumber sampai paham — boleh cari tambahan bila kurang.",
-    "3. Praktikkan di folder misi ini (sandbox — semua file di sini aman).",
+    "2. Pelajari sumber sampai paham, boleh cari tambahan bila kurang.",
+    "3. Praktikkan di folder misi ini (sandbox, semua file di sini aman).",
     "4. Tulis hasil belajar sebagai laporan di reports/ folder misi ini.",
-    "5. AKHIRI dengan tool `skill_propose` untuk skill target di atas — isi body",
+    "5. AKHIRI dengan tool `skill_propose` untuk skill target di atas, isi body",
     "   dengan prosedur yang kamu PRAKTIKKAN, bukan teori kosong. Tanpa itu",
     "   misi dianggap belum selesai.",
     "6. Tutup dengan ringkasan singkat: apa yang dipelajari & bukti di folder.",
@@ -73,22 +73,22 @@ export function sweepStaleRuns(workspacePath: string, missions: Mission[]): void
 
 export interface DungeonRunnerDeps {
   workspacePath: string;
-  /** Pastikan ruangan dungeon ada (project kind dungeon) — kembalikan projectId. */
+  /** Pastikan ruangan dungeon ada (project kind dungeon), kembalikan projectId. */
   ensureRoom: (mission: Mission) => string;
   /** Buat sesi persona di ruangan tsb (workspace ter-scope ke folder misi). */
   createSession: (personaId: string, projectId: string) => string;
-  /** Jalankan turn (async — resolve saat turn selesai). */
+  /** Jalankan turn (async, resolve saat turn selesai). */
   runTurn: (sessionId: string, text: string) => Promise<void>;
   /** Ringkasan hasil: pesan assistant terakhir sesi. */
   lastAssistantText: (sessionId: string) => string | null;
 }
 
 export function createDungeonRunner(deps: DungeonRunnerDeps) {
-  /** Mulai run baru — fire-and-forget; status via listRuns/getRun. */
+  /** Mulai run baru, fire-and-forget; status via listRuns/getRun. */
   function start(mission: Mission): DungeonRun {
     // satu run aktif per misi (arena latihan = fokus; antre menyusul bila perlu)
     const active = loadRuns(deps.workspacePath, mission.id).find((r) => r.status === "running");
-    if (active) throw new Error(`misi '${mission.id}' sedang berjalan (run ${active.id}) — tunggu selesai`);
+    if (active) throw new Error(`misi '${mission.id}' sedang berjalan (run ${active.id}), tunggu selesai`);
 
     const projectId = deps.ensureRoom(mission);
     const sessionId = deps.createSession(mission.persona, projectId);

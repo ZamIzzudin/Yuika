@@ -14,7 +14,7 @@ describe("project files (P2-STU-3 v0)", () => {
   it("tree: folder dulu (AZ), file dotfile & node_modules disembunyikan", () => {
     fs.mkdirSync(path.join(root, "code"));
     fs.mkdirSync(path.join(root, ".git"));
-    fs.mkdirSync(path.join(root, "node_modules")); // berkas anggota tidak dibuat — cukup foldernya
+    fs.mkdirSync(path.join(root, "node_modules")); // berkas anggota tidak dibuat, cukup foldernya
     fs.writeFileSync(path.join(root, "code", "a.html"), "<p>x</p>");
     fs.writeFileSync(path.join(root, "z.md"), "# z");
     const t = buildFileTree(root);

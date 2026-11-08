@@ -1,4 +1,4 @@
-// Batch 2 · Agent Developer — GERBANG e2e (P1-MCP-4 egress + P2-STU-2 terminal).
+// Batch 2 · Agent Developer, GERBANG e2e (P1-MCP-4 egress + P2-STU-2 terminal).
 // Bukti end-to-end user-facing:
 //  T1 tab Terminal hidup (sesi via UI, user bisa mengetik → output muncul)
 //  T2 agent menjalankan CLI (tool `terminal`, aman node -v) → output muncul
@@ -6,7 +6,7 @@
 //  T3 perintah berisiko (npm publish) → APPROVAL card muncul → Approve once
 //     → perintah jalan di sesi shared
 // Shell deterministik: YUI_TERMINAL_CMD = echo-shell.mjs (fixture core).
-// (Egress container nyata = integration test terpisah; butuh Docker — env e2e
+// (Egress container nyata = integration test terpisah; butuh Docker, env e2e
 //  ini tanpa Docker, jalur local fallback yang diuji di sini.)
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
@@ -19,7 +19,7 @@ async function enqueue(request: APIRequestContext, scripts: unknown[]): Promise<
 
 test.describe.configure({ mode: "serial" });
 
-test("T1-T3 — terminal shared user & agent + approval perintah berisiko", async ({ page, request }) => {
+test("T1-T3, terminal shared user & agent + approval perintah berisiko", async ({ page, request }) => {
   test.setTimeout(180_000);
 
   await enqueue(request, [
@@ -38,14 +38,14 @@ test("T1-T3 — terminal shared user & agent + approval perintah berisiko", asyn
   // Hiro/Neo di-assign (hemat resource docker) → assign Hiro lalu mulai sesi
   // dengannya (tab bar muncul setelah sesi pertama ada).
   await page.getByRole("button", { name: "Hiro Yui", exact: true }).click();
-  await page.getByRole("button", { name: "Start session" }).click();
+  await page.getByRole("button", { name: "Start Session" }).click();
   await expect(page.getByRole("tab", { name: "Terminal" })).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("tab", { name: "Terminal" }).click();
   await expect(page.getByTestId("terminal-holder")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("● live")).toBeVisible({ timeout: 30_000 });
 
-  // sesi tunggal per project (dibuat tab) — ambil id utk polling buffer
+  // sesi tunggal per project (dibuat tab), ambil id utk polling buffer
   const sess = (await (await request.get(`${API}/api/terminal/sessions`)).json()) as {
     sessions: { id: string; createdAt: number }[];
   };
@@ -66,14 +66,14 @@ test("T1-T3 — terminal shared user & agent + approval perintah berisiko", asyn
   await expect.poll(buffer, { timeout: 15_000 }).toContain("ECHO:echo user-first");
 
   // ── T2: agent menjalankan node -v via tool terminal ─────────────────
-  // Scope project → PROJECT LEAD (Conductor/Maestro) otomatis — tak ada kartu
+  // Scope project → PROJECT LEAD (Conductor/Maestro) otomatis, tak ada kartu
   // persona (kartu hanya di Freespace); toolset conductor kini punya terminal.
   await page.getByRole("tab", { name: "Chat" }).click();
   await expect(page.getByPlaceholder(/Describe a task/)).toBeVisible({ timeout: 30_000 });
   await page.getByPlaceholder(/Describe a task/).fill("Run node -v in the shared terminal.");
   await page.keyboard.press("Enter");
 
-  // output agent muncul di buffer sesi YANG SAMA (shared) — tanpa approval
+  // output agent muncul di buffer sesi YANG SAMA (shared), tanpa approval
   await expect.poll(buffer, { timeout: 60_000 }).toContain("ECHO:node -v");
 
   // ── T3: perintah berisiko → approval card → Approve once ────────────

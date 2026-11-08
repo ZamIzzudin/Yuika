@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// MCP server: Tailscale (dev-10) — expose dev lokal ke tailnet/Internet.
+// MCP server: Tailscale (dev-10), expose dev lokal ke tailnet/Internet.
 // stdio JSON-RPC minimal (tanpa SDK). Membungkus CLI `tailscale`:
 //   • ts_status        → status node + tailnet (tailscale status --json)
 //   • ts_ip            → IP tailnet node ini
@@ -9,12 +9,12 @@
 //   • ts_serve_stop    → matikan semua tunnel serve/funnel node ini
 // Prasyarat: tailscale terpasang & login (`tailscale up`). Funnel butuh
 // funnel/HTTPS diizinkan admin ACL tailnet. Risiko TINGGI: funnel = akses
-// publik — hanya untuk dev yang memang sengaja dibagikan.
+// publik, hanya untuk dev yang memang sengaja dibagikan.
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import readline from "node:readline";
 
-// Windows: CLI sering tidak di PATH (instal GUI) — coba lokasi umum.
+// Windows: CLI sering tidak di PATH (instal GUI), coba lokasi umum.
 function resolveBin() {
   if (process.platform === "win32") {
     for (const p of ["C:\\Program Files\\Tailscale\\tailscale.exe", "C:\\Program Files (x86)\\Tailscale\\tailscale.exe"]) {
@@ -40,7 +40,7 @@ const TOOLS = [
   },
   {
     name: "ts_ip",
-    description: "IP tailnet (100.x.y.z) node ini — untuk akses via VPN tailnet.",
+    description: "IP tailnet (100.x.y.z) node ini, untuk akses via VPN tailnet.",
     inputSchema: { type: "object", properties: {} },
   },
   {
@@ -61,7 +61,7 @@ const TOOLS = [
   {
     name: "ts_funnel_start",
     description:
-      "Publikasikan server dev lokal ke INTERNET publik via Tailscale Funnel: ts_funnel_start(port=3000). RISIKO TINGGI — hanya untuk dev yang memang mau dibagikan publik. Butuh funnel diizinkan admin tailnet.",
+      "Publikasikan server dev lokal ke INTERNET publik via Tailscale Funnel: ts_funnel_start(port=3000). RISIKO TINGGI, hanya untuk dev yang memang mau dibagikan publik. Butuh funnel diizinkan admin tailnet.",
     inputSchema: {
       type: "object",
       properties: { port: { type: "number", default: 3000 } },
@@ -115,7 +115,7 @@ rl.on("line", (line) => {
   } catch {
     return;
   }
-  if (msg.id === undefined) return; // notification (initialized) — diam saja
+  if (msg.id === undefined) return; // notification (initialized), diam saja
   const reply = (result) => process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: msg.id, result }) + "\n");
   if (msg.method === "initialize") {
     reply({

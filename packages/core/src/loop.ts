@@ -1,4 +1,4 @@
-// @yuika/core — agent turn loop (pola fase Hermes §4.1, versi demo linear):
+// @yuika/core, agent turn loop (pola fase Hermes §4.1, versi demo linear):
 // assembly → api_call → tool_round → (iterate) → finalizer.
 // TODO(P0) lihat TASKS.md: interrupt/AbortSignal end-to-end (P0-CORE-1),
 // compression v0 (P0-CORE-4), celebrating detection. Fallback model // repetition guard, iteration budget proper, compression, celebrating detection. guard repetisi: DONE dev 9.
@@ -22,12 +22,12 @@ import { getApprovalMode } from "./approval/engine.js";
 const MAX_ITERATIONS = env.maxIter;
 
 /** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0). P0-INF-3:
- *  kini lewat pino — baris trace = logger.debug bermakna (JSON, machine-parseable). */
+ *  kini lewat pino, baris trace = logger.debug bermakna (JSON, machine-parseable). */
 function trace(msg: string): void {
   if (env.trace) getLogger().child({ mod: "loop.trace" }).debug(msg);
 }
 
-/** P1-PRJ-5 (D17): terapkan binding MCP pada daftar tool sesi — tool `mcp__*`
+/** P1-PRJ-5 (D17): terapkan binding MCP pada daftar tool sesi, tool `mcp__*`
  *  hanya lolos bila ada di allowlist (prefix `...__*` atau nama persis). null = blokir semua. */
 export function applyMcpBinding<T extends { name: string }>(
   schemas: T[],
@@ -46,7 +46,7 @@ export interface LoopDeps {
   /** Model default sesi (env/Settings). Bisa dioverride per persona via `routeModel`. */
   model: string;
   /** P1-MDL-1: resolusi model PER PERSONA (override Settings → persona.yaml → default).
-   *  Mengembalikan juga fallback model — P0-CORE-2: provider mati → fallback otomatis. */
+   *  Mengembalikan juga fallback model, P0-CORE-2: provider mati → fallback otomatis. */
   routeModel?: (personaId: string) => { model: string; fallback?: string; markUnhealthy?: (model: string) => void };
   workspacePath: string;
   approvals: ApprovalEngine;
@@ -57,14 +57,14 @@ export interface LoopDeps {
   /** P1-CRED-1: catat pemakaian per panggilan model sukses (token dari provider,
    *  tanpa estimasi). Diisi runtime → ledger SQLite. */
   recordUsage?: (u: UsageEvent) => void;
-  /** P0-CORE-4: model aux murah untuk kompresi konteks (getter — swap panas via
+  /** P0-CORE-4: model aux murah untuk kompresi konteks (getter, swap panas via
    *  Settings). Kosong/null → fallback ke model utama sesi. */
   auxModel?: () => string;
-  /** P0-DEL-2: antrean steering — arahan user mid-turn di-drain (dipop) di awal
+  /** P0-DEL-2: antrean steering, arahan user mid-turn di-drain (dipop) di awal
    *  tiap iterasi loop, di-inject sebagai pesan user berlabel. Dipakai runner
    *  delegasi untuk arahkan anak tanpa membatalkannya. */
   steerFor?: (sessionId: string) => string[];
-  /** P1-DEL-3: gate pause per sesi (delegasi) — dipanggil di awal TIAP iterasi.
+  /** P1-DEL-3: gate pause per sesi (delegasi), dipanggil di awal TIAP iterasi.
    *  Resolve `true` = lanjut (tidak sedang pause); `false` = dibatalkan saat
    *  ter-pause → loop keluar graceful (progress & parsial tersimpan). */
   pauseGateFor?: (sessionId: string) => Promise<boolean>;
@@ -84,7 +84,7 @@ export class AgentLoop {
     let model = route.model;
 
     const turnId = `t_${randomUUID()}`;
-    // P0-INF-3: child logger per turn — traceId (=turnId) otomatis menempel di
+    // P0-INF-3: child logger per turn, traceId (=turnId) otomatis menempel di
     // SEMUA log turn ini; satu id = satu alur penuh di stdout.
     const log = getLogger().child({ mod: "loop", sessionId, turnId, persona: session.personaId });
 
@@ -94,7 +94,7 @@ export class AgentLoop {
     log.info({ model, projectId: session.projectId }, "turn started");
     emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
 
-    // 2) assembly: system prompt FROZEN (dari sesi) + history — via view kompresi
+    // 2) assembly: system prompt FROZEN (dari sesi) + history, via view kompresi
     // (P0-CORE-4): bila estimasi token > ambang, history lama diringkas aux model
     // jadi CHECKPOINT (tabel messages tetap append-only; ini murni lapisan view).
     const tAsm = Date.now();
@@ -143,7 +143,7 @@ export class AgentLoop {
 
     let usedDelegation = false;
     let usedTools = false; // P1-MEM-2: turn yang melibatkan tool = kandidat nudge belajar
-    // P0-CORE-1: teks parsial yang sudah mengalir ke UI — dipakai saat cancel
+    // P0-CORE-1: teks parsial yang sudah mengalir ke UI, dipakai saat cancel
     // supaya history tetap koheren (pesan assistant tidak menggantung).
     let streamedText = "";
     const cancelledExit = (): void => {
@@ -154,7 +154,7 @@ export class AgentLoop {
       emit({ type: "message.done", turnId });
       emit({ type: "turn.cancelled", turnId });
       emit({ type: "persona.state", personaId: session.personaId, state: "idle" });
-      log.info({ ms: Date.now() - t0 }, "turn cancelled (user) — partial saved");
+      log.info({ ms: Date.now() - t0 }, "turn cancelled (user), partial saved");
       trace(`turn=${turnId.slice(0, 10)} DIBATALKAN user total=${Date.now() - t0}ms iter parsial tersimpan`);
       return;
     };
@@ -163,27 +163,27 @@ export class AgentLoop {
     let lastRoundSig = "";
     let repeatRounds = 0;
 
-    // Fix 2026-11 (user): mode auto ("Hardcore") = user tidak ingin diinterupsi —
+    // Fix 2026-11 (user): mode auto ("Hardcore") = user tidak ingin diinterupsi,
     // iterasi lanjut sampai jawaban final, cap pengaman jauh lebih tinggi (64).
     const iterCap = getApprovalMode() === "auto" ? env.maxIterHardcore : MAX_ITERATIONS;
     for (let i = 0; i < iterCap; i++) {
       if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop ditekan sebelum iterasi dimulai
-      // P0-DEL-2: steering — arahan user mid-turn di-drain tiap awal iterasi.
-      // Pesan user berlabel (bukan system — kompatibel semua provider OpenAI-compat)
+      // P0-DEL-2: steering, arahan user mid-turn di-drain tiap awal iterasi.
+      // Pesan user berlabel (bukan system, kompatibel semua provider OpenAI-compat)
       // agar model memperlakukannya sebagai prioritas tertinggi berikutnya.
       const steers = this.deps.steerFor?.(sessionId) ?? [];
       for (const st of steers) {
-        const steerMsg: InternalMessage = { role: "user", content: `[arahan user — mid-turn] ${st}` };
+        const steerMsg: InternalMessage = { role: "user", content: `[arahan user, mid-turn] ${st}` };
         messages.push(steerMsg);
         store.appendMessage(sessionId, steerMsg);
         trace(`  steer: ${st.slice(0, 80)}`);
       }
-      // P1-DEL-3: pause (delegasi) — anak menunggu di sini TANPA memanggil
+      // P1-DEL-3: pause (delegasi), anak menunggu di sini TANPA memanggil
       // provider; resume/abort membangunkan gate. Abort saat pause → graceful.
       if (this.deps.pauseGateFor && !(await this.deps.pauseGateFor(sessionId))) {
         return cancelledExit();
       }
-      // 3) api phase — rantai attempt: primary → fallback (P0-CORE-2). Provider
+      // 3) api phase, rantai attempt: primary → fallback (P0-CORE-2). Provider
       // sudah retry transien ×2 di dalam (maxRetries); sampai sini = model itu
       // benar-benar gagal → tandai unhealthy (cooldown) & coba fallback SEKALI.
       let done: Awaited<ReturnType<ProviderAdapter["chatStream"]>> | undefined;
@@ -199,13 +199,13 @@ export class AgentLoop {
               emit({ type: "message.delta", turnId, delta: chunk.delta });
             }
             if (chunk.type === "reasoning_delta") {
-              // Pikiran model streaming ke UI (kolaps-able) — fix dev-10: panggilan
+              // Pikiran model streaming ke UI (kolaps-able), fix dev-10: panggilan
               // menit-lamanya kini hidup, bukan diam. Tidak masuk history (bukan
-              // konteks — hemat token & jaga invariant view-only).
+              // konteks, hemat token & jaga invariant view-only).
               emit({ type: "reasoning.delta", turnId, delta: chunk.delta, personaId: session.personaId });
             }
           });
-          // P1-CRED-1: metering — HANYA dari usage provider (tanpa estimasi).
+          // P1-CRED-1: metering, HANYA dari usage provider (tanpa estimasi).
           if (done.usage) {
             this.deps.recordUsage?.({
               sessionId,
@@ -225,7 +225,7 @@ export class AgentLoop {
           lastErr = undefined;
           break;
         } catch (err) {
-          // P0-CORE-1: abort oleh user BUKAN error provider — keluar graceful.
+          // P0-CORE-1: abort oleh user BUKAN error provider, keluar graceful.
           if (signal?.aborted) return cancelledExit();
           const ye = classifyError(err, "provider"); // P0-INF-4: kind/code/retryable
           lastErr = ye;
@@ -270,7 +270,7 @@ export class AgentLoop {
 
         // Fix 2026-11 (user): tool calls dalam SATU round dieksekusi PARALEL.
         // Provider mengirim beberapa tool_calls sekaligus (mis. Maestro mendelegasikan
-        // 3 riset "paralel") — dulu di-await satu-per-satu sehingga anak ke-2 baru
+        // 3 riset "paralel"), dulu di-await satu-per-satu sehingga anak ke-2 baru
         // jalan setelah anak ke-1 selesai (sequential). Hasil tetap di-append
         // BERURUTAN sesuai urutan call (kontrak protocol tool_result).
         for (const call of done.toolCalls as ToolCallRequest[]) {
@@ -330,7 +330,7 @@ export class AgentLoop {
         }
         if (repeatRounds >= 2) {
           const nudge =
-            "[sistem] Kamu memanggil tool yang sama berulang kali dengan argumen identik. Evaluasi hasil sebelumnya — lanjut dengan langkah BERBEDA atau berikan jawaban final sekarang.";
+            "[sistem] Kamu memanggil tool yang sama berulang kali dengan argumen identik. Evaluasi hasil sebelumnya, lanjut dengan langkah BERBEDA atau berikan jawaban final sekarang.";
           messages.push({ role: "user", content: nudge });
           store.appendMessage(sessionId, { role: "user", content: nudge });
           repeatRounds = 0;
@@ -349,7 +349,7 @@ export class AgentLoop {
         personaId: session.personaId,
         state: usedDelegation ? "celebrating" : "done",
       });
-      // P1-MEM-2: learn nudge — aux call ringan pasca-turn yang MELIBATKAN TOOL.
+      // P1-MEM-2: learn nudge, aux call ringan pasca-turn yang MELIBATKAN TOOL.
       // Fire-and-forget: tidak memblokir UI; hasil lewat event memory.noted + trace.
       if (usedTools) {
         const tLearn = Date.now();
@@ -382,14 +382,14 @@ export class AgentLoop {
     // iterasi tambahan pasca-coding untuk verifikasi artefak). Progres & file
     // tersimpan; user tinggal bilang "lanjutkan" untuk resume turn.
     const budgetMsg =
-      "Iterasi untuk turn ini mencapai batas atas sebelum jawaban final. Semua progres & file sudah tersimpan — ketik **lanjutkan** dan aku lanjut dari titik ini.";
+      "Iterasi untuk turn ini mencapai batas atas sebelum jawaban final. Semua progres & file sudah tersimpan, ketik **lanjutkan** dan aku lanjut dari titik ini.";
     messages.push({ role: "assistant", content: budgetMsg });
     store.appendMessage(sessionId, { role: "assistant", content: budgetMsg });
     emit({ type: "message.delta", turnId, delta: budgetMsg });
     emit({ type: "message.done", turnId });
-    emit({ type: "session.error", message: "iteration budget reached — progress saved, ask the agent to continue", recoverable: true, kind: "budget", code: ErrorCodes.ITERATION_BUDGET_EXCEEDED });
+    emit({ type: "session.error", message: "iteration budget reached, progress saved, ask the agent to continue", recoverable: true, kind: "budget", code: ErrorCodes.ITERATION_BUDGET_EXCEEDED });
     emit({ type: "persona.state", personaId: session.personaId, state: "done" });
-    log.warn({ ms: Date.now() - t0, iters: iterCap, kind: "budget" }, "iteration budget exhausted — graceful exit");
+    log.warn({ ms: Date.now() - t0, iters: iterCap, kind: "budget" }, "iteration budget exhausted, graceful exit");
     trace(`turn=${turnId.slice(0, 10)} BUDGET-HABIS (graceful) total=${Date.now() - t0}ms`);
   }
 }

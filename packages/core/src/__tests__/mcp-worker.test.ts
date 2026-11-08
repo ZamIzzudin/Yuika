@@ -1,4 +1,4 @@
-// P1-MCP-4: MCP worker sandbox — fail-closed bila `sandbox: true` tanpa
+// P1-MCP-4: MCP worker sandbox, fail-closed bila `sandbox: true` tanpa
 // Docker; `sandbox: "auto"` fallback stdio host; flag container benar.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import os from "node:os";

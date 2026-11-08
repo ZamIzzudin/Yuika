@@ -1,4 +1,4 @@
-// DS-1 — komponen global: Chip (badge status/label kecil) & Dot (indikator titik).
+// DS-1, komponen global: Chip (badge status/label kecil) & Dot (indikator titik).
 // Chip NON-interaktif: menampilkan status/kategori (✓ selesai, ● berjalan, draf).
 // Untuk tombol pilihan → pakai <Button active> atau Chip dengan onSelect.
 import type { ReactNode } from "react";
@@ -32,7 +32,7 @@ export function Chip({
   );
 }
 
-/** Chip yang bisa diklik (pilihan filter/persona) — state aktif = aksen. */
+/** Chip yang bisa diklik (pilihan filter/persona), state aktif = aksen. */
 export function ChipToggle({
   tone = "muted",
   active,
@@ -93,7 +93,7 @@ export function Dot({
   );
 }
 
-/* ── State persona (idle/working/done/…) — dipakai header chat & kartu delegasi ── */
+/* ── State persona (idle/working/done/…), dipakai header chat & kartu delegasi ── */
 export const STATE_LABEL: Record<string, string> = {
   idle: "Waiting",
   thinking: "Thinking",

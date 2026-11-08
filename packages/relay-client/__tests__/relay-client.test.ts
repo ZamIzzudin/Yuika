@@ -1,4 +1,4 @@
-// P1-PRT-1 — SDK relay-client terhadap SpecRelay (double spec v1).
+// P1-PRT-1, SDK relay-client terhadap SpecRelay (double spec v1).
 // Skenario SPEC-PROTOCOL §11 butir 1–7 yang bisa diuji di lapisan klien
 // (butir 8 = suite vectors @yuika/crypto; butir 9 = REST claim, di apps/api).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -64,7 +64,7 @@ async function waitFor<T>(fn: () => T | undefined, ms = 4_000): Promise<T> {
   }
 }
 
-describe("SPEC §11.1 — handshake", () => {
+describe("SPEC §11.1, handshake", () => {
   it("auth valid → auth_ok accountId", async () => {
     const c = makeClient(r1);
     const acc = await c.connect();
@@ -102,7 +102,7 @@ describe("SPEC §11.1 — handshake", () => {
   });
 });
 
-describe("SPEC §11.2/3/4 — host, join, E2E, broadcast", () => {
+describe("SPEC §11.2/3/4, host, join, E2E, broadcast", () => {
   let hc: RelayClient;
   let h: RelayHost;
 
@@ -131,7 +131,7 @@ describe("SPEC §11.2/3/4 — host, join, E2E, broadcast", () => {
     c.close();
   });
 
-  it("join dhPub invalid (bukan PEM) → bye 4102, terminal — CP-2", async () => {
+  it("join dhPub invalid (bukan PEM) → bye 4102, terminal, CP-2", async () => {
     const c = makeClient(r1);
     await c.connect();
     const remote = new RelayRemote({
@@ -178,7 +178,7 @@ describe("SPEC §11.2/3/4 — host, join, E2E, broadcast", () => {
     await rm2.join(host.deviceId);
     await waitFor(() => h.remotes.size === 2);
 
-    // broadcast = 2 box berbeda (per-recipient) — remote hanya bisa buka miliknya
+    // broadcast = 2 box berbeda (per-recipient), remote hanya bisa buka miliknya
     await h.sendEvent("all", { proto: 1, ev: "message.delta", sessionId: "s1", seq: 1, delta: "shared-but-sealed" });
     await waitFor(() => got[0]!.length > 0 && got[1]!.length > 0);
     expect(got[0]).toEqual(["shared-but-sealed"]);
@@ -194,7 +194,7 @@ describe("SPEC §11.2/3/4 — host, join, E2E, broadcast", () => {
   });
 });
 
-describe("SPEC §11.5 — list_hosts", () => {
+describe("SPEC §11.5, list_hosts", () => {
   it("host akun sama terdaftar & urut deviceId; akun lain tak tampak", async () => {
     const host2 = generateDeviceKeys();
     relay.devices.set(host2.deviceId, {
@@ -223,7 +223,7 @@ describe("SPEC §11.5 — list_hosts", () => {
   });
 });
 
-describe("SPEC §11.6 — sticky host_offline/host_back", () => {
+describe("SPEC §11.6, sticky host_offline/host_back", () => {
   it("host putus → remote host_offline → antrian; host kembali → host_back + flush", async () => {
     // host sengaja reconnect LAMBAT (backoff 1.5s) supaya window offline
     // cukup panjang untuk membuktikan antrian SDK menahan action.
@@ -278,7 +278,7 @@ describe("SPEC §11.6 — sticky host_offline/host_back", () => {
   });
 });
 
-describe("SPEC §11.7 — limit", () => {
+describe("SPEC §11.7, limit", () => {
   it("frame > maxFrame → bye 4105 (double: maxFrame 256)", async () => {
     const small = createSpecRelay({
       devices: [{ deviceId: host.deviceId, accountId: ACC_A, kind: "web", name: "H", signPub: host.signPub, dhPub: host.dhPub }],
@@ -334,7 +334,7 @@ describe("SPEC §11.7 — limit", () => {
   });
 });
 
-describe("SDK — outbox & rid", () => {
+describe("SDK, outbox & rid", () => {
   it("pesan pra-auth masuk outbox, flush urut setelah auth_ok", async () => {
     const c = makeClient(r1);
     c.send({ t: "list_hosts" }); // belum connect → outbox
@@ -354,9 +354,9 @@ describe("SDK — outbox & rid", () => {
   });
 });
 
-// CP-5 — unlink dari portal: device hilang dari registry relay → semua conn
+// CP-5, unlink dari portal: device hilang dari registry relay → semua conn
 // aktifnya kena bye 4001 (unknown device) → SDK PERMANEN (tidak reconnect).
-describe("CP-5 — unlink device → bye 4001 permanen", () => {
+describe("CP-5, unlink device → bye 4001 permanen", () => {
   it("bye 4001 → stopped: state closed & TIDAK reconnect setelah backoff", async () => {
     const d = generateDeviceKeys();
     const rl = createSpecRelay({
@@ -374,7 +374,7 @@ describe("CP-5 — unlink device → bye 4001 permanen", () => {
         open: async (t, f, b) => (await import("@yuika/crypto")).open(t, f, b).toString("utf8"),
       },
       socketFactory: nodeSocket,
-      backoff: { minMs: 100, maxMs: 200 }, // backoff cepat — bila SDK salah reconnect, cepat ketahuan
+      backoff: { minMs: 100, maxMs: 200 }, // backoff cepat, bila SDK salah reconnect, cepat ketahuan
       log: () => {},
     });
     await client.connect();
@@ -384,9 +384,9 @@ describe("CP-5 — unlink device → bye 4001 permanen", () => {
     await new Promise((r) => setTimeout(r, 300));
     expect(client.getState()).toBe("closed"); // bye diterima, koneksi putus
 
-    // jendela reconnect: 3× backoff max — transien akan reconnect di sini.
+    // jendela reconnect: 3× backoff max, transien akan reconnect di sini.
     await new Promise((r) => setTimeout(r, 700));
-    expect(client.getState()).toBe("closed"); // PERMANEN — tidak ada retry
+    expect(client.getState()).toBe("closed"); // PERMANEN, tidak ada retry
     client.close();
     await rl.close();
   });

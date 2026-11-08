@@ -13,13 +13,17 @@ import type {
 } from "@yuika/contracts";
 import {
   ArrowBendDownRight,
+  Brain,
   Check,
   Circle,
   CircleHalf,
   CircleNotch,
   Copy,
+  FolderSimple,
   Paperclip,
+  PencilSimple,
   TreeStructure,
+  UserCircle,
   X,
 } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
@@ -31,7 +35,18 @@ import { WorkflowStepsCard } from "./WorkflowStepsCard";
 import { ProjectDashboardView } from "./ProjectDashboard";
 import { WorkshopPanel } from "./WorkshopPanel";
 import { TerminalFullTab } from "./TerminalFullTab";
-import { Button, Card, Chip, ConfirmDialog, Field, Select, TextArea, TextInput } from "./ui";
+import { TeamSetupView } from "./TeamSetupView";
+import {
+  Button,
+  Card,
+  Chip,
+  ConfirmDialog,
+  Field,
+  Select,
+  TextArea,
+  TextInput,
+  Modal,
+} from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 /** Status cycle: klik chip = maju satu langkah. */
@@ -80,7 +95,7 @@ const PERSONA_NAME: Record<string, string> = {
 };
 
 /** Ikon status simpul pohon (○ ◐ ◑ ● → Phosphor). */
-/** Config → Browser (Batch 14a++): policy reader pindah ke Config — toggle
+/** Config → Browser (Batch 14a++): policy reader pindah ke Config, toggle
  *  allowAll per project (SSRF guard IP-private TETAP jalan di backend). */
 function BrowserPolicySection({ projectId }: { projectId: string }) {
   const [policy, setPolicy] = useState<{
@@ -138,7 +153,7 @@ function BrowserPolicySection({ projectId }: { projectId: string }) {
         <b className="text-body font-semibold text-primary">Browser policy</b>
         <p className="mt-1 text-caption leading-5 text-dim">
           Controls what the agent&apos;s web tools (web_fetch / research) may
-          open for this project. Live screen browsing is not affected — this
+          open for this project. Live screen browsing is not affected, this
           policy gates server-side page fetching only.
         </p>
       </header>
@@ -175,9 +190,9 @@ function BrowserPolicySection({ projectId }: { projectId: string }) {
           </b>
           {policy.allow.length === 0 ? (
             <p className="mt-1 text-caption text-muted">
-              Empty — only the default domain and explicit additions are
-              allowed. Turn on &quot;Allow all&quot; above or extend the list
-              via project config.
+              Empty, only the default domain and explicit additions are allowed.
+              Turn on &quot;Allow all&quot; above or extend the list via project
+              config.
             </p>
           ) : (
             <ul className="mt-1 flex flex-wrap gap-1.5">
@@ -215,7 +230,7 @@ function TaskStatusIcon({ s, size = 10 }: { s: TaskStatus; size?: number }) {
   return <Circle size={size} aria-hidden className="text-dim" />;
 }
 
-/** Satu simpul pohon task (rekursif) — proyeksi event `task.node.*` (D19). */
+/** Satu simpul pohon task (rekursif), proyeksi event `task.node.*` (D19). */
 function TreeNode({
   node,
   depth,
@@ -279,10 +294,10 @@ function TreeNode({
 
 /**
  * Tab proyek di area utama shell (P1-PRJ-4/6/7): Chat | Tim | Pohon | Roster | Sesi
- * berbagi satu area konten — nav tab dirender page.tsx, komponen ini = konten non-chat.
+ * berbagi satu area konten, nav tab dirender page.tsx, komponen ini = konten non-chat.
  * DS-1: ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
  */
-/** Batch 16: edit nama & deskripsi project (Config → Project) — PATCH lalu
+/** Batch 16: edit nama & deskripsi project (Config → Project), PATCH lalu
  *  parent refresh (header/sidebar ikut berubah). */
 function ProjectEditCard({
   project,
@@ -297,6 +312,7 @@ function ProjectEditCard({
 }) {
   const [name, setName] = useState(project.name);
   const [desc, setDesc] = useState(project.description);
+  const [editOpen, setEditOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -323,6 +339,7 @@ function ProjectEditCard({
           (await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`,
         );
       toastOk("Project updated");
+      setEditOpen(false);
       onSaved?.();
     } catch (e) {
       toastErr(e instanceof Error ? e.message : String(e));
@@ -342,8 +359,7 @@ function ProjectEditCard({
   }
 
   /** Sama dengan ProjectPanel.remove (Home): respons 200 dari server lama
-   *  tanpa field aditif (deleted.terminalSessions dsb.) TIDAK boleh gagalkan
-   *  refresh UI — pakai body apa adanya. */
+   *  tanpa field aditif TIDAK boleh gagalkan refresh UI, pakai body apa adanya. */
   async function remove() {
     if (deleting) return;
     setDeleting(true);
@@ -357,7 +373,9 @@ function ProjectEditCard({
         .catch(() => ({}))) as DeleteProjectResult & { error?: string };
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
       setConfirmOpen(false);
-      toastOk(`“${project.name}” deleted — sessions, tasks & workspace cleaned up. Persona skills & metering are kept.`);
+      toastOk(
+        `\u201C${project.name}\u201D deleted \u2014 sessions, tasks & workspace cleaned up. Persona skills & metering are kept.`,
+      );
       onDeleted?.(project.id);
     } catch (e) {
       toastErr(e instanceof Error ? e.message : String(e));
@@ -366,12 +384,12 @@ function ProjectEditCard({
     }
   }
 
-  const metaRow = (label: string, value: React.ReactNode) => (
-    <div className="flex min-w-0 items-baseline gap-2">
-      <small className="w-[92px] shrink-0 text-caption uppercase tracking-wide text-dim">
+  const cell = (label: string, value: React.ReactNode) => (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <small className="text-[10px] font-semibold tracking-wider text-dim uppercase">
         {label}
       </small>
-      <span className="min-w-0 flex-1 truncate text-caption text-secondary">
+      <span className="min-w-0 truncate text-caption text-secondary">
         {value}
       </span>
     </div>
@@ -382,90 +400,85 @@ function ProjectEditCard({
       <header className="flex flex-col gap-1">
         <b className="text-body font-semibold text-primary">Project</b>
         <p className="text-caption text-dim">
-          Rename or re-describe the project — everyone (you and the team) sees
-          the change immediately.
+          The identity of this workspace, one compact card. Edit the name or
+          description with the pencil button.
         </p>
       </header>
 
-      {/* meta read-only */}
-      <Card variant="inset" className="flex flex-col gap-2 p-3">
-        <div className="flex items-center gap-2">
-          {metaRow(
-            "Project ID",
-            <b className="font-mono text-caption font-medium text-primary">
-              {project.id}
-            </b>,
-          )}
-          <button
-            type="button"
-            aria-label="Copy project ID"
-            title="Copy project ID"
-            onClick={() => void copyId()}
-            className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md2 px-1.5 py-0.5 text-[11px] text-dim transition-colors hover:bg-hover hover:text-primary"
+      <Card variant="inset" className="p-4">
+        <div className="flex items-start gap-3">
+          <span
+            aria-hidden
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg2 border border-line bg-surface"
           >
-            {copiedId ? (
-              <Check size={12} aria-hidden className="text-success" />
-            ) : (
-              <Copy size={12} aria-hidden />
-            )}
-            {copiedId ? "Copied" : "Copy"}
-          </button>
+            <FolderSimple size={16} className="text-accent" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="text-title font-semibold break-words text-primary">
+              {project.name}
+            </b>
+            <p className="mt-0.5 text-body leading-6 text-muted">
+              {project.description || "No description yet."}
+            </p>
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="shrink-0"
+            aria-label="Edit project name and description"
+            title="Edit name & description"
+            onClick={() => setEditOpen(true)}
+          >
+            <PencilSimple size={13} aria-hidden />
+            Edit
+          </Button>
         </div>
-        {metaRow("Kind", project.kind)}
-        {metaRow("Workspace", <code className="font-mono">{project.rootPath}</code>)}
-        {metaRow(
-          "Created",
-          new Date(project.createdAt).toLocaleString("en-US", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }),
-        )}
-        {metaRow(
-          "Updated",
-          new Date(project.updatedAt).toLocaleString("en-US", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }),
-        )}
-      </Card>
 
-      {/* form edit */}
-      <Card variant="inset" className="flex flex-col gap-3 p-3">
-        <Field label="Name">
-          <TextInput
-            value={name}
-            maxLength={80}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Field>
-        <Field label="Description">
-          <TextArea
-            value={desc}
-            maxLength={280}
-            rows={3}
-            placeholder="What is this project about?"
-            onChange={(e) => setDesc(e.target.value)}
-          />
-        </Field>
-        <div className="flex justify-end gap-2">
-          <Button
-            size="sm"
-            onClick={() => {
-              setName(project.name);
-              setDesc(project.description);
-            }}
-            disabled={!dirty || busy}
-          >
-            Reset
-          </Button>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={save}
-            disabled={!dirty || !name.trim() || busy}
-          >
-            {busy ? "Saving…" : "Save"}
-          </Button>
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-3 sm:grid-cols-3">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <small className="text-[10px] font-semibold tracking-wider text-dim uppercase">
+              Project ID
+            </small>
+            <button
+              type="button"
+              onClick={() => void copyId()}
+              title="Copy project ID"
+              className="flex min-w-0 cursor-pointer items-center gap-1 text-caption text-secondary transition-colors hover:text-primary"
+            >
+              <code className="truncate font-mono">{project.id}</code>
+              {copiedId ? (
+                <Check
+                  size={11}
+                  aria-hidden
+                  className="shrink-0 text-success"
+                />
+              ) : (
+                <Copy size={11} aria-hidden className="shrink-0 text-dim" />
+              )}
+            </button>
+          </div>
+          {cell("Status", project.status)}
+          {cell("Kind", project.kind)}
+          {cell(
+            "Workspace",
+            <code className="font-mono">{project.rootPath}</code>,
+          )}
+          {cell(
+            "Created",
+            new Date(project.createdAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }),
+          )}
+          {cell(
+            "Updated",
+            new Date(project.updatedAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }),
+          )}
         </div>
       </Card>
 
@@ -490,6 +503,52 @@ function ProjectEditCard({
           Delete project
         </Button>
       </section>
+
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit project"
+      >
+        <div className="flex flex-col gap-3">
+          <Field label="Name">
+            <TextInput
+              value={name}
+              maxLength={80}
+              autoFocus
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+          <Field
+            label="Description"
+            hint="Shown on Home and read by every persona on the team."
+          >
+            <TextArea
+              value={desc}
+              maxLength={280}
+              rows={3}
+              placeholder="What is this project about?"
+              onChange={(e) => setDesc(e.target.value)}
+            />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              onClick={() => setEditOpen(false)}
+              disabled={busy}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={save}
+              disabled={!dirty || !name.trim() || busy}
+            >
+              {busy ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmDialog
         open={confirmOpen}
@@ -529,18 +588,18 @@ export function ProjectTabs({
     parentState: PersonaState;
     delegations: LiveDelegation[];
   };
-  /** Batch 16: setelah edit nama/deskripsi (menu Project) — parent refresh. */
+  /** Batch 16: setelah edit nama/deskripsi (menu Project), parent refresh. */
   onProjectUpdated?: () => void;
   /** D33: project dihapus dari Config → parent reset scope + refresh. */
   onDeleted?: (projectId: string) => void;
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
-  // Tab Konfigurasi: menu internal (roster/memori/skill) — ala SettingsModal, non-modal.
+  // Tab Konfigurasi: menu internal (roster/memori/skill), ala SettingsModal, non-modal.
   const [cfgMenu, setCfgMenu] = useState<
     "project" | "roster" | "memory" | "skills" | "browser" | "workshop"
   >("roster");
-  // Drawer "Log Task" (bekas tab Pohon) — dibuka dari tab Task.
+  // Drawer "Log Task" (bekas tab Pohon), dibuka dari tab Task.
   const [treeOpen, setTreeOpen] = useState(false);
   /** D33: sheet "Log Task" slide kanan→kiri saat buka, mundur saat tutup.
    *  treeOpen = mounted; sheetVis = posisi (translate-x). */
@@ -560,24 +619,20 @@ export function ProjectTabs({
       phases: { phase: string; ready: boolean; skills: string[] }[];
     }[]
   >([]);
-  const [title, setTitle] = useState("");
-  const [pick, setPick] = useState("");
-  const [role, setRole] = useState("");
-  const [mcpServer, setMcpServer] = useState("");
-  const [mcpServers, setMcpServers] = useState<
-    { name: string; declared: boolean }[]
-  >([]);
   const [busy, setBusy] = useState(false);
+  // D34: baseline utk dirty-check dokumen memori (Save hanya aktif saat berubah).
   const [userMd, setUserMd] = useState("");
   const [projMd, setProjMd] = useState("");
+  const [userMdBase, setUserMdBase] = useState("");
+  const [projMdBase, setProjMdBase] = useState("");
+  const [memBusy, setMemBusy] = useState<"user" | "project" | null>(null);
   const [loaded, setLoaded] = useState(false); // skeleton hanya untuk load pertama
 
   const refresh = useCallback(async () => {
     try {
-      const [t, r, m] = await Promise.all([
+      const [t, r] = await Promise.all([
         authFetch(apiUrl(`/api/projects/${project.id}/tasks`)),
         authFetch(apiUrl(`/api/projects/${project.id}/roster`)),
-        authFetch(apiUrl("/api/mcp/servers")),
       ]);
       if (t.ok) setTasks(((await t.json()) as { tasks: TaskItem[] }).tasks);
       if (r.ok) {
@@ -588,14 +643,6 @@ export function ProjectTabs({
         setRoster(rd.roster);
         if (rd.readiness) setReadiness(rd.readiness);
       }
-      if (m.ok)
-        setMcpServers(
-          (
-            (await m.json()) as {
-              servers: { name: string; declared: boolean }[];
-            }
-          ).servers.filter((s) => s.declared),
-        );
       setLoaded(true);
     } catch {
       /* refresh berikutnya */
@@ -632,22 +679,18 @@ export function ProjectTabs({
     }
   }
 
-  const available = personas.filter(
-    (p) => !roster.some((r) => r.personaId === p.id),
-  );
-
   useEffect(() => {
     void refresh();
   }, [rev, refresh]);
 
-  /** D33: buka sheet — mount dulu, frame berikutnya geser masuk (transisi jalan). */
+  /** D33: buka sheet, mount dulu, frame berikutnya geser masuk (transisi jalan). */
   const openSheet = useCallback(() => {
     // batal sisa timer close sebelumnya (race buka-tutup cepat).
     if (sheetTimer.current) clearTimeout(sheetTimer.current);
     setTreeOpen(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setSheetVis(true)));
   }, []);
-  /** D33: tutup sheet — mundur dulu, unmount setelah animasi selesai. */
+  /** D33: tutup sheet, mundur dulu, unmount setelah animasi selesai. */
   const closeSheet = useCallback(() => {
     setSheetVis(false);
     sheetTimer.current = setTimeout(() => setTreeOpen(false), 280);
@@ -676,50 +719,47 @@ export function ProjectTabs({
             apiUrl(`/api/memory?scope=project&projectId=${project.id}`),
           ),
         ]);
-        if (u.ok) setUserMd(((await u.json()) as { content: string }).content);
-        if (p.ok) setProjMd(((await p.json()) as { content: string }).content);
+        if (u.ok) {
+          const c = ((await u.json()) as { content: string }).content;
+          setUserMd(c);
+          setUserMdBase(c);
+        }
+        if (p.ok) {
+          const c = ((await p.json()) as { content: string }).content;
+          setProjMd(c);
+          setProjMdBase(c);
+        }
       } catch {
         /* coba lagi saat buka tab */
       }
     })();
   }, [activeTab, cfgMenu, project.id]);
 
-  /** Simpan dokumen memori (PUT /api/memory). */
+  /** Simpan dokumen memori (PUT /api/memory), D34: busy state + baseline. */
   async function saveMemoryDoc(scope: "user" | "project") {
-    const res = await authFetch(apiUrl("/api/memory"), {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        scope,
-        projectId: scope === "project" ? project.id : null,
-        content: scope === "user" ? userMd : projMd,
-      }),
-    });
-    if (res.ok)
-      toastOk(
-        scope === "user"
-          ? "USER.md saved — applies from the next new session."
-          : "Project MEMORY.md saved.",
-      );
-    else toastErr("failed to save the memory doc");
-  }
-
-  function assign() {
-    const persona = personas.find((p) => p.id === pick);
-    if (!persona || !role.trim() || busy) return;
-    setPick("");
-    setRole("");
-    const server = mcpServer;
-    setMcpServer("");
-    void saveRoster([
-      ...roster,
-      {
-        personaId: persona.id,
-        role: role.trim(),
-        phases: [],
-        mcp: server ? [{ server, tools: [] }] : [],
-      },
-    ]);
+    setMemBusy(scope);
+    try {
+      const res = await authFetch(apiUrl("/api/memory"), {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          scope,
+          projectId: scope === "project" ? project.id : null,
+          content: scope === "user" ? userMd : projMd,
+        }),
+      });
+      if (res.ok) {
+        if (scope === "user") setUserMdBase(userMd);
+        else setProjMdBase(projMd);
+        toastOk(
+          scope === "user"
+            ? "USER.md saved, applies from the next new session."
+            : "Project MEMORY.md saved.",
+        );
+      } else toastErr("Failed to save the memory doc");
+    } finally {
+      setMemBusy(null);
+    }
   }
 
   /** P2-FLOW-7: pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
@@ -799,60 +839,111 @@ export function ProjectTabs({
             {loaded && cfgMenu === "roster" && (
               <section
                 aria-label="Project roster"
-                className="flex flex-col gap-3"
+                className="flex flex-col gap-4"
               >
-                <p className="text-caption text-dim">
-                  {done}/{tasks.length} tasks done · roster stored declaratively
-                  in <code className="font-mono">project.yaml</code>
-                </p>
-                {roster.length === 0 ? (
-                  <p className="text-caption leading-5 text-dim">
-                    No personas in the roster yet — assign below to form the
-                    project team.
+                <header className="flex flex-col gap-1">
+                  <b className="text-body font-semibold text-primary">Team</b>
+                  <p className="text-caption text-dim">
+                    Click a persona to add or remove them, the same playground
+                    as day one. MCP servers trusted on this host are available
+                    to every persona automatically.
                   </p>
-                ) : (
-                  <ul className="flex flex-col gap-1.5">
-                    {roster.map((r) => {
-                      const p = personas.find((x) => x.id === r.personaId);
-                      return (
-                        <li
-                          key={r.personaId}
-                          className="group flex items-start gap-3 rounded-lg2 border border-line bg-surface px-3 py-2.5"
-                        >
-                          {p ? (
-                            <PersonaFace personaId={p.id} size={24} />
-                          ) : (
-                            <span
-                              className="h-6 w-6 shrink-0 rounded-pill bg-inset"
-                              aria-hidden
-                            />
-                          )}
-                          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                            <b className="text-body font-semibold text-primary">
+                </header>
+                {/* D34: playground identik dgn "Build Your Team", tanpa
+                    dropdown Start session (footer = ringkasan tim). */}
+                <TeamSetupView
+                  project={{ id: project.id, name: project.name }}
+                  personas={personas}
+                  assignedIds={roster.map((r) => r.personaId)}
+                  onAssign={(pid) => {
+                    const p = personas.find((x) => x.id === pid);
+                    if (!p || roster.some((r) => r.personaId === pid)) return;
+                    void saveRoster([
+                      ...roster,
+                      {
+                        personaId: pid,
+                        role: p.expertise,
+                        phases: [],
+                        mcp: [],
+                      },
+                    ]);
+                  }}
+                  onUnassign={(pid) =>
+                    void saveRoster(roster.filter((r) => r.personaId !== pid))
+                  }
+                  title="Your Project Team"
+                  footer={
+                    <span className="text-caption text-dim" aria-live="polite">
+                      {roster.length} on the team · {done}/{tasks.length} tasks
+                      done
+                    </span>
+                  }
+                />
+
+                {/* Roles: edit peran persona dalam project ini (inline). */}
+                {roster.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <small className="text-caption font-semibold tracking-wide text-dim uppercase">
+                      Roles in this project
+                    </small>
+                    <ul className="flex flex-col gap-px rounded-lg2 border border-line bg-inset p-2">
+                      {roster.map((r) => {
+                        const p = personas.find((x) => x.id === r.personaId);
+                        const rd = readiness.find(
+                          (x) => x.personaId === r.personaId,
+                        );
+                        return (
+                          <li
+                            key={r.personaId}
+                            className="group flex items-center gap-3 rounded-md2 px-2 py-1.5 transition-colors hover:bg-hover"
+                          >
+                            {p ? (
+                              <PersonaFace personaId={p.id} size={26} />
+                            ) : (
+                              <span
+                                className="h-[26px] w-[26px] shrink-0 rounded-pill bg-surface"
+                                aria-hidden
+                              />
+                            )}
+                            <b className="w-[110px] shrink-0 truncate text-body font-semibold text-primary">
                               {p?.name ?? r.personaId}
                             </b>
-                            <small className="text-caption text-dim">
-                              {r.role}
-                            </small>
+                            <TextInput
+                              key={r.personaId}
+                              defaultValue={r.role}
+                              maxLength={60}
+                              aria-label={`Role of ${p?.name ?? r.personaId} in this project`}
+                              className="h-7 w-full max-w-[280px]"
+                              onBlur={(e) => {
+                                const v = e.target.value.trim();
+                                if (!v || v === r.role) return;
+                                void saveRoster(
+                                  roster.map((x) =>
+                                    x.personaId === r.personaId
+                                      ? { ...x, role: v }
+                                      : x,
+                                  ),
+                                );
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") e.currentTarget.blur();
+                              }}
+                            />
                             {r.phases.length > 0 && (
-                              <small className="text-caption text-muted">
+                              <small className="shrink-0 text-caption text-muted">
                                 {r.phases.join(" · ")}
                               </small>
                             )}
-                            {/* P1-DUN-5: gating per fase — ✕ = belum ada skill siap (latih di Dungeon) */}
-                            {readiness
-                              .find((x) => x.personaId === r.personaId)
-                              ?.phases.filter(
-                                (ph) => ph.skills.length > 0 || !ph.ready,
-                              )
+                            {rd?.phases
+                              .filter((ph) => ph.skills.length > 0 || !ph.ready)
                               .map((ph) => (
                                 <small
                                   key={ph.phase}
-                                  className={`flex items-center gap-0.5 text-caption ${ph.ready ? "text-success" : "text-danger"}`}
+                                  className={`flex shrink-0 items-center gap-0.5 text-caption ${ph.ready ? "text-success" : "text-danger"}`}
                                   title={
                                     ph.ready
                                       ? `skills ready: ${ph.skills.join(", ")}`
-                                      : "no ready skills for this phase — train the persona in the Dungeon (Skill tab)"
+                                      : "no ready skills for this phase, train the persona in the Dungeon (Skill tab)"
                                   }
                                 >
                                   {ph.ready ? (
@@ -867,136 +958,117 @@ export function ProjectTabs({
                                   {ph.phase}
                                 </small>
                               ))}
-                            {r.mcp.map((b) => (
-                              <Chip
-                                key={b.server}
-                                tone="muted"
-                                className="self-start"
-                              >
-                                MCP:{b.server}
-                                {b.tools.length > 0
-                                  ? ` (${b.tools.length})`
-                                  : ""}
-                              </Chip>
-                            ))}
-                          </span>
-                          <button
-                            className="flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
-                            onClick={() =>
-                              void saveRoster(
-                                roster.filter(
-                                  (x) => x.personaId !== r.personaId,
-                                ),
-                              )
-                            }
-                            aria-label={`Remove ${p?.name ?? r.personaId} from roster`}
-                            disabled={busy}
-                          >
-                            <X size={12} aria-hidden />
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                {available.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 rounded-lg2 border border-line bg-inset p-3">
-                    <Select
-                      value={pick}
-                      onChange={(e) => setPick(e.target.value)}
-                      aria-label="Persona"
-                      className="w-36"
-                    >
-                      <option value="">Persona…</option>
-                      {available.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </Select>
-                    <TextInput
-                      placeholder="Role in this project…"
-                      value={role}
-                      maxLength={60}
-                      className="w-56"
-                      onChange={(e) => setRole(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && assign()}
-                    />
-                    {mcpServers.length > 0 && (
-                      <Select
-                        value={mcpServer}
-                        onChange={(e) => setMcpServer(e.target.value)}
-                        aria-label="MCP binding (optional)"
-                        className="w-44"
-                      >
-                        <option value="">No MCP binding…</option>
-                        {mcpServers.map((s) => (
-                          <option key={s.name} value={s.name}>
-                            Bind MCP: {s.name}
-                          </option>
-                        ))}
-                      </Select>
-                    )}
-                    <Button
-                      variant="primary"
-                      onClick={assign}
-                      disabled={!pick || !role.trim() || busy}
-                    >
-                      Assign
-                    </Button>
+                            <button
+                              className="ml-auto flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
+                              onClick={() =>
+                                void saveRoster(
+                                  roster.filter(
+                                    (x) => x.personaId !== r.personaId,
+                                  ),
+                                )
+                              }
+                              aria-label={`Remove ${p?.name ?? r.personaId} from roster`}
+                              disabled={busy}
+                            >
+                              <X size={12} aria-hidden />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 )}
               </section>
             )}
             {loaded && cfgMenu === "memory" && (
               <section
-                aria-label="Memory — what Yui knows"
-                className="flex max-w-[760px] flex-col gap-3"
+                aria-label="Memory, what Yui knows"
+                className="flex flex-col gap-4"
               >
+                <header className="flex flex-col gap-1">
+                  <b className="text-body font-semibold text-primary">Memory</b>
+                  <p className="text-caption text-dim">
+                    Two living documents Yui reads at the start of every
+                    session, keep them short and factual.
+                  </p>
+                </header>
                 {[
                   {
                     scope: "user" as const,
-                    title: "About You — USER.md",
-                    hint: "Cross-project: style, language, and constraint preferences.",
+                    title: "About You",
+                    file: "USER.md",
+                    Icon: UserCircle,
+                    hint: "Cross-project: your style, language, and constraints.",
+                    value: userMd,
+                    base: userMdBase,
+                    set: setUserMd,
                   },
                   {
                     scope: "project" as const,
-                    title: `This Project — MEMORY.md`,
-                    hint: `Decisions, lessons, and context that apply to ${project.name}.`,
+                    title: "This Project",
+                    file: "MEMORY.md",
+                    Icon: Brain,
+                    hint: `Decisions and context that apply to ${project.name}.`,
+                    value: projMd,
+                    base: projMdBase,
+                    set: setProjMd,
                   },
-                ].map((d) => (
-                  <Card key={d.scope} className="flex flex-col gap-2.5">
-                    <header className="flex items-center justify-between gap-2">
-                      <b className="text-body font-semibold text-primary">
-                        {d.title}
-                      </b>
-                      <Button
-                        size="sm"
-                        onClick={() => void saveMemoryDoc(d.scope)}
-                      >
-                        Save
-                      </Button>
-                    </header>
-                    <TextArea
-                      value={d.scope === "user" ? userMd : projMd}
-                      onChange={(e) =>
-                        d.scope === "user"
-                          ? setUserMd(e.target.value)
-                          : setProjMd(e.target.value)
-                      }
-                      rows={9}
-                      spellCheck={false}
-                    />
-                    <small className="text-caption text-dim">{d.hint}</small>
-                  </Card>
-                ))}
+                ].map((d) => {
+                  const dirty = d.value !== d.base;
+                  return (
+                    <Card key={d.scope} variant="inset" className="p-4">
+                      <header className="flex flex-wrap items-center gap-2.5">
+                        <span
+                          aria-hidden
+                          className="flex size-7 shrink-0 items-center justify-center rounded-md2 border border-line bg-surface"
+                        >
+                          <d.Icon size={14} className="text-accent" />
+                        </span>
+                        <span className="flex min-w-0 flex-col">
+                          <b className="text-body font-semibold text-primary">
+                            {d.title}
+                          </b>
+                          <code className="font-mono text-caption text-dim">
+                            {d.file}
+                          </code>
+                        </span>
+                        <div className="ml-auto flex shrink-0 items-center gap-2">
+                          {dirty && <Chip tone="warn">Unsaved</Chip>}
+                          <Button
+                            size="sm"
+                            variant={dirty ? "primary" : "secondary"}
+                            disabled={!dirty || memBusy === d.scope}
+                            onClick={() => void saveMemoryDoc(d.scope)}
+                          >
+                            {memBusy === d.scope ? "Saving…" : "Save"}
+                          </Button>
+                        </div>
+                      </header>
+                      <TextArea
+                        value={d.value}
+                        onChange={(e) => d.set(e.target.value)}
+                        rows={10}
+                        spellCheck={false}
+                        className="mt-3 font-mono text-caption leading-6"
+                      />
+                      <footer className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <small className="text-caption text-dim">
+                          {d.hint}
+                        </small>
+                        <small className="shrink-0 text-caption text-muted">
+                          {d.value.length.toLocaleString("en-US")} chars
+                        </small>
+                      </footer>
+                    </Card>
+                  );
+                })}
               </section>
             )}
             {loaded && cfgMenu === "skills" && <SkillsTab />}
             {loaded && cfgMenu === "browser" && (
               <BrowserPolicySection projectId={project.id} />
             )}
-            {/* Batch 13 (P2-WKS-6): workshop persisten — status/lifecycle/log/egress */}
+            {/* Batch 13 (P2-WKS-6): workshop persisten, status/lifecycle/log/egress */}
             {loaded && cfgMenu === "workshop" && (
               <WorkshopPanel projectId={project.id} rev={rev} />
             )}
@@ -1009,7 +1081,7 @@ export function ProjectTabs({
           aria-label="Task kanban board"
           className="flex flex-col gap-4 min-h-[87dvh]"
         >
-          {/* P2-PM-4/5: dashboard progres & health di paling atas — dibaca
+          {/* P2-PM-4/5: dashboard progres & health di paling atas, dibaca
               sekali lihat sebelum masuk board/detail. */}
           <ProjectDashboardView
             projectId={project.id}
@@ -1100,7 +1172,7 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
-      {/* Batch 14a++ (user 2026-11): tab Browser dibongkar — reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
+      {/* Batch 14a++ (user 2026-11): tab Browser dibongkar, reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
       {loaded && activeTab === "terminal" && (
         <TerminalFullTab project={{ id: project.id, name: project.name }} />
       )}
@@ -1136,7 +1208,7 @@ export function ProjectTabs({
             <section aria-label="Task tree (TaskTree)">
               {tree.length === 0 ? (
                 <p className="text-caption leading-5 text-dim">
-                  The task tree is still empty — nodes grow from task events
+                  The task tree is still empty, nodes grow from task events
                   (REST / tools <code className="font-mono">todo_*</code>) since
                   TaskTree went live. Pre-migration tasks only show on the Task
                   board.
@@ -1155,10 +1227,10 @@ export function ProjectTabs({
 
       {loaded && activeTab === "team" && (
         <section
-          aria-label="Team — delegation hierarchy diagram"
+          aria-label="Team, delegation hierarchy diagram"
           className="flex flex-col gap-4"
         >
-          {/* merge Flow→Team FINAL (user 2026-11-08): Team = CANVAS MURNI —
+          {/* merge Flow→Team FINAL (user 2026-11-08): Team = CANVAS MURNI,
               run workflow tampil sebagai tree of delegation (root conductor
               lead, fase implisit). Kendali run = chat; assign/reassign = Task. */}
           <TeamTree

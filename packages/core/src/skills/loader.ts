@@ -1,4 +1,4 @@
-// @yuika/core — skills loader: format SKILL.md agentskills.io-compatible (PLAN §4.4).
+// @yuika/core, skills loader: format SKILL.md agentskills.io-compatible (PLAN §4.4).
 // Progressive disclosure: index hanya {name, description}; isi penuh via skill_view.
 import fs from "node:fs";
 import path from "node:path";
@@ -27,7 +27,7 @@ export interface Skill extends SkillIndexEntry {
   /** P1-DUN-2 lifecycle: draft (hasil sesi) → tested (direview) → ready (siap assign).
    *  Skill seed tanpa status eksplisit = ready. */
   status: "draft" | "tested" | "ready";
-  /** Persona pemilik (metadata.yui.personas) — inventory “apa yang persona bisa”. */
+  /** Persona pemilik (metadata.yui.personas), inventory “apa yang persona bisa”. */
   personas: string[];
 }
 
@@ -65,7 +65,7 @@ export function listSkills(skillsDir: string): Skill[] {
     .filter((d) => d.isDirectory() && !d.name.startsWith(".") && d.name !== "drafts")
     .map((d) => path.join(skillsDir, d.name))
     // Robustness: SATU draf rusak (YAML frontmatter invalid, dsb.) TIDAK boleh
-    // merobohkan seluruh loader — lewati dengan warning (kasus nyata 2026-11:
+    // merobohkan seluruh loader, lewati dengan warning (kasus nyata 2026-11:
     // draf hasil latihan berisi description dengan koma tak terkutip).
     .flatMap((dir) => {
       try {

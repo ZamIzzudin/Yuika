@@ -1,15 +1,15 @@
-// @yuika/api — singleton YuiRuntime (P0-INF-1).
+// @yuika/api, singleton YuiRuntime (P0-INF-1).
 // Diadaptasi dari apps/web/src/lib/runtime.ts (perang HMR terbukti di sana):
-// di proses api TIDAK ada HMR Next, tapi `tsx watch` me-reload modul saat edit —
+// di proses api TIDAK ada HMR Next, tapi `tsx watch` me-reload modul saat edit,
 // cache globalThis + tag pemilik (hash source createYuiRuntime) tetap dipakai
 // agar reload tidak membuang runtime (server MCP reconnect menumpuk).
-// Import env-boot PERTAMA — sebelum @yuika/core mengevaluasi env.ts (fail-fast).
+// Import env-boot PERTAMA, sebelum @yuika/core mengevaluasi env.ts (fail-fast).
 import "./env-boot.js";
 import { createYuiRuntime, type YuiRuntime } from "@yuika/core";
 
 const g = globalThis as unknown as { __yuiRuntime?: YuiRuntime; __yuiRuntimeOwner?: string };
 
-/** djb2 → base36 — hash pendek dari source fungsi (cukup untuk deteksi perubahan). */
+/** djb2 → base36, hash pendek dari source fungsi (cukup untuk deteksi perubahan). */
 function sourceTag(fn: (...args: never[]) => unknown): string {
   const s = String(fn);
   let h = 5381;

@@ -1,4 +1,4 @@
-// Batch 7 (RS) — Research Engine: kontrak provider search & fetch.
+// Batch 7 (RS), Research Engine: kontrak provider search & fetch.
 // Brief "Remote Browser & Research Tool" §B: tanpa UI, tanpa API berbayar,
 // defensif (cache + fallback + hasil parsial). Plan: docs/PLAN-RESEARCH-LIVE-BROWSER.md
 
@@ -38,7 +38,7 @@ export type ResearchErrorKind =
   | "disabled"
   | "readability_failed";
 
-/** Mirip BrowserReadError (browser/reader.ts) — kode stabil utk pesan tool. */
+/** Mirip BrowserReadError (browser/reader.ts), kode stabil utk pesan tool. */
 export class ResearchError extends Error {
   constructor(
     public readonly code: ResearchErrorKind,

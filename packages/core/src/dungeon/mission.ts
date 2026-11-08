@@ -1,5 +1,5 @@
-// @yuika/core — dungeon missions (P1-DUN-1, PLAN §13.8): arena latihan persona.
-// Format `mission.yaml` di workspace/dungeons/<slug>/ — goal, sumber belajar,
+// @yuika/core, dungeon missions (P1-DUN-1, PLAN §13.8): arena latihan persona.
+// Format `mission.yaml` di workspace/dungeons/<slug>/, goal, sumber belajar,
 // acceptance, skill target. Sesi latihan jalan di ruangan sandbox (project
 // kind="dungeon") sehingga file tools terisolasi dari workspace produksi.
 import fs from "node:fs";
@@ -10,7 +10,7 @@ import { slugify } from "../skills/manager.js";
 
 export const DUNGEONS_DIRNAME = "dungeons";
 
-/** Misi contoh (dibuat bila dungeons/ kosong — acceptance P1-DUN-1:
+/** Misi contoh (dibuat bila dungeons/ kosong, acceptance P1-DUN-1:
  *  "misi contoh riset dokumentasi Phaser parse & jalan"). */
 const SEED_MISSIONS: Record<string, string> = {
   "phaser-research": `id: phaser-research
@@ -29,7 +29,7 @@ acceptance:
   - Ringkasan ≤ 500 kata, berbahasa Indonesia, tanpa istilah yang tidak dijelaskan
 targetSkill:
   name: phaser-basics
-  description: "Dasar Phaser 3 — scene, sprite, input, physics arcade — untuk memulai game 2D."
+  description: "Dasar Phaser 3, scene, sprite, input, physics arcade, untuk memulai game 2D."
 `,
 };
 
@@ -75,12 +75,12 @@ export interface CreateMissionInput {
 }
 
 /** Buat misi baru milik user (folder + mission.yaml, origin: user).
- *  Slug = slugify(skillName) — unik; bentrok → error jelas. */
+ *  Slug = slugify(skillName), unik; bentrok → error jelas. */
 export function createMission(workspacePath: string, input: CreateMissionInput): MissionType {
   const slug = slugify(input.skillName);
   if (!slug) throw new Error("nama skill kosong setelah disanitasi");
   const dir = missionDir(workspacePath, slug);
-  if (fs.existsSync(path.join(dir, "mission.yaml"))) throw new Error(`latihan '${slug}' sudah ada — pakai nama skill lain`);
+  if (fs.existsSync(path.join(dir, "mission.yaml"))) throw new Error(`latihan '${slug}' sudah ada, pakai nama skill lain`);
   const mission: MissionType = Mission.parse({
     id: slug,
     title: input.title.slice(0, 120),
@@ -96,7 +96,7 @@ export function createMission(workspacePath: string, input: CreateMissionInput):
   return mission;
 }
 
-/** Tambah sumber belajar ke misi (dipakai upload bahan ajar — dedupe). */
+/** Tambah sumber belajar ke misi (dipakai upload bahan ajar, dedupe). */
 export function appendMissionResource(workspacePath: string, slug: string, resource: string): void {
   const file = path.join(missionDir(workspacePath, slug), "mission.yaml");
   if (!fs.existsSync(file)) throw new Error(`latihan '${slug}' tidak ditemukan`);
@@ -113,7 +113,7 @@ export function deleteMission(workspacePath: string, slug: string): void {
   fs.rmSync(dir, { recursive: true, force: true });
 }
 
-/** Sanitasi nama file bahan ajar (dipakai REST upload — mirror project uploads). */
+/** Sanitasi nama file bahan ajar (dipakai REST upload, mirror project uploads). */
 export function sanitizeMaterialName(name: string): string {
   return name.replace(/[\\/:*?"<>|]/g, "_").trim();
 }

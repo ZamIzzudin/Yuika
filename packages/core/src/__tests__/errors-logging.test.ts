@@ -1,4 +1,4 @@
-// P0-INF-3/4 — logging terstruktur + error taxonomy.
+// P0-INF-3/4, logging terstruktur + error taxonomy.
 // (a) classifyError: bentuk dikenal → kind/code/retryable yang benar; unknown →
 //     fallbackKind; YuiError masuk-keluar idempoten; abort TIDAK dianggap error.
 // (b) loop: kegagalan provider → event session.error membawa kind+code (UI/log
@@ -16,7 +16,7 @@ import { AgentLoop } from "../loop.js";
 import type { ProviderAdapter, ProviderChunk, ChatRequest, ProviderDone } from "../provider/adapter.js";
 import type { EventDraft, YuiEvent } from "@yuika/contracts";
 
-/** Bentuk minimal error openai SDK (punya status) — tanpa import SDK. */
+/** Bentuk minimal error openai SDK (punya status), tanpa import SDK. */
 class FakeApiError extends Error {
   constructor(readonly status: number, message: string) {
     super(message);
@@ -24,7 +24,7 @@ class FakeApiError extends Error {
   }
 }
 
-describe("classifyError — taxonomy", () => {
+describe("classifyError, taxonomy", () => {
   it("network errno → provider/PROVIDER_NETWORK, retryable", () => {
     const e = new Error("socket hang up");
     (e as Error & { code?: string }).code = "ECONNRESET";
@@ -73,14 +73,14 @@ describe("classifyError — taxonomy", () => {
   });
 });
 
-describe("logger — singleton globalThis + child", () => {
+describe("logger, singleton globalThis + child", () => {
   it("getLogger() konsisten antar modul (cache globalThis, bukan per-import)", () => {
     expect(getLogger()).toBe(getLogger()); // dua jalur import → SATU instance (globalThis)
   });
   it("child membawa binding (traceId per turn)", () => {
     const lines: string[] = [];
     const stream = { write: (s: string) => lines.push(s) };
-    // instance pino dengan stream in-memory — mekanisme child sama deng root
+    // instance pino dengan stream in-memory, mekanisme child sama deng root
     const child = pino({ level: "info", base: null }, stream).child({ mod: "loop", sessionId: "s1", turnId: "t1" });
     child.info("hello trace");
     const rec = JSON.parse(lines[0]!) as Record<string, unknown>;
@@ -90,7 +90,7 @@ describe("logger — singleton globalThis + child", () => {
   });
 });
 
-describe("loop — session.error bermakna (P0-INF-4 wire)", () => {
+describe("loop, session.error bermakna (P0-INF-4 wire)", () => {
   it("provider throw → kind provider + code di event", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-err-"));
     const store = new SessionStore(path.join(dir, "t.db"));

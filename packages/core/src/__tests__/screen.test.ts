@@ -1,5 +1,5 @@
-// Batch 14a (P2-SCR) — Live Screen: lease fence (rokazo), CDP parse, manager
-// dengan browser ASLI (skipIf tak ada executable — mesin dev Edge terbukti
+// Batch 14a (P2-SCR), Live Screen: lease fence (rokazo), CDP parse, manager
+// dengan browser ASLI (skipIf tak ada executable, mesin dev Edge terbukti
 // via probe SCR-0), tools browser_* end-to-end, takeover pending, dan guard
 // eksklusi .yuika dari Files (SCR-3).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -54,7 +54,7 @@ function ctx(): ToolContext {
   };
 }
 
-/** Halaman data: URL deterministik (tanpa network) — di-encode karena
+/** Halaman data: URL deterministik (tanpa network), di-encode karena
  *  data: URL tak boleh memuat spasi mentah. */
 const PAGE_HTML = `<title>SCR test</title><input id=q placeholder=Type here><button onclick="this.textContent='clicked-' + document.getElementById('q').value">go</button><a href="#" id=l1>link one</a><p>hello screen</p>`;
 const PAGE = `data:text/html,${encodeURIComponent(PAGE_HTML)}`;
@@ -219,7 +219,7 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
   }, 30_000);
 
   // ── VLT-4 fill_login ─────────────────────────────────────────────
-  // Halaman login deterministik (data: URL — tanpa network): form
+  // Halaman login deterministik (data: URL, tanpa network): form
   // username+password; submit dicegah default → title berubah jadi marker
   // supaya isi form TERBUKTI tanpa membocorkan nilai ke assertion.
   const LOGIN_HTML = `<title>Sign in</title><form onsubmit="event.preventDefault();document.title='LOGGED-IN:'+document.getElementById('u').value"><input id=u type=text><input id=p type=password><button type=submit>Sign in</button></form>`;
@@ -246,7 +246,7 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
       { timeout: 5_000 },
     );
     // INVARIAN VLT-4 (hardening): snapshot pasca-fill TIDAK membocorkan
-    // password — input[type=password] di-mask di sumber + redactActive di
+    // password, input[type=password] di-mask di sumber + redactActive di
     // tool result. Username (type=text) tetap terlihat (by design).
     const snapRes = await registry.dispatch("browser_snapshot", {}, ctx());
     const snapStr = JSON.stringify(snapRes.result);
@@ -316,7 +316,7 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
 // ── SCR-3: profil browser TIDAK jadi artefak Files ──────────────────────────
 
 describe("SCR-3 files exclusion", () => {
-  it(".yuika (profil browser) tak muncul di tree — dotfile rule dijaga", () => {
+  it(".yuika (profil browser) tak muncul di tree, dotfile rule dijaga", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "yui-files-"));
     fs.mkdirSync(path.join(root, ".yuika", "browser", PROJECT, PERSONA), { recursive: true });
     fs.writeFileSync(path.join(root, ".yuika", "browser", PROJECT, PERSONA, "Cookies"), "x");

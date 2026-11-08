@@ -2,9 +2,9 @@
 
 import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
 /**
- * Yuika demo shell — orchestrator UI (DEMO-WEEK-1 §2):
+ * Yuika demo shell, orchestrator UI (DEMO-WEEK-1 §2):
  * persona picker → sesi → SSE event stream → render msg/activity/delegation/approval.
- * SEMUA tipe dari @yuika/contracts (dilarang tipe tangan — PLAN §6.3).
+ * SEMUA tipe dari @yuika/contracts (dilarang tipe tangan, PLAN §6.3).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaFace } from "@/components/PersonaPicker";
@@ -51,7 +51,7 @@ import type {
   YuiEvent,
 } from "@yuika/contracts";
 
-/** Prompt saran per persona (pola ConversationPrompts OpenBot — klik = kirim). */
+/** Prompt saran per persona (pola ConversationPrompts OpenBot, klik = kirim). */
 const SUGGESTIONS: Record<string, string[]> = {
   "yui-conductor": [
     "Riset 3 framework JS paling populer, bandingkan singkat, tulis laporan markdown ke reports/",
@@ -73,9 +73,9 @@ const SUGGESTIONS: Record<string, string[]> = {
 
 export default function Home() {
   const [personas, setPersonas] = useState<PersonaInfo[]>([]);
-  /** Menu Persona (2026-11, ex-Enhancer/Dungeon) — character studio + misi latihan. */
+  /** Menu Persona (2026-11, ex-Enhancer/Dungeon), character studio + misi latihan. */
   const [studioOpen, setStudioOpen] = useState(false);
-  // Sidebar fold/unfold — persist di localStorage (yui.sidebar: "open" | "folded");
+  // Sidebar fold/unfold, persist di localStorage (yui.sidebar: "open" | "folded");
   // layar sempit (<768px) default lipat. Shortcut: Ctrl/Cmd+B.
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const toggleSidebar = useCallback(() => {
@@ -108,7 +108,7 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const lastEventId = useRef(0);
 
-  // Project scope (P1-PRJ-6 shell v0): sesi yang dibuat melekat ke project aktif —
+  // Project scope (P1-PRJ-6 shell v0): sesi yang dibuat melekat ke project aktif,
   // file-ops & tasklist agent otomatis ter-scope (P1-PRJ-2/4).
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -117,7 +117,7 @@ export default function Home() {
   // Menu auto-close (fix test user #6): dropdown header persona + Sessions.
   const personaMenu = useMenuAutoClose<HTMLDetailsElement>();
   const sessionsMenu = useMenuAutoClose<HTMLDetailsElement>();
-  // Batch 14a follow-up: floating shared screen — melayang di atas SEMUA tab.
+  // Batch 14a follow-up: floating shared screen, melayang di atas SEMUA tab.
   const [pip, setPip] = useState<{
     projectId: string;
     personaId: string;
@@ -145,7 +145,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Batch 16: TIDAK ada restore project terakhir — aplikasi selalu dibuka
+    // Batch 16: TIDAK ada restore project terakhir, aplikasi selalu dibuka
     // di halaman HOME (typing + kartu project). Freespace dihapus.
     void loadProjects();
   }, [loadProjects]);
@@ -159,7 +159,7 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
-  // Override wujud persona (menu Persona): muat sekali — setShapeOverrides
+  // Override wujud persona (menu Persona): muat sekali, setShapeOverrides
   // membuat SEMUA PersonaFace/OrinPortrait reaktif (module-store + listener).
   useEffect(() => {
     authFetch(apiUrl("/api/personas/shapes"))
@@ -180,7 +180,7 @@ export default function Home() {
   const openReasoning = useRef<number | null>(null);
 
   const applyEvent = useCallback((e: YuiEvent) => {
-    // Dedupe: SSE replay+live bisa overlap saat reconnect (safety net — server sudah
+    // Dedupe: SSE replay+live bisa overlap saat reconnect (safety net, server sudah
     // dedupe by id; id monotonic per sesi).
     if (e.id <= lastEventId.current) return;
     lastEventId.current = Math.max(lastEventId.current, e.id);
@@ -270,7 +270,7 @@ export default function Home() {
         break;
       case "tool.result":
         setItems((prev) => {
-          // tutup activity tool.call yang cocok (match via callId — ToolResultEvent tanpa name)
+          // tutup activity tool.call yang cocok (match via callId, ToolResultEvent tanpa name)
           const next = [...prev];
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i]!.kind === "activity" && next[i]!.callId === e.callId) {
@@ -307,7 +307,7 @@ export default function Home() {
               const buf =
                 next[i]!.liveKind === e.kind ? (next[i]!.liveText ?? "") : "";
               let live = buf + e.delta;
-              if (live.length > 600) live = live.slice(-600); // ekor saja — ringan
+              if (live.length > 600) live = live.slice(-600); // ekor saja, ringan
               next[i] = {
                 ...next[i]!,
                 liveText: live,
@@ -415,7 +415,7 @@ export default function Home() {
         );
         break;
       case "login.requested":
-        // VLT-4: kartu kredensial — nilai TIDAK PERNAH di event (origin saja).
+        // VLT-4: kartu kredensial, nilai TIDAK PERNAH di event (origin saja).
         setItems((prev) => [
           ...prev,
           {
@@ -440,7 +440,7 @@ export default function Home() {
         // Batch 14a++: persona membuka browser → bubble "Open Browser".
         // Satu bubble per persona yang DIPAKAI ULANG: sesi baru (mis. user
         // menutup floating window lalu persona buka lagi) memperbarui bubble
-        // lama (URL baru) — bukan ditumpuk, dan tidak hilang diam-diam.
+        // lama (URL baru), bukan ditumpuk, dan tidak hilang diam-diam.
         if (e.status === "running" || e.status === "starting") {
           setItems((prev) => {
             const i = prev.findIndex(
@@ -539,7 +539,7 @@ export default function Home() {
         ]);
         break;
       case "context.compressed":
-        // P0-CORE-4: transparansi — user tahu konteks lama diringkas (riwayat asli utuh).
+        // P0-CORE-4: transparansi, user tahu konteks lama diringkas (riwayat asli utuh).
         setItems((prev) => [
           ...prev,
           {
@@ -553,7 +553,7 @@ export default function Home() {
       case "skill.proposed":
         setItems((prev) => [
           ...prev,
-          { kind: "skill", text: `${e.name} — ${e.description}` },
+          { kind: "skill", text: `${e.name}, ${e.description}` },
         ]);
         break;
       case "turn.cancelled":
@@ -561,7 +561,7 @@ export default function Home() {
           ...prev,
           {
             kind: "noted",
-            text: "turn cancelled — progress & partial output saved",
+            text: "turn cancelled, progress & partial output saved",
             scope: "project",
           },
         ]);
@@ -575,8 +575,8 @@ export default function Home() {
   }, []);
 
   // SSE: buka saat sesi ada. DUA jalur pemulihan (bug "UI diam walau trace jalan"):
-  //  (a) browser auto-reconnect (CONNECTING) — aman, applyEvent dedupe by id;
-  //  (b) FATAL (CLOSED, mis. route 500 sesaat / dev recompile) — browser TIDAK
+  //  (a) browser auto-reconnect (CONNECTING), aman, applyEvent dedupe by id;
+  //  (b) FATAL (CLOSED, mis. route 500 sesaat / dev recompile), browser TIDAK
   //      reconnect; kita buat ulang EventSource dengan backoff (1s→15s),
   //      ?since=lastEventId → tanpa celah/duplikat.
   useEffect(() => {
@@ -588,7 +588,7 @@ export default function Home() {
     const open = async () => {
       // Fix 2026-11 ("timelapse"): sesi lama (since=0) → tarik snapshot dalam
       // SATU fetch lalu apply sinkron dalam satu tick (React batch = satu render,
-      // tanpa efek streaming ulang) — baru buka SSE live dari seq terakhir.
+      // tanpa efek streaming ulang), baru buka SSE live dari seq terakhir.
       if (lastEventId.current === 0) {
         try {
           const r = await authFetch(
@@ -650,7 +650,7 @@ export default function Home() {
     };
   }, [sessionId, applyEvent]);
 
-  // Resync saat window kembali fokus: tarik snapshot event sejak lastEventId —
+  // Resync saat window kembali fokus: tarik snapshot event sejak lastEventId,
   // menutup celah apa pun yang terlewat (SSE mati saat tab di background, dll).
   useEffect(() => {
     const resync = async () => {
@@ -673,7 +673,7 @@ export default function Home() {
           }
         }
       } catch {
-        /* offline — SSE watchdog akan ambil alih */
+        /* offline, SSE watchdog akan ambil alih */
       }
     };
     window.addEventListener("focus", resync);
@@ -698,7 +698,7 @@ export default function Home() {
     if (projectId) void loadProjectSessions(projectId);
   }
 
-  /** Batch 16: roster project aktif (person yang ter-assign — project.yaml). */
+  /** Batch 16: roster project aktif (person yang ter-assign, project.yaml). */
   const loadRoster = useCallback(async (pid: string) => {
     try {
       const r = await authFetch(apiUrl(`/api/projects/${pid}/roster`));
@@ -721,7 +721,7 @@ export default function Home() {
   }, [activeProjectId, loadRoster]);
 
   /** Ganti scope project → Batch 16: sesi ada → buka terbaru; BELUM ada sesi
-   *  → layar Team Assembly (playground) — TIDAK lagi auto-buka Conductor. */
+   *  → layar Team Assembly (playground), TIDAK lagi auto-buka Conductor. */
   async function pickProject(id: string | null) {
     setActiveProjectId(id);
     setMainTab("chat");
@@ -773,7 +773,7 @@ export default function Home() {
   }
 
   /** Sesi baru di project aktif (Conductor lead). Batch 16: Conductor harus
-   *  ter-assign — kalau belum, assign dulu (merge roster) lalu buka sesi. */
+   *  ter-assign, kalau belum, assign dulu (merge roster) lalu buka sesi. */
   async function newProjectSession() {
     if (!activeProjectId) return;
     const lead = personas.find((p) => p.id === "yui-conductor") ?? personas[0];
@@ -855,7 +855,7 @@ export default function Home() {
     window.dispatchEvent(new Event("yui:roster-changed"));
   }
 
-  // Batch 16: tab Terminal hanya muncul bila Hiro/Neo ter-assign — tanpa itu
+  // Batch 16: tab Terminal hanya muncul bila Hiro/Neo ter-assign, tanpa itu
   // docker tak disiapkan (hemat resource), persis permintaan user.
   const showTerminalTab =
     rosterIds.includes("yui-coder") || rosterIds.includes("yui-operator");
@@ -873,7 +873,7 @@ export default function Home() {
     });
   }
 
-  /** P0-CORE-1: tombol Stop — abort turn aktif; progres & parsial tersimpan. */
+  /** P0-CORE-1: tombol Stop, abort turn aktif; progres & parsial tersimpan. */
   async function cancelTurn() {
     if (!sessionId) return;
     await authFetch(apiUrl(`/api/sessions/${sessionId}/cancel`), {
@@ -888,7 +888,7 @@ export default function Home() {
     window.addEventListener("yui:open-settings", open);
     return () => window.removeEventListener("yui:open-settings", open);
   }, []);
-  // Trace realtime (fix dev-10): naik tiap event SSE — TracePanel refetch
+  // Trace realtime (fix dev-10): naik tiap event SSE, TracePanel refetch
   // trace terstruktur saat itu (debounce), BUKAN polling 3 dtk buta.
   const [traceTick, setTraceTick] = useState(0);
   // Mode approval (fix dev-10): "auto" = write_file & run_command bebas-approval.
@@ -901,7 +901,7 @@ export default function Home() {
   }, []);
   const toggleApprovalMode = useCallback(() => {
     const next = approvalMode === "auto" ? "ask" : "auto";
-    setApprovalMode(next); // optimistic — server persist (survive restart)
+    setApprovalMode(next); // optimistic, server persist (survive restart)
     authFetch(apiUrl("/api/settings/approval"), {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -919,7 +919,7 @@ export default function Home() {
     try {
       setWfArmed(window.localStorage.getItem("yui.workflowArmed") === "1");
     } catch {
-      /* private mode — default off */
+      /* private mode, default off */
     }
   }, []);
   const toggleWorkflowArmed = useCallback(() => {
@@ -1002,7 +1002,7 @@ export default function Home() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ approved, remember }),
       });
-      // Fix dev-10 (approval 404): kegagalan resolve TIDAK lagi diam-diam —
+      // Fix dev-10 (approval 404): kegagalan resolve TIDAK lagi diam-diam,
       // tampil sebagai item error di chat supaya bisa dilaporkan, bukan kartu
       // yang seolah diabaikan.
       if (!res.ok) {
@@ -1020,7 +1020,7 @@ export default function Home() {
         ...prev,
         {
           kind: "error",
-          text: "Keputusan approval gagal terkirim (jaringan/server) — coba lagi.",
+          text: "Keputusan approval gagal terkirim (jaringan/server), coba lagi.",
         },
       ]);
     }
@@ -1039,12 +1039,12 @@ export default function Home() {
           {sidebarOpen ? (
             <>
               <div className="flex items-center gap-2.5 px-2 pb-4">
-                {/* Logo maskot Orin — Batch 16: klik = kembali ke HOME. */}
+                {/* Logo maskot Orin, Batch 16: klik = kembali ke HOME. */}
                 <button
                   type="button"
                   onClick={() => void pickProject(null)}
-                  title="Home — all projects"
-                  aria-label="Home — all projects"
+                  title="Home, all projects"
+                  aria-label="Home, all projects"
                   className="flex min-w-0 cursor-pointer items-end gap-2.5 rounded-md2 border border-transparent px-1 py-0.5 text-left"
                 >
                   <img
@@ -1100,7 +1100,7 @@ export default function Home() {
                 <div className="px-2.5 pb-1">
                   <RemoteBadge />
                 </div>
-                {/* akun portal — footer sidebar (selalu terlihat di semua state;
+                {/* akun portal, footer sidebar (selalu terlihat di semua state;
                 FIX overlap tombol oleh overlay fixed 2026-11-08) */}
                 <AuthPill />
                 <button
@@ -1206,7 +1206,7 @@ export default function Home() {
                 )
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
-                  {/* pills terpusat ala page Persona — grid [1fr_auto_1fr]
+                  {/* pills terpusat ala page Persona, grid [1fr_auto_1fr]
                     (kolom tengah pills, kiri/kanan 1fr sama → center sejati). */}
                   <div className="grid flex-none grid-cols-[1fr_auto_1fr] items-center gap-3 px-3 pt-3">
                     <span aria-hidden />
@@ -1259,7 +1259,7 @@ export default function Home() {
                             </span>
                           ),
                           title: sessionId
-                            ? "Step-by-step trace per turn of this session (tool steps live here — kept out of chat)"
+                            ? "Step-by-step trace per turn of this session (tool steps live here, kept out of chat)"
                             : "Start a session to see the trace",
                         },
                       ]}
@@ -1340,7 +1340,7 @@ export default function Home() {
                           <StateChip state={personaState} />
                         </span>
                         {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama).
-                            (Tombol pintu Workflow dihapus 2026-11 — menumpuk dgn
+                            (Tombol pintu Workflow dihapus 2026-11, menumpuk dgn
                             status persona; tab Team sudah ada di tablist atas.) */}
                         {/* Kanan: dropdown daftar sesi + sesi baru (tab Sesi lama) */}
                         {activeProject && (
@@ -1445,7 +1445,7 @@ export default function Home() {
                               </h1>
                               <p className="max-w-[420px] text-body leading-6 text-muted">
                                 {activeProject
-                                  ? `Describe the task — ${active.name} will work on it or delegate to the right specialists. All files & tasks stay bound to this project.`
+                                  ? `Describe the task, ${active.name} will work on it or delegate to the right specialists. All files & tasks stay bound to this project.`
                                   : active.description}
                               </p>
                               {active.id === "yui-conductor" &&
@@ -1458,9 +1458,9 @@ export default function Home() {
                                       className="shrink-0 text-accent"
                                     />
                                     Need the full team pipeline? Toggle Workflow
-                                    Mode beside Hardcore Mode — your next
-                                    message starts a structured run. Watch
-                                    progress in the Team tab.
+                                    Mode beside Hardcore Mode, your next message
+                                    starts a structured run. Watch progress in
+                                    the Team tab.
                                   </span>
                                 )}
                               <div className="mt-2 flex max-w-[560px] flex-wrap justify-center gap-2">
@@ -1524,7 +1524,8 @@ export default function Home() {
                               // D33: hapus dari Config → refresh daftar; scope
                               // aktif terhapus → kembali ke HOME.
                               void loadProjects();
-                              if (activeProjectId === pid) void pickProject(null);
+                              if (activeProjectId === pid)
+                                void pickProject(null);
                             }}
                             live={{
                               parentPersonaId: active.id,
@@ -1551,7 +1552,7 @@ export default function Home() {
           )}
         </main>
       </div>
-      {/* Batch 14a follow-up: floating shared screen — di atas SEMUA tab,
+      {/* Batch 14a follow-up: floating shared screen, di atas SEMUA tab,
           termasuk chat; nonton persona + take/hand over tanpa pindah tab. */}
       {pip && activeProject?.id === pip.projectId && (
         <ScreenPip

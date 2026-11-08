@@ -1,6 +1,6 @@
-// @yuika/core — Batch 13 (P2-WKS-4): tool persona run_in_workshop.
+// @yuika/core, Batch 13 (P2-WKS-4): tool persona run_in_workshop.
 // Eksekusi di container workshop PERSISTEN project (home selamat lintas
-// tidur/bangun — node_modules & cache hangat). Berbeda dari run_command
+// tidur/bangun, node_modules & cache hangat). Berbeda dari run_command
 // (sandbox disposable): workshop harus DIBUKA USER dulu dari panel Workshop
 // (persetujuan pembukaan = klik user); persona boleh membangunkan yang tidur.
 // Output di-redact (pola run_command: secrets + active run-scope).
@@ -10,14 +10,14 @@ import { redactSecrets } from "../redact.js";
 import { redactActive } from "../vault/redact.js";
 import type { WorkshopManager } from "../workshop/manager.js";
 
-/** Perintah read-only ringan — bebas approval (mengurangi approval fatigue). */
+/** Perintah read-only ringan, bebas approval (mengurangi approval fatigue). */
 const SAFE_HEADS = new Set(["ls", "cat", "pwd", "node", "npm", "echo", "printenv", "git", "df", "ps"]);
 
 export function registerWorkshopTool(deps: { manager: () => WorkshopManager }): void {
   registry.register({
     name: "run_in_workshop",
     description:
-      "Run a command in this project's persistent workshop container — the preferred place for installs and builds (npm install / npm init -y / npm run). cwd is the project root and it edits the SAME files shown in the Files tab; installed packages and the npm cache stay warm across sleep/wake, unlike the one-shot sandbox. Egress is limited to the project's allowlist. If the workshop is not open yet, the user gets an approval card to open it right here; if it is asleep it is woken automatically.",
+      "Run a command in this project's persistent workshop container, the preferred place for installs and builds (npm install / npm init -y / npm run). cwd is the project root and it edits the SAME files shown in the Files tab; installed packages and the npm cache stay warm across sleep/wake, unlike the one-shot sandbox. Egress is limited to the project's allowlist. If the workshop is not open yet, the user gets an approval card to open it right here; if it is asleep it is woken automatically.",
     parameters: z.object({
       cmd: z.string().min(1).max(60),
       args: z.array(z.string().max(500)).max(32).default([]),
@@ -44,7 +44,7 @@ export function registerWorkshopTool(deps: { manager: () => WorkshopManager }): 
       const m = deps.manager();
       const info = m.info(ctx.projectId);
       if (info.state === "absent") {
-        // WKS-2: pembukaan workshop = KEPUTUSAN USER — tapi lewat KARTU
+        // WKS-2: pembukaan workshop = KEPUTUSAN USER, tapi lewat KARTU
         // APPROVAL di chat (bukan suruh user pindah tab ke panel). Egress
         // yang akan dipasang dicantumkan supaya keputusan informed.
         const egress = m.readConfig(ctx.projectId).egressAllow;
@@ -54,7 +54,7 @@ export function registerWorkshopTool(deps: { manager: () => WorkshopManager }): 
           `Open the persistent workshop container for this project (Docker; egress allowlist: ${egress.join(", ") || "none"})`,
         );
         if (ok === false) {
-          return { isError: true, result: { error: "user menolak membuka workshop — install dihentikan" } };
+          return { isError: true, result: { error: "user menolak membuka workshop, install dihentikan" } };
         }
         await m.start(ctx.projectId, { by: `persona:${ctx.personaId ?? "unknown"}` });
       }

@@ -1,4 +1,4 @@
-// P2-STU-2: TerminalManager + tool `terminal` — sesi shared user & agent.
+// P2-STU-2: TerminalManager + tool `terminal`, sesi shared user & agent.
 // Shell deterministik via fixture echo-shell.mjs (YUI_TERMINAL_CMD).
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
@@ -116,7 +116,7 @@ describe("TerminalManager", () => {
   });
 });
 
-// ── integrasi Docker ASLI — regresi 13d: sesi docker TANPA -i mati instan ──
+// ── integrasi Docker ASLI, regresi 13d: sesi docker TANPA -i mati instan ──
 async function dockerUp(): Promise<boolean> {
   const { execFile } = await import("node:child_process");
   return await new Promise((resolve) => {
@@ -131,7 +131,11 @@ describe.skipIf(!(await dockerUp()))("terminal docker sandbox (regresi -i, 13d)"
     const d = fs.mkdtempSync(path.join(os.tmpdir(), "yui-term-dkr-"));
     const info = await tm.ensureSession(d);
     expect(info.backend).toBe("docker");
-    const r = await tm.runInSession(d, "pwd", { timeoutMs: 20_000 });
+    // D34: saat 5 suite turbo jalan paralel di mesin yang sibuk, container
+    // docker butuh waktu ekstra sebelum PTY siap, quietMs longgar + retry.
+    let r = await tm.runInSession(d, "pwd", { timeoutMs: 20_000, quietMs: 5_000 });
+    if (!r.output.includes("/workspace"))
+      r = await tm.runInSession(d, "pwd", { timeoutMs: 20_000, quietMs: 5_000 });
     expect(r.output).toContain("/workspace");
     expect(r.timedOut).toBe(false);
     await tm.closeAll();

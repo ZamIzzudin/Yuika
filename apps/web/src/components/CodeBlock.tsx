@@ -1,8 +1,8 @@
 "use client";
 // CodeBlock (D29): preview file kode & fenced-code markdown dengan syntax
-// highlighting editor-grade via Shiki (github-dark-default — token pastel
+// highlighting editor-grade via Shiki (github-dark-default, token pastel
 // lembut di atas latar gelap #101010, inline styles).
-// Prinsip: LAZY — highlighter di-import dinamis sekali (singleton); selagi
+// Prinsip: LAZY, highlighter di-import dinamis sekali (singleton); selagi
 // belum siap/berhasil → fallback <pre> polos (tidak pernah blank atau error).
 // Gutter nomor baris + header (chip bahasa + copy). Aman: shiki meng-escape
 // konten sebelum mewarnai; teks selalu lewat codeToHtml, bukan raw HTML user.
@@ -57,7 +57,7 @@ type Hl = {
   codeToHtml: (code: string, o: { lang: string; theme: string }) => string;
 };
 
-/** Singleton highlighter — dibuat sekali per halaman, dipakai semua CodeBlock. */
+/** Singleton highlighter, dibuat sekali per halaman, dipakai semua CodeBlock. */
 let hlPromise: Promise<Hl | null> | null = null;
 function getHl(langs: string[]): Promise<Hl | null> {
   if (!hlPromise) {
@@ -197,7 +197,7 @@ export function CodeBlock({
           </div>
         )}
         {html ? (
-          // shiki: token colors inline; latar kita sendiri (bg-inset) —
+          // shiki: token colors inline; latar kita sendiri (bg-inset),
           // background inline shiki di-nol-kan via [&_.shiki]
           <div
             className="min-w-0 flex-1 [&_.shiki]:bg-transparent! [&_.shiki]:p-0! [&_code]:font-mono! [&_code]:text-[12.5px]! [&_code]:leading-5!"

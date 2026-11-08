@@ -1,7 +1,7 @@
 "use client";
-// DS-1 — toast global (react-hot-toast) untuk feedback aksi success/error.
+// DS-1, toast global (react-hot-toast) untuk feedback aksi success/error.
 // Semua operasi async (simpan, upload, install, accept, hapus) WAJIB pakai
-// toastOk/toastErr — bukan banner inline tersebar (docs/DESIGN-SYSTEM.md §Toast).
+// toastOk/toastErr, bukan banner inline tersebar (docs/DESIGN-SYSTEM.md §Toast).
 // Ikon Phosphor (§5b), gaya dari token --yui-*.
 import { Check, Warning } from "@phosphor-icons/react";
 import { Toaster, toast } from "react-hot-toast";
@@ -27,16 +27,20 @@ export function YuiToaster() {
   );
 }
 
-/** Sukses — centang hijau, singkat. */
+/** Sukses, centang hijau, singkat. */
 export const toastOk = (msg: string) =>
   toast.success(msg, {
     duration: 2600,
-    icon: <Check size={15} weight="bold" aria-hidden className="text-success" />,
+    icon: (
+      <Check size={15} weight="bold" aria-hidden className="text-success" />
+    ),
   });
 
-/** Gagal — segitiga merah, tahan lebih lama agar sempat dibaca. */
+/** Gagal, segitiga merah, tahan lebih lama agar sempat dibaca. */
 export const toastErr = (msg: string) =>
   toast.error(msg, {
     duration: 5200,
-    icon: <Warning size={15} weight="fill" aria-hidden className="text-danger" />,
+    icon: (
+      <Warning size={15} weight="fill" aria-hidden className="text-danger" />
+    ),
   });

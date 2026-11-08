@@ -1,4 +1,4 @@
-// Menu Persona — override bentuk geometri maskot (persona-shapes.json):
+// Menu Persona, override bentuk geometri maskot (persona-shapes.json):
 // validasi persona dikenal + bentuk salah satu dari 15; persist; reset
 // (clear) idempoten; file korup → dianggap tanpa override (bukan crash boot).
 import { describe, expect, it, beforeEach } from "vitest";

@@ -1,6 +1,6 @@
-// @yuika/core — Batch 14a (SCR-2): browser_* tools agent via sesi screen
+// @yuika/core, Batch 14a (SCR-2): browser_* tools agent via sesi screen
 // SHARED dengan user (satu Chromium per project×persona). Input dikirim ke
-// browser yang SAMA yang sedang di-stream ke user — yang dilihat user =
+// browser yang SAMA yang sedang di-stream ke user, yang dilihat user =
 // yang dilihat agent (take control dua arah, D25).
 //
 // Lease: agent tools butuh lease (owner personaId); bila user pegang →
@@ -20,7 +20,7 @@ import { redactActive } from "../vault/redact.js";
 
 const log = moduleLogger("tools:screen");
 
-/** Direktori data runtime (dipasang saat register — runtime.ts). */
+/** Direktori data runtime (dipasang saat register, runtime.ts). */
 let dataDir = "";
 
 export function registerScreenTools(opts: { dataDir: string }): void {
@@ -36,7 +36,7 @@ export function registerScreenTools(opts: { dataDir: string }): void {
       const st = await ensureScreen(dataDir, ctx.projectId, actorOf(ctx));
       // sesi baru → agent otomatis pegang lease (pelopor pembuka)
       if (st.leaseOwner === null) takeLease(key, actorOf(ctx));
-      // Bubble chat (SCR-3 follow-up): beri tahu user browser hidup —
+      // Bubble chat (SCR-3 follow-up): beri tahu user browser hidup,
       // tombol "Open Browser" membuka floating window.
       ctx.emit({
         type: "screen.state",
@@ -102,7 +102,7 @@ export function registerScreenTools(opts: { dataDir: string }): void {
       withScreen(ctx, async (key) => {
         const snap = await screenSnapshot(key);
         // VLT-4 defense-in-depth: scrub active secret (password login terisi
-        // via kartu) sebelum hasil masuk konteks model — di luar masking
+        // via kartu) sebelum hasil masuk konteks model, di luar masking
         // input[type=password] yang sudah dilakukan di sumber snapshot.
         return JSON.parse(redactActive(JSON.stringify(snap)));
       }),
@@ -118,7 +118,7 @@ export function registerScreenTools(opts: { dataDir: string }): void {
         if (typeof args.ref === "number") {
           const snap = await screenSnapshot(key);
           const it = snap.items[args.ref];
-          if (!it) return { error: `ref ${args.ref} not found — snapshot may be stale, call browser_snapshot again` };
+          if (!it) return { error: `ref ${args.ref} not found, snapshot may be stale, call browser_snapshot again` };
           await screenClick(key, actorOf(ctx), it.x, it.y);
           return { clicked: args.ref, name: it.name ?? null };
         }
@@ -139,7 +139,7 @@ export function registerScreenTools(opts: { dataDir: string }): void {
       withScreen(ctx, async (key) => {
         const snap = await screenSnapshot(key);
         const it = snap.items[args.ref];
-        if (!it) return { error: `ref ${args.ref} not found — call browser_snapshot` };
+        if (!it) return { error: `ref ${args.ref} not found, call browser_snapshot` };
         await screenClick(key, actorOf(ctx), it.x, it.y);
         await screenType(key, actorOf(ctx), args.text);
         if (args.submit) await screenPress(key, actorOf(ctx), "enter");
@@ -172,7 +172,7 @@ export function registerScreenTools(opts: { dataDir: string }): void {
   registry.register({
     name: "request_takeover",
     description:
-      "Show a non-blocking card asking the user to hand over control of the shared screen — use when the user holds control and you need to act, or after they finish a manual step (login, captcha, review). Waits for the answer up to the deadline; expired/denied leaves you read-only (browser_snapshot still works).",
+      "Show a non-blocking card asking the user to hand over control of the shared screen, use when the user holds control and you need to act, or after they finish a manual step (login, captcha, review). Waits for the answer up to the deadline; expired/denied leaves you read-only (browser_snapshot still works).",
     parameters: takeoverSchema,
     handler: (args: { reason: string }, ctx) =>
       new Promise<ToolResult>((resolve) => {
@@ -216,8 +216,8 @@ export function registerScreenTools(opts: { dataDir: string }): void {
                     status: r.status,
                     hint:
                       r.status === "expired"
-                        ? "deadline passed with no answer — you may ask again or continue read-only via browser_snapshot"
-                        : "user denied — continue read-only via browser_snapshot",
+                        ? "deadline passed with no answer, you may ask again or continue read-only via browser_snapshot"
+                        : "user denied, continue read-only via browser_snapshot",
                   },
                 },
           );
@@ -300,10 +300,10 @@ export function registerScreenTools(opts: { dataDir: string }): void {
                     status: r.status,
                     hint:
                       r.status === "skipped"
-                        ? "user skipped — ask for an alternative or continue read-only via browser_snapshot"
+                        ? "user skipped, ask for an alternative or continue read-only via browser_snapshot"
                         : r.status === "expired"
-                          ? "deadline passed with no answer — you may ask again"
-                          : "no password field found — navigate to the login form first, then ask again",
+                          ? "deadline passed with no answer, you may ask again"
+                          : "no password field found, navigate to the login form first, then ask again",
                   },
                 },
           );

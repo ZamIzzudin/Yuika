@@ -1,5 +1,5 @@
 "use client";
-// Batch 16 (Home & Team Assembly): halaman HOME — landing pertama aplikasi.
+// Batch 16 (Home & Team Assembly): halaman HOME, landing pertama aplikasi.
 // Tidak ada lagi workspace/freespace: semua sesi hidup di dalam project.
 // - Typing headline: "Hello, Let's Build Something!" → hapus → "Hello, Wanna
 //   Build Something?" (sekali jalan; prefers-reduced-motion → langsung final).
@@ -15,7 +15,7 @@ import { apiUrl, authFetch } from "@/lib/api";
 const FIRST = "Hello, Wanna Build Something?";
 const FINAL = "Hello, Let's Build Something!";
 
-/** D28: "2 Hours Ago" — relative time English, di-refresh tiap 30s supaya
+/** D28: "2 Hours Ago", relative time English, di-refresh tiap 30s supaya
  *  kartu Home tidak basi tanpa reload. <45s → "Just Now". */
 function timeAgo(ts: number, now: number): string {
   const s = Math.max(0, Math.floor((now - ts) / 1000));
@@ -168,7 +168,7 @@ export function HomeView({
 
   return (
     // CATATAN (flex overflow trap): JANGAN `justify-center` pada scroll container
-    // — begitu daftar project melebihi viewport, kartu paling atas terdorong ke
+    //, begitu daftar project melebihi viewport, kartu paling atas terdorong ke
     // luar jangkauan scroll. Centering via `my-auto` pada wrapper: pas → center,
     // lebih tinggi → top-aligned & tetap bisa discroll penuh.
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-10">
@@ -182,63 +182,63 @@ export function HomeView({
         </div>
 
         <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3">
-        {/* Kartu Create — selalu pertama; satu-satunya pintu bikin project. */}
-        <button
-          type="button"
-          aria-label="New project"
-          onClick={() => setOpen(true)}
-          className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg2 border border-dashed border-line-strong bg-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent hover:bg-accent-soft hover:text-primary"
-        >
-          <Plus size={22} weight="bold" aria-hidden className="text-accent" />
-          <span className="text-body">New project</span>
-        </button>
-
-        {!booted && cards.length === 0 && (
-          <Card variant="inset" className="min-h-[120px] p-4">
-            <Skeleton lines={3} />
-          </Card>
-        )}
-        {booted && cards.length === 0 && (
-          <p className="col-span-full px-2 py-6 text-center text-body text-dim">
-            No projects yet.
-          </p>
-        )}
-
-        {cards.map((p) => (
+          {/* Kartu Create, selalu pertama; satu-satunya pintu bikin project. */}
           <button
-            key={p.id}
             type="button"
-            onClick={() => onOpenProject(p.id)}
-            className={`group flex min-h-[120px] cursor-pointer flex-col gap-2 rounded-lg2 border p-4 text-left transition-all ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
-              p.status === "archived"
-                ? "border-line bg-inset opacity-70"
-                : "border-line bg-surface hover:-translate-y-0.5 hover:border-line-strong hover:shadow-pop"
-            }`}
+            aria-label="New project"
+            onClick={() => setOpen(true)}
+            className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg2 border border-dashed border-line-strong bg-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-accent hover:bg-accent-soft hover:text-primary"
           >
-            <span className="flex items-center gap-2">
-              <i
-                className={`h-[7px] w-[7px] shrink-0 rounded-pill ${p.status === "archived" ? "bg-line-strong" : "bg-accent"}`}
-                aria-hidden
-              />
-              <b className="truncate text-body font-semibold text-primary">
-                {p.name}
-              </b>
-            </span>
-            <span className="line-clamp-3 text-caption text-muted">
-              {p.description || "No description"}
-            </span>
-            <span className="mt-auto text-caption text-dim capitalize flex items-center justify-between">
-              {p.status === "archived" ? "archived · " : ""}
-              {p.kind === "dungeon" ? "dungeon" : "project"}
-              <time
-                dateTime={new Date(p.updatedAt).toISOString()}
-                className="normal-case"
-              >
-                {timeAgo(p.updatedAt, now)}
-              </time>
-            </span>
+            <Plus size={22} weight="bold" aria-hidden className="text-accent" />
+            <span className="text-body">New project</span>
           </button>
-        ))}
+
+          {!booted && cards.length === 0 && (
+            <Card variant="inset" className="min-h-[120px] p-4">
+              <Skeleton lines={3} />
+            </Card>
+          )}
+          {booted && cards.length === 0 && (
+            <p className="col-span-full px-2 py-6 text-center text-body text-dim">
+              No projects yet.
+            </p>
+          )}
+
+          {cards.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onOpenProject(p.id)}
+              className={`group flex min-h-[120px] cursor-pointer flex-col gap-2 rounded-lg2 border p-4 text-left transition-all ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+                p.status === "archived"
+                  ? "border-line bg-inset opacity-70"
+                  : "border-line bg-surface hover:-translate-y-0.5 hover:border-line-strong hover:shadow-pop"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <i
+                  className={`h-[7px] w-[7px] shrink-0 rounded-pill ${p.status === "archived" ? "bg-line-strong" : "bg-accent"}`}
+                  aria-hidden
+                />
+                <b className="truncate text-body font-semibold text-primary">
+                  {p.name}
+                </b>
+              </span>
+              <span className="line-clamp-3 text-caption text-muted">
+                {p.description || "No description"}
+              </span>
+              <span className="mt-auto text-caption text-dim capitalize flex items-center justify-between">
+                {p.status === "archived" ? "archived · " : ""}
+                {p.kind === "dungeon" ? "dungeon" : "project"}
+                <time
+                  dateTime={new Date(p.updatedAt).toISOString()}
+                  className="normal-case"
+                >
+                  {timeAgo(p.updatedAt, now)}
+                </time>
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 

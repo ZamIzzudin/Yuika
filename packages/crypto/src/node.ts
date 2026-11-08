@@ -1,6 +1,6 @@
-// @yuika/crypto — backend Node (byte-exact dengan yuika-portal/packages/crypto).
+// @yuika/crypto, backend Node (byte-exact dengan yuika-portal/packages/crypto).
 // Spec: docs/portal/SPEC-PROTOCOL.md §3 (signChallenge) & §5 (envelope E2E).
-// JANGAN ubah semantik — perubahan = proto bump (SPEC §12).
+// JANGAN ubah semantik, perubahan = proto bump (SPEC §12).
 import {
   createCipheriv,
   createDecipheriv,
@@ -33,7 +33,7 @@ export function generateDeviceKeys(): DeviceKeys {
 
 // ── relay auth (sign) ───────────────────────────────────────────────────────
 
-/** `sig = Ed25519(priv, deviceId|nonce)` base64 — auth relay SPEC §3. */
+/** `sig = Ed25519(priv, deviceId|nonce)` base64, auth relay SPEC §3. */
 export function signChallenge(signPrivPem: string, deviceId: string, nonce: string): string {
   return edSign(
     null,
@@ -74,7 +74,7 @@ function deriveKey(dhPrivPem: string, peerDhPubPem: string, aad: string): Buffer
 }
 
 /**
- * Enkripsi E2E — return base64(iv ‖ ciphertext ‖ tag), AAD `from|to` (SPEC §5).
+ * Enkripsi E2E, return base64(iv ‖ ciphertext ‖ tag), AAD `from|to` (SPEC §5).
  * key = HKDF-SHA256(X25519(dhPriv, peerDhPub), salt=aad, info="", L=32).
  */
 export function seal(
@@ -91,7 +91,7 @@ export function seal(
   return Buffer.concat([iv, ct, cipher.getAuthTag()]).toString("base64");
 }
 
-/** Buka envelope — throw jika kunci salah / AAD tak cocok / box dimanipulasi. */
+/** Buka envelope, throw jika kunci salah / AAD tak cocok / box dimanipulasi. */
 export function open(
   to: { deviceId: string; dhPriv: string },
   from: { deviceId: string; dhPub: string },

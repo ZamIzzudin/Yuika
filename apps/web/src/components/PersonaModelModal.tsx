@@ -1,5 +1,5 @@
 "use client";
-// Modal model per persona — DIPINDAH dari SettingsModal (permintaan user):
+// Modal model per persona, DIPINDAH dari SettingsModal (permintaan user):
 // dibuka lewat tombol gear di card identitas page Persona. Berisi form model
 // persona aktif (primary + fallback, kosong = ikut default) + tombol
 // "Check connection" (smoke test P1-MDL-2: tool-call 2 langkah per model aktif).
@@ -66,7 +66,7 @@ export function PersonaModelModal({
     void loadSmoke();
   }, [loadRoutes, loadSmoke]);
 
-  // smoke berjalan async — poll ringan sampai selesai
+  // smoke berjalan async, poll ringan sampai selesai
   useEffect(() => {
     if (!smoke?.running) return;
     const t = setInterval(() => void loadSmoke(), 3_000);
@@ -91,7 +91,7 @@ export function PersonaModelModal({
           (await r.json().catch(() => ({}))).error ?? "failed to save",
         );
       setRoutes((await r.json()) as ModelRoutes);
-      toastOk("Saved — the next session uses the new route.");
+      toastOk("Saved, the next session uses the new route.");
     } catch (e) {
       toastErr(e instanceof Error ? e.message : "failed to save");
     } finally {
@@ -133,7 +133,7 @@ export function PersonaModelModal({
               spellCheck={false}
             />
           </Field>
-          {/* hasil smoke — per model aktif */}
+          {/* hasil smoke, per model aktif */}
           {smoke && smoke.results.length > 0 && (
             <ul
               className="flex flex-wrap gap-3 my-4"
@@ -157,7 +157,7 @@ export function PersonaModelModal({
                   {!s.ok && (
                     <small className="text-dim">
                       {" "}
-                      — automatic fallback engaged
+                      , automatic fallback engaged
                     </small>
                   )}
                 </li>

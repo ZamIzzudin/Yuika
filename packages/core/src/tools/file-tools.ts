@@ -1,4 +1,4 @@
-// @yuika/core — file tools (contoh pola: zod schema → registry.register).
+// @yuika/core, file tools (contoh pola: zod schema → registry.register).
 // Path safety: semua path di-resolve di dalam workspace (PLAN §4.11).
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -9,7 +9,7 @@ import { redactSecrets } from "../redact.js";
 function safeResolve(workspace: string, rel: string): string {
   const root = path.resolve(workspace);
   const p = path.resolve(workspace, rel);
-  // Bandingkan dengan separator — `D:\ws` tidak boleh meloloskan `D:\ws-evil`.
+  // Bandingkan dengan separator, `D:\ws` tidak boleh meloloskan `D:\ws-evil`.
   if (p !== root && !p.startsWith(root + path.sep)) throw new Error(`path keluar workspace: ${rel}`);
   return p;
 }
@@ -17,7 +17,7 @@ function safeResolve(workspace: string, rel: string): string {
 const readSchema = z.object({
   path: z.string().min(1),
   /** Paging karakter (fix "tail-mockup": dulu file >40k char terpotong tanpa
-   *  offset — agent sampai menulis script node untuk membaca ekor file). */
+   *  offset, agent sampai menulis script node untuk membaca ekor file). */
   offset: z.number().int().min(0).default(0),
   limit: z.number().int().min(1).max(40_000).default(40_000),
 });
@@ -28,7 +28,7 @@ const searchSchema = z.object({
 });
 const writeSchema = z.object({ path: z.string().min(1), content: z.string() });
 
-/** Ekstensi artefak KODE — wajib mendarat di code/, bukan reports/ (routing otomatis). */
+/** Ekstensi artefak KODE, wajib mendarat di code/, bukan reports/ (routing otomatis). */
 const CODE_EXT = new Set([
   ".html", ".htm", ".css", ".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".py",
   ".vue", ".svelte", ".php", ".rb", ".go", ".rs", ".java", ".kt", ".swift",
@@ -40,7 +40,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
   registry.register({
     name: "read_file",
     description:
-      "Baca isi file teks di workspace (relative path). File panjang: respons memuat `totalChars` + `nextOffset` — bila terpotong, lanjutkan dengan offset itu (JANGAN menulis script node untuk membaca bagian file).",
+      "Baca isi file teks di workspace (relative path). File panjang: respons memuat `totalChars` + `nextOffset`, bila terpotong, lanjutkan dengan offset itu (JANGAN menulis script node untuk membaca bagian file).",
     parameters: readSchema,
     handler: async (args: z.infer<typeof readSchema>, ctx) => {
       const p = safeResolve(ctx.workspacePath, args.path);
@@ -80,7 +80,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
           const old = await fs.readFile(p, "utf-8");
           if (old !== args.content) revisions.saveRevision(p, old);
         } catch {
-          /* file baru — tidak ada revisi */
+          /* file baru, tidak ada revisi */
         }
       }
       await fs.writeFile(p, args.content, "utf-8");
@@ -88,7 +88,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
         result: {
           path: target,
           bytes: args.content.length,
-          ...(target !== requested ? { redirectedFrom: requested, note: `file kode dipindahkan ke ${target} — folder reports/ khusus laporan/markdown` } : {}),
+          ...(target !== requested ? { redirectedFrom: requested, note: `file kode dipindahkan ke ${target}, folder reports/ khusus laporan/markdown` } : {}),
         },
       };
     },
@@ -104,7 +104,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
   registry.register({
     name: "search_files",
     description:
-      "Cari teks di seluruh file workspace (seperti grep) — kembalikan file:baris + potongan baris. Jauh lebih cepat daripada read_file satu-satu untuk menemukan bagian di file besar.",
+      "Cari teks di seluruh file workspace (seperti grep), kembalikan file:baris + potongan baris. Jauh lebih cepat daripada read_file satu-satu untuk menemukan bagian di file besar.",
     parameters: searchSchema,
     handler: async (args: z.infer<typeof searchSchema>, ctx) => {
       const root = safeResolve(ctx.workspacePath, args.dir);
@@ -145,7 +145,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
       return {
         result: {
           hits,
-          note: hits.length ? `${hits.length} baris cocok (maks 100) — buka konteks sekitarnya dengan read_file` : "tidak ada yang cocok",
+          note: hits.length ? `${hits.length} baris cocok (maks 100), buka konteks sekitarnya dengan read_file` : "tidak ada yang cocok",
         },
       };
     },

@@ -1,4 +1,4 @@
-// @yuika/api — vault REST (Batch 12 / P2-VLT-1..2). METADATA-ONLY: nilai
+// @yuika/api, vault REST (Batch 12 / P2-VLT-1..2). METADATA-ONLY: nilai
 // masuk SATU kali via POST fill (dari kartu protected web), tidak pernah
 // dikembalikan / di-log / di-event.
 import type { FastifyInstance } from "fastify";
@@ -10,7 +10,7 @@ export function registerVaultRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     return { secrets: getRt().vault.list() };
   });
 
-  /** Isi kartu protected — body {value, save}. Respons metadata saja. */
+  /** Isi kartu protected, body {value, save}. Respons metadata saja. */
   app.post("/api/vault/fill/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
     const body = VaultFillSubmit.parse(req.body);
@@ -20,7 +20,7 @@ export function registerVaultRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     return { ok: true as const };
   });
 
-  /** Skip dari kartu (tombol Skip — agent menerima sinyal fallback). */
+  /** Skip dari kartu (tombol Skip, agent menerima sinyal fallback). */
   app.post("/api/vault/fill/:id/skip", async (req, reply) => {
     const { id } = req.params as { id: string };
     const ok = getRt().vault.skipFill(id);

@@ -1,11 +1,11 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
 /**
- * ChatView — pola visual OpenBot (D:\projects\openbot):
+ * ChatView, pola visual OpenBot (D:\projects\openbot):
  * pesan agent = teks polos + gutter wajah + nama muted; user = bubble terang rata kanan;
  * tool = langkah senyap yang bisa dilipat; delegasi = baris subagent; approval = kartu tenang.
  * Logika event tetap dari page.tsx (semua tipe @yuika/contracts).
- * DS-1: Tailwind semantik + komponen ui/* — tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
+ * DS-1: Tailwind semantik + komponen ui/*, tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PersonaState } from "@yuika/contracts";
@@ -63,7 +63,7 @@ export interface ChatItem {
   role?: "user" | "assistant";
   text?: string;
   streaming?: boolean;
-  // reasoning (fix dev-10: pikiran model streaming — kolaps-able)
+  // reasoning (fix dev-10: pikiran model streaming, kolaps-able)
   reasoningOpen?: boolean;
   // activity (tool)
   name?: string;
@@ -76,24 +76,24 @@ export interface ChatItem {
   childSessionId?: string;
   goal?: string;
   childState?: PersonaState;
-  /** Feed live anak (delegation.delta) — streaming saat delegasi berjalan. */
+  /** Feed live anak (delegation.delta), streaming saat delegasi berjalan. */
   liveText?: string;
   liveKind?: "text" | "reasoning" | "tool";
-  /** P1-DEL-3: anak di-pause — menunggu resume (chip + tombol jadi Resume). */
+  /** P1-DEL-3: anak di-pause, menunggu resume (chip + tombol jadi Resume). */
   paused?: boolean;
   // approval
   requestId?: string;
   reason?: string;
   resolved?: "approved" | "denied" | "expired" | null;
-  // vault (Batch 12): kartu protected — nilai TIDAK pernah di item/event;
+  // vault (Batch 12): kartu protected, nilai TIDAK pernah di item/event;
   // user mengisi via REST fill langsung dari kartu.
   vkind?: "api_key" | "command" | "login";
   originHint?: string;
   saved?: boolean;
   vresolved?: "filled" | "skipped" | "expired" | null;
-  // takeover (Batch 14a SCR-4): persona minta kontrol screen — non-blocking.
+  // takeover (Batch 14a SCR-4): persona minta kontrol screen, non-blocking.
   tresolved?: "granted" | "denied" | "expired" | null;
-  // login (VLT-4): kartu kredensial — nilai via REST fill saja, TIDAK di item.
+  // login (VLT-4): kartu kredensial, nilai via REST fill saja, TIDAK di item.
   loginRequestId?: string;
   loginOrigin?: string;
   lresolved?: "filled" | "skipped" | "expired" | "failed" | null;
@@ -111,15 +111,21 @@ export interface ChatItem {
 
 export { STATE_LABEL };
 
-/** Batch 12 (D27): input nilai rahasia — uncontrolled (nilai hanya dibaca saat
+/** Batch 12 (D27): input nilai rahasia, uncontrolled (nilai hanya dibaca saat
  *  submit lalu input di-clear) + toggle "Save to Vault" (off = run-only).
- *  Nilai dikirim LANGSUNG ke POST /api/vault/fill/:id — tidak pernah masuk
+ *  Nilai dikirim LANGSUNG ke POST /api/vault/fill/:id, tidak pernah masuk
  *  state React / event / chat. */
-/** VLT-4: kartu login — dua field (username/password, uncontrolled; dibaca
+/** VLT-4: kartu login, dua field (username/password, uncontrolled; dibaca
  *  HANYA saat submit lalu di-clear DOM-side) + Save to Vault + Auto submit.
- *  Nilai dikirim LANGSUNG ke POST /api/login/:id/fill — tidak pernah masuk
+ *  Nilai dikirim LANGSUNG ke POST /api/login/:id/fill, tidak pernah masuk
  *  state React / event / chat. */
-function LoginFillCard({ requestId, origin }: { requestId: string; origin: string }) {
+function LoginFillCard({
+  requestId,
+  origin,
+}: {
+  requestId: string;
+  origin: string;
+}) {
   const userRef = useRef<HTMLInputElement>(null);
   const passRef = useRef<HTMLInputElement>(null);
   const [save, setSave] = useState(true);
@@ -155,7 +161,7 @@ function LoginFillCard({ requestId, origin }: { requestId: string; origin: strin
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
-      clear(); // DOM-side clear — nilai tidak tinggal di UI
+      clear(); // DOM-side clear, nilai tidak tinggal di UI
       setBusy(false);
     }
   };
@@ -169,7 +175,7 @@ function LoginFillCard({ requestId, origin }: { requestId: string; origin: strin
         { method: "POST" },
       );
     } catch {
-      /* race dengan deadline — biarkan event resolved yang mengakhiri */
+      /* race dengan deadline, biarkan event resolved yang mengakhiri */
     } finally {
       clear();
       setBusy(false);
@@ -199,11 +205,21 @@ function LoginFillCard({ requestId, origin }: { requestId: string; origin: strin
       />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <label className="flex cursor-pointer items-center gap-1.5 text-caption text-secondary select-none">
-          <input type="checkbox" checked={save} onChange={() => setSave(!save)} className="accent-current" />
+          <input
+            type="checkbox"
+            checked={save}
+            onChange={() => setSave(!save)}
+            className="accent-current"
+          />
           Save to Vault
         </label>
         <label className="flex cursor-pointer items-center gap-1.5 text-caption text-secondary select-none">
-          <input type="checkbox" checked={submit} onChange={() => setSubmit(!submit)} className="accent-current" />
+          <input
+            type="checkbox"
+            checked={submit}
+            onChange={() => setSubmit(!submit)}
+            className="accent-current"
+          />
           Submit form
         </label>
       </div>
@@ -216,7 +232,12 @@ function LoginFillCard({ requestId, origin }: { requestId: string; origin: strin
         <Button size="sm" disabled={busy} onClick={() => void fill()}>
           Fill login
         </Button>
-        <Button size="sm" variant="ghost" disabled={busy} onClick={() => void skip()}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={busy}
+          onClick={() => void skip()}
+        >
           Skip
         </Button>
       </div>
@@ -266,7 +287,7 @@ function VaultFillCard({ requestId }: { requestId: string }) {
         { method: "POST" },
       );
     } catch {
-      /* race dengan deadline — biarkan event resolved yang mengakhiri */
+      /* race dengan deadline, biarkan event resolved yang mengakhiri */
     } finally {
       if (ref.current) ref.current.value = "";
       setBusy(false);
@@ -293,11 +314,17 @@ function VaultFillCard({ requestId }: { requestId: string }) {
           onChange={(e) => setSave(e.target.checked)}
           className="accent-[var(--c-accent)]"
         />
-        Save to Vault (uncheck = use once for this run, deleted when the turn ends)
+        Save to Vault (uncheck = use once for this run, deleted when the turn
+        ends)
       </label>
       {err && <p className="text-caption text-danger">{err}</p>}
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="primary" onClick={() => void submit()} disabled={busy}>
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={() => void submit()}
+          disabled={busy}
+        >
           {busy ? "Sending…" : "Send securely"}
         </Button>
         <Button size="sm" onClick={() => void skip()} disabled={busy}>
@@ -343,14 +370,14 @@ export function ChatView({
   personaId: string;
   personaName: string;
   onSend: (text: string) => void;
-  /** P0-CORE-1: tombol Stop — batalkan turn aktif (progres tersimpan). */
+  /** P0-CORE-1: tombol Stop, batalkan turn aktif (progres tersimpan). */
   onCancel?: () => void;
-  /** Konten state kosong (hero + saran) — composer tetap tampil, user bisa langsung menulis. */
+  /** Konten state kosong (hero + saran), composer tetap tampil, user bisa langsung menulis. */
   emptySlot?: ReactNode;
   onApprove: (requestId: string, approved: boolean, remember?: boolean) => void;
   /** Klik kartu delegasi → buka sesi persona anak (fix 2026-11 user). */
   onOpenDelegation?: (childSessionId: string) => void;
-  /** Fix dev-10: mode cepat — "auto" = write_file & run_command bebas-approval. */
+  /** Fix dev-10: mode cepat, "auto" = write_file & run_command bebas-approval. */
   approvalMode?: "ask" | "auto";
   onToggleApprovalMode?: () => void;
   /** Konteks workflow utk composer conductor (null = chat biasa). */
@@ -360,7 +387,7 @@ export function ChatView({
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
-  // P0-DEL-2: kontrol delegasi aktif — steer input per kartu + cancel.
+  // P0-DEL-2: kontrol delegasi aktif, steer input per kartu + cancel.
   const [steerOpenFor, setSteerOpenFor] = useState<string | null>(null);
   const [steerText, setSteerText] = useState("");
   async function sendSteer(childSessionId: string) {
@@ -434,7 +461,7 @@ export function ChatView({
     ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
   }, [input]);
 
-  // Tool steps TIDAK lagi dirender di chat (user 2026-11 #8) — observability
+  // Tool steps TIDAK lagi dirender di chat (user 2026-11 #8), observability
   // langkah kerja ada di tab Logs (Session Trace, realtime). items activity
   // tetap terkumpul (dipakai indikator dot tab Chat/Team).
   const steps = items.filter((it) => it.kind === "activity");
@@ -671,7 +698,7 @@ export function ChatView({
               );
             }
             if (it.kind === "reasoning") {
-              // Fix dev-10: pikiran model streaming (reasoning_content GLM) —
+              // Fix dev-10: pikiran model streaming (reasoning_content GLM),
               // panggilan 2–9 menit kini "hidup". Kolaps-able; tampilkan ekor
               // (pikiran terbaru) supaya DOM ringan walau reasoning panjang.
               const full = it.text ?? "";
@@ -716,7 +743,7 @@ export function ChatView({
                         {it.resolved === "approved"
                           ? "Approved"
                           : it.resolved === "expired"
-                            ? "Expired — the server restarted while waiting"
+                            ? "Expired, the server restarted while waiting"
                             : "Rejected"}
                       </p>
                     ) : (
@@ -748,7 +775,7 @@ export function ChatView({
               );
             }
             if (it.kind === "vault") {
-              // Batch 12 (D27): kartu protected — nilai dikirim LANGSUNG ke REST
+              // Batch 12 (D27): kartu protected, nilai dikirim LANGSUNG ke REST
               // fill (bukan lewat chat/event); input di-clear DOM-side saat submit.
               return (
                 <div
@@ -760,7 +787,9 @@ export function ChatView({
                       Credential needed ·{" "}
                       <code className="font-mono text-caption">{it.name}</code>
                     </b>
-                    <p className="mt-0.5 text-caption text-muted">{it.reason}</p>
+                    <p className="mt-0.5 text-caption text-muted">
+                      {it.reason}
+                    </p>
                     {it.originHint && (
                       <p className="mt-0.5 text-caption text-dim">
                         for {it.originHint}
@@ -774,7 +803,7 @@ export function ChatView({
                             : "Used for this run only (deleted when the turn ends)"
                           : it.vresolved === "skipped"
                             ? "Skipped"
-                            : "Expired — no value was provided"}
+                            : "Expired, no value was provided"}
                       </p>
                     ) : (
                       <VaultFillCard requestId={it.requestId!} />
@@ -784,7 +813,7 @@ export function ChatView({
               );
             }
             if (it.kind === "login") {
-              // VLT-4: kartu login — dua field; nilai LANGSUNG ke REST fill,
+              // VLT-4: kartu login, dua field; nilai LANGSUNG ke REST fill,
               // tidak pernah lewat state/event chat. resolved via SSE.
               return (
                 <div
@@ -794,33 +823,38 @@ export function ChatView({
                   <div className="col-start-2 rounded-card border border-line-strong border-l-2 border-l-accent bg-inset px-4 py-3">
                     <b className="text-body font-medium text-primary">
                       Login needed ·{" "}
-                      <code className="font-mono text-caption">{it.loginOrigin}</code>
+                      <code className="font-mono text-caption">
+                        {it.loginOrigin}
+                      </code>
                     </b>
                     <p className="mt-0.5 text-caption text-muted">
-                      {it.name} needs credentials to sign in — values go
-                      straight into the browser form, never into the chat.
+                      {it.name} needs credentials to sign in, values go straight
+                      into the browser form, never into the chat.
                     </p>
                     {it.lresolved ? (
                       <p className="mt-2 text-caption text-muted">
                         {it.lresolved === "filled"
                           ? it.lsaved
-                            ? "Filled — saved encrypted in the vault"
+                            ? "Filled, saved encrypted in the vault"
                             : "Filled for this run only"
                           : it.lresolved === "skipped"
                             ? "Skipped"
                             : it.lresolved === "expired"
-                              ? "Expired — no credentials were provided"
-                              : "No password field found — navigate to the sign-in form and ask again"}
+                              ? "Expired, no credentials were provided"
+                              : "No password field found, navigate to the sign-in form and ask again"}
                       </p>
                     ) : (
-                      <LoginFillCard requestId={it.loginRequestId!} origin={it.loginOrigin ?? ""} />
+                      <LoginFillCard
+                        requestId={it.loginRequestId!}
+                        origin={it.loginOrigin ?? ""}
+                      />
                     )}
                   </div>
                 </div>
               );
             }
             if (it.kind === "takeover") {
-              // Batch 14a (SCR-4): kartu non-blocking — persona minta kontrol
+              // Batch 14a (SCR-4): kartu non-blocking, persona minta kontrol
               // shared screen. Turn TIDAK diblok UI; tombol memanggil REST
               // resolve; deadline auto-expired di backend.
               return (
@@ -832,14 +866,16 @@ export function ChatView({
                     <b className="text-body font-medium text-primary">
                       {it.name} asks for screen control
                     </b>
-                    <p className="mt-0.5 text-caption text-muted">{it.reason}</p>
+                    <p className="mt-0.5 text-caption text-muted">
+                      {it.reason}
+                    </p>
                     {it.tresolved ? (
                       <p className="mt-2 text-caption text-muted">
                         {it.tresolved === "granted"
-                          ? "Control handed over — the agent is driving now (watch it on the Browser tab, Live mode)"
+                          ? "Control handed over, the agent is driving now (watch it on the Browser tab, Live mode)"
                           : it.tresolved === "denied"
-                            ? "Denied — the agent continues read-only"
-                            : "Expired with no answer — the agent continues read-only"}
+                            ? "Denied, the agent continues read-only"
+                            : "Expired with no answer, the agent continues read-only"}
                       </p>
                     ) : (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -857,7 +893,9 @@ export function ChatView({
                           variant="primary"
                           onClick={() => {
                             void authFetch(
-                              apiUrl(`/api/takeover/${encodeURIComponent(it.requestId!)}/resolve`),
+                              apiUrl(
+                                `/api/takeover/${encodeURIComponent(it.requestId!)}/resolve`,
+                              ),
                               {
                                 method: "POST",
                                 headers: { "content-type": "application/json" },
@@ -872,7 +910,9 @@ export function ChatView({
                           size="sm"
                           onClick={() => {
                             void authFetch(
-                              apiUrl(`/api/takeover/${encodeURIComponent(it.requestId!)}/resolve`),
+                              apiUrl(
+                                `/api/takeover/${encodeURIComponent(it.requestId!)}/resolve`,
+                              ),
                               {
                                 method: "POST",
                                 headers: { "content-type": "application/json" },
@@ -901,7 +941,9 @@ export function ChatView({
                     <b className="text-body font-medium text-primary">
                       {it.name} is working in a browser
                     </b>
-                    <p className="mt-0.5 truncate text-caption text-dim">{it.screenUrl}</p>
+                    <p className="mt-0.5 truncate text-caption text-dim">
+                      {it.screenUrl}
+                    </p>
                     <div className="mt-3">
                       <Button
                         size="sm"
@@ -929,10 +971,10 @@ export function ChatView({
                     : Wrench;
               const title =
                 it.kind === "noted"
-                  ? "Learn nudge after a task — editable/removable on the Memory tab"
+                  ? "Learn nudge after a task, editable/removable on the Memory tab"
                   : it.kind === "compressed"
-                    ? "P0-CORE-4: old history is summarized into a checkpoint so long sessions still fit the model window — the original history stays fully stored"
-                    : "Skill proposed from experience — validate it on the Skill tab";
+                    ? "P0-CORE-4: old history is summarized into a checkpoint so long sessions still fit the model window, the original history stays fully stored"
+                    : "Skill proposed from experience, validate it on the Skill tab";
               return (
                 <div
                   key={`r${i}`}
@@ -960,7 +1002,7 @@ export function ChatView({
                         <b className="font-semibold text-primary">
                           Context compressed
                         </b>{" "}
-                        — {it.n} old messages summarized (~{it.before} → ~
+                        , {it.n} old messages summarized (~{it.before} → ~
                         {it.after} tokens); the original history stays fully
                         stored.
                       </>
@@ -970,7 +1012,7 @@ export function ChatView({
                         <b className="font-semibold text-primary">
                           Yui proposed a skill
                         </b>
-                        : {it.text} — validate it on the{" "}
+                        : {it.text}, validate it on the{" "}
                         <b className="font-semibold text-primary">Skill</b> tab
                       </>
                     )}
@@ -1029,7 +1071,7 @@ export function ChatView({
                 {approvalMode === "auto" ? "Hardcore Mode" : "Safety Mode"}
               </button>
             ) : null}
-            {/* Toggle Workflow Mode — sejajar Hardcore Mode (user 2026-11-08):
+            {/* Toggle Workflow Mode, sejajar Hardcore Mode (user 2026-11-08):
                 nyala = pesan berikutnya jadi brief run; saat run hidup, pesan
                 selalu steer apa pun toggle. Hanya utk conductor di project. */}
             {workflow && (
@@ -1054,7 +1096,7 @@ export function ChatView({
               </button>
             )}
           </div>
-          {/* Strip status workflow (chip/progres/gate/pause) — input brief &
+          {/* Strip status workflow (chip/progres/gate/pause), input brief &
               steer kini SATU dengan composer. */}
           {workflow && (
             <WorkflowRunBar
@@ -1079,9 +1121,9 @@ export function ChatView({
                 busy
                   ? `${personaName} is working…`
                   : workflow?.activeRun
-                    ? "Steer the running workflow — e.g. keep scope minimal"
+                    ? "Steer the running workflow, e.g. keep scope minimal"
                     : workflow?.armed
-                      ? "Describe the goal — this message starts a workflow run"
+                      ? "Describe the goal, this message starts a workflow run"
                       : `Describe a task for ${personaName}…`
               }
               onChange={(e) => setInput(e.target.value)}

@@ -1,5 +1,5 @@
-// P1-MDL-3: price book — roundtrip file, biaya = metering × harga,
-// model tanpa harga → null (bukan 0 — jujur).
+// P1-MDL-3: price book, roundtrip file, biaya = metering × harga,
+// model tanpa harga → null (bukan 0, jujur).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";

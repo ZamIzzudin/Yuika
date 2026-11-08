@@ -1,5 +1,5 @@
 "use client";
-// CP-3 SSO — halaman callback portal: ?code&state → tukar jadi sesi Yuika.
+// CP-3 SSO, halaman callback portal: ?code&state → tukar jadi sesi Yuika.
 // Portal mengarahkan ke sini setelah user menekan Accept; token sesi Yuika
 // disimpan seperti login biasa (localStorage via lib/api) lalu kembali ke /.
 import { useEffect, useRef, useState } from "react";
@@ -19,7 +19,7 @@ export default function PortalCallbackPage() {
     const code = params.get("code");
     const state = params.get("state");
     if (!code || !state) {
-      setError("Missing code/state from portal — restart sign-in.");
+      setError("Missing code/state from portal, restart sign-in.");
       return;
     }
     void (async () => {
@@ -29,8 +29,12 @@ export default function PortalCallbackPage() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ code, state }),
         });
-        const body = (await r.json().catch(() => ({}))) as { token?: string; error?: string };
-        if (!r.ok || !body.token) throw new Error(body.error ?? "portal sign-in failed");
+        const body = (await r.json().catch(() => ({}))) as {
+          token?: string;
+          error?: string;
+        };
+        if (!r.ok || !body.token)
+          throw new Error(body.error ?? "portal sign-in failed");
         setAuthToken(body.token);
         router.replace("/");
       } catch (err) {

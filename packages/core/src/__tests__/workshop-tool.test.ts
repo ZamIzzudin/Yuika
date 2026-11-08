@@ -1,4 +1,4 @@
-// P2-WKS-4 — tool run_in_workshop: absent → error + hint (workshop dibuka
+// P2-WKS-4, tool run_in_workshop: absent → error + hint (workshop dibuka
 // user), running → exec by persona + output ter-redact.
 import { beforeEach, describe, expect, it } from "vitest";
 import { resetRegistryForTests, registry } from "../registry.js";

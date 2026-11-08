@@ -1,4 +1,4 @@
-// W3-A2 (TASKS.md): run_command — ls/echo internal bebas-approval; node = execFile
+// W3-A2 (TASKS.md): run_command, ls/echo internal bebas-approval; node = execFile
 // dengan cwd = workspace proyek + approval.
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
@@ -28,7 +28,7 @@ afterEach(() => {
 const ctx = () => ({ sessionId: "s1", turnId: "t1", workspacePath: dir, emit: () => {} });
 
 describe("run_command", () => {
-  it("node: SELALU minta approval — reason menyertakan argumen", async () => {
+  it("node: SELALU minta approval, reason menyertakan argumen", async () => {
     const requestApproval = vi.fn(async (_t: string, _a: unknown, reason: string) => {
       expect(reason).toContain("node -v");
       return true;
@@ -82,7 +82,7 @@ describe("run_command", () => {
 });
 
 // FLOW user 2026-11 (#7): eksekusi run_command tercatat di log terminal
-// (view "Commands" panel terminal — tanpa membuka sesi shell).
+// (view "Commands" panel terminal, tanpa membuka sesi shell).
 describe("run_command → terminal command log", () => {
   it("node -v tercatat (command, args, exitCode, output) di listCommandLog", async () => {
     const { listCommandLog } = await import("../terminal/manager.js");

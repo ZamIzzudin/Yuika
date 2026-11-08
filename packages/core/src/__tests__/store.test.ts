@@ -1,4 +1,4 @@
-// W2-B2 (TASKS.md): session store — id monotonic, replay ?since=, prompt/toolset frozen.
+// W2-B2 (TASKS.md): session store, id monotonic, replay ?since=, prompt/toolset frozen.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -35,7 +35,7 @@ describe("SessionStore", () => {
     const s = store.getSession("s1")!;
     expect(s.systemPrompt).toBe("PROMPT-V1");
     expect(s.toolsets).toEqual(["a", "b"]);
-    // tidak ada API untuk mutate — verifikasi tak ada method set/update
+    // tidak ada API untuk mutate, verifikasi tak ada method set/update
     const methods = Object.getOwnPropertyNames(SessionStore.prototype);
     expect(methods.filter((m) => /update|set(Session|Prompt|Toolset)/i.test(m))).toEqual([]);
     store.close();
@@ -76,7 +76,7 @@ describe("SessionStore", () => {
   });
 });
 
-// P1-MEM-5: session_search — scope project vs all, snippet, exclude tool role.
+// P1-MEM-5: session_search, scope project vs all, snippet, exclude tool role.
 describe("SessionStore.searchMessages (P1-MEM-5)", () => {
   it("cari lintas sesi: scope project memfilter, all menembus; tool role dikecualikan", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-ss-"));

@@ -1,4 +1,4 @@
-// @yuika/contracts — persona manifest schema (PLAN §7.2)
+// @yuika/contracts, persona manifest schema (PLAN §7.2)
 // Loader (@yuika/core) menggabungkan persona.yaml + PERSONA.md + toolsets.yaml + skills.yaml
 // + delegation.yaml menjadi bentuk tervalidasi ini.
 import { z } from "zod";
@@ -34,7 +34,7 @@ const DelegationRules = z.object({
   can_spawn: z.array(z.string()).default([]),
   spawnable_by: z.array(z.string()).default(["user"]),
   /** P1-DEL-1: cap paralel MILIK SI PENDELEGASI (persona yang memegang
-   *  delegate_task) — berlaku pada delegation.yaml persona tsb.; persona anak
+   *  delegate_task), berlaku pada delegation.yaml persona tsb.; persona anak
    *  tanpa delegate_task mengabaikannya. Dikombinasikan min() dengan cap
    *  budget workspace (Settings → Metering). */
   max_concurrent: z.number().int().min(1).max(16).optional(),
@@ -59,10 +59,10 @@ export const PersonaManifest = z.object({
 });
 export type PersonaManifest = z.infer<typeof PersonaManifest>;
 
-/** Bentuk geometri maskot Orin (v8) — 15 bentuk; urutan = indeks input Rive
+/** Bentuk geometri maskot Orin (v8), 15 bentuk; urutan = indeks input Rive
  *  `shape` 0–14 (satu sumber kebenaran bersama SHAPE_ORDER di web).
  *  Menu Persona: user dapat mengganti bentuk per persona (persist di
- *  workspace/persona-shapes.json — override di atas default PERSONA_SHAPE). */
+ *  workspace/persona-shapes.json, override di atas default PERSONA_SHAPE). */
 export const ORIN_SHAPE_KEYS = [
   "orb",
   "cloud",

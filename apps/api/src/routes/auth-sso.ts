@@ -1,4 +1,4 @@
-// @yuika/api — CP-3 SSO login via portal (OAuth2-style + PKCE S256).
+// @yuika/api, CP-3 SSO login via portal (OAuth2-style + PKCE S256).
 // Portal = satu-satunya identity provider (signup hanya di portal); Yuika
 // tetap mint sesinya SENDIRI (portal tidak tahu secret sesi Yuika).
 //
@@ -83,7 +83,7 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
     const attemptId = body.state.split(".")[0];
     const attempt = attemptId ? attempts.get(attemptId) : undefined;
     if (!attemptId || !attempt || attempt.state !== body.state) {
-      return reply.code(400).send({ error: "unknown or expired sign-in attempt — restart sign-in" });
+      return reply.code(400).send({ error: "unknown or expired sign-in attempt, restart sign-in" });
     }
     attempts.delete(attemptId); // sekali pakai
 
@@ -114,11 +114,11 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
 
     try {
       const user = findOrCreatePortalUser(exchanged.accountId, exchanged.email);
-      // CP-4: auto-link browser — portal menyertakan deviceToken sekali-pakai
+      // CP-4: auto-link browser, portal menyertakan deviceToken sekali-pakai
       // di exchange; klaim dengan kunci STABIL (tersimpan lokal) agar
-      // idempotent (deviceId stabil — CP-4 portal). Re-claim SETIAP login:
+      // idempotent (deviceId stabil, CP-4 portal). Re-claim SETIAP login:
       // menyembuhkan drift bila device terhapus di portal (unlink/reset db)
-      // — bukan skip. Gagal klaim ≠ gagal login (row lama tetap utuh).
+      //, bukan skip. Gagal klaim ≠ gagal login (row lama tetap utuh).
       if (exchanged.deviceToken) {
         const existing = getWebDevice();
         const sameAccount = existing?.accountId === exchanged.accountId;
@@ -154,7 +154,7 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
             .catch(() => undefined);
           req.log.info({ deviceId }, sameAccount ? "[sso] web device re-linked (idempotent)" : "[sso] web device auto-linked");
         } catch (e) {
-          req.log.warn({ err: e instanceof Error ? e.message : String(e) }, "[sso] web device auto-link gagal — login tetap lanjut");
+          req.log.warn({ err: e instanceof Error ? e.message : String(e) }, "[sso] web device auto-link gagal, login tetap lanjut");
         }
       }
       return reply.send({ token: createSession(user.id), user });

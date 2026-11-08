@@ -1,4 +1,4 @@
-// P1-PRJ-8 (request user): hapus project = bersihkan SEMUA artefak terkait —
+// P1-PRJ-8 (request user): hapus project = bersihkan SEMUA artefak terkait,
 // sesi & eventnya, task & project_events, file workspace (MEMORY.md project,
 // uploads), revisi file, audit MCP. YANG DIPERTAHANKAN: skill persona & usage
 // ledger (akuntansi jujur). Test ini mereplikasi urutan runtime.deleteProject
@@ -18,7 +18,7 @@ let tmp = "";
 
 afterEach(() => {
   if (!tmp) return;
-  // Windows: WAL file butuh handle tertutup — semua store di-close dulu.
+  // Windows: WAL file butuh handle tertutup, semua store di-close dulu.
   for (const f of fs.readdirSync(tmp)) {
     try {
       fs.rmSync(path.join(tmp, f), { force: true, recursive: true });
@@ -47,7 +47,7 @@ function setup() {
 }
 
 describe("hapus project + artefak (P1-PRJ-8)", () => {
-  it("urutan runtime.deleteProject: sesi/task/file/revisi/audit bersih — project lain & usage utuh", () => {
+  it("urutan runtime.deleteProject: sesi/task/file/revisi/audit bersih, project lain & usage utuh", () => {
     const { ws, projects, sessions, revisions, audit, ledger } = setup();
     projects.createProject({ id: "p_a", name: "A", rootPath: "projects/p_a" });
     projects.createProject({ id: "p_b", name: "B", rootPath: "projects/p_b" });
@@ -77,7 +77,7 @@ describe("hapus project + artefak (P1-PRJ-8)", () => {
     audit.log({ server: "fs", tool: "read", sessionId: "s_a", ok: true, durationMs: 5 });
     audit.log({ server: "fs", tool: "read", sessionId: "s_b", ok: true, durationMs: 5 });
 
-    // Usage DIPERTAHANKAN (akuntansi) — baris untuk project terhapus tetap historis.
+    // Usage DIPERTAHANKAN (akuntansi), baris untuk project terhapus tetap historis.
     ledger.record({ sessionId: "s_a", projectId: "p_a", personaId: "yui-coder", model: "m", promptTokens: 10, outputTokens: 5, latencyMs: 100, at: Date.now() });
     ledger.record({ sessionId: "s_b", projectId: "p_b", personaId: "yui-scribe", model: "m", promptTokens: 20, outputTokens: 8, latencyMs: 120, at: Date.now() });
 
@@ -104,7 +104,7 @@ describe("hapus project + artefak (P1-PRJ-8)", () => {
         revisions: nRev,
         auditRows,
         workshop: false, // replika tanpa workshop manager (runtime asli: destroy)
-        // D31: runtime asli memanggil terminal.killSessionsUnder(root) —
+        // D31: runtime asli memanggil terminal.killSessionsUnder(root),
         // replika store-level: 0 sesi terminal (tanpa manager).
         terminalSessions: 0,
         workspaceDir: rootA,

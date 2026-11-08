@@ -1,16 +1,16 @@
 # syntax=docker/dockerfile:1
-# P0-INF-5 — image Yuika (web + api) untuk docker compose.
+# P0-INF-5, image Yuika (web + api) untuk docker compose.
 #
 # Multi-stage, DUA target runtime dari satu file:
-#   web : Next.js standalone (output:standalone — bundle minimal, tanpa devDeps)
-#   api : Fastify + @yuika/core via tsx (core exports menunjuk src/*.ts — tsx
+#   web : Next.js standalone (output:standalone, bundle minimal, tanpa devDeps)
+#   api : Fastify + @yuika/core via tsx (core exports menunjuk src/*.ts, tsx
 #         adalah runtime loader resmi sampai core punya build dist sendiri).
 #
-# Data user (sqlite + workspace) TIDAK di dalam image — volume /data
+# Data user (sqlite + workspace) TIDAK di dalam image, volume /data
 # (YUI_DB_PATH=/data/demo.db, YUI_WORKSPACE_DIR=/data/workspace) supaya
 # upgrade image tidak memindahkan data.
 #
-# Base: bookworm (glibc) — better-sqlite3 prebuilt binaries tersedia;
+# Base: bookworm (glibc), better-sqlite3 prebuilt binaries tersedia;
 # alpine (musl) memaksa kompilasi dari source.
 
 # ---------- stage 1: build web (standalone) ----------
@@ -30,7 +30,7 @@ RUN npm ci --no-audit --no-fund
 # Source (di-copy setelah .dockerignore membuang .next/node_modules lokal)
 COPY . .
 
-# NEXT_PUBLIC_* di-inline ke bundle client SAAT BUILD — base URL api
+# NEXT_PUBLIC_* di-inline ke bundle client SAAT BUILD, base URL api
 # dari sudut pandang BROWSER pengguna (default: docker host di mesin sama).
 ARG NEXT_PUBLIC_API_BASE=http://127.0.0.1:3211
 ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE \
@@ -59,11 +59,11 @@ CMD ["node", "apps/web/server.js"]
 FROM node:24-bookworm-slim AS api
 WORKDIR /app
 
-# uv untuk server MCP berbasis uvx (git, time) — binary tunggal, tanpa python image
+# uv untuk server MCP berbasis uvx (git, time), binary tunggal, tanpa python image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 # Prod deps seluruh workspaces (npm workspaces tidak punya filter per-package
-# untuk ci; v1: prune — catat di TASKS)
+# untuk ci; v1: prune, catat di TASKS)
 COPY package.json package-lock.json turbo.json ./
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/core/package.json packages/core/

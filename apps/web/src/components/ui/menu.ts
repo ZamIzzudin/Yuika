@@ -2,7 +2,7 @@
 // Menu auto-close (fix test user #6): dropdown <details> di header menutup
 // otomatis saat (a) klik/pointer di luar menu, (b) tombol Escape, (c) salah
 // satu item dipilih (pemanggil memanggil close() di onClick item).
-// Accordion (Thinking/Trace/Settings) BUKAN menu — tetap perilaku native.
+// Accordion (Thinking/Trace/Settings) BUKAN menu, tetap perilaku native.
 import { useEffect, useRef } from "react";
 
 export function useMenuAutoClose<T extends HTMLDetailsElement>() {

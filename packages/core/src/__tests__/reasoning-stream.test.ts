@@ -1,5 +1,5 @@
 // Fix dev-10 (laporan user: "task sederhana 30 menit, UI seperti mati"):
-// GLM mengirim pikiran model di `delta.reasoning_content` — adapter LAMA
+// GLM mengirim pikiran model di `delta.reasoning_content`, adapter LAMA
 // membuangnya diam-diam (42k token reasoning per call tak terlihat). Kini
 // diteruskan sebagai chunk reasoning_delta → loop emit reasoning.delta →
 // UI streaming "💭 Berpikir…". Test: mock fetch SSE OpenAI-compat.

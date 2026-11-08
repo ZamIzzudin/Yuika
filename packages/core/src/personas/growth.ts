@@ -1,8 +1,8 @@
-// @yuika/core — growth tracking (P1-PER-4): persona "tumbuh" seiring pengalaman
-// NYATA — sesi dibuat, turn selesai, task project yang dibereskan. BUKAN state
+// @yuika/core, growth tracking (P1-PER-4): persona "tumbuh" seiring pengalaman
+// NYATA, sesi dibuat, turn selesai, task project yang dibereskan. BUKAN state
 // gamifikasi palsu: semua angka dikurasi dari tabel yang sudah ada
 // (sessions / events / project_tasks), jadi tidak bisa inflate tanpa kerja.
-// Level dari jumlah `turns` (aktivitas paling jujur — sesi bisa kosong,
+// Level dari jumlah `turns` (aktivitas paling jujur, sesi bisa kosong,
 // task bisa di-reassign; turn selesai = persona benar-benar bekerja).
 import type { PersonaGrowth } from "@yuika/contracts";
 import type { ISessionStore } from "../session/store.js";

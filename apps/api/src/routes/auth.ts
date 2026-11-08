@@ -1,4 +1,4 @@
-// @yuika/api — REST /api/auth/* (me, logout; SSO start/complete di
+// @yuika/api, REST /api/auth/* (me, logout; SSO start/complete di
 // routes/auth-sso.ts). Local register/login DIHAPUS (portal-only): akun &
 // signup hidup di yuika-portal. Route-route ini di-whitelist middleware
 // auth (lihat app.ts).

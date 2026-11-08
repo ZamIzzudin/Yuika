@@ -1,4 +1,4 @@
-// P1-PRJ-4 (TASKS.md): tool todo_* — agent mengelola tasklist project dari turn.
+// P1-PRJ-4 (TASKS.md): tool todo_*, agent mengelola tasklist project dari turn.
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";

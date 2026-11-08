@@ -1,4 +1,4 @@
-// @yuika/contracts — public entry
+// @yuika/contracts, public entry
 export * from "./events.js";
 export * from "./vault.js";
 export * from "./remote.js";

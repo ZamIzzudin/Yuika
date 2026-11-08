@@ -1,7 +1,7 @@
 // P1 fix 2026-11: cold start `uvx`/`npx` (unduh paket pertama) melampaui timeout
 // handshake SDK default 60s → -32001 "Request timed out" + proses anak zombie.
 // Fixture: initialize DIBALAS LAMBAT (delay via argv[2]) → menguji connectTimeoutMs.
-// argv[3]: path pidfile — fixture menulis PID-nya (test memverifikasi proses anak
+// argv[3]: path pidfile, fixture menulis PID-nya (test memverifikasi proses anak
 // benar-benar dimatikan saat handshake gagal; portabel: tak andalkan sinyal,
 // di Windows TerminateProcess tak menjalankan handler).
 import readline from "node:readline";

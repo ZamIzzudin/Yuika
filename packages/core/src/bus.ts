@@ -1,6 +1,6 @@
-// @yuika/core — in-process event bus (DEMO-SHORTCUT: P0 mengganti dengan Redis Streams
+// @yuika/core, in-process event bus (DEMO-SHORTCUT: P0 mengganti dengan Redis Streams
 // saat worker pool terpisah; kontrak event TIDAK berubah).
-// QUIRK dev (dipelajari dev-10): emitter HARUS di-cache di globalThis — HMR Next
+// QUIRK dev (dipelajari dev-10): emitter HARUS di-cache di globalThis, HMR Next
 // me-re-eval modul ini saat core berubah, dan turn yang masih berjalan di runtime
 // LAMA akan publish ke instance emitter lama. Dua bus = "split brain": event masuk
 // DB (trace jalan) tapi SSE route baru tak pernah menerima → UI diam sampai refresh
@@ -16,7 +16,7 @@ g.__yuiBusEmitter = bus;
 export const EventBus = {
   publish(sessionId: string, event: YuiEvent): void {
     bus.emit(sessionId, event);
-    bus.emit("*", event); // P1-PRT-3: host portal — proyeksi lintas sesi
+    bus.emit("*", event); // P1-PRT-3: host portal, proyeksi lintas sesi
   },
   subscribe(sessionId: string, listener: (e: YuiEvent) => void): () => void {
     bus.on(sessionId, listener);

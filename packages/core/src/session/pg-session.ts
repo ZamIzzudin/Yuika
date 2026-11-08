@@ -1,10 +1,10 @@
-// @yuika/core — P0-DATA-1: SessionStore driver PostgreSQL (postgres.js).
-// Hanya dimuat oleh WORKER (session/pg-worker.ts) — paket `postgres` tak pernah
+// @yuika/core, P0-DATA-1: SessionStore driver PostgreSQL (postgres.js).
+// Hanya dimuat oleh WORKER (session/pg-worker.ts), paket `postgres` tak pernah
 // masuk proses utama/bundle web. Interface-nya ASYNC (pg memang begitu); proses
 // utama memakainya lewat sync-bridge (pg-bridge.ts) sehingga ISessionStore
 // (sinkron) tetap terpenuhi.
 //
-// Keputusan tipe kolom: id/seq/ts = double precision (bukan bigint) — driver
+// Keputusan tipe kolom: id/seq/ts = double precision (bukan bigint), driver
 // mengembalikan number asli (bigint → string di postgres.js); nilai selalu
 // < 2^53 (epoch ms / counter), exact. COUNT() di-cast ::int.
 // Mono­tonisitas id events dipertahankan via sequence bersama (nextval).
@@ -112,7 +112,7 @@ export class PgSessionStore {
     this.sql = postgres(databaseUrl, { max: maxConnections, idle_timeout: 60 });
   }
 
-  /** Bootstrap skema (idempotent) — dipanggil worker saat start. */
+  /** Bootstrap skema (idempotent), dipanggil worker saat start. */
   async migrate(): Promise<void> {
     await ensureSequences(this.sql);
     await this.sql.unsafe(DDL);
@@ -175,7 +175,7 @@ export class PgSessionStore {
         const p = JSON.parse(r.payload) as { state?: string; personaId?: string };
         if (p.state === "done" && p.personaId) out.set(p.personaId, (out.get(p.personaId) ?? 0) + 1);
       } catch {
-        /* payload rusak — skip */
+        /* payload rusak, skip */
       }
     }
     return out;

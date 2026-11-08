@@ -18,7 +18,7 @@ function makeFixture() {
   const pDir = path.join(personasDir, "yui-test");
   fs.mkdirSync(pDir, { recursive: true });
   fs.writeFileSync(path.join(pDir, "persona.yaml"), 'id: yui-test\nname: "Yui Test"\nversion: 0.1.0\nexpertise: testing\ndescription: "Persona fixture."\nmemory:\n  domain: testing\n  learn: false\n', "utf-8");
-  fs.writeFileSync(path.join(pDir, "PERSONA.md"), "Kamu persona fixture — selalu menjawab singkat.", "utf-8");
+  fs.writeFileSync(path.join(pDir, "PERSONA.md"), "Kamu persona fixture, selalu menjawab singkat.", "utf-8");
   fs.writeFileSync(path.join(pDir, "toolsets.yaml"), "tools: [read_file]\n", "utf-8");
   fs.writeFileSync(path.join(pDir, "skills.yaml"), "bundled: [fixture-skill]\n", "utf-8");
   fs.writeFileSync(path.join(pDir, "delegation.yaml"), "spawnable_by: [user]\n", "utf-8");
@@ -37,7 +37,7 @@ describe("prompt stack frozen per sesi (W2-C2)", () => {
 
     const stored = store.getSession("s1")!.systemPrompt;
     expect(stored).toContain(CORE_SYSTEM_PROMPT);
-    expect(stored).toContain("Kamu persona fixture — selalu menjawab singkat.");
+    expect(stored).toContain("Kamu persona fixture, selalu menjawab singkat.");
     expect(stored).toContain("fixture-skill: Skill fixture untuk test.");
     // identik dengan builder langsung (tidak ada lapisan lain yang diselipkan)
     const index = listSkills(skillsDir);
@@ -81,7 +81,7 @@ describe("USER.md stub (W5-C2)", () => {
     expect(first).toContain("(preview)");
     expect(first).toContain("Maestro Yui");
 
-    // user mengedit isi — harus terjaga
+    // user mengedit isi, harus terjaga
     fs.appendFileSync(userMdPath(dir), "- preferensi manual user: suka bullet point.\n", "utf-8");
 
     appendUserPreferenceNote(dir, "Pierre Yui");

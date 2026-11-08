@@ -1,9 +1,9 @@
-// @yuika/core — admission control (P1-CRED-2) + rate limit (P1-CRED-3).
+// @yuika/core, admission control (P1-CRED-2) + rate limit (P1-CRED-3).
 // Gas-station pattern: sebelum turn → cek saldo (cache, TTL 10 dtk, di-invalidate
 // tiap usage event) + HOLD perkiraan kasar; saat turn selesai → SETTLE (hold
 // dilepas; biaya actual sudah tercatat di ledger oleh hook recordUsage).
 // HOLD = rata-rata biaya/panggilan 24 jam terakhir × 4 langkah/turn (clamp
-// 0.02–2.0) — HANYA untuk pre-auth, tidak pernah masuk angka pelaporan.
+// 0.02–2.0), HANYA untuk pre-auth, tidak pernah masuk angka pelaporan.
 import fs from "node:fs";
 import path from "node:path";
 import { BudgetConfig, type BudgetStatus, type UpdateBudgetRequest, type UsageFilter, type UsageMatrixRow } from "@yuika/contracts";
@@ -66,7 +66,7 @@ export class AdmissionControl {
     return this.cfg.maxDelegationConcurrency ?? 3;
   }
 
-  /** Belanja jujur dari ledger × price book (cache TTL — "saldo cache" CRED-2). */
+  /** Belanja jujur dari ledger × price book (cache TTL, "saldo cache" CRED-2). */
   private spent(force = false): SpentSnapshot {
     if (!force && this.cache && Date.now() - this.cache.at < CACHE_TTL_MS) return this.cache.snap;
     const book = loadPriceBook(this.priceBookFile);
@@ -120,7 +120,7 @@ export class AdmissionControl {
     while (this.turnTimes.length && now - this.turnTimes[0]! > 60_000) this.turnTimes.shift();
     const status = this.status();
     if (this.cfg.maxTurnsPerMinute !== null && this.turnTimes.length >= this.cfg.maxTurnsPerMinute) {
-      return { ok: false, reason: `Rate limit workspace tercapai (${this.cfg.maxTurnsPerMinute} turn/menit) — tunggu sebentar`, warn: null, status };
+      return { ok: false, reason: `Rate limit workspace tercapai (${this.cfg.maxTurnsPerMinute} turn/menit), tunggu sebentar`, warn: null, status };
     }
     const hold = this.holdEstimate();
     const cur = status.currency ?? "USD";
@@ -129,7 +129,7 @@ export class AdmissionControl {
     if (overDaily || overTotal) {
       const which = overDaily ? `harian ${this.cfg.dailyLimit} ${cur}` : `total ${this.cfg.totalLimit} ${cur}`;
       if (this.cfg.mode === "block") {
-        return { ok: false, reason: `Budget ${which} tercapai — turn DITOLAK (mode block). Naikkan limit di Settings → Metering`, warn: null, status };
+        return { ok: false, reason: `Budget ${which} tercapai, turn DITOLAK (mode block). Naikkan limit di Settings → Metering`, warn: null, status };
       }
       this.turnTimes.push(now);
       this.holds.set(sessionId, hold);

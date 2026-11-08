@@ -1,9 +1,9 @@
-// @yuika/core — Learn nudge (P1-MEM-2): panggilan aux RINGAN pasca-turn — sarankan
+// @yuika/core, Learn nudge (P1-MEM-2): panggilan aux RINGAN pasca-turn, sarankan
 // SATU catatan bila turn mengungkap preferensi user / pelajaran project yang
 // reusable, atau "none". Hasil masuk lewat tool memory_append (dedupe, kurasi
 // sama seperti agent). Non-blocking: fire-and-forget dari finalizer loop.
 // Matikan dengan YUI_LEARN=0; model aux via YUI_AUX_MODEL (alias lama
-// YUI_LEARN_MODEL; default: model utama) — P1-INF-3: tugas ringan → model murah.
+// YUI_LEARN_MODEL; default: model utama), P1-INF-3: tugas ringan → model murah.
 import type { ProviderAdapter, InternalMessage } from "../provider/adapter.js";
 import type { Emit } from "../session/emit.js";
 import type { UsageEvent } from "@yuika/contracts";
@@ -20,7 +20,7 @@ export interface LearnNudgeArgs {
   turnId: string;
   workspacePath: string;
   emit: Emit;
-  /** P1-INF-3/CRED: panggilan aux ikut ter-meter (jujur — tanpa ini token nudge tak tercatat). */
+  /** P1-INF-3/CRED: panggilan aux ikut ter-meter (jujur, tanpa ini token nudge tak tercatat). */
   recordUsage?: (u: UsageEvent) => void;
 }
 
@@ -33,9 +33,9 @@ export interface LearnNudgeResult {
 const SYSTEM = `Kamu adalah modul pembelajaran agent Yui. Tinjau transkrip satu turn kerja.
 Tugasmu HANYA memutuskan: apakah turn ini mengungkap (a) preferensi user yang DURABEL (gaya, bahasa, batasan, kebiasaan) atau (b) keputusan/pelajaran PROJECT yang reusable (stack, struktur, keputusan arsitektur, temuan riset kunci)?
 Aturan tinggi: kalau ragu → none. Jangan mencatat: tugas sesaat, konten percakapan, hal yang jelas sekali-pakai, atau hal yang sudah umum.
-Balas HANYA JSON satu baris: {"note": string|null, "scope": "user"|"project"} — note maksimal 200 karakter, bahasa user.`;
+Balas HANYA JSON satu baris: {"note": string|null, "scope": "user"|"project"}, note maksimal 200 karakter, bahasa user.`;
 
-/** Ekstrak hasil final dari stream (kembalikan done — usage ikut ter-meter aux). */
+/** Ekstrak hasil final dari stream (kembalikan done, usage ikut ter-meter aux). */
 async function completeText(provider: ProviderAdapter, model: string, messages: InternalMessage[]) {
   let text = "";
   const done = await provider.chatStream({ model, messages, tools: [] }, (c) => {
@@ -89,8 +89,8 @@ export async function runLearnNudge(args: LearnNudgeArgs): Promise<LearnNudgeRes
       { role: "user", content: `Persona: ${args.personaName}\n\nTranskrip:\n${compactTranscript(args.transcript)}` },
     ]);
     raw = done.text;
-    // P1-INF-3/CRED: aux call ter-meter — token/latensi/model aux jujur di ledger
-    // (provider tak melapor usage = tak tercatat — kebijakan sama seperti loop utama).
+    // P1-INF-3/CRED: aux call ter-meter, token/latensi/model aux jujur di ledger
+    // (provider tak melapor usage = tak tercatat, kebijakan sama seperti loop utama).
     if (args.recordUsage && done.usage) {
       args.recordUsage({
         sessionId: args.sessionId, projectId: null, personaId: args.personaId, model,

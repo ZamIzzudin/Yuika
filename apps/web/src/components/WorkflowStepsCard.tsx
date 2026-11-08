@@ -29,7 +29,15 @@ interface RunSummary {
 interface RunDetail {
   id: string;
   leadSessionId: string;
-  workflow: { name: string; phases: Array<{ id: string; name?: string; mode?: string; steps?: Array<{ id?: string; persona: string }> }> };
+  workflow: {
+    name: string;
+    phases: Array<{
+      id: string;
+      name?: string;
+      mode?: string;
+      steps?: Array<{ id?: string; persona: string }>;
+    }>;
+  };
   status: string;
   phaseStates: PhaseState[];
 }
@@ -60,7 +68,9 @@ export function WorkflowStepsCard({ projectId }: { projectId: string }) {
       }
       if (ps.ok) {
         setRoster(
-          (((await ps.json()) as { personas: { id: string }[] }).personas ?? []).map((p) => p.id),
+          (
+            ((await ps.json()) as { personas: { id: string }[] }).personas ?? []
+          ).map((p) => p.id),
         );
       }
     } catch {
@@ -87,11 +97,14 @@ export function WorkflowStepsCard({ projectId }: { projectId: string }) {
         void load();
       }, 300);
     };
-    const es = new EventSource(apiUrl(`/api/sessions/${lead}/stream?since=0${authTokenQuery()}`));
+    const es = new EventSource(
+      apiUrl(`/api/sessions/${lead}/stream?since=0${authTokenQuery()}`),
+    );
     es.onmessage = (m) => {
       try {
         const e = JSON.parse(m.data) as { type: string; runId?: string };
-        if (e.type?.startsWith("workflow.") && (!e.runId || e.runId === id)) schedule();
+        if (e.type?.startsWith("workflow.") && (!e.runId || e.runId === id))
+          schedule();
       } catch {
         /* abaikan */
       }
@@ -106,9 +119,10 @@ export function WorkflowStepsCard({ projectId }: { projectId: string }) {
   }, [run?.id, run?.leadSessionId, load]);
 
   const steerable = run ? STEERABLE.includes(run.status) : false;
-  if (!run) return null; // tidak ada run aktif — seksi disembunyikan
+  if (!run) return null; // tidak ada run aktif, seksi disembunyikan
 
-  const phaseName = (pid: string) => run.workflow.phases.find((p) => p.id === pid)?.name ?? pid;
+  const phaseName = (pid: string) =>
+    run.workflow.phases.find((p) => p.id === pid)?.name ?? pid;
 
   async function reassign(phaseId: string, stepId: string, persona: string) {
     await authFetch(apiUrl(`/api/workflows/runs/${run!.id}/steps/reassign`), {
@@ -122,67 +136,80 @@ export function WorkflowStepsCard({ projectId }: { projectId: string }) {
   return (
     <div aria-label="Workflow steps assignment">
       <Card className="p-3">
-      <header className="mb-2 flex flex-wrap items-center gap-2">
-        <PersonaFace personaId="yui-conductor" size={18} />
-        <b className="text-caption font-semibold text-primary">Workflow steps</b>
-        <span className="text-caption text-dim">
-          {run.workflow.name} · {run.status.replace("_", " ")} — reassign pending steps below
-        </span>
-      </header>
-      <div className="flex flex-col gap-2">
-        {run.workflow.phases.map((phase) => {
-          const st = run.phaseStates.find((p) => p.phaseId === phase.id);
-          const steps =
-            st && st.steps.length
-              ? st.steps
-              : (phase.steps ?? []).map((ps) => ({
-                  id: ps.id ?? "",
-                  personaId: ps.persona,
-                  ok: null,
-                  summary: "",
-                }));
-          const pending = steps.filter((s) => s.ok === null);
-          if (!pending.length) return null; // hanya fase yang masih ada step bisa di-assign
-          return (
-            <div key={phase.id} data-phase={phase.id} className="flex flex-col gap-1">
-              <small className="text-[11px] font-semibold uppercase tracking-wide text-dim">
-                {phaseName(phase.id)}
-              </small>
-              {pending.map((s) => (
-                <div
-                  key={s.id}
-                  data-step={s.id}
-                  className="flex items-center gap-2 rounded-md2 border border-line bg-raised px-2 py-1.5"
-                >
-                  <PersonaFace personaId={s.personaId} size={18} />
-                  <span className="min-w-0 flex-1 truncate text-caption text-secondary" title={s.personaId}>
-                    <b className="font-semibold">{s.id}</b> · {s.personaId.replace("yui-", "")}
-                  </span>
-                  {steerable ? (
-                    <select
-                      className="shrink-0 rounded-md2 border border-line bg-control px-1 py-0.5 text-caption text-primary outline-none"
-                      value={s.personaId}
-                      aria-label={`Reassign ${s.id}`}
-                      onChange={(ev) => {
-                        if (ev.target.value !== s.personaId)
-                          void reassign(phase.id, s.id, ev.target.value);
-                      }}
+        <header className="mb-2 flex flex-wrap items-center gap-2">
+          <PersonaFace personaId="yui-conductor" size={18} />
+          <b className="text-caption font-semibold text-primary">
+            Workflow steps
+          </b>
+          <span className="text-caption text-dim">
+            {run.workflow.name} · {run.status.replace("_", " ")}, reassign
+            pending steps below
+          </span>
+        </header>
+        <div className="flex flex-col gap-2">
+          {run.workflow.phases.map((phase) => {
+            const st = run.phaseStates.find((p) => p.phaseId === phase.id);
+            const steps =
+              st && st.steps.length
+                ? st.steps
+                : (phase.steps ?? []).map((ps) => ({
+                    id: ps.id ?? "",
+                    personaId: ps.persona,
+                    ok: null,
+                    summary: "",
+                  }));
+            const pending = steps.filter((s) => s.ok === null);
+            if (!pending.length) return null; // hanya fase yang masih ada step bisa di-assign
+            return (
+              <div
+                key={phase.id}
+                data-phase={phase.id}
+                className="flex flex-col gap-1"
+              >
+                <small className="text-[11px] font-semibold uppercase tracking-wide text-dim">
+                  {phaseName(phase.id)}
+                </small>
+                {pending.map((s) => (
+                  <div
+                    key={s.id}
+                    data-step={s.id}
+                    className="flex items-center gap-2 rounded-md2 border border-line bg-raised px-2 py-1.5"
+                  >
+                    <PersonaFace personaId={s.personaId} size={18} />
+                    <span
+                      className="min-w-0 flex-1 truncate text-caption text-secondary"
+                      title={s.personaId}
                     >
-                      {roster.map((pid) => (
-                        <option key={pid} value={pid}>
-                          {pid.replace("yui-", "")}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <small className="shrink-0 text-[11px] text-dim">locked</small>
-                  )}
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
+                      <b className="font-semibold">{s.id}</b> ·{" "}
+                      {s.personaId.replace("yui-", "")}
+                    </span>
+                    {steerable ? (
+                      <select
+                        className="shrink-0 rounded-md2 border border-line bg-control px-1 py-0.5 text-caption text-primary outline-none"
+                        value={s.personaId}
+                        aria-label={`Reassign ${s.id}`}
+                        onChange={(ev) => {
+                          if (ev.target.value !== s.personaId)
+                            void reassign(phase.id, s.id, ev.target.value);
+                        }}
+                      >
+                        {roster.map((pid) => (
+                          <option key={pid} value={pid}>
+                            {pid.replace("yui-", "")}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <small className="shrink-0 text-[11px] text-dim">
+                        locked
+                      </small>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
       </Card>
     </div>
   );

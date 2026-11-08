@@ -1,4 +1,4 @@
-// Batch 7 (RS) — Research Engine public surface.
+// Batch 7 (RS), Research Engine public surface.
 export type { SearchResult, FetchedPage, SearchProvider, ResearchErrorKind } from "./types.js";
 export { ResearchError } from "./types.js";
 export { newResearchCache, SqliteResearchCache, type ResearchCache, type CacheKind } from "./cache.js";

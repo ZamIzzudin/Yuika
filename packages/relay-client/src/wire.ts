@@ -1,11 +1,11 @@
-// @yuika/relay-client — tipe wire SPEC-PROTOCOL v1 (FROZEN, mirror
-// docs/portal/SPEC-PROTOCOL.md §4). Jangan ubah shape — perubahan = proto bump.
+// @yuika/relay-client, tipe wire SPEC-PROTOCOL v1 (FROZEN, mirror
+// docs/portal/SPEC-PROTOCOL.md §4). Jangan ubah shape, perubahan = proto bump.
 // Field tak dikenal HARUS diabaikan penerima (forward-compat §2).
 
 export const PROTO = 1;
 export const MAX_FRAME = 262_144;
 
-/** bye fatal — SDK match berdasarkan code (string hanya untuk log) §4.7. */
+/** bye fatal, SDK match berdasarkan code (string hanya untuk log) §4.7. */
 export const ByeCode = {
   REPLACED: 4000,
   UNKNOWN_DEVICE: 4001,
@@ -21,7 +21,7 @@ export const ByeCode = {
   ACCOUNT_LIMIT: 4201,
 } as const;
 
-/** err soft (koneksi tetap) — v1 hanya host-offline. */
+/** err soft (koneksi tetap), v1 hanya host-offline. */
 export const ErrCode = { HOST_OFFLINE: 4104 } as const;
 
 export interface HostEntry {

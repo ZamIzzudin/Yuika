@@ -1,4 +1,4 @@
-// @yuika/api — entry (P0-INF-1): service API terpisah dari proses Next.js.
+// @yuika/api, entry (P0-INF-1): service API terpisah dari proses Next.js.
 // Boot: load .env root (env-boot) → Fastify + runtime singleton → listen.
 import { buildApp } from "./app.js";
 import { getRuntime } from "./runtime.js";
@@ -14,7 +14,7 @@ const host = process.env.YUI_API_HOST ?? "127.0.0.1";
 const app = buildApp();
 
 // SIGTERM/SIGINT: matikan runtime dengan sopan (server MCP stdio, sqlite WAL)
-// — tanpa ini proses anak MCP jadi zombie saat tsx watch restart.
+//, tanpa ini proses anak MCP jadi zombie saat tsx watch restart.
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {
     log.info({ sig }, "api shutting down");
@@ -37,13 +37,13 @@ app
       getRuntime();
       log.info("runtime siap");
       // P1-PRT-3: host portal auto-online saat API start (kalau sudah pernah
-      // pair) — host harus tetap bisa diremot walau tak ada tab web terbuka.
+      // pair), host harus tetap bisa diremot walau tak ada tab web terbuka.
       const linked = getHostDevice();
       if (linked) {
         getPortalHost()
           .start(getRuntime(), linked)
           .then(() => log.info({ deviceId: linked.deviceId }, "portal host online"))
-          .catch((e: unknown) => log.warn({ err: e }, "portal host gagal connect (relay down?) — akan terus retry"));
+          .catch((e: unknown) => log.warn({ err: e }, "portal host gagal connect (relay down?), akan terus retry"));
       }
       // CP-5: web presence (device hasil auto-link SSO) ikut online saat boot.
       const web = getWebDevice();
@@ -51,10 +51,10 @@ app
         getWebPresence()
           .start(web)
           .then(() => log.info({ deviceId: web.deviceId }, "web presence online"))
-          .catch((e: unknown) => log.warn({ err: e }, "web presence gagal connect — retry berikutnya saat login/boot"));
+          .catch((e: unknown) => log.warn({ err: e }, "web presence gagal connect, retry berikutnya saat login/boot"));
       }
     } catch (e) {
-      log.error({ err: e }, "runtime gagal init — env belum lengkap? (lihat .env.example)");
+      log.error({ err: e }, "runtime gagal init, env belum lengkap? (lihat .env.example)");
       process.exit(1);
     }
   })

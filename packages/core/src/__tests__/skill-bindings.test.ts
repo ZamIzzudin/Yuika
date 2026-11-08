@@ -1,5 +1,5 @@
 // Mapping manual skill → persona (menu Dungeon, feedback user dev-10):
-// effective = (bundled ∪ attached ∪ global) \ detached — dipakai index prompt
+// effective = (bundled ∪ attached ∪ global) \ detached, dipakai index prompt
 // sesi baru; detach bisa melepas bawaan; attach membatalkan detach.
 import { describe, expect, it } from "vitest";
 import { effectiveSkillNames, applyBindingAction, loadSkillBindings, saveSkillBindings } from "../skills/bindings.js";

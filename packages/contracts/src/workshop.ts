@@ -1,4 +1,4 @@
-// P2-WKS — Workshop persisten per project (D24, Batch 13).
+// P2-WKS, Workshop persisten per project (D24, Batch 13).
 // Workshop = kelas eksekusi KEDUA (selain sandbox disposable): container yang
 // MENETAP (volume /home/yui persist, tidur/bangun, egress allowlist) sebagai
 // rumah kerja persona. Milik PROJECT (1 project = ≤1 workshop).
@@ -8,7 +8,7 @@ export const WorkshopState = z.enum([
   "absent", // belum pernah dibuat (atau di-destroy)
   "starting", // transisi create/start
   "running", // container hidup
-  "asleep", // docker stop — volume utuh, bangun cepat
+  "asleep", // docker stop, volume utuh, bangun cepat
   "stopped", // dihentikan eksplisit user (tidak auto-wake)
   "error",
 ]);
@@ -24,7 +24,7 @@ export const WorkshopInfo = z.object({
   createdAt: z.number().int(),
   lastWakeAt: z.number().int().nullable(),
   lastSleepAt: z.number().int().nullable(),
-  /** Total waktu hidup terakumulasi (ms) — metering uptime (WKS-5). */
+  /** Total waktu hidup terakumulasi (ms), metering uptime (WKS-5). */
   uptimeMs: z.number().int(),
   /** Allowlist egress yang DIPAKAI workshop ini (workshop.json). */
   egressAllow: z.array(z.string()),
@@ -46,13 +46,13 @@ export const WorkshopLogItem = z.object({
 });
 export type WorkshopLogItem = z.infer<typeof WorkshopLogItem>;
 
-/** `.yuika/workshop.json` di root project — konfigurasi allowlist egress. */
+/** `.yuika/workshop.json` di root project, konfigurasi allowlist egress. */
 export const WorkshopConfig = z.object({
   egressAllow: z.array(z.string().min(3).max(200)).max(64).default([]),
 });
 export type WorkshopConfig = z.infer<typeof WorkshopConfig>;
 
-/** Default egress (WKS-2): toolchain npm + GitHub — cukup untuk install &
+/** Default egress (WKS-2): toolchain npm + GitHub, cukup untuk install &
  * clone; domain lain ditambah via UI/konfigurasi (kartu persetujuan ringan). */
 export const WORKSHOP_DEFAULT_EGRESS = [
   "registry.npmjs.org",

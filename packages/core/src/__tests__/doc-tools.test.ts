@@ -1,4 +1,4 @@
-// dev-10: doc_read — scribe membaca dokumen user (xlsx → CSV, teks langsung,
+// dev-10: doc_read, scribe membaca dokumen user (xlsx → CSV, teks langsung,
 // pdf via unpdf). PDF fixture minimal dibuat manual (Helvetica, satu baris).
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";
@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 function pdfFixture(text: string): Buffer {
-  // PDF minimal valid — objek font Helvetica + content stream Tj
+  // PDF minimal valid, objek font Helvetica + content stream Tj
   const stream = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`;
   const objs = [
     "<< /Type /Catalog /Pages 2 0 R >>",
@@ -49,7 +49,7 @@ describe("doc_read (dev-10)", () => {
     const XLSX = await import("xlsx");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Bulan", "Omzet"], ["Jan", 150]]), "Ringkasan");
-    // xlsx ≥0.19 ESM tidak lagi auto-bind fs — tulis via buffer (API yang dipakai prod: read(buffer)).
+    // xlsx ≥0.19 ESM tidak lagi auto-bind fs, tulis via buffer (API yang dipakai prod: read(buffer)).
     fs.writeFileSync(path.join(dir, "laporan.xlsx"), XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
 
     const x = await registry.dispatch("doc_read", { path: "laporan.xlsx" }, ctx());

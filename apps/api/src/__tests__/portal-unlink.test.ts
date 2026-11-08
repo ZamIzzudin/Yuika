@@ -1,11 +1,11 @@
-// CP-5 — unlink device dari portal: relay putus semua conn device itu dgn
+// CP-5, unlink device dari portal: relay putus semua conn device itu dgn
 // bye 4001 (UNKNOWN_DEVICE) → sisi Yuika harus bereaksi permanen:
 //   - HOST device  : worker berhenti, row host_device dihapus, status note
 //                    "unlinked" (UI menampilkan "pairing ulang", bukan error
 //                    jaringan generik).
 //   - WEB device   : presence berhenti, row web_device dihapus, SEMUA sesi
 //                    web milik portal account itu dicabut (login berikutnya
-//                    auto-link ulang via deviceToken — CP-4).
+//                    auto-link ulang via deviceToken, CP-4).
 // Pakai SpecRelay (packages/relay-client/src/testing.ts) + hook unlink().
 import fs from "node:fs";
 import os from "node:os";
@@ -80,7 +80,7 @@ afterAll(async () => {
   fs.rmSync(TMP, { recursive: true, force: true });
 });
 
-describe("CP-5 — host device di-unlink (bye 4001)", () => {
+describe("CP-5, host device di-unlink (bye 4001)", () => {
   it("worker berhenti, row host_device terhapus, status note=unlinked", async () => {
     const rec = { ...record(hostKeys, "desktop"), relayUrl: relay.url() };
     saveHostDevice(rec);
@@ -96,7 +96,7 @@ describe("CP-5 — host device di-unlink (bye 4001)", () => {
   });
 });
 
-describe("CP-5 — web device di-unlink (bye 4001)", () => {
+describe("CP-5, web device di-unlink (bye 4001)", () => {
   it("presence berhenti, row web_device terhapus, sesi web dicabut", async () => {
     // sesi web milik portal account (ibarat hasil SSO CP-4)
     const user = findOrCreatePortalUser(ACC, "unlink@yuika.test");
@@ -116,7 +116,7 @@ describe("CP-5 — web device di-unlink (bye 4001)", () => {
   });
 });
 
-describe("CP-5 — guard: 4001 di auth PERTAMA bukan unlink", () => {
+describe("CP-5, guard: 4001 di auth PERTAMA bukan unlink", () => {
   it("relay tak mengenal device → presence stop diam: row & sesi UTUH", async () => {
     // device #2: ada row + sesi, tapi TIDAK terdaftar di registry relay
     const user = findOrCreatePortalUser(ACC, "unlink@yuika.test");

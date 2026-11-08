@@ -1,8 +1,8 @@
-// P1 fix 2026-11 — MCP cold start:
+// P1 fix 2026-11, MCP cold start:
 // 1. connectTimeoutMs (default 150s) diteruskan ke handshake initialize + listTools
 //    awal → server `uvx`/`npx` yang mengunduh paket tak lagi -32001 di 60s.
 // 2. Handshake gagal → transport DITUTUP: proses anak benar-benar mati (bukan
-//    zombie) — dibuktikan lewat pidfile + probe `kill(pid, 0)` yang portabel
+//    zombie), dibuktikan lewat pidfile + probe `kill(pid, 0)` yang portabel
 //    (Windows: TerminateProcess tak menjalankan handler sinyal → tak bisa pakai marker).
 import { describe, expect, it } from "vitest";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -32,7 +32,7 @@ async function waitFor(predicate: () => boolean, ms = 5_000): Promise<boolean> {
 
 describe("MCP cold-start timeout (fix -32001)", () => {
   it("initialize lambat < connectTimeoutMs → connect tetap sukses", async () => {
-    // server menjawab initialize setelah 700ms — timeout longgar 5s harus lolos
+    // server menjawab initialize setelah 700ms, timeout longgar 5s harus lolos
     const conn = await connectMcpServer(
       "slow-ok",
       { command: process.execPath, args: [fixture, "700"] },

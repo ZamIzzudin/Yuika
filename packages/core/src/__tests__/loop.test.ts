@@ -1,4 +1,4 @@
-// W1-A3 (TASKS.md): loop vs fake provider — stream, final, append-only, error path.
+// W1-A3 (TASKS.md): loop vs fake provider, stream, final, append-only, error path.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -260,7 +260,7 @@ describe("AgentLoop (fake provider)", () => {
 describe("P0-CORE-4 aux routing: kompresi pakai model murah", () => {
   it("summary call pergi ke auxModel (bukan model utama) + checkpoint merekam model aux", async () => {
     resetRegistryForTests();
-    // ~50 pesan × 10k chars ≈ 125k token — melampaui ambang default 70%×128k.
+    // ~50 pesan × 10k chars ≈ 125k token, melampaui ambang default 70%×128k.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-aux-"));
     const store = new SessionStore(path.join(dir, "t.db"));
     const sid = "s_aux1";

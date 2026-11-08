@@ -1,4 +1,4 @@
-// P1-DEL-3: pause/resume anak delegasi — anak berhenti di BATAS ITERASI (tanpa
+// P1-DEL-3: pause/resume anak delegasi, anak berhenti di BATAS ITERASI (tanpa
 // memanggil provider) sampai resume; abort saat pause tetap graceful
 // (job interrupted, bukan error); arahan steer yang datang saat pause
 // ter-delain begitu resume (antrean tak hilang).
@@ -103,7 +103,7 @@ describe("P1-DEL-3 pause/resume anak", () => {
     // iterasi 1 (tool round) berjalan → pause SEBELUM iterasi 2 mulai.
     c.pause();
     await waitFor(() => parentEvents.some((e) => e.type === "delegation.paused"));
-    await new Promise((r) => setTimeout(r, 120)); // beri waktu — iterasi 2 TIDAK boleh jalan
+    await new Promise((r) => setTimeout(r, 120)); // beri waktu, iterasi 2 TIDAK boleh jalan
     expect(provider.calls).toBe(1);
     expect(map.size).toBe(1); // masih aktif (ter-pause ≠ selesai)
 
@@ -111,7 +111,7 @@ describe("P1-DEL-3 pause/resume anak", () => {
     const summary = await handle.summary;
     expect(summary).toContain("selesai setelah resume");
     // iter 1 (pra-pause) + iter 2 (pasca-resume); call ke-3 = learn nudge
-    // pasca-turn (fire-and-forget, P1-MEM-2) — boleh ikut tercatat.
+    // pasca-turn (fire-and-forget, P1-MEM-2), boleh ikut tercatat.
     expect(provider.calls).toBeGreaterThanOrEqual(2);
     // event audit parent: paused → resumed → done (urut)
     const types = parentEvents.map((e) => e.type);
@@ -134,7 +134,7 @@ describe("P1-DEL-3 pause/resume anak", () => {
     const c = map.get(handle.childSessionId)!;
     c.pause();
     await waitFor(() => parentEvents.some((e) => e.type === "delegation.paused"));
-    c.abort.abort(); // cancel saat ter-pause — gate harus terbangunkan, bukan menggantung
+    c.abort.abort(); // cancel saat ter-pause, gate harus terbangunkan, bukan menggantung
 
     const summary = await handle.summary;
     expect(summary).toContain("dibatalkan");
@@ -166,7 +166,7 @@ describe("P1-DEL-3 pause/resume anak", () => {
 
     await handle.summary;
     const childMsgs = JSON.stringify(store.getMessages(handle.childSessionId));
-    expect(childMsgs).toContain("[arahan user — mid-turn] prioritaskan ringkasan");
+    expect(childMsgs).toContain("[arahan user, mid-turn] prioritaskan ringkasan");
     const steered = parentEvents.find((e) => e.type === "delegation.steered");
     expect(steered && steered.type === "delegation.steered" && steered.text.includes("prioritaskan")).toBe(true);
   });

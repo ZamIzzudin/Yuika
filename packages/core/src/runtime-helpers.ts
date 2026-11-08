@@ -1,4 +1,4 @@
-// @yuika/core — runtime helpers (dipakai runtime.ts & delegation/runner.ts).
+// @yuika/core, runtime helpers (dipakai runtime.ts & delegation/runner.ts).
 import type { Persona } from "./personas/loader.js";
 import { listSkills } from "./skills/loader.js";
 import { buildSystemPrompt } from "./prompt/builder.js";

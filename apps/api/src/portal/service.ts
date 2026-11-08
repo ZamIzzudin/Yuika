@@ -1,5 +1,5 @@
-// @yuika/api — P1-PRT-3: portal host worker.
-// Memegang koneksi relay sebagai HOST (proses apps/api — bukan browser):
+// @yuika/api, P1-PRT-3: portal host worker.
+// Memegang koneksi relay sebagai HOST (proses apps/api, bukan browser):
 // host online tanpa tab terbuka; Tauri nanti memakai kode yang sama.
 //
 // RemoteAction → runtime (re-use jalur yang dipakai route web, CONTRACTS §5):
@@ -23,7 +23,7 @@ import { clearHostDevice } from "./store.js";
 import { getScreenState, listScreens, subscribeScreen } from "./screen-bridge.js";
 import type { HostDeviceRecord } from "./store.js";
 
-const RING_CAP = 500; // event terakhir per sesi — resume delta subscribe{sinceSeq}
+const RING_CAP = 500; // event terakhir per sesi, resume delta subscribe{sinceSeq}
 const SNAPSHOT_MSGS = 50;
 
 /** SCR-7: interval pump frame remote-watch (default 1000ms = 1fps;
@@ -34,7 +34,7 @@ function remoteScreenPumpMs(): number {
 /** Muat aman di bawah MAX_FRAME wire (262 144 B) setelah seal + JSON. */
 const REMOTE_FRAME_MAX = 200_000;
 
-/** Satu remote menonton satu screen (v0 — ganti = unsubscribe lama otomatis). */
+/** Satu remote menonton satu screen (v0, ganti = unsubscribe lama otomatis). */
 interface ScreenWatch {
   key: string;
   latest: { data: string; width: number; height: number; ts: number } | null;
@@ -50,7 +50,7 @@ export interface PortalStatus {
   relayUrl: string | null;
   relayState: "offline" | "connecting" | "authed" | "closed";
   remotes: Array<{ deviceId: string; kind: string; name: string }>;
-  /** CP-5: alasan terakhir worker berhenti — "unlinked" = device dihapus
+  /** CP-5: alasan terakhir worker berhenti, "unlinked" = device dihapus
    *  dari portal (bye 4001), BUKAN error jaringan; UI mengarahkan pairing ulang. */
   note?: "unlinked";
 }
@@ -80,7 +80,7 @@ function project(e: YuiEvent, seq: number): RemoteEvent[] {
     case "approval.requested":
       return [{
         proto: 1, ev: "approval.request", sessionId: e.sessionId, approvalId: e.requestId,
-        title: e.tool, summary: `${e.reason} — ${JSON.stringify(e.args).slice(0, 140)}`,
+        title: e.tool, summary: `${e.reason}, ${JSON.stringify(e.args).slice(0, 140)}`,
         risk: riskOf(e.tool),
       }];
     case "approval.resolved":
@@ -98,7 +98,7 @@ function project(e: YuiEvent, seq: number): RemoteEvent[] {
     case "delegation.resumed":
       return [{ proto: 1, ev: "delegation.update", sessionId: e.sessionId, jobId: e.childSessionId, state: "progress" }];
     default:
-      return []; // reasoning.delta, tool.*, memory.noted, persona.state, … — v0 dilewati
+      return []; // reasoning.delta, tool.*, memory.noted, persona.state, …, v0 dilewati
   }
 }
 
@@ -115,7 +115,7 @@ export class PortalHostService {
   private known = new Set<string>(); // session id yang pernah divalidasi/dibuat
   private unsubAll: (() => void) | null = null;
   private introSent = new Set<string>();
-  /** CP-5: bye 4001 terakhir (untuk note status — jaring ≠ unlinked). */
+  /** CP-5: bye 4001 terakhir (untuk note status, jaring ≠ unlinked). */
   private unlinkedAt = 0;
 
   get running(): boolean {
@@ -124,10 +124,10 @@ export class PortalHostService {
 
   /** CP-5: bye 4001 (UNKNOWN_DEVICE) = device di-unlink dari portal →
    *  permanen: hentikan loop, hapus row host_device (pairing ulang),
-   *  status menampilkan "unlinked" — bukan error jaringan generik. */
+   *  status menampilkan "unlinked", bukan error jaringan generik. */
   private onHostBye(code: number, error: string): void {
     if (code !== ByeCode.UNKNOWN_DEVICE) return;
-    console.warn(`[portal-host] device di-unlink dari portal (bye 4001: ${error}) — berhenti, pairing ulang diperlukan`);
+    console.warn(`[portal-host] device di-unlink dari portal (bye 4001: ${error}), berhenti, pairing ulang diperlukan`);
     this.unlinkedAt = Date.now();
     void this.stop();
     clearHostDevice();
@@ -283,7 +283,7 @@ export class PortalHostService {
           }
         }
         this.track(from.deviceId, sid);
-        // snapshot duluan (id asli + transcript) — lalu turn jalan (fire-and-forget
+        // snapshot duluan (id asli + transcript), lalu turn jalan (fire-and-forget
         // seperti POST /api/sessions/:id/message).
         await this.sendSnapshot(from.deviceId, sid, action.rid);
         void rt.runTurn(sid, action.message).catch((e: unknown) =>
@@ -325,7 +325,7 @@ export class PortalHostService {
       case "watch_screen":
         return void this.startWatch(from, action.key, action.rid);
       case "unwatch_screen": {
-        // key dari watch aktif (contract unwatch tak bawa key — v0 satu watch per remote)
+        // key dari watch aktif (contract unwatch tak bawa key, v0 satu watch per remote)
         const key = this.screenWatches.get(from.deviceId)?.key ?? null;
         this.stopWatch(from.deviceId);
         // ack ber-rid (aturan CONTRACTS §1): state TERAKHIR screen yang ditinggalkan.

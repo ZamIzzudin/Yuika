@@ -1,5 +1,5 @@
-// @yuika/core — MCP client (DEMO): stdio via SDK resmi, register tools ke registry.
-// DEMO-SHORTCUT: tanpa health check / reconnect / park / sandbox per-tenant / trust gate —
+// @yuika/core, MCP client (DEMO): stdio via SDK resmi, register tools ke registry.
+// DEMO-SHORTCUT: tanpa health check / reconnect / park / sandbox per-tenant / trust gate,
 // semuanya P1 (TASKS.md §MCP). Jangan pernah resolve tool MCP di import-time.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -45,9 +45,9 @@ export async function connectMcpServer(
     onCall?: (info: McpCallInfo) => void;
     onDown?: (reason: string) => void;
     /** P1-MCP-6: server menambah/menghapus tool (notifikasi tools/list_changed).
-     *  Dipanggil SETELAH re-register selesai — runtime memperbarui status/allowlist. */
+     *  Dipanggil SETELAH re-register selesai, runtime memperbarui status/allowlist. */
     onToolsChanged?: (info: { toolNames: string[]; added: string[]; removed: string[] }) => void;
-    /** Timeout handshake connect + listTools awal. Default 150 dtk — cold start
+    /** Timeout handshake connect + listTools awal. Default 150 dtk, cold start
      *  `uvx`/`npx` mengunduh paket pertama kali (PyPI/npm bisa lambat); timeout
      *  SDK default 60 dtk terlalu ketat → -32001 "Request timed out". */
     connectTimeoutMs?: number;
@@ -65,13 +65,13 @@ export async function connectMcpServer(
   const connectTimeoutMs = opts.connectTimeoutMs ?? 150_000;
   const client = new Client({ name: "yuika", version: "0.1.0" }, { capabilities: {} });
   // Server Python (uvx): bila uvx tak di PATH (mis. baru di-install via UI dan
-  // PATH proses belum menyegarkan), pakai path absolut — tanpa restart server.
+  // PATH proses belum menyegarkan), pakai path absolut, tanpa restart server.
   let command = cfg.command;
   if (command === "uvx") {
     command = (await findUvx()) ?? "uvx"; // biarkan ENOENT natural bila tak ada
   }
 
-  // P1-MCP-4 — MCP worker per-tenant di sandbox: server stdio dibungkus
+  // P1-MCP-4, MCP worker per-tenant di sandbox: server stdio dibungkus
   // `docker run -i` (container terisolasi: caps drop, network default-deny,
   // egress allowlist opsional) alih-alih spawn bare di host.
   let dockerArgv: string[] | null = null;
@@ -90,10 +90,10 @@ export async function connectMcpServer(
       dockerArgv = sb.sandboxArgv(name, command, cfg.args ?? [], opts.workspacePath, { egress, mountMode: "ro", interactive: true }, proxyPort);
     } else if (forced) {
       throw new Error(
-        `MCP server '${serverName}' menuntut sandbox (sandbox: true) tapi Docker tidak tersedia — YUI_SANDBOX gagal fail-closed`,
+        `MCP server '${serverName}' menuntut sandbox (sandbox: true) tapi Docker tidak tersedia, YUI_SANDBOX gagal fail-closed`,
       );
     } else {
-      opts.onDown?.("sandbox diminta tapi Docker tak tersedia — fallback stdio host (sandbox:auto)");
+      opts.onDown?.("sandbox diminta tapi Docker tak tersedia, fallback stdio host (sandbox:auto)");
     }
   }
 
@@ -115,12 +115,12 @@ export async function connectMcpServer(
     throw err;
   }
   // P0-MCP-1: proses server mati / crash → beri tahu runtime (reconnect backoff).
-  // onclose juga terpicu saat penutupan disengaja — runtime memfilter lewat flag.
+  // onclose juga terpicu saat penutupan disengaja, runtime memfilter lewat flag.
   transport.onclose = () => opts.onDown?.("transport closed");
   transport.onerror = (e) => opts.onDown?.(e instanceof Error ? e.message : String(e));
 
   // P1-MCP-6: server mengubah daftar tool (mis. dev tambah tool tanpa restart)
-  // → re-fetch + re-register otomatis — TIDAK perlu restart app.
+  // → re-fetch + re-register otomatis, TIDAK perlu restart app.
   client.setNotificationHandler(ToolListChangedNotificationSchema, () => {
     void syncTools().then((r) => {
       if (r.added.length || r.removed.length) opts.onToolsChanged?.(r);
@@ -141,7 +141,7 @@ export async function connectMcpServer(
       registry.register({
         name: fullName,
       description: `[MCP:${serverName}] ${t.description ?? t.name}`,
-      // P0-MCP-2: schema NYATA dari server (JSON Schema `t.inputSchema`) — provider
+      // P0-MCP-2: schema NYATA dari server (JSON Schema `t.inputSchema`), provider
       // & validasi dispatch memakai bentuk asli (bukan passthrough kosong). Provider
       // jadi tahu parameter tool MCP → tool-call lebih akurat.
       parameters: (t.inputSchema && typeof t.inputSchema === "object" && Object.keys(t.inputSchema).length > 0
@@ -189,7 +189,7 @@ export async function connectMcpServer(
     return { toolNames: [...fresh], added, removed };
   }
 
-  await syncTools(); // initial sync — snapshot awal untuk return
+  await syncTools(); // initial sync, snapshot awal untuk return
   const initial = [...current];
   return {
     close: () => client.close(),
@@ -210,7 +210,7 @@ export async function connectMcpFromConfig(
   for (const [name, cfg] of Object.entries(config.mcpServers)) {
     const entry = opts.trust?.servers.find((s) => s.server === name);
     if (!entry?.trusted) {
-      log(`MCP server '${name}' SKIPPED — belum di-trust workspace ini (fail-closed, P1-MCP-3)`);
+      log(`MCP server '${name}' SKIPPED, belum di-trust workspace ini (fail-closed, P1-MCP-3)`);
       continue;
     }
     try {

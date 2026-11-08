@@ -1,5 +1,5 @@
-// @yuika/core — todo tools (P1-PRJ-4): tasklist per project dilihat/dikelola agent.
-// Hanya jalan untuk sesi yang melekat ke project (P1-PRJ-2) — sesi workspace global
+// @yuika/core, todo tools (P1-PRJ-4): tasklist per project dilihat/dikelola agent.
+// Hanya jalan untuk sesi yang melekat ke project (P1-PRJ-2), sesi workspace global
 // mendapat error informatif. Status machine: todo → doing → review → done.
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -12,9 +12,9 @@ const listSchema = z.object({});
 const addSchema = z.object({
   title: z.string().min(1).max(140).describe("judul task, imperatif & spesifik"),
   assignee: z.string().nullish().describe("persona id assignee (mis. yui-coder), opsional"),
-  // P2-PM-3: detail first-class — Planner mengisi saat generate task list
+  // P2-PM-3: detail first-class, Planner mengisi saat generate task list
   description: z.string().max(2_000).nullish().describe("deskripsi lengkap apa & mengapa (beda dari judul)"),
-  acceptance: z.array(z.string().min(3).max(500)).max(20).optional().describe("acceptance criteria — kalimat terverifikasi-able"),
+  acceptance: z.array(z.string().min(3).max(500)).max(20).optional().describe("acceptance criteria, kalimat terverifikasi-able"),
   dependsOn: z.array(z.string()).max(50).optional().describe("id task yang harus selesai dulu (DAG)"),
   estimate: z.string().max(24).nullish().describe("estimasi kasar, mis. \"2d\" / \"4h\""),
   phase: z.enum(WORKFLOW_PHASES).nullish().describe("fase workflow yang di-cover task ini"),
@@ -25,7 +25,7 @@ const updateSchema = z.object({
   status: TaskStatus.optional().describe("todo | doing | review | done"),
   assignee: z.string().nullable().optional(),
   addRefs: z.array(z.string()).optional().describe("referensi artefak (path/job id) untuk ditambahkan"),
-  // P2-PM-3: detail — replace-semantik
+  // P2-PM-3: detail, replace-semantik
   description: z.string().max(2_000).nullable().optional(),
   acceptance: z.array(z.string().min(3).max(500)).max(20).optional(),
   dependsOn: z.array(z.string()).max(50).optional(),
@@ -38,7 +38,7 @@ export function registerTodoTools(deps: { sessionStore: ISessionStore; projects:
   function projectIdOf(sessionId: string): string {
     const session = deps.sessionStore.getSession(sessionId);
     const pid = session?.projectId ?? null;
-    if (!pid) throw new Error("sesi ini tidak melekat ke project — tasklist hanya tersedia di sesi project");
+    if (!pid) throw new Error("sesi ini tidak melekat ke project, tasklist hanya tersedia di sesi project");
     return pid;
   }
 

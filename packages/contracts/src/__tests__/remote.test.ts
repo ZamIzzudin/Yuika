@@ -1,4 +1,4 @@
-// P1-PRT-2 — verifikasi kontrak remote: contoh wire CONTRACTS §4 valid,
+// P1-PRT-2, verifikasi kontrak remote: contoh wire CONTRACTS §4 valid,
 // act/ev tak dikenal ditolak (host membalas error unknown_action), field
 // opsional (rid session.snapshot, sinceSeq subscribe, reason reject).
 import { describe, expect, it } from "vitest";

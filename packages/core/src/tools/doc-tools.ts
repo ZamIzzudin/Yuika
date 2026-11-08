@@ -1,4 +1,4 @@
-// @yuika/core — doc_read (dev-10, scribe = persona dokumen): baca & terjemahkan
+// @yuika/core, doc_read (dev-10, scribe = persona dokumen): baca & terjemahkan
 // file yang di-upload user ke teks yang bisa dipahami agent.
 // Dukungan: teks (md/txt/csv/json/html/xml), PDF (unpdf), Excel (xlsx/xls → CSV
 // per sheet). File lain (mis. docx) → pesan jelas, bukan error mentah.
@@ -44,13 +44,13 @@ export function registerDocTools(): void {
   registry.register({
     name: "doc_read",
     description:
-      "Baca file dokumen user (PDF/Excel/CSV/teks) dari workspace — khususnya folder uploads/ — dan kembalikan isinya sebagai teks untuk dipahami/dirangkum/diterjemahkan. Untuk PDF/Excel hasilnya ekstraksi teks; file biner lain ditolak dengan pesan jelas.",
+      "Baca file dokumen user (PDF/Excel/CSV/teks) dari workspace, khususnya folder uploads/, dan kembalikan isinya sebagai teks untuk dipahami/dirangkum/diterjemahkan. Untuk PDF/Excel hasilnya ekstraksi teks; file biner lain ditolak dengan pesan jelas.",
     parameters: schema,
     handler: async (args, ctx) => {
       const p = safeResolve(ctx.workspacePath, args.path);
       const st = await fs.stat(p);
       if (st.size > MAX_BYTES) {
-        return { result: { error: `file terlalu besar (${Math.round(st.size / 1024 / 1024)} MB > 10 MB) — minta user versi lebih kecil` }, isError: true };
+        return { result: { error: `file terlalu besar (${Math.round(st.size / 1024 / 1024)} MB > 10 MB), minta user versi lebih kecil` }, isError: true };
       }
       const ext = path.extname(args.path).toLowerCase();
       const buf = await fs.readFile(p);
@@ -61,7 +61,7 @@ export function registerDocTools(): void {
         else if (ext === ".xlsx" || ext === ".xls") text = await xlsxToCsv(buf, args.sheet);
         else
           return {
-            result: { error: `format .${ext.slice(1) || "?"} belum didukung doc_read (dukung: pdf, xlsx/xls, csv, md, txt, json, html) — minta user ekspor ke salah satu format itu` },
+            result: { error: `format .${ext.slice(1) || "?"} belum didukung doc_read (dukung: pdf, xlsx/xls, csv, md, txt, json, html), minta user ekspor ke salah satu format itu` },
             isError: true,
           };
       } catch (e) {
@@ -75,7 +75,7 @@ export function registerDocTools(): void {
           totalChars: text.length,
           nextOffset: truncated ? args.maxChars : null,
           content: truncated ? text.slice(0, args.maxChars) : text,
-          note: truncated ? "terpotong — bila perlu lanjutan, minta offset (v1) atau minta bagian spesifik" : undefined,
+          note: truncated ? "terpotong, bila perlu lanjutan, minta offset (v1) atau minta bagian spesifik" : undefined,
         },
       };
     },

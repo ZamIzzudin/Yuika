@@ -3,7 +3,7 @@ import type { PersonaState } from "@yuika/contracts";
 import { OrinPortrait } from "./OrinPortrait";
 
 /**
- * Portrait persona — Orin v8 (rig geometris SVG — FINAL; Rive dibatalkan
+ * Portrait persona, Orin v8 (rig geometris SVG, FINAL; Rive dibatalkan
  * 2026-11, runtime-nya dicabut bersih). compact = wajah kecil header chat;
  * hero = empty state (pola agent-chat-empty OpenBot).
  */

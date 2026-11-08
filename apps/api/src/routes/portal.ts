@@ -1,11 +1,11 @@
-// @yuika/api — P1-PRT-3/4: route portal.
+// @yuika/api, P1-PRT-3/4: route portal.
 // - POST /api/portal/pair   : host menukar pairing token portal → device keys
 //   dibuat DI PROSES INI (private tak pernah keluar), claim REST portal,
 //   simpan lokal (portal-device.db), start host worker relay.
 // - GET  /api/portal/status : status link + relay + daftar remote (badge UI).
 // - DELETE /api/portal/unlink: berhenti + hapus kredensial LOKAL (device masih
-//   terdaftar di portal — unlink di sana via halaman Devices).
-// - POST /api/remote-dev/claim: PROXY claim untuk halaman /dev/remote —
+//   terdaftar di portal, unlink di sana via halaman Devices).
+// - POST /api/remote-dev/claim: PROXY claim untuk halaman /dev/remote,
 //   kunci dibuat di BROWSER (remote = device sendiri); API hanya meneruskan
 //   public keys (menghindari CORS portal; portal tetap tak melihat private).
 import type { FastifyInstance } from "fastify";
@@ -85,7 +85,7 @@ export function registerPortalRoutes(app: FastifyInstance, getRt: () => import("
   app.get("/api/portal/status", async () => {
     const svc = getPortalHost();
     const st = svc.status();
-    // CP-4: device web auto-link (SSO) — presence di portal, terpisah dari host.
+    // CP-4: device web auto-link (SSO), presence di portal, terpisah dari host.
     const web = getWebDevice();
     const pres = getWebPresence().status();
     const webDevice = web

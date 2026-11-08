@@ -1,10 +1,10 @@
-// DS-1 — komponen global: Button.
+// DS-1, komponen global: Button.
 // SATU sumber tombol untuk seluruh app. Jangan tulis <button> mentah di fitur
 // baru (docs/DESIGN-SYSTEM.md §Button). Variant:
 //   primary   aksi utama satu per layar (Kirim, Simpan, Jalankan)
 //   secondary aksi pendamping di samping primary (default bila ragu)
 //   ghost     aksi sunyi di dalam kartu/bar (tanpa border)
-//   danger    destruktif (hapus, tolak) — konfirmasi tetap tanggung jawab pemanggil
+//   danger    destruktif (hapus, tolak), konfirmasi tetap tanggung jawab pemanggil
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -39,21 +39,36 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?: ReactNode;
 }
 
-export function Button({ variant = "secondary", size = "md", active, className = "", children, ...rest }: ButtonProps) {
+export function Button({
+  variant = "secondary",
+  size = "md",
+  active,
+  className = "",
+  children,
+  ...rest
+}: ButtonProps) {
   const on =
     active && (variant === "secondary" || variant === "ghost")
       ? " border-accent text-accent bg-accent-soft"
       : "";
   return (
-    <button className={`${BASE} ${VARIANTS[variant]} ${SIZES[size]}${on} ${className}`} {...rest}>
+    <button
+      className={`${BASE} ${VARIANTS[variant]} ${SIZES[size]}${on} ${className}`}
+      {...rest}
+    >
       {children}
     </button>
   );
 }
 
 /** Kelas tombol untuk elemen non-<button> (link, dsb). */
-export function buttonClass(opts: { variant?: ButtonVariant; size?: ButtonSize; active?: boolean } = {}) {
+export function buttonClass(
+  opts: { variant?: ButtonVariant; size?: ButtonSize; active?: boolean } = {},
+) {
   const v = opts.variant ?? "secondary";
-  const on = opts.active && (v === "secondary" || v === "ghost") ? " border-accent text-accent bg-accent-soft" : "";
+  const on =
+    opts.active && (v === "secondary" || v === "ghost")
+      ? " border-accent text-accent bg-accent-soft"
+      : "";
   return `${BASE} ${VARIANTS[v]} ${SIZES[opts.size ?? "md"]}${on}`;
 }

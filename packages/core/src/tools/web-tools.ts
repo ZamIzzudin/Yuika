@@ -1,7 +1,7 @@
-// @yuika/core — web tools (Batch 7 · Research Engine):
-//  · web_search — provider chain (wikipedia/github/hn/stackex/docsites/news/market/
+// @yuika/core, web tools (Batch 7 · Research Engine):
+//  · web_search, provider chain (wikipedia/github/hn/stackex/docsites/news/market/
 //    social + searxng/ddg fallback); hasil parsial + daftar provider gagal.
-//  · web_fetch  — pipeline riset: SSRF/policy guard (browser/reader) + robots +
+//  · web_fetch , pipeline riset: SSRF/policy guard (browser/reader) + robots +
 //    throttle domain + Readability→markdown; cache + budget per sesi.
 // P2-STU-4 tetap: fetch agent tercatat di riwayat tab Browser project.
 import { z } from "zod";
@@ -23,11 +23,11 @@ const fetchSchema = z.object({
   maxChars: z.number().int().positive().max(20_000).default(8_000),
 });
 
-/** Pesan tool ENGLISH (dibaca agent) — kode error tetap machine-readable. */
+/** Pesan tool ENGLISH (dibaca agent), kode error tetap machine-readable. */
 function friendlyError(e: ResearchError): string {
   switch (e.code) {
     case "host_denied":
-      return `Blocked by project browser policy: ${e.message} — ask the owner to allow the domain (Browser tab policy file)`;
+      return `Blocked by project browser policy: ${e.message}, ask the owner to allow the domain (Browser tab policy file)`;
     case "private_blocked":
       return `Blocked by SSRF guard: ${e.message}`;
     case "robots_denied":
@@ -58,7 +58,7 @@ export function registerWebTools(deps?: {
         return { result: { results: [], errors: [], note: "research disabled by operator (YUI_RESEARCH_OFF)" } };
       }
       // Watchdog (bug nyata 2026-11): await internal tanpa deadline (DNS, stream)
-      // bisa menggantung turn selamanya — tool WAJIB selalu balik.
+      // bisa menggantung turn selamanya, tool WAJIB selalu balik.
       const outcome = await withTimeout(
         researchSearch(args.query, {
           limit: args.limit,
@@ -77,7 +77,7 @@ export function registerWebTools(deps?: {
           errors: outcome.errors,
           cached: outcome.cached,
           note: outcome.errors.length
-            ? "partial results — failed providers listed in errors; refine the query instead of retrying the same one"
+            ? "partial results, failed providers listed in errors; refine the query instead of retrying the same one"
             : undefined,
         },
       };
@@ -95,7 +95,7 @@ export function registerWebTools(deps?: {
       }
       try {
         // Watchdog: pipeline punya timeout per-hop 20 dtk, tapi DNS/redirect/stream
-        // bisa bocor — jamin tool selalu menyelesaikan turn.
+        // bisa bocor, jamin tool selalu menyelesaikan turn.
         const outcome = await withTimeout(
           researchFetch(args.url, {
             policy: researchPolicyFor(ctx.workspacePath),

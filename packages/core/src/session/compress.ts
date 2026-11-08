@@ -1,7 +1,7 @@
-// @yuika/core — kompresi konteks v0 (P0-CORE-4).
+// @yuika/core, kompresi konteks v0 (P0-CORE-4).
 // Saat estimasi token prompt mendekati jendela model (>70%), history LAMA
 // diringkas aux model menjadi CHECKPOINT. Invariant append-only DIJAGA:
-// tabel messages tidak pernah diubah — checkpoint adalah lapisan VIEW:
+// tabel messages tidak pernah diubah, checkpoint adalah lapisan VIEW:
 // prompt = system + ringkasan checkpoint + messages setelah batas potong.
 //
 // Fail-soft by design: aux call gagal → turn jalan apa adanya (tanpa kompresi),
@@ -56,9 +56,9 @@ export interface SlimOptions {
 
 export const DEFAULT_SLIM: SlimOptions = { keepRecent: 8, maxToolChars: 2_500 };
 
-/** Diet prompt (fix dev-10: "task sederhana 30 menit" — prompt membengkak
+/** Diet prompt (fix dev-10: "task sederhana 30 menit", prompt membengkak
  *  4.7k→3 0k token karena isi file terkirim ulang tiap iterasi): di VIEW
- *  (tabel messages tak pernah diubah), payload tool LAMA diarsipkan —
+ *  (tabel messages tak pernah diubah), payload tool LAMA diarsipkan,
  *  hasil read_file panjang → potong head+tail; args write_file (isi file)
  *  → placeholder. Pesan terbaru selalu utuh; model bisa re-read bila butuh.
  *  Sama seperti kompresi: langkah ini FAIL-SAFE & view-only. */
@@ -72,7 +72,7 @@ export function slimHistory(view: InternalMessage[], opts: SlimOptions = DEFAULT
     if (m.role === "tool" && typeof m.content === "string" && m.content.length > opts.maxToolChars) {
       const head = m.content.slice(0, 400);
       const tail = m.content.slice(-200);
-      const repl = `${head}\n…[arsip ${m.content.length} chars — read_file/search_files bila butuh detail]…\n${tail}`;
+      const repl = `${head}\n…[arsip ${m.content.length} chars, read_file/search_files bila butuh detail]…\n${tail}`;
       archivedChars += m.content.length - repl.length;
       return { ...m, content: repl };
     }
@@ -85,7 +85,7 @@ export function slimHistory(view: InternalMessage[], opts: SlimOptions = DEFAULT
           changed = true;
           archivedChars += s.length;
           const p = typeof args.path === "string" ? args.path : "?";
-          return { ...c, args: { ...args, content: `[arsip: isi file ${p} (${s.length} chars) sudah ditulis ke workspace — read_file bila perlu]` } };
+          return { ...c, args: { ...args, content: `[arsip: isi file ${p} (${s.length} chars) sudah ditulis ke workspace, read_file bila perlu]` } };
         }
         return c;
       });
@@ -103,7 +103,7 @@ export async function buildContextMessages(
   model: string,
   sessionId: string,
   opts: CompressOptions = DEFAULT_COMPRESS,
-  /** Metering aux call (hanya bila provider mengembalikan usage — tanpa estimasi). */
+  /** Metering aux call (hanya bila provider mengembalikan usage, tanpa estimasi). */
   recordAuxUsage?: (u: { inputTokens: number; outputTokens: number; latencyMs: number }) => void,
 ): Promise<CompressResult> {
   const all = store.getMessagesWithSeq(sessionId);
@@ -114,7 +114,7 @@ export async function buildContextMessages(
     if (checkpoint) {
       out.push({
         role: "user",
-        content: `[ringkasan sesi sebelumnya — konteks dikompresi otomatis]\n${checkpoint.summary}`,
+        content: `[ringkasan sesi sebelumnya, konteks dikompresi otomatis]\n${checkpoint.summary}`,
       });
       out.push({
         role: "assistant",
@@ -129,7 +129,7 @@ export async function buildContextMessages(
   const budget = Math.floor(opts.contextTokens * opts.threshold);
   const before = estimateTokens(current);
 
-  // Diet prompt SELALU jalan (view-only) — payload tool lama diarsipkan
+  // Diet prompt SELALU jalan (view-only), payload tool lama diarsipkan
   // sebelum keputusan kompresi; ini yang meredam pertumbuhan prompt tiap
   // iterasi walau jendela konteks masih jauh.
   const slimmed = slimHistory(current);
@@ -172,12 +172,12 @@ export async function buildContextMessages(
       recordAuxUsage({ inputTokens: res.usage.inputTokens ?? 0, outputTokens: res.usage.outputTokens ?? 0, latencyMs: Date.now() - tAux });
     }
   } catch {
-    // Fail-soft: tanpa kompresi — jangan ganggu turn user.
+    // Fail-soft: tanpa kompresi, jangan ganggu turn user.
     return { messages: current, compressed: false, messagesSummarized: 0, estTokensBefore: before, estTokensAfter: estimateTokens(current), archivedChars: slimmed.archivedChars };
   }
 
   store.saveContextCheckpoint(sessionId, toSummarize[toSummarize.length - 1]!.seq, summary, model);
-  checkpoint = store.latestContextCheckpoint(sessionId); // refresh — closure view() membaca variable ini
+  checkpoint = store.latestContextCheckpoint(sessionId); // refresh, closure view() membaca variable ini
   const post = slimHistory(view()); // rebuild dari checkpoint baru + diet ulang
   current = post.messages;
   const after = estimateTokens(current);

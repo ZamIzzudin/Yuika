@@ -1,7 +1,7 @@
-// @yuika/core — tool registry (pola registry Hermes §4.2)
+// @yuika/core, tool registry (pola registry Hermes §4.2)
 // register() → dispatch() dengan validasi zod + gerbang approval. Semua tool return JSON.
 // P0-MCP-2: parameters boleh zod schema ATAU JSON Schema mentah (dari server MCP
-// `t.inputSchema`) — validasi JSON Schema via ajv (compile sekali, di-cache).
+// `t.inputSchema`), validasi JSON Schema via ajv (compile sekali, di-cache).
 import { z } from "zod";
 import Ajv, { type ValidateFunction } from "ajv";
 import type { EventDraft } from "@yuika/contracts";
@@ -10,7 +10,7 @@ export interface ToolContext {
   sessionId: string;
   turnId: string;
   workspacePath: string;
-  /** P2-VLT: persona/project pemanggil — utk scope visibility vault (D27).
+  /** P2-VLT: persona/project pemanggil, utk scope visibility vault (D27).
    *  Opsional (tool lama tak peduli; test bisa omit). */
   personaId?: string;
   projectId?: string | null;
@@ -26,7 +26,7 @@ export interface ToolResult {
 export interface ToolDefinition {
   name: string;
   description: string;
-  /** zod schema (tool internal) ATAU JSON Schema object (tool MCP — P0-MCP-2). */
+  /** zod schema (tool internal) ATAU JSON Schema object (tool MCP, P0-MCP-2). */
   parameters: z.ZodTypeAny | Record<string, unknown>;
   handler: (args: any, ctx: ToolContext) => Promise<ToolResult>;
   /** Return alasan (string) bila panggilan ini butuh approval manusia; null = langsung jalan. */
@@ -36,7 +36,7 @@ export interface ToolDefinition {
 const tools = new Map<string, ToolDefinition>();
 const isZod = (p: ToolDefinition["parameters"]): p is z.ZodTypeAny => typeof (p as z.ZodTypeAny).safeParse === "function";
 
-/** P0-MCP-2: validator ajv per tool (compile sekali — dispatch panas tidak re-compile). */
+/** P0-MCP-2: validator ajv per tool (compile sekali, dispatch panas tidak re-compile). */
 const ajv = new Ajv({ allErrors: true, strict: false });
 const ajvCache = new Map<string, ValidateFunction>();
 function jsonSchemaValidator(name: string, schema: Record<string, unknown>): ValidateFunction {
@@ -51,7 +51,7 @@ function jsonSchemaValidator(name: string, schema: Record<string, unknown>): Val
 /**
  * Normalisasi JSON Schema untuk kompatibilitas provider OpenAI-compatible.
  * zodToJsonSchema memancarkan `exclusiveMinimum/Maximum: true|false` (bentuk boolean
- * draft-04) — sebagian provider (mis. GLM, kode error 1210) memvalidasi draft 2020-12
+ * draft-04), sebagian provider (mis. GLM, kode error 1210) memvalidasi draft 2020-12
  * yang mensyaratkan bentuk angka. Konversi: boolean true → ambil nilai minimum/maximum,
  * lalu hapus field aslinya; false → hapus (tidak bermakna di draft baru).
  */
@@ -63,7 +63,7 @@ export function normalizeToolSchema(node: unknown): unknown {
   for (const [k, v] of Object.entries(n)) {
     if (k === "exclusiveMinimum") {
       if (v === true) out.exclusiveMinimum = n.minimum; // draft-04 boolean → angka
-      else if (v !== false) out[k] = v; // bentuk angka (draft-7/2020-12, output zod v4) — pertahankan
+      else if (v !== false) out[k] = v; // bentuk angka (draft-7/2020-12, output zod v4), pertahankan
     } else if (k === "exclusiveMaximum") {
       if (v === true) out.exclusiveMaximum = n.maximum;
       else if (v !== false) out[k] = v;
@@ -101,7 +101,7 @@ export const registry = {
         name: t.name,
         description: t.description,
         parameters: normalizeToolSchema(
-          // zod v4: konversi native (drop dep zod-to-json-schema) — target
+          // zod v4: konversi native (drop dep zod-to-json-schema), target
           // draft-7: exclusiveMinimum angka (bukan boolean draft-04) langsung
           // ramah provider; normalizeToolSchema tetap jaring-pengaman utk JSON
           // Schema mentah dari server MCP (bisa draft-04).
@@ -113,7 +113,7 @@ export const registry = {
     const def = tools.get(name);
     if (!def) return { result: { error: `unknown tool: ${name}` }, isError: true };
 
-    // P0-MCP-2: dua jalur validasi — zod (tool internal) atau ajv (JSON Schema MCP).
+    // P0-MCP-2: dua jalur validasi, zod (tool internal) atau ajv (JSON Schema MCP).
     let args: Record<string, unknown>;
     if (isZod(def.parameters)) {
       const parsed = def.parameters.safeParse(rawArgs ?? {});
@@ -145,7 +145,7 @@ export const registry = {
     try {
       return await def.handler(args, ctx);
     } catch (err) {
-      // Error handler TIDAK pernah dilempar ke loop — selalu JSON terstruktur.
+      // Error handler TIDAK pernah dilempar ke loop, selalu JSON terstruktur.
       return { result: { error: err instanceof Error ? err.message : String(err) }, isError: true };
     }
   },

@@ -1,6 +1,6 @@
-// @yuika/core — P0-SEC-1: sandbox container untuk run_command.
+// @yuika/core, P0-SEC-1: sandbox container untuk run_command.
 // Eksekusi `node` berjalan di container Docker SEKALI-PAKAI dengan:
-//   - network default-deny (`--network none` — egress diblokir total)
+//   - network default-deny (`--network none`, egress diblokir total)
 //   - resource cap (memory / cpus / pids-limit)
 //   - rootfs read-only; hanya /workspace (mount rw) + tmpfs /tmp yang bisa ditulis
 //   - cap-drop ALL + no-new-privileges
@@ -8,9 +8,9 @@
 // Workspace proyek di-mount → hasil file yang ditulis agent TERLIHAT di host.
 //
 // Mode (env YUI_SANDBOX, tervalidasi env.ts):
-//   auto  — docker bila tersedia; kalau tidak → fallback eksekusi lokal + peringatan
+//   auto , docker bila tersedia; kalau tidak → fallback eksekusi lokal + peringatan
 //   docker— fail-closed: tanpa Docker → error jelas (untuk deployment server)
-//   off   — selalu eksekusi lokal (dev tanpa Docker Desktop)
+//   off  , selalu eksekusi lokal (dev tanpa Docker Desktop)
 import { execFile, spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import path from "node:path";
 import { moduleLogger } from "../logger.js";
@@ -24,15 +24,15 @@ export interface SandboxOptions {
   tmpfsSize: string;
   timeoutMs: number;
   killGraceMs: number;
-  /** P1-MCP-4: allowlist egress — non-empty = network ON via allowlist proxy
+  /** P1-MCP-4: allowlist egress, non-empty = network ON via allowlist proxy
    * (host-side); kosong = default-deny `--network none` (perilaku lama). */
   egress?: string[];
-  /** mode mount workspace: rw (default) | ro (MCP worker — server baca
+  /** mode mount workspace: rw (default) | ro (MCP worker, server baca
    * workspace, tak menulis). */
   mountMode?: "rw" | "ro";
-  /** sisipkan `-i` (stdin terbuka) — MCP worker stdio / terminal. */
+  /** sisipkan `-i` (stdin terbuka), MCP worker stdio / terminal. */
   interactive?: boolean;
-  /** P2-VLT-3: env proses anak (nilai vault sudah di-resolve backend-side) —
+  /** P2-VLT-3: env proses anak (nilai vault sudah di-resolve backend-side),
    *  dioper sbg `-e KEY=VAL`. */
   env?: NodeJS.ProcessEnv;
 }
@@ -52,7 +52,7 @@ export interface SandboxResult {
   stdout: string;
   stderr: string;
   timedOut: boolean;
-  /** mode efektif eksekusi ini — masuk konteks agent agar transparan */
+  /** mode efektif eksekusi ini, masuk konteks agent agar transparan */
   note?: string;
 }
 
@@ -62,7 +62,7 @@ export function readSandboxMode(): SandboxMode {
   return (process.env.YUI_SANDBOX as SandboxMode) || "auto";
 }
 
-/** Cek Docker daemon hidup (`docker info`) — di-cache per proses: dipanggil di
+/** Cek Docker daemon hidup (`docker info`), di-cache per proses: dipanggil di
  *  setiap tool call, jangan bayar 200ms tiap kali. */
 let dockerProbe: Promise<boolean> | null = null;
 export function dockerAvailable(probe = false): Promise<boolean> {
@@ -81,7 +81,7 @@ function mountPath(ws: string): string {
   return path.resolve(ws).replace(/\\/g, "/");
 }
 
-/** Bangun argv `docker run` — diekspor untuk test kontrak flag (tanpa spawn).
+/** Bangun argv `docker run`, diekspor untuk test kontrak flag (tanpa spawn).
  * `proxyPort` terisi = mode egress (lihat runInSandbox: proxy di host). */
 export function sandboxArgv(
   name: string,
@@ -102,7 +102,7 @@ export function sandboxArgv(
     ...(o.interactive ? ["-i"] : []),
     "--rm",
     "--name", name,
-    // default-deny egress: TIDAK ada network di dalam container — KECUALI
+    // default-deny egress: TIDAK ada network di dalam container, KECUALI
     // mode egress (P1-MCP-4): network nyala tapi SEMUA trafik dipaksa lewat
     // allowlist proxy di host (lihat tools/egress.ts).
     ...(egress ? ["--add-host", "host.docker.internal:host-gateway"] : ["--network", "none"]),
@@ -113,12 +113,12 @@ export function sandboxArgv(
     // least privilege
     "--cap-drop", "ALL",
     "--security-opt", "no-new-privileges",
-    // rootfs read-only — hanya workspace & tmpfs yang bisa ditulis
+    // rootfs read-only, hanya workspace & tmpfs yang bisa ditulis
     "--read-only",
     "--tmpfs", `/tmp:rw,size=${o.tmpfsSize},noexec`,
     "-v", `${mountPath(workspacePath)}:/workspace:${o.mountMode === "ro" ? "ro" : "rw"}`,
     "-w", "/workspace",
-    // HOME read-only-safe: rootfs RO (hanya /workspace & /tmp writable) —
+    // HOME read-only-safe: rootfs RO (hanya /workspace & /tmp writable),
     // npm/node menulis cache+log ke HOME → arahkan ke tmpfs; tanpa ini
     // `npm install/init` gagal EACCES diam-diam di rootfs RO.
     "-e", "HOME=/tmp",
@@ -144,7 +144,7 @@ export function sandboxArgv(
 }
 
 /** Jalankan perintah di container sekali-pakai. Timeout → docker kill (grace)
- *  lalu resolve `timedOut: true` — tidak pernah menggantung pemanggil. */
+ *  lalu resolve `timedOut: true`, tidak pernah menggantung pemanggil. */
 export async function runInSandbox(
   cmd: string,
   args: string[],
@@ -173,7 +173,7 @@ export async function runInSandbox(
     let stderr = "";
     let timedOut = false;
     let settled = false;
-    const cap = 1_000_000; // 1 MB — sama dengan legacy execFile
+    const cap = 1_000_000; // 1 MB, sama dengan legacy execFile
 
     const child = spawn("docker", argv, { windowsHide: true });
     const timer = setTimeout(() => {
@@ -207,8 +207,8 @@ export async function runInSandbox(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // P1-MCP-4 / P2-STU-2: sesi container PERSISTEN (bukan sekali-pakai).
-// Dipakai untuk: (a) MCP worker — server stdio jalan DI DALAM container,
-// stdin/stdout di-pipe ke StdioClientTransport; (b) Terminal tab — shell
+// Dipakai untuk: (a) MCP worker, server stdio jalan DI DALAM container,
+// stdin/stdout di-pipe ke StdioClientTransport; (b) Terminal tab, shell
 // hidup lama, user & agent menulis ke stdin yang sama.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -218,7 +218,7 @@ export interface SandboxSession {
   write(data: string): void;
   /** langganan stdout+stderr gabungan (chunk mentah) */
   onData(cb: (chunk: string) => void): () => void;
-  /** callback exit (code / null saat kill) — sekali saja */
+  /** callback exit (code / null saat kill), sekali saja */
   onExit(cb: (code: number | null) => void): void;
   /** docker kill + tunggu proses CLI selesai (grace killGraceMs) */
   kill(): Promise<void>;
@@ -230,7 +230,7 @@ export interface SandboxSessionOptions extends Partial<SandboxOptions> {
   autoRemove?: boolean;
 }
 
-/** Spawn container interaktif `-i` (stdin terbuka, TANPA `-t` — pipe murni
+/** Spawn container interaktif `-i` (stdin terbuka, TANPA `-t`, pipe murni
  * supaya output tidak tercampur escape sequence PTY). */
 export async function startSandboxSession(
   cmd: string,
@@ -245,10 +245,10 @@ export async function startSandboxSession(
     ...opts,
   };
   const name = `yui-ses-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  // FIX (13d): sesi interaktif WAJIB `-i` — tanpa itu sh membaca EOF dan
+  // FIX (13d): sesi interaktif WAJIB `-i`, tanpa itu sh membaca EOF dan
   // mati instan (exit 0, tanpa output): terminal selalu "exited".
   const base = sandboxArgv(name, cmd, args, workspacePath, { ...opts, interactive: true, timeoutMs: 0 }, undefined);
-  // sesi: tanpa --rm eksplisit di argv (sandboxArgv sudah --rm) — keep; kill
+  // sesi: tanpa --rm eksplisit di argv (sandboxArgv sudah --rm), keep; kill
   // pakai `docker kill` sehingga container pasti bersih.
   let proxyPort: number | undefined;
   if ((opts.egress?.length ?? 0) > 0) {

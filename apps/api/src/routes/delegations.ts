@@ -1,4 +1,4 @@
-// @yuika/api — kontrol anak delegasi (P0-DEL-2 steer/cancel + P1-DEL-3 pause/resume).
+// @yuika/api, kontrol anak delegasi (P0-DEL-2 steer/cancel + P1-DEL-3 pause/resume).
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { YuiRuntime } from "@yuika/core";
@@ -11,13 +11,13 @@ const Body = z.discriminatedUnion("action", [
 ]);
 
 export function registerDelegationRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
-  /** POST /api/delegations/:id — kontrol anak delegasi dari UI parent.
+  /** POST /api/delegations/:id, kontrol anak delegasi dari UI parent.
    *  id = childSessionId. 404 bila anak sudah selesai (tak terdaftar). */
   app.post("/api/delegations/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
     const parsed = Body.safeParse(req.body ?? {});
     if (!parsed.success) {
-      return reply.code(400).send({ error: "invalid body — use {action:'cancel'|'steer'|'pause'|'resume'} (+text for steer)" });
+      return reply.code(400).send({ error: "invalid body, use {action:'cancel'|'steer'|'pause'|'resume'} (+text for steer)" });
     }
     const rt = getRt();
     const ok =

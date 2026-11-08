@@ -1,4 +1,4 @@
-// P0-MCP-2: tool MCP memakai JSON Schema ASLI dari server (t.inputSchema) —
+// P0-MCP-2: tool MCP memakai JSON Schema ASLI dari server (t.inputSchema),
 // bukan passthrough kosong. Validasi dispatch via ajv (compile-cache);
 // toolSchemas meneruskan schema asli ke provider.
 import { describe, expect, it, beforeEach } from "vitest";

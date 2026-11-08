@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a) — Wikipedia search API (resmi, gratis, tanpa key). id + en paralel.
+// Batch 7 (RS-1a), Wikipedia search API (resmi, gratis, tanpa key). id + en paralel.
 import type { SearchProvider, SearchResult } from "../types.js";
 import { htmlToPlain, httpJson } from "../util.js";
 

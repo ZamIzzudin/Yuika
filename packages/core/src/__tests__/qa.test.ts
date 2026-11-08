@@ -1,4 +1,4 @@
-// SCR-6 (Batch 14b) — QA watch: Sherlock menonton live screen persona lain.
+// SCR-6 (Batch 14b), QA watch: Sherlock menonton live screen persona lain.
 // Browser ASLI (skipIf tak ada executable). Yang diuji:
 //  - qa_watch → state target (watchers naik), read-only tanpa lease
 //  - qa_snapshot → snapshot sesi TARGET (title page target terbaca)
@@ -32,7 +32,7 @@ beforeEach(() => {
 afterEach(async () => {
   vi.unstubAllEnvs();
   await closeAllScreens();
-  // best-effort: profil Edge bisa masih dikunci sesaat di Windows (EPERM) —
+  // best-effort: profil Edge bisa masih dikunci sesaat di Windows (EPERM),
   // dir tmp dibiarkan bila belum lepas (pola screen.test, OS akan bersihkan).
   try {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -55,7 +55,7 @@ function ctx(personaId = WATCHER): ToolContext {
 
 describe.skipIf(!detectBrowserExec())("SCR-6 qa tools (real browser)", () => {
   it("qa_watch → watchers terlihat di state; qa_snapshot membaca page TARGET", async () => {
-    // driver (yui-coder) buka screen via jalur persona asli — sesi milik driver
+    // driver (yui-coder) buka screen via jalur persona asli, sesi milik driver
     await registry.dispatch("browser_open", { url: PAGE }, ctx(DRIVER));
     const driverKey = screenKey(PROJECT, DRIVER);
     await vi.waitFor(() => expect(getScreenState(driverKey)?.title).toBe("driver-at-work"), { timeout: 5_000 });
@@ -69,7 +69,7 @@ describe.skipIf(!detectBrowserExec())("SCR-6 qa tools (real browser)", () => {
     expect(w.state.watchers).toBeGreaterThanOrEqual(1);
     expect(getScreenState(driverKey)?.watchers).toBe(1);
 
-    // snapshot dari sesi driver — title target terbaca, tanpa lease sherlock
+    // snapshot dari sesi driver, title target terbaca, tanpa lease sherlock
     const snap = await registry.dispatch("qa_snapshot", { target: DRIVER }, ctx());
     expect(snap.isError).toBeFalsy();
     expect((snap.result as { title: string }).title).toBe("driver-at-work");
@@ -130,7 +130,7 @@ describe.skipIf(!detectBrowserExec())("SCR-6 qa tools (real browser)", () => {
     expect(res2.activeScreens).toEqual([]);
     expect(res2.hint).toContain("must open its browser first");
 
-    // stop idempoten pada sesi yang sudah mati — bukan error
+    // stop idempoten pada sesi yang sudah mati, bukan error
     const r3 = await registry.dispatch("qa_watch", { target: DRIVER, on: false }, ctx());
     expect(r3.isError).toBeFalsy();
   }, 30_000);

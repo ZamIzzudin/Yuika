@@ -1,5 +1,5 @@
-// @yuika/core — provider abstraction (D12: OpenAI-compatible dulu; adapter lain P1)
-// Invariant: SEMUA akses model lewat interface ini — tidak ada import OpenAI di loop.ts.
+// @yuika/core, provider abstraction (D12: OpenAI-compatible dulu; adapter lain P1)
+// Invariant: SEMUA akses model lewat interface ini, tidak ada import OpenAI di loop.ts.
 
 export interface ToolCallRequest {
   id: string;
@@ -7,7 +7,7 @@ export interface ToolCallRequest {
   args: Record<string, unknown>;
 }
 
-/** Format pesan internal — konvergen dari/ke format provider apa pun (pola Hermes §4.1). */
+/** Format pesan internal, konvergen dari/ke format provider apa pun (pola Hermes §4.1). */
 export interface InternalMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
@@ -18,7 +18,7 @@ export interface InternalMessage {
 export interface ToolSchema {
   name: string;
   description: string;
-  /** JSON Schema object (bukan zod) — bentuk yang dikirim ke provider. */
+  /** JSON Schema object (bukan zod), bentuk yang dikirim ke provider. */
   parameters: Record<string, unknown>;
 }
 

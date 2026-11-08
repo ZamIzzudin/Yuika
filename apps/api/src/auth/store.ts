@@ -1,11 +1,11 @@
-// @yuika/api — auth store (SQLite terpisah dari sesi). Portal-only (CP-3+):
-// - Kredensial TIDAK ada di sini — akun & signup hidup di yuika-portal;
+// @yuika/api, auth store (SQLite terpisah dari sesi). Portal-only (CP-3+):
+// - Kredensial TIDAK ada di sini, akun & signup hidup di yuika-portal;
 //   user lokal dibuat otomatis saat sign-in SSO pertama.
 // - Identitas user = portal_account_id (dari exchange code portal).
 // - Token sesi: random 32B (base64url) dikirim ke klien; di DB hanya SHA-256
 //   hash-nya (bocor DB ≠ token bisa dipakai). TTL 30 hari, expired dipurge.
 // - Mode terbuka: selama tabel users kosong, API terbuka (self-hosted solo
-//   ala Gitea) — user pertama lahir dari portal sign-in pertama, setelah itu
+//   ala Gitea), user pertama lahir dari portal sign-in pertama, setelah itu
 //   SEMUA route non-auth wajib Bearer token (lihat middleware di app.ts).
 // DB path: env YUI_AUTH_DB || <repo>/auth.db (tergitignore via *.db).
 import { createHash, randomBytes } from "node:crypto";
@@ -51,7 +51,7 @@ function open(): Database.Database {
       CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id);
     `);
     // CP-3 SSO: identitas user = portal_account_id (unique, nullable utk
-    // user lokal lama pra-migrasi — tak bisa login lagi, data tetap aman).
+    // user lokal lama pra-migrasi, tak bisa login lagi, data tetap aman).
     // password_hash dipertahankan hanya kompatibilitas skema lama; nilai
     // sentinel "!portal-only" tak pernah diverifikasi (login lokal dihapus).
     ensureColumn(d, "users", "portal_account_id", "portal_account_id TEXT");
@@ -61,7 +61,7 @@ function open(): Database.Database {
   return db;
 }
 
-/** Jumlah user terdaftar — 0 berarti mode terbuka (API terbuka). */
+/** Jumlah user terdaftar, 0 berarti mode terbuka (API terbuka). */
 export function authUserCount(): number {
   const row = open().prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number };
   return row.n;
@@ -99,7 +99,7 @@ export function deleteSession(token: string): void {
   open().prepare("DELETE FROM auth_sessions WHERE token_hash = ?").run(sha(token));
 }
 
-/** CP-5: sign-out SEMUA sesi milik satu portal account — dipakai saat
+/** CP-5: sign-out SEMUA sesi milik satu portal account, dipakai saat
  *  web device di-unlink dari portal (bye 4001): sesi web dicabut, login
  *  berikutnya auto-link ulang via deviceToken (CP-4). */
 export function signOutPortalAccount(portalAccountId: string): number {
@@ -114,7 +114,7 @@ export function signOutPortalAccount(portalAccountId: string): number {
 
 // ── CP-3 SSO: find-or-create user dari identitas portal ──────────────────
 
-/** Email sudah dipakai user milik akun portal LAIN — penolakan, bukan takeover. */
+/** Email sudah dipakai user milik akun portal LAIN, penolakan, bukan takeover. */
 export class PortalLinkConflictError extends Error {
   constructor(email: string) {
     super(`email ${email} already belongs to another portal account`);
@@ -122,7 +122,7 @@ export class PortalLinkConflictError extends Error {
 }
 
 /**
- * Login via portal (CP-3): identitas = portalAccountId — akun portal lain
+ * Login via portal (CP-3): identitas = portalAccountId, akun portal lain
  * dgn email sama DITOLAK (anti takeover; email portal unik per akun).
  * Pengecualian: user LAMA pra-portal (portal_account_id NULL, sisa migrasi)
  * dgn email sama → di-link sekali (portal menjamin kepemilikan email).
