@@ -127,6 +127,47 @@ describe("AgentLoop (fake provider)", () => {
     store.close();
   });
 
+  it("tool round dengan narasi antar tool: segmen teks baru dibuka dengan paragraf baru", async () => {
+    // Fix 2026-11 (user): teks antar tool round menumpuk tanpa jeda;
+    // delta "\n\n" wajib memisah segmen (round pertama TIDAK boleh
+    // berawalan separator).
+    resetRegistryForTests();
+    registry.register({
+      name: "echo_test",
+      description: "test",
+      parameters: z.object({ text: z.string() }),
+      handler: async (args: { text: string }) => ({ result: { echoed: args.text } }),
+    });
+    const provider = new FakeProvider([
+      {
+        deltas: ["Saya cek dulu."],
+        done: {
+          type: "done",
+          finishReason: "tool_calls",
+          text: "Saya cek dulu.",
+          toolCalls: [{ id: "c1", name: "echo_test", args: { text: "hai" } }],
+        },
+      },
+      {
+        deltas: ["Hasil OK, lanjut cari video."],
+        done: {
+          type: "done",
+          finishReason: "stop",
+          text: "Hasil OK, lanjut cari video.",
+          toolCalls: [],
+        },
+      },
+    ]);
+    const { events, loop, sessionId, store } = makeHarness(provider);
+    await loop.runTurn(sessionId, "tes separator");
+
+    const deltas = events
+      .filter((e): e is Extract<YuiEvent, { type: "message.delta" }> => e.type === "message.delta")
+      .map((e) => e.delta);
+    expect(deltas.join("")).toBe("Saya cek dulu.\n\nHasil OK, lanjut cari video.");
+    store.close();
+  });
+
   it("provider error → session.error (recoverable=false) + persona.state error, tanpa crash", async () => {
     resetRegistryForTests();
     const { store, events, loop, sessionId } = makeHarness(new FailingProvider());

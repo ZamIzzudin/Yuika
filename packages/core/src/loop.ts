@@ -193,8 +193,20 @@ export class AgentLoop {
       for (let ai = 0; ai < attempts.length; ai++) {
         try {
           const attemptModel = attempts[ai]!;
+          // Fix 2026-11 (user): segmen teks antar tool round menumpuk jadi
+          // satu blok tanpa jeda kalimat (sulit dibaca). Tiap segmen baru
+          // (setelah round tool / attempt fallback) dibuka dengan paragraf
+          // baru, jadi satu turn = paragraf-per-langkah; streaming & replay
+          // SSE sama-sama kena (UI event-sourced).
+          let segStarted = false;
           done = await provider.chatStream({ model: attemptModel, messages, tools, signal }, (chunk) => {
             if (chunk.type === "text_delta") {
+              if (!segStarted) {
+                segStarted = true;
+                if (streamedText.trim()) {
+                  emit({ type: "message.delta", turnId, delta: "\n\n" });
+                }
+              }
               streamedText += chunk.delta; // : simpan parsial untuk jalur cancel
               emit({ type: "message.delta", turnId, delta: chunk.delta });
             }
