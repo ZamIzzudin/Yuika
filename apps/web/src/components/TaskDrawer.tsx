@@ -405,7 +405,7 @@ function ProjectEditCard({
         </p>
       </header>
 
-      <Card variant="inset" className="p-4">
+      <Card className="p-4">
         <div className="flex items-start gap-3">
           <span
             aria-hidden
@@ -841,14 +841,6 @@ export function ProjectTabs({
                 aria-label="Project roster"
                 className="flex flex-col gap-4"
               >
-                <header className="flex flex-col gap-1">
-                  <b className="text-body font-semibold text-primary">Team</b>
-                  <p className="text-caption text-dim">
-                    Click a persona to add or remove them, the same playground
-                    as day one. MCP servers trusted on this host are available
-                    to every persona automatically.
-                  </p>
-                </header>
                 {/* D34: playground identik dgn "Build Your Team", tanpa
                     dropdown Start session (footer = ringkasan tim). */}
                 <TeamSetupView
@@ -871,113 +863,14 @@ export function ProjectTabs({
                   onUnassign={(pid) =>
                     void saveRoster(roster.filter((r) => r.personaId !== pid))
                   }
-                  title="Your Project Team"
+                  title="Rearrange Your Team"
                   footer={
                     <span className="text-caption text-dim" aria-live="polite">
-                      {roster.length} on the team · {done}/{tasks.length} tasks
-                      done
+                      {roster.length} on the team.
                     </span>
                   }
                 />
 
-                {/* Roles: edit peran persona dalam project ini (inline). */}
-                {roster.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <small className="text-caption font-semibold tracking-wide text-dim uppercase">
-                      Roles in this project
-                    </small>
-                    <ul className="flex flex-col gap-px rounded-lg2 border border-line bg-inset p-2">
-                      {roster.map((r) => {
-                        const p = personas.find((x) => x.id === r.personaId);
-                        const rd = readiness.find(
-                          (x) => x.personaId === r.personaId,
-                        );
-                        return (
-                          <li
-                            key={r.personaId}
-                            className="group flex items-center gap-3 rounded-md2 px-2 py-1.5 transition-colors hover:bg-hover"
-                          >
-                            {p ? (
-                              <PersonaFace personaId={p.id} size={26} />
-                            ) : (
-                              <span
-                                className="h-[26px] w-[26px] shrink-0 rounded-pill bg-surface"
-                                aria-hidden
-                              />
-                            )}
-                            <b className="w-[110px] shrink-0 truncate text-body font-semibold text-primary">
-                              {p?.name ?? r.personaId}
-                            </b>
-                            <TextInput
-                              key={r.personaId}
-                              defaultValue={r.role}
-                              maxLength={60}
-                              aria-label={`Role of ${p?.name ?? r.personaId} in this project`}
-                              className="h-7 w-full max-w-[280px]"
-                              onBlur={(e) => {
-                                const v = e.target.value.trim();
-                                if (!v || v === r.role) return;
-                                void saveRoster(
-                                  roster.map((x) =>
-                                    x.personaId === r.personaId
-                                      ? { ...x, role: v }
-                                      : x,
-                                  ),
-                                );
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") e.currentTarget.blur();
-                              }}
-                            />
-                            {r.phases.length > 0 && (
-                              <small className="shrink-0 text-caption text-muted">
-                                {r.phases.join(" · ")}
-                              </small>
-                            )}
-                            {rd?.phases
-                              .filter((ph) => ph.skills.length > 0 || !ph.ready)
-                              .map((ph) => (
-                                <small
-                                  key={ph.phase}
-                                  className={`flex shrink-0 items-center gap-0.5 text-caption ${ph.ready ? "text-success" : "text-danger"}`}
-                                  title={
-                                    ph.ready
-                                      ? `skills ready: ${ph.skills.join(", ")}`
-                                      : "no ready skills for this phase, train the persona in the Dungeon (Skill tab)"
-                                  }
-                                >
-                                  {ph.ready ? (
-                                    <Check
-                                      size={10}
-                                      weight="bold"
-                                      aria-hidden
-                                    />
-                                  ) : (
-                                    <X size={10} weight="bold" aria-hidden />
-                                  )}
-                                  {ph.phase}
-                                </small>
-                              ))}
-                            <button
-                              className="ml-auto flex shrink-0 cursor-pointer items-center justify-center rounded-md2 border border-transparent p-1 text-dim opacity-0 transition-opacity group-hover:opacity-100 hover:bg-hover hover:text-danger focus-visible:opacity-100"
-                              onClick={() =>
-                                void saveRoster(
-                                  roster.filter(
-                                    (x) => x.personaId !== r.personaId,
-                                  ),
-                                )
-                              }
-                              aria-label={`Remove ${p?.name ?? r.personaId} from roster`}
-                              disabled={busy}
-                            >
-                              <X size={12} aria-hidden />
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
               </section>
             )}
             {loaded && cfgMenu === "memory" && (
@@ -1016,7 +909,7 @@ export function ProjectTabs({
                 ].map((d) => {
                   const dirty = d.value !== d.base;
                   return (
-                    <Card key={d.scope} variant="inset" className="p-4">
+                    <Card key={d.scope} className="p-4">
                       <header className="flex flex-wrap items-center gap-2.5">
                         <span
                           aria-hidden
