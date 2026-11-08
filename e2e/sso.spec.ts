@@ -1,36 +1,53 @@
 // CP-3 SSO via portal, e2e browser penuh (double portal :3110):
-// mode terbuka → pill "Sign in" → portal /authorize (auto-accept) → balik
-// /auth/callback?code&state → sesi Yuika → badge email → sign out → gerbang
-// portal-only. afterAll wipe users → spec lain tetap mode terbuka.
+// mode terbuka → Settings → Account → "Sign in with Yuika Portal" → portal
+// /authorize (auto-accept) → /auth/callback?code&state → sesi Yuika → email
+// di panel Account → sign out → gerbang portal-only. afterAll wipe users →
+// spec lain tetap mode terbuka. (D37: pill sidebar diganti Settings → Account.)
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
 const API = "http://127.0.0.1:3291";
 
-test("SSO, pill sign-in → authorize (auto-accept) → callback → login → sign out → gerbang portal-only", async ({
+/** Buka Settings → Account, kembalikan dialog untuk assertion. */
+async function openAccount(page: import("@playwright/test").Page) {
+  await page.getByRole("button", { name: "Settings" }).click();
+  const dlg = page.getByRole("dialog", { name: "Settings" });
+  await expect(dlg).toBeVisible();
+  await dlg.getByRole("button", { name: "Account" }).click();
+  await expect(dlg.getByText("Your Yuika Portal session")).toBeVisible();
+  return dlg;
+}
+
+test("SSO, Settings→Account sign-in → authorize (auto-accept) → callback → login → sign out → gerbang portal-only", async ({
   page,
 }) => {
   test.setTimeout(90_000);
 
-  // 1) Mode terbuka: app terpakai tanpa login; pill portal ada.
+  // 1) Mode terbuka: app terpakai tanpa login; Settings → Account menawarkan
+  //    sign-in portal.
   await page.goto("/");
   await expect(page.getByRole("button", { name: "New project" })).toBeVisible({
     timeout: 30_000,
   });
-  const pill = page.getByRole("button", { name: "Sign in", exact: true });
-  await expect(pill).toBeVisible();
+  const dlg = await openAccount(page);
+  const signIn = dlg.getByRole("button", {
+    name: "Sign in with Yuika Portal",
+  });
 
   // 2) Klik → double portal /authorize (auto-accept) → 302 balik callback.
-  await pill.click();
+  await signIn.click();
   // Callback menyelesaikan exchange (PKCE) lalu kembali ke workspace.
   await expect(page.getByRole("button", { name: "New project" })).toBeVisible({
     timeout: 30_000,
   });
 
-  // 3) Sesi Yuika aktif: badge email portal (dari /api/auth/me).
-  await expect(page.getByTitle("Sign out")).toContainText(
-    "e2e-portal@yuika.test",
-    { timeout: 15_000 },
-  );
+  // 3) Sesi Yuika aktif: email portal (dari /api/auth/me) di panel Account.
+  const dlg2 = await openAccount(page);
+  await expect(dlg2.getByText("e2e-portal@yuika.test")).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(dlg2.getByTitle("Sign out")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dlg2).toBeHidden();
 
   // 4) Token Yuika valid untuk route ber-auth: /api/auth/me.
   const me = await page.evaluate(async () => {
@@ -59,7 +76,8 @@ test("SSO, pill sign-in → authorize (auto-accept) → callback → login → s
 
   // 5) Sign out → kini ada user terdaftar → gerbang portal-only (tanpa form
   //    email/password; hanya tombol portal + hint akun di portal).
-  await page.getByTitle("Sign out").click();
+  const dlg3 = await openAccount(page);
+  await dlg3.getByTitle("Sign out").click();
   const gate = page.getByLabel("Sign in to Yuika");
   await expect(gate).toBeVisible({ timeout: 15_000 });
   await expect(

@@ -1,19 +1,19 @@
 "use client";
-import { apiUrl, authFetch } from "@/lib/api";
+import { apiUrl, authFetch, clearAuthToken } from "@/lib/api";
 // Settings modal (feedback user sesi dev 9): menu khusus untuk hal yang tidak muat
 // di sidebar, seksi: Provider & Model (API key/base URL/model, swap panas),
 // MCP (katalog + trust + audit, dulunya sesak di dasar sidebar), + metering.
 // DS-1: ui/* + Tailwind semantik + ikon Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
-import type { ProviderSettings } from "@yuika/contracts";
-import { Check, Prohibit, Warning, X } from "@phosphor-icons/react";
+import type { AuthStatusT, ProviderSettings } from "@yuika/contracts";
+import { Check, Globe, Prohibit, SignOut, UserCircle, Warning, X } from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
 import { PortalSettings } from "./PortalSettings";
 import { Skeleton } from "./Skeleton";
 import { toastErr, toastOk } from "./ui/toast";
 import { Button, Card, Field, Modal, Select, TextInput } from "./ui";
 
-type Section = "provider" | "mcp" | "usage" | "portal";
+type Section = "provider" | "mcp" | "usage" | "portal" | "account";
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   {
@@ -126,6 +126,15 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               <small className="text-caption">{s.hint}</small>
             </button>
           ))}
+          <div className="flex-1" />
+          <button
+            aria-current={section === "account" ? "page" : undefined}
+            onClick={() => setSection("account")}
+            className="flex cursor-pointer flex-col gap-0.5 rounded-lg2 border border-transparent px-3 py-2.5 text-left transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] text-dim hover:bg-hover hover:text-secondary"
+          >
+            <b className="text-body font-semibold">Account</b>
+            <small className="text-caption">portal session, sign out</small>
+          </button>
         </nav>
         <div className="min-w-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
           {section === "provider" && (
@@ -243,6 +252,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             </section>
           )}
           {section === "portal" && <PortalSettings />}
+          {section === "account" && <AccountPanel />}
         </div>
       </div>
     </Modal>
@@ -845,5 +855,108 @@ function PriceBookEditor({
         </tbody>
       </table>
     </details>
+  );
+}
+
+/** D37: akun portal, rumah baru tombol sign in/out (dulu pill AuthPill di
+ *  footer sidebar). Sesi aktif: email + tombol Sign out (danger); mode
+ *  terbuka: ajakan sign-in + tombol portal (CP-3 SSO). */
+function AccountPanel() {
+  const [status, setStatus] = useState<AuthStatusT | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const r = await authFetch(apiUrl("/api/auth/me"));
+      if (r.ok) setStatus(await r.json());
+    } catch {
+      /* offline, tampilkan mode terbuka */
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function signOut() {
+    clearAuthToken();
+    await authFetch(apiUrl("/api/auth/logout"), { method: "POST" }).catch(
+      () => undefined,
+    );
+    window.location.reload();
+  }
+
+  /** CP-3 SSO: minta URL authorize portal lalu arahkan browser (PKCE). */
+  async function signIn() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await authFetch(apiUrl("/api/auth/portal/start"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          redirectUri: `${window.location.origin}/auth/callback`,
+        }),
+      });
+      const body = (await r.json().catch(() => ({}))) as {
+        authorizeUrl?: string;
+        error?: string;
+      };
+      if (!r.ok || !body.authorizeUrl)
+        throw new Error(body.error ?? "portal sign-in unavailable");
+      window.location.href = body.authorizeUrl;
+    } catch (err) {
+      const { toastErr } = await import("./ui/toast");
+      toastErr(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
+  }
+
+  if (!status) return <Skeleton lines={2} />;
+  const user = status.user;
+  return (
+    <section aria-label="Account" className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <b className="text-body font-semibold text-primary">Account</b>
+        <p className="text-caption leading-5 text-dim">
+          Your Yuika Portal session. Signing in links this device to your
+          portal account, the first sign-in on a server closes open mode.
+        </p>
+      </header>
+      {user ? (
+        <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <UserCircle size={28} aria-hidden className="shrink-0 text-dim" />
+            <div className="flex min-w-0 flex-col">
+              <b className="truncate text-body font-medium text-primary">
+                {user.email}
+              </b>
+              <small className="text-caption text-dim">
+                Signed in via Yuika Portal
+              </small>
+            </div>
+          </div>
+          <Button
+            variant="danger"
+            title="Sign out"
+            onClick={() => void signOut()}
+          >
+            <SignOut size={13} aria-hidden /> Sign out
+          </Button>
+        </Card>
+      ) : (
+        <Card className="flex flex-col gap-3 p-4">
+          <p className="text-caption leading-5 text-muted">
+            Not signed in. This server runs in open mode, anyone local can
+            use it. Sign in with your Yuika Portal account to claim it.
+          </p>
+          <div>
+            <Button disabled={busy} onClick={() => void signIn()}>
+              <Globe size={13} aria-hidden />{" "}
+              {busy ? "Redirecting…" : "Sign in with Yuika Portal"}
+            </Button>
+          </div>
+        </Card>
+      )}
+    </section>
   );
 }

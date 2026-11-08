@@ -73,7 +73,7 @@ export function Modal({
           <b className="text-title text-primary">{title}</b>
           <button
             type="button"
-            aria-label="Tutup"
+            aria-label="Close"
             className="cursor-pointer rounded-md2 border border-transparent bg-transparent p-1 text-muted transition-colors hover:bg-hover hover:text-primary"
             onClick={onClose}
           >

@@ -4,6 +4,8 @@ import { apiUrl, authFetch } from "@/lib/api";
 // tab Characters = CharacterStage (layar character-select penuh, konstelasi,
 // maskot hero, dua card kaca, galeri dock; lihat CharacterStage.tsx).
 // Tab Missions (melatih skill baru) + Training history = warisan Dungeon (P1-DUN).
+// D37 redesign: minimalis tapi informatif — kartu misi = identitas + meta ringkas
+// + hasil run terakhir + aksi; history = baris tanggal·status·ringkasan.
 // DS-1: hanya komponen ui/* + utility Tailwind semantik (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PersonaInfo } from "@yuika/contracts";
@@ -17,7 +19,6 @@ import {
   Sword,
   Trash,
   UploadSimple,
-  Users,
   X,
 } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
@@ -26,7 +27,6 @@ import { Skeleton } from "./Skeleton";
 import { toastErr } from "./ui/toast";
 import {
   Button,
-  Chip,
   Card,
   ConfirmDialog,
   Modal,
@@ -36,7 +36,6 @@ import {
   Select,
   TabPills,
   EmptyState,
-  MetaRow,
   SectionTitle,
 } from "./ui";
 
@@ -258,6 +257,8 @@ export function PersonaStudioView({
   const userMissions =
     dungeons?.filter((d) => d.mission.origin === "user") ?? [];
 
+  /** Kartu misi D37: identitas + Run di baris atas, meta skill singkat,
+   *  hasil run terakhir terpisah oleh garis, aksi alat di baris bawah. */
   const card = (d: DungeonRow) => {
     const active = d.runs.find((r) => r.status === "running");
     const last = d.runs[d.runs.length - 1];
@@ -265,83 +266,87 @@ export function PersonaStudioView({
       r.startsWith("materials/"),
     );
     return (
-      <Card key={d.mission.id} className="flex flex-col gap-2 p-3">
-        <div className="flex items-center gap-3">
-          <PersonaFace personaId={d.mission.persona} size={28} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <b className="truncate text-body text-primary">{d.mission.title}</b>
-            <MetaRow>
-              skill{" "}
-              <code className="font-mono">{d.mission.targetSkill.name}</code>
-              <span aria-hidden>·</span> persona{" "}
-              {d.mission.persona.replace("yui-", "")}
-            </MetaRow>
+      <Card key={d.mission.id} className="flex flex-col gap-3 p-4">
+        <div className="flex items-start gap-3">
+          <PersonaFace personaId={d.mission.persona} size={30} />
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <b className="truncate text-body font-semibold text-primary">
+              {d.mission.title}
+            </b>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-dim">
+              <code className="rounded-pill border border-line bg-inset px-2 py-px font-mono text-secondary">
+                {d.mission.targetSkill.name}
+              </code>
+              {materials.length > 0 && (
+                <span
+                  className="flex items-center gap-1"
+                  title={materials.join("\n")}
+                >
+                  <UploadSimple size={11} aria-hidden />{" "}
+                  {materials.length} materials
+                </span>
+              )}
+            </div>
           </div>
           <Button
-            variant="primary"
             size="sm"
             disabled={Boolean(active)}
             onClick={() => void run(d.mission.id)}
           >
-            {active ? "running…" : "Run"}
+            {active ? (
+              <span className="flex items-center gap-1.5">
+                <CircleNotch size={12} aria-hidden className="animate-spin" />{" "}
+                running
+              </span>
+            ) : (
+              "Run"
+            )}
           </Button>
         </div>
-        <small className="line-clamp-2 text-caption leading-5 text-muted">
-          {d.mission.goal.trim().split("\n")[0]}
-        </small>
-        {materials.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {materials.map((m) => (
-              <code
-                key={m}
-                className="rounded-pill border border-line bg-hover px-2 py-px font-mono text-caption text-muted"
-              >
-                {m}
-              </code>
-            ))}
+
+        {last && (
+          <div className="flex items-start gap-2 border-t border-line pt-3">
+            {last.status === "running" ? (
+              <CircleNotch
+                size={12}
+                aria-hidden
+                className="mt-1 shrink-0 animate-spin text-warn"
+              />
+            ) : last.status === "done" ? (
+              <Check
+                size={12}
+                weight="bold"
+                aria-hidden
+                className="mt-1 shrink-0 text-success"
+              />
+            ) : (
+              <X
+                size={12}
+                weight="bold"
+                aria-hidden
+                className="mt-1 shrink-0 text-danger"
+              />
+            )}
+            <span className="min-w-0 flex-1 text-caption leading-5 text-muted line-clamp-2">
+              {last.summary ??
+                (last.status === "running"
+                  ? "The persona is working through the mission…"
+                  : "No summary recorded.")}
+            </span>
           </div>
         )}
-        {last && (
-          <MetaRow>
-            {last.status === "running" ? (
-              <Chip tone="warn">
-                <CircleNotch size={11} aria-hidden /> running
-              </Chip>
-            ) : last.status === "done" ? (
-              <Chip tone="ok">
-                <Check size={11} weight="bold" aria-hidden /> done
-              </Chip>
-            ) : (
-              <Chip tone="danger">
-                <X size={11} weight="bold" aria-hidden /> failed
-              </Chip>
-            )}
-            {last.summary ? (
-              <span className="truncate">{last.summary.slice(0, 160)}</span>
-            ) : null}
-          </MetaRow>
-        )}
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center justify-end gap-2">
           <Button
             size="sm"
+            variant="secondary"
             disabled={uploading === d.mission.id}
             onClick={() => {
               uploadFor.current = d.mission.id;
               fileRef.current?.click();
             }}
           >
-            {uploading === d.mission.id ? (
-              "uploading…"
-            ) : (
-              <>
-                <UploadSimple
-                  size={12}
-                  aria-hidden
-                  className="mr-1 inline align-[-2px]"
-                />{" "}
-                Materials
-              </>
-            )}
+            {uploading === d.mission.id ? "Uploading…" : "Materials"}
           </Button>
           {d.mission.origin === "user" && (
             <Button
@@ -413,51 +418,67 @@ export function PersonaStudioView({
               />
             ) : (
               <div className="flex flex-col gap-2">
+                <header className="flex flex-col gap-1">
+                  <b className="text-body font-semibold text-primary">
+                    Training history
+                  </b>
+                  <p className="text-caption leading-5 text-dim">
+                    Every mission run, newest first. Open a run to revisit its
+                    chat and artifacts.
+                  </p>
+                </header>
                 {allRuns.map((r) => (
-                  <Card
-                    key={r.id}
-                    className="flex items-center gap-3 px-3 py-2"
-                  >
-                    <PersonaFace personaId={r.persona} size={24} />
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <b className="truncate text-body text-primary">
-                        {r.title}
-                      </b>
-                      <MetaRow>
-                        {new Date(r.startedAt).toLocaleString("en-GB")}
-                        <span aria-hidden>·</span>
+                  <Card key={r.id} className="flex items-center gap-3 p-3">
+                    <PersonaFace personaId={r.persona} size={28} />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <b className="min-w-0 truncate text-body font-semibold text-primary">
+                          {r.title}
+                        </b>
                         {r.status === "running" ? (
-                          <>
+                          <span className="flex shrink-0 items-center gap-1 text-caption text-warn">
                             <CircleNotch
                               size={11}
                               aria-hidden
-                              className="animate-pulse"
+                              className="animate-spin"
                             />{" "}
                             running
-                          </>
-                        ) : r.status === "done" ? (
-                          <>
-                            <Check size={11} weight="bold" aria-hidden /> done
-                          </>
-                        ) : (
-                          <>
-                            <X size={11} weight="bold" aria-hidden /> failed
-                          </>
-                        )}
-                        {r.summary ? (
-                          <span className="truncate">
-                            , {r.summary.slice(0, 140)}
                           </span>
-                        ) : null}
-                      </MetaRow>
+                        ) : r.status === "done" ? (
+                          <span className="flex shrink-0 items-center gap-1 text-caption text-success">
+                            <Check size={11} weight="bold" aria-hidden /> done
+                          </span>
+                        ) : (
+                          <span className="flex shrink-0 items-center gap-1 text-caption text-danger">
+                            <X size={11} weight="bold" aria-hidden /> failed
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex min-w-0 items-baseline gap-2 text-caption text-dim">
+                        <span className="shrink-0 tabular-nums">
+                          {new Date(r.startedAt).toLocaleString("en-US", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                        {r.summary && (
+                          <span
+                            className="min-w-0 flex-1 truncate"
+                            title={r.summary}
+                          >
+                            {r.summary}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <Button
                       size="sm"
-                      disabled={!onOpenProject}
+                      variant="secondary"
+                      disabled={!onOpenProject || !r.projectId}
                       onClick={() => onOpenProject?.(r.projectId ?? "")}
                       title="Open the training room (chat + artifacts)"
                     >
-                      Open session →
+                      Open
                     </Button>
                   </Card>
                 ))}
@@ -465,25 +486,30 @@ export function PersonaStudioView({
             )
           ) : (
             <>
-              <div className="flex items-center gap-3">
-                <Button variant="primary" onClick={() => setFormOpen(true)}>
-                  + New mission
+              <header className="flex flex-wrap items-end justify-between gap-2">
+                <div className="flex flex-col gap-1">
+                  <b className="text-body font-semibold text-primary">
+                    Missions
+                  </b>
+                  <p className="max-w-[520px] text-caption leading-5 text-dim">
+                    Run a mission to grow a new skill. The persona researches a
+                    topic or studies your files, then distills what it learns.
+                  </p>
+                </div>
+                <Button onClick={() => setFormOpen(true)}>
+                  <Sword size={13} aria-hidden /> New mission
                 </Button>
-                <small className="text-caption text-dim">
-                  The full form (mode, persona, skill, pass criteria) opens as a
-                  modal.
-                </small>
-              </div>
+              </header>
 
               {userMissions.length > 0 && (
-                <div className="flex flex-col gap-2">
+                <div className="mt-4 flex flex-col gap-2">
                   <SectionTitle>Your missions</SectionTitle>
                   <div className="grid gap-2 md:grid-cols-2">
                     {userMissions.map(card)}
                   </div>
                 </div>
               )}
-              <div className="flex flex-col gap-2">
+              <div className="mt-4 flex flex-col gap-2">
                 <SectionTitle>Built-in missions</SectionTitle>
                 {dungeons === null ? (
                   <Skeleton lines={3} />

@@ -18,7 +18,7 @@ import {
   Users,
 } from "@phosphor-icons/react";
 import { PersonaStudioView } from "@/components/PersonaStudioView";
-import { AuthGate, AuthPill } from "@/components/AuthGate";
+import { AuthGate } from "@/components/AuthGate";
 import { setShapeOverrides } from "@/components/orinShapes";
 import { TracePanel } from "@/components/TracePanel";
 import { LogsTab } from "@/components/LogsTab";
@@ -1100,9 +1100,6 @@ export default function Home() {
                 <div className="px-2.5 pb-1">
                   <RemoteBadge />
                 </div>
-                {/* akun portal, footer sidebar (selalu terlihat di semua state;
-                FIX overlap tombol oleh overlay fixed 2026-11-08) */}
-                <AuthPill />
                 <button
                   className="flex w-full cursor-pointer items-center gap-2 rounded-md2 border border-transparent px-2.5 py-2 text-left text-body text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
                   onClick={() => setSettingsOpen(true)}
@@ -1145,7 +1142,6 @@ export default function Home() {
                   <Users size={20} aria-hidden />
                 </button>
                 <RemoteBadge compact />
-                <AuthPill compact />
                 <button
                   type="button"
                   title="Settings"
