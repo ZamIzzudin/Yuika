@@ -1,12 +1,19 @@
 "use client";
 import { apiUrl, authFetch, clearAuthToken } from "@/lib/api";
-// Settings modal (feedback user sesi dev 9): menu khusus untuk hal yang tidak muat
-// di sidebar, seksi: Provider & Model (API key/base URL/model, swap panas),
-// MCP (katalog + trust + audit, dulunya sesak di dasar sidebar), + metering.
+// Settings modal (D38): anotasi kode P0/P1 & hint berlebihan dibuang agar
+// bersih; section Usage jadi dashboard informatif (KPI tiles + bar chart
+// token per persona + tabel model). Rumah hal yang tak muat di sidebar:
+// Provider & Model, MCP & Tools, Usage, Portal, Account.
 // DS-1: ui/* + Tailwind semantik + ikon Phosphor (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
 import type { AuthStatusT, ProviderSettings } from "@yuika/contracts";
-import { Check, Globe, Prohibit, SignOut, UserCircle, Warning, X } from "@phosphor-icons/react";
+import {
+  Globe,
+  Prohibit,
+  SignOut,
+  UserCircle,
+  Warning,
+} from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
 import { PortalSettings } from "./PortalSettings";
 import { Skeleton } from "./Skeleton";
@@ -22,9 +29,40 @@ const SECTIONS: { id: Section; label: string; hint: string }[] = [
     hint: "API key, base URL, model",
   },
   { id: "mcp", label: "MCP & Tools", hint: "catalog, trust, audit" },
-  { id: "usage", label: "Usage", hint: "token usage per persona/model" },
+  { id: "usage", label: "Usage", hint: "spend, limits, tokens" },
   { id: "portal", label: "Portal", hint: "link devices, remote control" },
 ];
+
+/** Tile statistik kecil untuk dashboard Usage. */
+function Stat({
+  label,
+  value,
+  sub,
+  children,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1 rounded-lg2 border border-line bg-surface p-4">
+      <span className="text-caption font-semibold uppercase tracking-wide text-dim">
+        {label}
+      </span>
+      <p className="text-title font-semibold text-primary">{value}</p>
+      {sub && <p className="text-caption text-muted">{sub}</p>}
+      {children}
+    </div>
+  );
+}
+
+const fmt = (n: number) => n.toLocaleString("en-US");
+const compact = (n: number) =>
+  new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n);
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const [section, setSection] = useState<Section>("provider");
@@ -91,7 +129,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         return;
       }
       setApiKey("");
-      toastOk("Saved, new sessions & turns use the new config (.env updated).");
+      toastOk("Saved. New sessions use the new config.");
       await load();
     } catch {
       toastErr("could not reach the server");
@@ -147,13 +185,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               ) : (
                 <>
                   <p className="text-caption text-dim">
-                    Stored key:{" "}
-                    <code className="font-mono">
+                    Key{" "}
+                    <code className="font-mono text-secondary">
                       {cfg.hasApiKey ? cfg.keyPreview : "none"}
                     </code>{" "}
-                    · active: <code className="font-mono">{cfg.model}</code>
+                    · model{" "}
+                    <code className="font-mono text-secondary">{cfg.model}</code>
                   </p>
-                  <Field label="Provider kind (P1-INF-2)">
+                  <Field label="Provider kind">
                     <Select
                       value={kind}
                       onChange={(e) => setKind(e.target.value as typeof kind)}
@@ -165,9 +204,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                       <option value="gemini">Google Gemini</option>
                     </Select>
                   </Field>
-                  <Field
-                    label={`Base URL (${kind === "anthropic" ? "default: https://api.anthropic.com" : kind === "gemini" ? "default: https://generativelanguage.googleapis.com" : "OpenAI-compatible"})`}
-                  >
+                  <Field label="Base URL">
                     <TextInput
                       value={baseUrl}
                       onChange={(e) => setBaseUrl(e.target.value)}
@@ -182,13 +219,16 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                     />
                   </Field>
                   <Field
-                    label={`API key ${cfg?.hasApiKey ? "(leave empty to keep)" : ""}`}
+                    label="API key"
+                    hint={
+                      cfg.hasApiKey ? "stored, leave empty to keep" : undefined
+                    }
                   >
                     <TextInput
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      placeholder={cfg?.hasApiKey ? "••••••••" : "sk-…"}
+                      placeholder={cfg.hasApiKey ? "••••••••" : "sk-…"}
                       spellCheck={false}
                     />
                   </Field>
@@ -201,10 +241,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                         spellCheck={false}
                       />
                     </Field>
-                    <Field
-                      label="Fallback model (optional)"
-                      hint="used automatically when the primary model fails (P0-CORE-2)"
-                    >
+                    <Field label="Fallback model" hint="when the primary fails">
                       <TextInput
                         value={fallback}
                         onChange={(e) => setFallback(e.target.value)}
@@ -214,8 +251,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                     </Field>
                   </div>
                   <Field
-                    label="Aux model (optional)"
-                    hint="lightweight tasks like memory learning; empty = primary model (P1-INF-3)"
+                    label="Aux model"
+                    hint="lightweight tasks, empty = primary"
                   >
                     <TextInput
                       value={aux}
@@ -247,8 +284,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               aria-label="Usage metering"
               className="flex flex-col gap-5"
             >
-              <BudgetPanel />
-              <UsagePanel />
+              <BudgetDashboard />
+              <UsageDashboard />
             </section>
           )}
           {section === "portal" && <PortalSettings />}
@@ -259,11 +296,10 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** P1-MDL: editor model per persona, kosong = ikut default; tersimpan ke
-/** P1-CRED-2/3/4: panel saldo & batas, belanja jujur dari metering × price
- *  book, burn-rate 24 j, hold aktif, limit harian/total (mode warn/block),
- *  rate-limit turn/menit & cap delegasi paralel. Edit = blur → PUT budget. */
-function BudgetPanel() {
+/** Saldo & batas belanja (metering × price book): burn-rate 24 j, hold aktif,
+ *  limit harian/total (mode warn/block), rate-limit turn/menit & cap
+ *  delegasi paralel. Edit = blur → PUT budget. */
+function BudgetDashboard() {
   const [st, setSt] = useState<{
     config: {
       mode: "warn" | "block";
@@ -311,16 +347,13 @@ function BudgetPanel() {
     const pct = Math.min(100, Math.round((spent / limit) * 100));
     return (
       <div
-        className="relative mt-1 h-4 w-full overflow-hidden rounded-pill bg-inset"
+        className="mt-1 h-1.5 w-full overflow-hidden rounded-pill bg-inset"
         title={`${pct}% of limit`}
       >
         <div
           className={`h-full rounded-pill ${spent >= limit ? "bg-danger" : "bg-accent"}`}
           style={{ width: `${pct}%` }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-[10px] text-secondary">
-          {pct}%
-        </span>
       </div>
     );
   };
@@ -359,47 +392,37 @@ function BudgetPanel() {
   );
   return (
     <div className="flex flex-col gap-3">
+      <span className="text-caption font-semibold uppercase tracking-wide text-dim">
+        Spend &amp; limits
+      </span>
       <div className="grid grid-cols-3 gap-3">
-        <div>
-          <span className="text-caption font-semibold tracking-wide text-dim uppercase">
-            Today
-          </span>
-          <p className="mt-1 text-body text-primary">
-            <b>{fmtC(st.spentToday)}</b>
-            {st.config.dailyLimit !== null ? (
-              <> / {fmtC(st.config.dailyLimit)}</>
-            ) : (
-              <small className="text-dim"> (no limit)</small>
-            )}
-          </p>
+        <Stat
+          label="Today"
+          value={fmtC(st.spentToday)}
+          sub={
+            st.config.dailyLimit !== null
+              ? `of ${fmtC(st.config.dailyLimit)}`
+              : "no limit"
+          }
+        >
           {bar(st.spentToday, st.config.dailyLimit)}
-        </div>
-        <div>
-          <span className="text-caption font-semibold tracking-wide text-dim uppercase">
-            Total
-          </span>
-          <p className="mt-1 text-body text-primary">
-            <b>{fmtC(st.spentTotal)}</b>
-            {st.config.totalLimit !== null ? (
-              <> / {fmtC(st.config.totalLimit)}</>
-            ) : (
-              <small className="text-dim"> (no limit)</small>
-            )}
-          </p>
+        </Stat>
+        <Stat
+          label="Total"
+          value={fmtC(st.spentTotal)}
+          sub={
+            st.config.totalLimit !== null
+              ? `of ${fmtC(st.config.totalLimit)}`
+              : "no limit"
+          }
+        >
           {bar(st.spentTotal, st.config.totalLimit)}
-        </div>
-        <div>
-          <span className="text-caption font-semibold tracking-wide text-dim uppercase">
-            Burn-rate
-          </span>
-          <p className="mt-1 text-body text-primary">
-            <b>{fmtC(st.burnRatePerHour)}</b>/h{" "}
-            <small className="text-dim">(24 h average)</small>
-          </p>
-          <p className="text-caption text-muted">
-            Active holds: {fmtC(st.activeHolds)}
-          </p>
-        </div>
+        </Stat>
+        <Stat
+          label="Burn-rate"
+          value={`${fmtC(st.burnRatePerHour)}/h`}
+          sub={`active holds ${fmtC(st.activeHolds)}`}
+        />
       </div>
       {(st.dailyLimitHit || st.totalLimitHit) && (
         <p
@@ -411,33 +434,29 @@ function BudgetPanel() {
             <Warning size={14} aria-hidden />
           )}
           {st.config.mode === "block"
-            ? "Limit reached, new turns are REJECTED (block mode)."
-            : "Limit reached (warn mode), turns keep running."}
+            ? "Limit reached, new turns are rejected."
+            : "Limit reached, turns keep running."}
         </p>
       )}
       {st.coverage !== "full" && (
         <p className="text-caption text-dim">
           {st.coverage === "none"
-            ? "Cost figures need model prices, fill them in the Model Prices editor below."
-            : "Some models are unpriced, figures are a lower bound (honest, not zero)."}
+            ? "Costs need model prices, set them below."
+            : "Some models are unpriced, figures are a lower bound."}
         </p>
       )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {numField("dailyLimit", `Daily limit (${cur})`, "— no limit")}
-        {numField("totalLimit", `Total limit (${cur})`, "— no limit")}
-        {numField("maxTurnsPerMinute", "Turns / minute", "— no limit")}
-        {numField(
-          "maxDelegationConcurrency",
-          "Parallel delegations",
-          "— default 3",
-        )}
+        {numField("dailyLimit", `Daily limit (${cur})`, "—")}
+        {numField("totalLimit", `Total limit (${cur})`, "—")}
+        {numField("maxTurnsPerMinute", "Turns / minute", "—")}
+        {numField("maxDelegationConcurrency", "Parallel delegations", "3")}
         <Field label="When the limit is reached">
           <Select
             value={st.config.mode}
             onChange={(e) => save({ mode: e.target.value as "warn" | "block" })}
           >
-            <option value="warn">warn, just warn</option>
-            <option value="block">block, reject turns</option>
+            <option value="warn">Warn only</option>
+            <option value="block">Block turns</option>
           </Select>
         </Field>
       </div>
@@ -445,10 +464,10 @@ function BudgetPanel() {
   );
 }
 
-/** P1-CRED-1 + P1-MDL-3: panel metering, rollup token per persona & model +
- *  estimasi biaya dari price book (hanya bila harga di-set, tanpa harga = tak
- *  dihitung, bukan 0). Editor harga inline per 1 jt token. */
-function UsagePanel() {
+/** Metering konsumsi: KPI tiles + bar chart token per persona + tabel per
+ *  model + atribusi biaya persona×model, harga dari price book (tanpa harga
+ *  = tak dihitung, bukan 0). */
+function UsageDashboard() {
   const [data, setData] = useState<{
     summary: {
       calls: number;
@@ -514,7 +533,6 @@ function UsagePanel() {
     return () => clearInterval(t);
   }, [load]);
 
-  const fmt = (n: number) => n.toLocaleString("en-US");
   /** Estimasi biaya baris model, null bila model tak berharga (jujur, bukan 0). */
   const cost = (m: {
     key: string;
@@ -581,137 +599,214 @@ function UsagePanel() {
     </table>
   );
 
+  if (data === null) return <Skeleton lines={4} />;
+
+  const maxPersona = Math.max(
+    ...data.summary.byPersona.map(
+      (p) => p.promptTokens + p.outputTokens,
+    ),
+    1,
+  );
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
-        {[
-          [0, "All"],
-          [24, "24 h"],
-          [1, "1 h"],
-        ].map(([h, label]) => (
-          <Button
-            key={h}
-            size="sm"
-            active={hours === h}
-            onClick={() => setHours(h as number)}
-          >
-            {label as string}
-          </Button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-caption font-semibold uppercase tracking-wide text-dim">
+          Consumption
+        </span>
+        <div className="flex gap-2">
+          {[
+            [0, "All"],
+            [24, "24 h"],
+            [1, "1 h"],
+          ].map(([h, label]) => (
+            <Button
+              key={h}
+              size="sm"
+              active={hours === h}
+              onClick={() => setHours(h as number)}
+            >
+              {label as string}
+            </Button>
+          ))}
+        </div>
       </div>
-      {data === null ? (
-        <Skeleton lines={4} />
-      ) : data.summary.calls === 0 ? (
-        <p className="text-caption text-dim">
+
+      {data.summary.calls === 0 ? (
+        <Card className="p-4 text-caption leading-5 text-dim">
           No usage recorded yet. Metering is automatic, figures come only from
-          provider usage reports (no estimation).
-        </p>
+          provider usage reports.
+        </Card>
       ) : (
         <>
-          <p className="text-caption text-secondary">
-            <b className="text-primary">{fmt(data.summary.calls)}</b> model
-            calls ·{" "}
-            <b className="text-primary">{fmt(data.summary.promptTokens)}</b>{" "}
-            input tokens ·{" "}
-            <b className="text-primary">{fmt(data.summary.outputTokens)}</b>{" "}
-            output tokens
-            {anyPriced && (
-              <>
-                {" "}
-                · est. cost <b className="text-primary">{fmtCost(totalCost)}</b>
-              </>
-            )}
-            {data.summary.windowStart && (
-              <span className="text-dim">
-                {" "}
-                (since{" "}
-                {new Date(data.summary.windowStart).toLocaleString("en-US")})
-              </span>
-            )}
-          </p>
-          <Table
-            label="Usage per persona"
-            head={["Persona", "Calls", "In tokens", "Out tokens"]}
-          >
-            {data.summary.byPersona.map((r) => (
-              <tr key={r.key} className="border-b border-line">
-                <td className="py-1 pr-3">{r.key.replace("yui-", "")}</td>
-                <td className="py-1 pr-3">{fmt(r.calls)}</td>
-                <td className="py-1 pr-3">{fmt(r.promptTokens)}</td>
-                <td className="py-1 pr-3">{fmt(r.outputTokens)}</td>
-              </tr>
-            ))}
-          </Table>
-          <Table
-            label="Usage per model"
-            head={["Model", "Calls", "In tokens", "Out tokens", "Est. cost"]}
-          >
-            {data.summary.byModel.map((r) => (
-              <tr key={r.key} className="border-b border-line">
-                <td className="py-1 pr-3">
-                  <code className="font-mono">{r.key}</code>
-                </td>
-                <td className="py-1 pr-3">{fmt(r.calls)}</td>
-                <td className="py-1 pr-3">{fmt(r.promptTokens)}</td>
-                <td className="py-1 pr-3">{fmt(r.outputTokens)}</td>
-                <td className="py-1 pr-3">{fmtCost(cost(r))}</td>
-              </tr>
-            ))}
-          </Table>
-          {data.matrix && data.matrix.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <span className="text-caption font-semibold tracking-wide text-dim uppercase">
-                Cost attribution (persona × model)
-              </span>
+          {/* KPI tiles */}
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <Stat label="Model calls" value={fmt(data.summary.calls)} />
+            <Stat
+              label="Input tokens"
+              value={compact(data.summary.promptTokens)}
+              sub={fmt(data.summary.promptTokens)}
+            />
+            <Stat
+              label="Output tokens"
+              value={compact(data.summary.outputTokens)}
+              sub={fmt(data.summary.outputTokens)}
+            />
+            <Stat
+              label="Est. cost"
+              value={anyPriced ? fmtCost(totalCost) : "—"}
+              sub={anyPriced ? "from your price book" : "set model prices below"}
+            />
+          </div>
+
+          {/* Bar chart token per persona (in + out stacked) */}
+          {data.summary.byPersona.length > 0 && (
+            <Card className="flex flex-col gap-2.5 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-caption font-semibold uppercase tracking-wide text-dim">
+                  Tokens by persona
+                </span>
+                <span className="flex items-center gap-3 text-caption text-dim">
+                  <span className="flex items-center gap-1.5">
+                    <i
+                      aria-hidden
+                      className="inline-block size-2 rounded-xs bg-accent"
+                    />
+                    input
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <i
+                      aria-hidden
+                      className="inline-block size-2 rounded-xs bg-accent/40"
+                    />
+                    output
+                  </span>
+                </span>
+              </div>
+              {data.summary.byPersona.map((p) => {
+                const total = p.promptTokens + p.outputTokens;
+                const wIn = (p.promptTokens / maxPersona) * 100;
+                const wOut = (p.outputTokens / maxPersona) * 100;
+                return (
+                  <div key={p.key} className="flex items-center gap-3">
+                    <span
+                      className="w-24 shrink-0 truncate text-caption text-secondary"
+                      title={p.key}
+                    >
+                      {p.key.replace("yui-", "")}
+                    </span>
+                    <div className="flex h-3 min-w-0 flex-1 overflow-hidden rounded-pill bg-inset">
+                      <div
+                        className="h-full bg-accent"
+                        style={{ width: `${wIn}%` }}
+                        title={`${fmt(p.promptTokens)} input`}
+                      />
+                      <div
+                        className="h-full bg-accent/40"
+                        style={{ width: `${wOut}%` }}
+                        title={`${fmt(p.outputTokens)} output`}
+                      />
+                    </div>
+                    <span
+                      className="w-14 shrink-0 text-right text-caption tabular-nums text-dim"
+                      title={`${fmt(total)} tokens · ${fmt(p.calls)} calls`}
+                    >
+                      {compact(total)}
+                    </span>
+                  </div>
+                );
+              })}
+            </Card>
+          )}
+
+          {/* Tabel per model */}
+          <Card className="p-4">
+            <span className="text-caption font-semibold uppercase tracking-wide text-dim">
+              By model
+            </span>
+            <div className="mt-1">
               <Table
-                label="Persona cost attribution per model"
-                head={["Persona", "Model", "Calls", "Tokens", "Est. cost"]}
+                label="Usage per model"
+                head={["Model", "Calls", "In", "Out", "Est. cost"]}
               >
-                {data.matrix.map((r) => (
-                  <tr
-                    key={`${r.personaId}|${r.model}`}
-                    className="border-b border-line"
-                  >
+                {data.summary.byModel.map((r) => (
+                  <tr key={r.key} className="border-b border-line">
                     <td className="py-1 pr-3">
-                      {r.personaId.replace("yui-", "")}
+                      <code className="font-mono">{r.key}</code>
                     </td>
-                    <td className="py-1 pr-3">
-                      <code className="font-mono">{r.model}</code>
+                    <td className="py-1 pr-3 tabular-nums">{fmt(r.calls)}</td>
+                    <td className="py-1 pr-3 tabular-nums">
+                      {fmt(r.promptTokens)}
                     </td>
-                    <td className="py-1 pr-3">{fmt(r.calls)}</td>
-                    <td className="py-1 pr-3">
-                      {fmt(r.promptTokens + r.outputTokens)}
+                    <td className="py-1 pr-3 tabular-nums">
+                      {fmt(r.outputTokens)}
                     </td>
-                    <td className="py-1 pr-3">
-                      {r.cost === null
-                        ? "—"
-                        : `${r.cost.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${r.currency}`}
-                    </td>
+                    <td className="py-1 pr-3">{fmtCost(cost(r))}</td>
                   </tr>
                 ))}
               </Table>
             </div>
+          </Card>
+
+          {/* Atribusi biaya persona × model */}
+          {data.matrix && data.matrix.length > 0 && (
+            <Card className="p-4">
+              <span className="text-caption font-semibold uppercase tracking-wide text-dim">
+                Cost attribution (persona × model)
+              </span>
+              <div className="mt-1">
+                <Table
+                  label="Persona cost attribution per model"
+                  head={["Persona", "Model", "Calls", "Tokens", "Est. cost"]}
+                >
+                  {data.matrix.map((r) => (
+                    <tr
+                      key={`${r.personaId}|${r.model}`}
+                      className="border-b border-line"
+                    >
+                      <td className="py-1 pr-3">
+                        {r.personaId.replace("yui-", "")}
+                      </td>
+                      <td className="py-1 pr-3">
+                        <code className="font-mono">{r.model}</code>
+                      </td>
+                      <td className="py-1 pr-3 tabular-nums">{fmt(r.calls)}</td>
+                      <td className="py-1 pr-3 tabular-nums">
+                        {fmt(r.promptTokens + r.outputTokens)}
+                      </td>
+                      <td className="py-1 pr-3">
+                        {r.cost === null
+                          ? "—"
+                          : `${r.cost.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${r.currency}`}
+                      </td>
+                    </tr>
+                  ))}
+                </Table>
+              </div>
+            </Card>
           )}
+
           <PriceBookEditor
             models={data.summary.byModel.map((m) => m.key)}
             prices={prices}
             onSave={savePrice}
           />
+
           {data.recent && data.recent.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-caption font-semibold tracking-wide text-dim uppercase">
+            <Card className="flex flex-col gap-1.5 p-4">
+              <span className="text-caption font-semibold uppercase tracking-wide text-dim">
                 Recent
               </span>
               <ul className="flex flex-col gap-0.5 text-caption text-muted">
                 {data.recent.map((e, i) => (
                   <li key={i} className="flex flex-wrap gap-x-2">
                     <code className="font-mono">{e.model}</code> ·{" "}
-                    {e.personaId.replace("yui-", "")} · {fmt(e.promptTokens)}+
+                    {e.personaId.replace("yui-", "")} · {fmt(e.promptTokens)}+{" "}
                     {fmt(e.outputTokens)} tok · {e.latencyMs} ms
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           )}
         </>
       )}
@@ -719,7 +814,7 @@ function UsagePanel() {
   );
 }
 
-/** P1-MDL-3: editor price book, harga per 1 jt token (in/out) + mata uang.
+/** Editor price book, harga per 1 jt token (in/out) + mata uang.
  *  Baris = model yang terlihat di metering + yang sudah berharga; blur = simpan. */
 function PriceBookEditor({
   models,
@@ -760,11 +855,11 @@ function PriceBookEditor({
   return (
     <details className="rounded-md2 border border-line bg-inset px-3 py-2">
       <summary className="cursor-pointer list-none text-caption text-secondary select-none [&::-webkit-details-marker]:hidden">
-        Model prices (cost indicator), per 1 million tokens
+        Model prices, per 1 million tokens
       </summary>
       <p className="mt-2 text-caption leading-5 text-dim">
-        Fill these in from your provider's invoice. Unpriced models contribute
-        no cost (not zero), token metering stays accurate regardless.
+        Fill these in from your provider&apos;s invoice. Unpriced models
+        contribute no cost (not zero), token metering stays accurate regardless.
       </p>
       <table className="mt-2 w-full text-caption" aria-label="Prices per model">
         <thead>
@@ -858,9 +953,9 @@ function PriceBookEditor({
   );
 }
 
-/** D37: akun portal, rumah baru tombol sign in/out (dulu pill AuthPill di
- *  footer sidebar). Sesi aktif: email + tombol Sign out (danger); mode
- *  terbuka: ajakan sign-in + tombol portal (CP-3 SSO). */
+/** D37: akun portal, rumah tombol sign in/out (dulu pill AuthPill di footer
+ *  sidebar). Sesi aktif: email + tombol Sign out (danger); mode terbuka:
+ *  ajakan sign-in + tombol portal (CP-3 SSO). */
 function AccountPanel() {
   const [status, setStatus] = useState<AuthStatusT | null>(null);
   const [busy, setBusy] = useState(false);
@@ -946,8 +1041,8 @@ function AccountPanel() {
       ) : (
         <Card className="flex flex-col gap-3 p-4">
           <p className="text-caption leading-5 text-muted">
-            Not signed in. This server runs in open mode, anyone local can
-            use it. Sign in with your Yuika Portal account to claim it.
+            Not signed in. This server runs in open mode, anyone local can use
+            it. Sign in with your Yuika Portal account to claim it.
           </p>
           <div>
             <Button disabled={busy} onClick={() => void signIn()}>
