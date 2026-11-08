@@ -13,12 +13,22 @@ import { Chip } from "./ui";
 interface ActivityItem {
   at: number;
   personaId: string;
-  kind: "tool" | "screen" | "vault" | "delegation" | "approval" | "qa" | "visit";
+  kind:
+    | "tool"
+    | "screen"
+    | "vault"
+    | "delegation"
+    | "approval"
+    | "qa"
+    | "visit";
   label: string;
   isError: boolean;
 }
 
-const KIND_TONE: Record<ActivityItem["kind"], "accent" | "ok" | "info" | "muted" | "warn" | "danger"> = {
+const KIND_TONE: Record<
+  ActivityItem["kind"],
+  "accent" | "ok" | "info" | "muted" | "warn" | "danger"
+> = {
   tool: "accent",
   screen: "info",
   vault: "warn",
@@ -33,7 +43,9 @@ function ActivityFeed({ projectId }: { projectId: string }) {
 
   const load = useCallback(async () => {
     try {
-      const r = await authFetch(apiUrl(`/api/projects/${projectId}/activity?limit=200`));
+      const r = await authFetch(
+        apiUrl(`/api/projects/${projectId}/activity?limit=200`),
+      );
       if (r.ok) {
         const d = (await r.json()) as { activity?: ActivityItem[] };
         setItems(d.activity ?? []);
@@ -50,7 +62,8 @@ function ActivityFeed({ projectId }: { projectId: string }) {
     return () => clearInterval(t);
   }, [load]);
 
-  const fmt = (ts: number) => new Date(ts).toLocaleTimeString("en-US", { hour12: false });
+  const fmt = (ts: number) =>
+    new Date(ts).toLocaleTimeString("en-US", { hour12: false });
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto rounded-lg2 border border-line bg-inset p-2">
@@ -68,14 +81,24 @@ function ActivityFeed({ projectId }: { projectId: string }) {
               key={`${a.at}-${i}`}
               className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-md2 px-2 py-1.5 hover:bg-hover"
             >
-              <small className="flex-none font-mono text-[11px] text-dim">{fmt(a.at)}</small>
-              <Chip tone={a.isError ? "danger" : KIND_TONE[a.kind]} className="flex-none">
+              <small className="flex-none font-mono text-[11px] text-dim">
+                {fmt(a.at)}
+              </small>
+              <Chip
+                tone={a.isError ? "danger" : KIND_TONE[a.kind]}
+                className="flex-none"
+              >
                 {a.personaId.replace("yui-", "")}
               </Chip>
-              <span className={`min-w-0 flex-1 truncate font-mono text-caption ${a.isError ? "text-danger" : "text-secondary"}`} title={a.label}>
+              <span
+                className={`min-w-0 flex-1 truncate font-mono text-caption ${a.isError ? "text-danger" : "text-secondary"}`}
+                title={a.label}
+              >
                 {a.label}
               </span>
-              <small className="flex-none text-[10px] uppercase tracking-wide text-dim">{a.kind}</small>
+              <small className="flex-none text-[10px] uppercase tracking-wide text-dim">
+                {a.kind}
+              </small>
             </li>
           ))}
         </ul>
@@ -100,26 +123,25 @@ export function LogsTab({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-3 sm:px-6">
-      <header className="flex flex-wrap items-center gap-2">
+      <header className="flex flex-wrap items-center gap-2 justify-between">
         <b className="text-body font-semibold text-primary">Logs</b>
-        {(["activity", "trace"] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            aria-pressed={view === v}
-            onClick={() => setView(v)}
-            className={`cursor-pointer rounded-pill border px-3 py-1.5 text-caption transition-colors ${
-              view === v ? "border-accent/60 bg-accent/10 text-accent" : "border-line bg-surface text-muted hover:text-primary"
-            }`}
-          >
-            {v === "activity" ? "Project activity" : "Session trace"}
-          </button>
-        ))}
-        <small className="text-caption text-dim">
-          {view === "activity"
-            ? "every persona step in this project, live"
-            : "per-turn timeline of the active chat session"}
-        </small>
+        <div className="flex gap-2">
+          {(["activity", "trace"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={view === v}
+              onClick={() => setView(v)}
+              className={`cursor-pointer rounded-pill border px-3 py-1.5 text-caption transition-colors ${
+                view === v
+                  ? "border-accent/60 bg-accent/10 text-accent"
+                  : "border-line bg-surface text-muted hover:text-primary"
+              }`}
+            >
+              {v === "activity" ? "Project activity" : "Session trace"}
+            </button>
+          ))}
+        </div>
       </header>
       {view === "activity" ? (
         <ActivityFeed projectId={projectId} />

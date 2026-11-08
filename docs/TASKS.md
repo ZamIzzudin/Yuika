@@ -735,3 +735,4 @@
 - [x] Chat Markdown: tabel GFM (delimiter + alignment :---: + escaped | + kolom mismatch aman + overflow-x) + task list - [ ]/- [x] (checkbox SVG) — riset Scholar kini tampil sbg tabel, bukan pipe mentah · [x] Delete project "authentication required": ProjectPanel.remove() pakai fetch polos tanpa Bearer (kelas bug FileTab) → authFetch; sekalian 4 fetch polos lain: SSE snapshot resync x2 (page.tsx), dungeon materials upload + mission remove (PersonaStudioView) — semua route non-/api/auth digating P1-INF-1
 - [x] dns.lookup tanpa timeout di hostnameIsPrivate → race 5 dtk (unref) · throttle domainThrottle livelock self-requeue → reservasi slot sekali · ddg selalu dipanggil (+10 dtk/search) → hanya bila hasil site-router < 3, race 5 dtk · watchdog withTimeout 25s/45s di web_search/web_fetch · budget query 10→30/jam · pesan error tool EN — research.test.ts 24/24
 
+

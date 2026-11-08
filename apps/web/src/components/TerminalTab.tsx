@@ -85,7 +85,15 @@ export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
       term.onData((d) => {
         if (!info) return;
         lastInputAt = Date.now();
-        term?.write(d === "\r" ? "\r\n" : d);
+        // Echo lokal harus "digambar", bukan diteruskan mentah:
+        // - Enter  \r    → \r\n (baris baru)
+        // - Backspace \x7f → \b \b (hapus karakter terakhir di layar).
+        //   Menulis \x7f mentah memicu "xterm.js: Parsing error: {}" (parser
+        //   menolak DEL) DAN tidak menghapus apa pun di layar (D32, lapor user).
+        // Ke backend tetap dikirim byte asli — pemrosesan tetap di sisi shell.
+        if (d === "\r") term?.write("\r\n");
+        else if (d === "\x7f") term?.write("\b \b");
+        else term?.write(d);
         void authFetch(apiUrl(`/api/terminal/sessions/${info.id}/input`), {
           method: "POST",
           headers: { "content-type": "application/json" },
