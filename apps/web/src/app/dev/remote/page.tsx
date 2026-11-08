@@ -536,10 +536,11 @@ export default function DevRemotePage() {
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-4 p-6">
       <header className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-title font-semibold">Remote (dev)</h1>
+          <h1 className="text-title font-semibold">Remote console</h1>
           <p className="text-caption text-dim">
-            , second-device proof: keys live in this browser, relay is
-            blind.
+            Control a linked host from a second browser: keys live in this
+            browser and the relay is blind. Pair with a Web token from Portal,
+            Devices.
           </p>
         </div>
         {statusChip}

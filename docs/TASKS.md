@@ -811,3 +811,10 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 ### D57 — Density Tab Persona di zoom 100% (SELESAI)
 - [x] User selalu browsing 90% zoom; di 100% stage persona terlalu padat/overlap. CharacterStage dikecilkan ~15%: maskot 200→168, cincin orbit 560/390/270→460/320/220, card kaca 300/320→272/288 (p-5→p-4, gap-3→2.5, tinggi max 520→440), chevron 44→40px makin dekat pusat, tipografi card turun 1 tingkat (h2 2xl→lg, body 13→12, tag 12→11), pill emote 12→11.
 
+
+### D58 — Pisahkan konsep Connect-to-host vs Remote-control (SELESAI, tahap copy)
+- [x] welcome.html: kartu remote kini "Open the full web app of a Yuika host in this window" + catatan eksplisit bahwa koneksi host = direct link tanpa Portal; remote control dari HP/browser kedua dipair di Portal.
+- [x] /dev/remote di-rename "Remote (dev)" → "Remote console" + subjudul menjelaskan Web token & relay blind.
+- [x] PortalSettings: langkah pairing memperjelas Desktop token = host yang DIKENDALIKAN; Web token = remote controller di /dev/remote.
+- [ ] TAHAP BERIKUT (antrian): promosikan Remote console keluar /dev (mis. /remote) agar tidak ikut disembunyikan YUI_HIDE_DEV_PAGES di build Docker prod; portal Devices page beri tombol buka console.
+

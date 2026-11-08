@@ -207,14 +207,16 @@ export function PortalSettings() {
             <li>1. Register or sign in at your Yuika Portal account.</li>
             <li>
               2. Open Devices, add a pairing token, choose the{" "}
-              <span className="text-primary">Desktop</span> kind (this app is a
-              host).
+              <span className="text-primary">Desktop</span> kind (this studio
+              instance is the host that remotes will control).
             </li>
             <li>3. Paste the token below (valid for 2 minutes, single use).</li>
           </ol>
           <p className="text-caption text-faint">
-            Web tokens are not for this input, they pair a remote browser at the{" "}
-            <span className="font-mono">/dev/remote</span> page.
+            Web tokens pair a second browser as a remote controller instead:
+            open the Remote console ({""}
+            <span className="font-mono">/dev/remote</span>) on that device and
+            paste the token there.
           </p>
           <Field label="Portal URL">
             <TextInput
