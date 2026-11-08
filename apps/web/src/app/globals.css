@@ -51,6 +51,7 @@
   --font-sans: var(--yui-font-sans);
   --font-mono: var(--yui-font-mono);
   --text-caption: 12px; /* yui-sm, meta, hint, chip */
+  --text-md: var(--yui-text-md); /* D44: text-md utility (dipakai AuthGate) */
   --text-body: 13px; /* yui-md, default UI */
   --text-lead: 14px; /* yui-lg, teks panel */
   --text-title: 16px; /* yui-xl, judul seksi */
@@ -250,6 +251,24 @@ main {
   to {
     transform: translateY(5px);
     box-shadow: 0 18px 30px -12px rgb(0 0 0 / 0.5);
+  }
+}
+/* D44: latar antariksa Home — bintang berkelip + drift layer sangat pelan. */
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes space-drift {
+  from {
+    transform: translate3d(-18px, 10px, 0);
+  }
+  to {
+    transform: translate3d(18px, -10px, 0);
   }
 }
 @keyframes yui-pulse {

@@ -1,0 +1,18 @@
+import { expect, test } from "@playwright/test";
+
+// D44 dbg: latar antariksa Home — maskot & bintang render, tanpa pageerror.
+test("dbg space home renders mascots & stars", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "New project" })).toBeVisible();
+  await page.waitForTimeout(1_500);
+  const mascots = page.locator("[data-mascot]");
+  const n = await mascots.count();
+  // transform mesti terisi loop fisika (bukan opacity-0 mentah)
+  const t = await mascots.first().getAttribute("style");
+  console.log("mascots:", n, "| style:", (t ?? "").slice(0, 60));
+  expect(n).toBeGreaterThan(0);
+  await page.screenshot({ path: "e2e/.tmp/space-home.png" });
+  if (errors.length) throw new Error("pageerror: " + errors.join(" | "));
+});

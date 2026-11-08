@@ -11,6 +11,8 @@ import { Button, Card, Field, Modal, TextInput } from "./ui";
 import { Skeleton } from "./Skeleton";
 import { toastErr } from "./ui/toast";
 import { apiUrl, authFetch } from "@/lib/api";
+import type { PersonaInfo } from "@yuika/contracts";
+import { HomeSpace } from "./HomeSpace";
 
 const FIRST = "Hello, Wanna Build Something?";
 const FINAL = "Hello, Let's Build Something!";
@@ -118,11 +120,14 @@ function TypingHeadline() {
 }
 
 export function HomeView({
+  personas,
   projects,
   booted,
   onOpenProject,
   onCreated,
 }: {
+  /** Maskot latar antariksa (D44): melayang, bisa dilempar, bertabrakan. */
+  personas: PersonaInfo[];
   projects: ProjectInfo[];
   booted: boolean;
   onOpenProject: (id: string) => void;
@@ -171,8 +176,9 @@ export function HomeView({
     //, begitu daftar project melebihi viewport, kartu paling atas terdorong ke
     // luar jangkauan scroll. Centering via `my-auto` pada wrapper: pas → center,
     // lebih tinggi → top-aligned & tetap bisa discroll penuh.
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-10">
-      <div className="mx-auto my-auto flex w-full max-w-[760px] flex-col items-center">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-10">
+      <HomeSpace personas={personas} />
+      <div className="relative z-10 mx-auto my-auto flex w-full max-w-[760px] flex-col items-center">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <TypingHeadline />
           <p className="max-w-[440px] text-body text-muted">

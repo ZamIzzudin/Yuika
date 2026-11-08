@@ -1189,6 +1189,7 @@ export default function Home() {
                   />
                 ) : (
                   <HomeView
+                    personas={personas}
                     projects={projects}
                     booted={booted}
                     onOpenProject={(id) => void pickProject(id)}

@@ -208,9 +208,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         className="relative z-10 flex w-full max-w-[360px] flex-col gap-4 rounded-lg2 border border-line bg-surface p-6 shadow-[0_30px_80px_-40px_rgb(0_0_0/.6)]"
       >
         <div className="flex flex-col items-center gap-2 text-center">
-          <OrinPortrait state="idle" size={150} />
-          <h1 className="text-title font-semibold text-primary">Yuika</h1>
-          <p className="text-caption text-muted">
+          <OrinPortrait state="idle" size={150} personaId="yui-coder" />
+          <h1 className="text-title font-semibold text-primary">Let's Start</h1>
+          <p className="text-md text-muted">
             Welcome to your agentic persona studio
           </p>
         </div>
