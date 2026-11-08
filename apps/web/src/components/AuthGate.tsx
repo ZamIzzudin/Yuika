@@ -10,6 +10,7 @@ import type { AuthStatusT } from "@yuika/contracts";
 import { apiUrl, authFetch, clearAuthToken } from "@/lib/api";
 import { OrinPortrait } from "./OrinPortrait";
 import { HomeSpace } from "./HomeSpace";
+import { backToDesktopWelcome, isDesktopShell } from "@/lib/desktop";
 
 /** Baris sign in/out portal, di FOOTER SIDEBAR (selalu terlihat di semua
  *  state workspace/studio; bukan fixed overlay: versi fixed menutupi
@@ -129,6 +130,9 @@ export function AuthPill({ compact = false }: { compact?: boolean }) {
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatusT | null>(null);
   const [busy, setBusy] = useState(false);
+  // D48: di dalam shell desktop → tawarkan kembali ke onboarding host/remote.
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => setDesktop(isDesktopShell()), []);
   useEffect(() => {
     let alive = true;
     void (async () => {
@@ -240,6 +244,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             Sign Up to Yuika Portal
           </a>
         </p>
+        {desktop && (
+          <button
+            type="button"
+            onClick={backToDesktopWelcome}
+            className="mx-auto rounded-pill border border-line px-4 py-1.5 text-caption text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:border-line-strong hover:text-primary"
+          >
+            Switch desktop mode
+          </button>
+        )}
       </section>
     </main>
   );

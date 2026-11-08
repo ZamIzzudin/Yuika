@@ -37,7 +37,7 @@
 - Verifikasi: cargo check/build ✓, `tauri dev` runtime (window + welcome
   ter-load dari dev server) ✓, e2e dbg-space welcome fallback ✓.
 
-### D48 — prod host mode (butuh CI; `next build` EPERM di host dev)
+### D48 — prod host mode (SEBAGIAN SELESAI di sesi D48)
 1. Static export web: `output: "export"` di next.config build desktop +
    `NEXT_PUBLIC_API_BASE` tetap default 127.0.0.1:3211. Perhatikan route
    dinamis /dev & /auth/callback (client-only, aman).
@@ -46,7 +46,16 @@
    (node_modules pruned) — atau sidecar `node.exe`. Putuskan saat eksekusi
    dengan uji cold-start di Windows bersih.
 3. Release path Rust: `spawn_api()` mode release menjalankan sidecar/resource
-   (sekarang: error eksplisit "ships with P2-DTL-3").
+   (masih error eksplisit "ships with P2-DTL-3" — sidecar node = pekerjaan D49).
+
+**Selesai di sesi D48:** EPERM `next build` hilang; /auth/callback dibungkus
+Suspense (useSearchParams); next.config dapat mode `NEXT_EXPORT=1` →
+`output: "export"`; static export HIJAU (`apps/web/out`, 14 MB, welcome.html
+ikut); tauri.conf beforeBuildCommand → scripts/build-desktop-web.mjs.
+BONUS sesi yang sama: welcome.html REDESIGN (oval+maskot float, kartu
+mode ikon); tombol "Switch desktop mode" (login gate + footer sidebar,
+hanya saat window.__TAURI__); CharacterStage breakpoint 1100→1000 + narrow
+h-auto (fix tumpang tindih di window desktop 1280−sidebar 272).
 
 ### D49 — packaging + auto-update (P2-DTL-3)
 - NSIS aktif (sudah di config), updater `tauri-plugin-updater` +
@@ -55,6 +64,24 @@
 - CI workflow `desktop.yml`: build win (matrix mac/linux menyusul), upload
   artefak NSIS + updater manifest.
 - DMG (macOS) menyusul bila ada kebutuhan test relay lintas platform.
+
+## FAQ (D48, jawaban untuk pertanyaan user)
+
+**Apakah source desktop terpisah dari web?** TIDAK. Shell Tauri hanya
+window native yang MEMUAT UI web yang sama (`apps/web`). Di mode dev,
+window membuka http://localhost:3000 (next dev) → HMR: ubah kode web,
+desktop ikut berubah detik itu juga. Di paket build, UI web di-export
+statis (`apps/web/out`) lalu DIBUNDL ke dalam exe — installer membawa
+snapshot; perubahan web = rebuild installer (`npm run tauri build -w
+@yuika/desktop` atau via CI). Tidak ada dua codebase UI.
+
+**Cara bikin executable untuk user?**`cd apps/desktop && npx tauri build`
+(butuh Rust + WebView2; beforeBuildCommand men-export web otomatis) →
+hasil di `src-tauri/target/release/bundle/nsis/*.exe` (installer) &
+`target/release/yuika-desktop.exe` (portabel). Catatan jujur D48: HOST
+mode versi build masih stub (`spawn_api` release error eksplisit — API
+sidecar belum dibundel); jalur RELOTE (connect ke host lain) sudah berfungsi
+penuh di build. Bundel API node = D49.
 
 ## Catatan uji manual (D47)
 

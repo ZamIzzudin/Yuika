@@ -1,6 +1,7 @@
 "use client";
 
 import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
+import { backToDesktopWelcome, isDesktopShell } from "@/lib/desktop";
 /**
  * Yuika demo shell, orchestrator UI (DEMO-WEEK-1 §2):
  * persona picker → sesi → SSE event stream → render msg/activity/delegation/approval.
@@ -9,6 +10,7 @@ import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaFace } from "@/components/PersonaPicker";
 import {
+  ArrowsLeftRight,
   CaretDown,
   Gear,
   Plus,
@@ -76,6 +78,10 @@ export default function Home() {
   // Sidebar fold/unfold, persist di localStorage (yui.sidebar: "open" | "folded");
   // layar sempit (<768px) default lipat. Shortcut: Ctrl/Cmd+B.
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // D48: UI di dalam shell desktop Tauri → tampilkan tombol switch mode
+  // (state via effect: hindari hydration mismatch vs prerender statis).
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => setDesktop(isDesktopShell()), []);
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((v) => {
       try {
@@ -1139,6 +1145,17 @@ export default function Home() {
                 >
                   <SmileyBlank size={20} aria-hidden />
                 </button>
+                {desktop && (
+                  <button
+                    type="button"
+                    title="Switch desktop mode"
+                    aria-label="Switch desktop mode"
+                    onClick={backToDesktopWelcome}
+                    className="flex size-9 cursor-pointer items-center justify-center rounded-md2 border border-transparent text-dim transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] hover:bg-hover hover:text-primary"
+                  >
+                    <ArrowsLeftRight size={20} aria-hidden />
+                  </button>
+                )}
                 <RemoteBadge compact />
                 <button
                   type="button"

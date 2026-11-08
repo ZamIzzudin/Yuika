@@ -23,6 +23,23 @@ test("dbg welcome.html fallback in plain browser", async ({ page }) => {
   await page.goto("/welcome.html");
   await expect(page.getByRole("heading", { name: "Welcome to Yuika" })).toBeVisible();
   await expect(page.getByText("Launch the Yuika desktop app")).toBeVisible();
-  // plain mode: kartu disembunyikan, tak ada invode crash
+  // plain mode: kartu disembunyikan, tak ada invoke crash
   await expect(page.getByRole("button", { name: "On this device" })).toBeHidden();
+  await page.screenshot({ path: "e2e/.tmp/welcome-plain.png" });
+});
+
+// D48: mode shell (window.__TAURI__ ada) → kartu mode tampil; invoke
+// di-stub agar klik tak error. Menjaga layout kartu onboarding.
+test("dbg welcome.html shell mode shows mode cards", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__TAURI__ = { core: { invoke: async () => undefined } };
+  });
+  await page.goto("/welcome.html");
+  await expect(
+    page.getByRole("button", { name: "On this device" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Connect to a host" })).toBeVisible();
+  await page.getByRole("button", { name: "Connect to a host" }).click();
+  await expect(page.getByLabel(/Host URL/)).toBeVisible();
+  await page.screenshot({ path: "e2e/.tmp/welcome-shell.png" });
 });

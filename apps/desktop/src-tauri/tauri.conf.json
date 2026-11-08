@@ -5,6 +5,7 @@
   "identifier": "com.zamizzudin.yuika",
   "build": {
     "beforeDevCommand": "npm run dev -w @yuika/web",
+    "beforeBuildCommand": "node ../../scripts/build-desktop-web.mjs",
     "devUrl": "http://localhost:3000",
     "frontendDist": "../../apps/web/out"
   },

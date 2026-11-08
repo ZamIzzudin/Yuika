@@ -515,19 +515,19 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     (overrides[id] as OrinShapeKey | undefined) ?? PERSONA_SHAPE[id] ?? "orb";
 
   const cardCls =
-    "z-[2] flex flex-col gap-3 rounded-[18px] border border-line bg-surface/75 p-5 shadow-[0_18px_50px_-24px_rgb(0_0_0/.55)] backdrop-blur-[14px] max-[1099px]:h-auto min-[1100px]:absolute min-[1100px]:top-[40%] min-[1100px]:h-[min(520px,calc(100%-240px))] min-[1100px]:w-[320px] min-[1100px]:-translate-y-1/2";
+    "z-[2] flex flex-col gap-3 rounded-[18px] border border-line bg-surface/75 p-5 shadow-[0_18px_50px_-24px_rgb(0_0_0/.55)] backdrop-blur-[14px] max-[999px]:h-auto min-[1000px]:absolute min-[1000px]:top-[40%] min-[1000px]:h-[min(520px,calc(100%-240px))] min-[1000px]:w-[300px] xl:w-[320px] min-[1000px]:-translate-y-1/2";
 
   return (
     <div
       ref={boxRef}
-      className="relative isolate h-[88dvh] min-h-[560px] w-full overflow-hidden max-[1099px]:flex max-[1099px]:flex-col max-[1099px]:gap-4 max-[1099px]:overflow-visible max-[1099px]:pb-2"
+      className="relative isolate h-[88dvh] min-h-[560px] w-full overflow-hidden max-[999px]:flex max-[999px]:flex-col max-[999px]:gap-4 max-[999px]:h-auto max-[999px]:min-h-0 max-[999px]:overflow-visible max-[999px]:pb-4"
       style={{ "--c": accent } as React.CSSProperties}
     >
       {/* latar: OVAL BERLAPIS, konsep sama dengan orbit workspace
           (PersonaPicker): cincin elips konsentris di belakang maskot. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 max-[1099px]:hidden"
+        className="pointer-events-none absolute inset-0 z-0 max-[999px]:hidden"
       >
         <div className="absolute top-[44%] left-1/2 h-[560px] w-[min(640px,58vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
         <div className="absolute top-[44%] left-1/2 h-[390px] w-[min(460px,42vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
@@ -535,7 +535,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       </div>
 
       {/* ===== HERO, maskot di tengah panggung ===== */}
-      <div className="absolute left-1/2 top-[44%] z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[26px] max-[1099px]:static max-[1099px]:mt-2 max-[1099px]:translate-x-0 max-[1099px]:translate-y-0">
+      <div className="absolute left-1/2 top-[44%] z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[26px] max-[999px]:static max-[999px]:mt-2 max-[999px]:translate-x-0 max-[999px]:translate-y-0">
         <div key={persona.id} className="pop-yui flex flex-col items-center">
           <button
             type="button"
@@ -580,7 +580,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         aria-label="Previous persona"
         onClick={() => go(-1)}
         disabled={personas.length < 2}
-        className="absolute top-[44%] z-[3] hidden size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1100px]:flex min-[1100px]:left-[calc(50%-190px)]"
+        className="absolute top-[44%] z-[3] hidden size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1000px]:flex min-[1000px]:left-[calc(50%-172px)] xl:left-[calc(50%-190px)]"
       >
         <CaretLeft size={22} aria-hidden />
       </button>
@@ -589,7 +589,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         aria-label="Next persona"
         onClick={() => go(1)}
         disabled={personas.length < 2}
-        className="absolute top-[44%] z-[3] hidden size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1100px]:flex min-[1100px]:left-[calc(50%+146px)]"
+        className="absolute top-[44%] z-[3] hidden size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1000px]:flex min-[1000px]:left-[calc(50%+128px)] xl:left-[calc(50%+146px)]"
       >
         <CaretRight size={22} aria-hidden />
       </button>
@@ -598,7 +598,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       <aside
         className={
           cardCls +
-          " relative min-[1100px]:left-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
+          " relative min-[1000px]:left-[max(24px,calc(25%-580px))] min-[1000px]:overflow-hidden"
         }
       >
         {/* setup model persona, pojok kiri atas card */}
@@ -711,7 +711,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       <aside
         className={
           cardCls +
-          " min-[1100px]:right-[max(24px,calc(25%-580px))] min-[1100px]:overflow-hidden"
+          " min-[1000px]:right-[max(24px,calc(25%-580px))] min-[1000px]:overflow-hidden"
         }
       >
         <div className="shrink-0">
@@ -777,7 +777,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
       )}
 
       {/* ===== DOCK, galeri karakter ===== */}
-      <div className="absolute inset-x-0 bottom-5 z-[4] flex flex-col items-center gap-2 max-[1099px]:sticky max-[1099px]:bottom-0 max-[1099px]:mt-auto max-[1099px]:translate-y-0">
+      <div className="absolute inset-x-0 bottom-5 z-[4] flex flex-col items-center gap-2 max-[999px]:static max-[999px]:mt-4">
         <div
           data-dock=""
           role="listbox"

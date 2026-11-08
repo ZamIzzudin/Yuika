@@ -2,12 +2,30 @@
 // CP-3 SSO, halaman callback portal: ?code&state → tukar jadi sesi Yuika.
 // Portal mengarahkan ke sini setelah user menekan Accept; token sesi Yuika
 // disimpan seperti login biasa (localStorage via lib/api) lalu kembali ke /.
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiUrl, authFetch, setAuthToken } from "@/lib/api";
 import { OrinPortrait } from "@/components/OrinPortrait";
 
 export default function PortalCallbackPage() {
+  return (
+    // Suspense WAJIB untuk useSearchParams() saat prerender/export statis
+    // (Next.js: "missing-suspense-with-csr-bounce" → build gagal tanpa ini).
+    <Suspense
+      fallback={
+        <main className="flex h-dvh w-full items-center justify-center bg-canvas">
+          <p className="text-caption text-muted">
+            Completing portal sign-in…
+          </p>
+        </main>
+      }
+    >
+      <PortalCallback />
+    </Suspense>
+  );
+}
+
+function PortalCallback() {
   const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
