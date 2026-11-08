@@ -147,7 +147,7 @@ function BrowserPolicySection({ projectId }: { projectId: string }) {
   return (
     <section
       aria-label="Browser policy"
-      className="flex max-w-[560px] flex-col gap-3"
+      className="flex flex-col gap-3"
     >
       <header>
         <b className="text-body font-semibold text-primary">Browser policy</b>

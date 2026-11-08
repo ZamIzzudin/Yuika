@@ -126,7 +126,7 @@ export function WorkshopPanel({
 
   return (
     <div
-      className="flex max-w-[760px] flex-col gap-4"
+      className="flex flex-col gap-4"
       aria-label="Workshop panel"
     >
       <Card className="flex flex-col gap-3 p-4">

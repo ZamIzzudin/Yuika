@@ -1,9 +1,11 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
-// Tab Skill (P1-MEM-3): pengalaman → draf skill → validasi user → siap pakai.
-// Draf: agent usulkan via tool skill_propose; user edit bebas → Terima (lint +
-// aktif, langsung terlihat agent via skills_list) atau Tolak (hapus).
-// DS-1: ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
+// Config → Skills (P1-MEM-3, redesign D36): lifecycle draft → tested → ready.
+// Draf: agent usulkan via tool skill_propose; user edit → Accept (aktif,
+// terlihat agent via skills_list) atau Reject (hapus permanen).
+// Skill tested bisa dijalankan ke EVAL BUTA (P1-DUN-3): lulus → ready.
+// Semua copy UI ENGLISH (aturan proyek). D36: rata kartu surface p-4 ala
+// page Config lain; bahasa campur & list border-left lama dibuang total.
 import { useCallback, useEffect, useState } from "react";
 import {
   Check,
@@ -12,9 +14,10 @@ import {
   Flag,
   Info,
   PencilSimple,
+  Sparkle,
   X,
 } from "@phosphor-icons/react";
-import { Button, Card, ConfirmDialog, Field, TextArea, TextInput } from "./ui";
+import { Button, Card, Chip, ConfirmDialog, Field, TextArea, TextInput } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 interface DraftRow {
@@ -41,6 +44,11 @@ const STATUS_LABEL: Record<string, string> = {
   tested: "human-tested",
   ready: "ready",
   draft: "draft",
+};
+const STATUS_TONE: Record<string, "ok" | "warn" | "muted"> = {
+  ready: "ok",
+  tested: "warn",
+  draft: "muted",
 };
 
 export function SkillsTab() {
@@ -163,7 +171,16 @@ export function SkillsTab() {
       aria-label="Skills, drafts and active"
       className="flex flex-col gap-4"
     >
-      <p className="flex items-start gap-2 rounded-md2 border border-line bg-inset px-3 py-2 text-caption leading-5 text-muted">
+      <header className="flex flex-col gap-1">
+        <b className="text-body font-semibold text-primary">Skills</b>
+        <p className="text-caption leading-5 text-dim">
+          Reusable ways of working the personas earn from experience. Drafts
+          arrive from chat, you edit and accept them, and every accepted skill
+          joins the prompt of new sessions.
+        </p>
+      </header>
+
+      <p className="flex items-start gap-2 rounded-lg2 border border-line bg-surface px-3 py-2.5 text-caption leading-5 text-muted">
         <Info size={14} aria-hidden className="mt-0.5 shrink-0 text-accent" />
         <span>
           New skills are{" "}
@@ -172,213 +189,238 @@ export function SkillsTab() {
           </b>{" "}
           via
           <code className="font-mono"> skills_list</code>/
-          <code className="font-mono">skill_view</code>, but they're only{" "}
+          <code className="font-mono">skill_view</code>, but they&apos;re only{" "}
           <b className="text-secondary">
             introduced into the prompt of NEW sessions
           </b>{" "}
-          (the running session's prompt is frozen by design).
+          (the running session&apos;s prompt is frozen by design).
         </span>
       </p>
-      {drafts.length === 0 ? (
-        <p className="text-caption leading-5 text-dim">
-          No drafts yet. Mention it in chat, e.g. &quot;make the way you just
-          worked into a skill&quot;, or the agent proposes one itself after a
-          flow proves successful.
-        </p>
-      ) : (
-        drafts.map((d) => (
-          <Card key={d.slug} className="flex flex-col gap-2.5">
-            <header className="flex flex-wrap items-center justify-between gap-2">
-              <b className="text-body font-semibold text-primary">
-                {open === d.slug && edit ? edit.name : d.name}
-              </b>
-              <span className="flex gap-1.5">
-                {open === d.slug ? (
-                  <Button
-                    size="sm"
-                    onClick={() => void saveDraft(d)}
-                    disabled={busy}
-                  >
-                    Save
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setOpen(d.slug);
-                      setEdit({
-                        name: d.name,
-                        description: d.description,
-                        body: d.body,
-                      });
-                    }}
-                  >
-                    Edit
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => void accept(d.slug)}
-                  disabled={busy}
-                  title="Validate & activate this skill"
-                >
-                  Accept
-                </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => setConfirmSlug(d.slug)}
-                  disabled={busy}
-                  title="Delete draft"
-                >
-                  Reject
-                </Button>
-              </span>
-            </header>
-            {open === d.slug && edit ? (
-              <div className="flex flex-col gap-2.5">
-                <Field label="Skill name">
-                  <TextInput
-                    value={edit.name}
-                    onChange={(e) => setEdit({ ...edit, name: e.target.value })}
-                    placeholder="Skill name"
-                  />
-                </Field>
-                <Field label="When to use">
-                  <TextInput
-                    value={edit.description}
-                    onChange={(e) =>
-                      setEdit({ ...edit, description: e.target.value })
-                    }
-                    placeholder="When this skill should be used"
-                  />
-                </Field>
-                <Field label="Body (markdown)">
-                  <TextArea
-                    value={edit.body}
-                    onChange={(e) => setEdit({ ...edit, body: e.target.value })}
-                    rows={10}
-                    spellCheck={false}
-                  />
-                </Field>
-              </div>
-            ) : (
-              <>
-                <small className="text-caption leading-5 text-muted">
-                  {d.description}
-                </small>
-                <pre className="overflow-x-auto rounded-md2 bg-inset px-3 py-2.5 font-mono text-[12.5px] leading-5 text-secondary">
-                  {d.body}
-                </pre>
-              </>
-            )}
-          </Card>
-        ))
-      )}
 
+      {/* ── Draf diusulkan agent ── */}
       <div className="flex flex-col gap-2">
-        <b className="text-body font-semibold text-primary">
-          Ready to use ({skills.length})
-        </b>
-        {skills.length === 0 ? (
-          <p className="text-caption text-dim">No active skills yet.</p>
+        <small className="text-caption font-semibold uppercase tracking-wide text-dim">
+          Proposed drafts ({drafts.length})
+        </small>
+        {drafts.length === 0 ? (
+          <Card className="p-4 text-caption leading-5 text-dim">
+            No drafts yet. Mention it in chat, e.g. &quot;make the way you just
+            worked into a skill&quot;, or the agent proposes one itself after a
+            flow proves successful.
+          </Card>
         ) : (
-          <ul className="flex flex-col gap-2.5">
+          drafts.map((d) => (
+            <Card key={d.slug} className="flex flex-col gap-3 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <Sparkle
+                    size={18}
+                    aria-hidden
+                    className="shrink-0 text-accent"
+                  />
+                  <b className="min-w-0 truncate text-body font-semibold text-primary">
+                    {open === d.slug && edit ? edit.name : d.name}
+                  </b>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {open === d.slug ? (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => void saveDraft(d)}
+                        disabled={busy}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setOpen(null)}
+                        disabled={busy}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setOpen(d.slug);
+                        setEdit({
+                          name: d.name,
+                          description: d.description,
+                          body: d.body,
+                        });
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => void accept(d.slug)}
+                    disabled={busy}
+                    title="Validate & activate this skill"
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => setConfirmSlug(d.slug)}
+                    disabled={busy}
+                    title="Delete draft"
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </div>
+
+              {open === d.slug && edit ? (
+                <div className="flex flex-col gap-2.5">
+                  <Field label="Skill name">
+                    <TextInput
+                      value={edit.name}
+                      onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                      placeholder="Skill name"
+                    />
+                  </Field>
+                  <Field label="When to use">
+                    <TextInput
+                      value={edit.description}
+                      onChange={(e) =>
+                        setEdit({ ...edit, description: e.target.value })
+                      }
+                      placeholder="When this skill should be used"
+                    />
+                  </Field>
+                  <Field label="Body (markdown)">
+                    <TextArea
+                      value={edit.body}
+                      onChange={(e) => setEdit({ ...edit, body: e.target.value })}
+                      rows={10}
+                      spellCheck={false}
+                      className="font-mono"
+                    />
+                  </Field>
+                </div>
+              ) : (
+                <>
+                  <p className="text-caption leading-5 text-muted">
+                    {d.description}
+                  </p>
+                  <pre className="max-h-56 overflow-auto rounded-md2 bg-inset p-3 font-mono text-[12.5px] leading-5 whitespace-pre-wrap text-secondary">
+                    {d.body}
+                  </pre>
+                </>
+              )}
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* ── Library skill aktif ── */}
+      <div className="flex flex-col gap-2">
+        <small className="text-caption font-semibold uppercase tracking-wide text-dim">
+          Library ({skills.length})
+        </small>
+        {skills.length === 0 ? (
+          <Card className="p-4 text-caption leading-5 text-dim">
+            No active skills yet. Accept a draft to start the library.
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-2.5">
             {skills.map((s) => (
-              <li
-                key={s.name}
-                className="flex flex-col gap-0.5 border-l-2 border-line pl-3"
-              >
-                <b className="flex flex-wrap items-baseline gap-x-2 text-body font-semibold text-primary">
-                  {s.name}
+              <Card key={s.name} className="flex flex-col gap-2 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <b className="min-w-0 truncate text-body font-semibold text-primary">
+                      {s.name}
+                    </b>
+                    {s.status && (
+                      <Chip tone={STATUS_TONE[s.status] ?? "muted"}>
+                        {STATUS_LABEL[s.status] ?? s.status}
+                      </Chip>
+                    )}
+                  </div>
                   {s.usage && (
                     <small
-                      className="flex items-center gap-2 text-caption font-normal text-dim"
+                      className="flex items-center gap-2.5 text-caption text-dim"
                       title="views · edits · uses"
                     >
-                      <span className="flex items-center gap-0.5">
-                        <Eye size={11} aria-hidden /> {s.usage.views}
+                      <span className="flex items-center gap-1">
+                        <Eye size={12} aria-hidden /> {s.usage.views}
                       </span>
-                      <span className="flex items-center gap-0.5">
-                        <PencilSimple size={11} aria-hidden /> {s.usage.patches}
+                      <span className="flex items-center gap-1">
+                        <PencilSimple size={12} aria-hidden />{" "}
+                        {s.usage.patches}
                       </span>
-                      <span className="flex items-center gap-0.5">
-                        <Flag size={11} aria-hidden /> {s.usage.used}
+                      <span className="flex items-center gap-1">
+                        <Flag size={12} aria-hidden /> {s.usage.used}
                       </span>
                     </small>
                   )}
-                </b>
-                <small className="text-caption leading-5 text-muted">
+                </div>
+                <p className="text-caption leading-5 text-muted">
                   {s.description}
-                  {s.status && s.status !== "ready" && (
-                    <span
-                      className="ml-1 inline-flex items-center gap-0.5 align-baseline text-warn"
-                      title="Lifecycle P1-DUN-2: draft → tested (reviewed) → ready (assignable)"
-                    >
-                      ·{" "}
-                      {s.status === "tested" && (
-                        <CircleNotch size={11} aria-hidden />
-                      )}{" "}
-                      {STATUS_LABEL[s.status]}
-                    </span>
-                  )}
-                  {s.personas && s.personas.length > 0 && (
-                    <span className="ml-1 text-dim">
-                      ·{" "}
-                      {s.personas.map((p) => p.replace("yui-", "")).join(", ")}
-                    </span>
-                  )}
-                </small>
+                </p>
+                {s.personas && s.personas.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {s.personas.map((p) => (
+                      <span
+                        key={p}
+                        className="rounded-pill border border-line bg-inset px-2 py-0.5 font-mono text-caption text-secondary"
+                      >
+                        {p.replace("yui-", "")}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {(s.status === "tested" || s.eval) && (
-                  <small
-                    className={`flex flex-wrap items-center gap-1.5 text-caption leading-5 ${
-                      s.eval?.verdict === "pass"
-                        ? "text-success"
-                        : s.eval?.verdict === "fail"
-                          ? "text-danger"
-                          : "text-muted"
-                    }`}
-                  >
+                  <div className="flex flex-wrap items-center gap-2 text-caption leading-5">
                     {s.eval?.verdict === "pending" ? (
-                      <>
+                      <span className="flex items-center gap-1.5 text-muted">
                         <CircleNotch
-                          size={11}
+                          size={12}
                           aria-hidden
-                          className="animate-pulse"
-                        />{" "}
-                        evaluasi buta berjalan… (hakim sedang memeriksa bukti)
-                      </>
+                          className="animate-spin"
+                        />
+                        Blind eval running, the judge is checking the evidence…
+                      </span>
                     ) : s.eval?.verdict === "pass" ? (
-                      <>
-                        <Check size={11} weight="bold" aria-hidden /> lulus eval
-                        buta
-                        {s.eval.reason
-                          ? `, ${s.eval.reason.slice(0, 120)}`
-                          : ""}
-                      </>
+                      <span className="flex items-center gap-1.5 text-success">
+                        <Check size={12} weight="bold" aria-hidden />
+                        Passed the blind eval
+                        {s.eval.reason ? `, ${s.eval.reason.slice(0, 120)}` : ""}
+                      </span>
                     ) : s.eval?.verdict === "fail" ? (
-                      <>
-                        <X size={11} weight="bold" aria-hidden /> belum lulus,{" "}
-                        {s.eval.reason?.slice(0, 160) ?? "tanpa alasan"}
-                      </>
+                      <span className="flex items-center gap-1.5 text-danger">
+                        <X size={12} weight="bold" aria-hidden />
+                        Not passing,{" "}
+                        {s.eval.reason?.slice(0, 160) ?? "no reason given"}
+                      </span>
                     ) : (
-                      "belum pernah dieval"
+                      <span className="text-muted">
+                        Never evaluated by the blind judge yet.
+                      </span>
                     )}
                     {s.status === "tested" && s.eval?.verdict !== "pending" && (
                       <Button
                         size="sm"
+                        variant="secondary"
                         onClick={() => void evalSkill(s.name)}
                         disabled={busy}
+                        title="P1-DUN-3: a judge persona runs the skill blind; pass → ready"
                       >
-                        Eval buta
+                        Run blind eval
                       </Button>
                     )}
-                  </small>
+                  </div>
                 )}
-              </li>
+              </Card>
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
