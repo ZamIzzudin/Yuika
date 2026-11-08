@@ -111,8 +111,16 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
       return;
     }
     flushing = false;
+    // Heartbeat SSE: proxy publik (Cloudflare ~100s, sebagian LB lebih
+    // pendek) memutus koneksi idle. Baris komentar `: ping` diabaikan
+    // EventSource tapi menjaga koneksi hangat dan membuat koneksi mati
+    // terdeteksi lebih cepat di kedua sisi.
+    const ping = setInterval(() => {
+      if (!closed) reply.raw.write(": ping\n\n");
+    }, 25_000);
     req.raw.on("close", () => {
       closed = true;
+      clearInterval(ping);
       unsub();
       reply.raw.end();
     });

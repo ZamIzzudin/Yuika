@@ -38,9 +38,10 @@ function isNewer(candidate: string, current: string): boolean {
 }
 
 function readVersion(): string {
-  // apps/api/src/routes/meta.ts → ../../../package.json = repo root
-  // (di container: /app/package.json, di dev: root repo).
-  const file = new URL("../../../package.json", import.meta.url);
+  // apps/api/src/routes/meta.ts → ../../../../package.json = repo root
+  // (di container: /app/package.json, di dev: root repo). Empat level naik
+  // (apps/api/src/routes); tiga hanya sampai /app/apps → fallback 0.0.0.
+  const file = new URL("../../../../package.json", import.meta.url);
   try {
     return (JSON.parse(fs.readFileSync(file, "utf8")) as { version?: string })
       .version ?? "0.0.0";

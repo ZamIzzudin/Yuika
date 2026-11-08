@@ -15,6 +15,13 @@ process.env.YUI_RELEASES_API = "https://releases.test/latest";
 const { buildApp } = await import("../app.js");
 const { _resetMetaCacheForTests } = await import("../routes/meta.js");
 
+// Sumber kebenaran versi: package.json root (empat level naik dari file ini,
+// sama dalam dev dan di container). Mencegah bug-mirror: dulu test hanya
+// match regex sehingga fallback "0.0.0" lolos.
+const rootPkg = JSON.parse(
+  fs.readFileSync(new URL("../../../../package.json", import.meta.url), "utf8"),
+) as { version: string };
+
 const fake = { listPersonas: () => [] } as unknown as YuiRuntime;
 let app: FastifyInstance;
 const realFetch = globalThis.fetch;
@@ -37,7 +44,8 @@ describe("GET /api/meta", () => {
     const r = await app.inject({ method: "GET", url: "/api/meta" });
     expect(r.statusCode).toBe(200);
     const body = r.json() as { version: string; latest: string | null; updateAvailable: boolean };
-    expect(body.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(body.version).toBe(rootPkg.version);
+    expect(rootPkg.version).not.toBe("0.0.0");
     expect(body.latest).toBeNull();
     expect(body.updateAvailable).toBe(false);
   });
