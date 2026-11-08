@@ -106,9 +106,10 @@ at minimum; `YUI_PROVIDER_KIND` if you use Anthropic or Gemini). Keys live
 only in `.env` on your server and are passed to the api container at runtime;
 they are never baked into images.
 
-Before first sign-in can work, the portal operator must whitelist your
-callback `https://studio.yourdomain.example/auth/callback`
-(`YUIKA_WEB_REDIRECT_URIS` on their side).
+No registration is needed: the portal accepts sign-in callbacks from any
+self-hosted studio at `https://<host>/auth/callback` (open redirect policy).
+If a specific portal runs in strict mode, its operator will ask you for your
+callback URL first.
 
 ## Step 5 - Build and start
 
@@ -211,9 +212,9 @@ means losing every stored secret, so keep backups off the server.
   restart caddy`. Let's Encrypt limits retries to 5 per hour per domain.
 - **First build dies with exit 137:** out of memory. Add the swap from step
   2, then build again.
-- **Sign-in redirects then errors:** the portal operator has not whitelisted
-  your callback yet, or `YUI_PORTAL_URL` in `.env` is not the public https
-  URL.
+- **Sign-in redirects then errors:** `YUI_PORTAL_URL` in `.env` is not the
+  public https URL, or the portal you point to runs in strict mode and has
+  not whitelisted your callback yet.
 - **Streams (live events) feel frozen behind another proxy:** this stack
   already disables buffering at Caddy; if you put another proxy in front,
   make sure it does not buffer `/api/*` responses.
