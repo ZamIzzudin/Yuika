@@ -419,9 +419,9 @@ _Exit: skenario lulus 2× berturut tanpa intervensi manual._
 
 > **D23 (2026-11): desktop = HOST atau REMOTE (switch mode)**, host = develop lokal (runtime di shell); remote = kirim action ke host lain (termasuk web-host). Konsep lama "device relay worker ambil job eksekusi lokal" MELEBUR ke relay-client + mode host (P1-PRT); task lama dianotasi, tidak dihapus.
 
-- [ ] **P2-DTL-1** Tauri shell + reuse UI web · _B · 2d_, **+ D23: mode switch host/remote di onboarding**
+- [~] **P2-DTL-1** Tauri shell + reuse UI web · _B · 2d_, **+ D23: mode switch host/remote di onboarding** ✅ D47 dev slice: apps/desktop (Tauri 2, window→UI web, welcome.html onboarding host/remote, host spawn+health-poll API 3211, kill-on-exit; prod export statis+sidecar menyusul D48, lihat docs/PLAN-DESKTOP.md)
 - [ ] **P2-DTL-2** Device relay worker (ambil job eksekusi lokal, report hasil; approval ketat) · _A · 4d_, **+ D23: tercapai via relay-client (host worker = P1-PRT-3 berjalan dalam Tauri; approval ketat tetap prinsip)**
-- [ ] **P2-DTL-3** Auto-update + packaging (NSIS/MSI/DMG) · _B · 2d_
+- [ ] **P2-DTL-3** Auto-update + packaging (NSIS/MSI/DMG) · _B · 2d_ — config NSIS+icons scaffolded D47; aktif di D49 (docs/PLAN-DESKTOP.md)
 
 ### P2-AGT (autonomy & knowledge)
 

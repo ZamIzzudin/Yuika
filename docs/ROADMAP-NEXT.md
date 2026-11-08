@@ -29,9 +29,9 @@
        per project (volume, wake/sleep, egress allowlist, `run_in_workshop`, UI,
        metering). **Staging/VPS-first** (Docker absen di host dev); `WorkshopHost`
        interface + fallback lokal.
-7. [ ] **Desktop Tauri** (P2-DTL-1+3, ~4d; DTL-2 sudah melebur ke relay-client),
+7. [~] **Desktop Tauri** (P2-DTL-1+3, ~4d; DTL-2 sudah melebur ke relay-client),
        shell Tauri reuse UI web + mode switch host/remote di onboarding + packaging
-       (NSIS/MSI) & auto-update. **Ditaruh pasca-Workshop** karena nilai utama Tauri
+       (NSIS/MSI) & auto-update. **D47: dev slice jalan** (apps/desktop Tauri 2 + onboarding welcome.html host/remote + host spawn API + e2e fallback; staging D48 export statis + sidecar API, D49 NSIS+updater di docs/PLAN-DESKTOP.md). **Ditaruh pasca-Workshop** karena nilai utama Tauri
        host = workshop/terminal/Docker di shell desktop. Bila test relay multi-platform
        jadi mendesak sebelum Workshop → boleh di-swap maju (ubah dokumen ini saja).
 8. [ ] **SCR-5 DevTools embed** (~2d, opsional), panel DevTools di floating

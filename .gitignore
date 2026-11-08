@@ -38,3 +38,6 @@ vault.key
 
 # Yuika runtime state (screen profiles, policies), cookies/browser data
 .yuika/
+# D47: Tauri desktop (apps/desktop)
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/schemas/

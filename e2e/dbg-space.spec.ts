@@ -16,3 +16,13 @@ test("dbg space home renders mascots & stars", async ({ page }) => {
   await page.screenshot({ path: "e2e/.tmp/space-home.png" });
   if (errors.length) throw new Error("pageerror: " + errors.join(" | "));
 });
+
+// D47: onboarding desktop (welcome.html) di browser biasa — tanpa shell
+// Tauri → fallback note + link ke app; kartu mode tak memicu apa pun.
+test("dbg welcome.html fallback in plain browser", async ({ page }) => {
+  await page.goto("/welcome.html");
+  await expect(page.getByRole("heading", { name: "Welcome to Yuika" })).toBeVisible();
+  await expect(page.getByText("Launch the Yuika desktop app")).toBeVisible();
+  // plain mode: kartu disembunyikan, tak ada invode crash
+  await expect(page.getByRole("button", { name: "On this device" })).toBeHidden();
+});
