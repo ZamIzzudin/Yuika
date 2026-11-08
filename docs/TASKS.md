@@ -795,3 +795,8 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] ZamIzzudin/Yuika-Mobile: scaffold Expo SDK 58 blank-TS, identitas dark Yuika, placeholder pairing; LICENSE template Expo dihapus (keputusan lisensi menunggu user).
 - [x] Studio repo: apps/desktop & script dihapus, README link repo desktop + penjelasan split release; api 49 test & web tsc hijau.
 
+
+### D55 — CI installer desktop (pin studio ref) (SELESAI)
+- [x] Yuika-Desktop: workflow_dispatch input studio_ref (tag/branch) + release_tag opsional; windows-2022 runner, sibling clone ZamIzzudin/Yuika@ref (STUDIO_TOKEN utk repo private, fallback anonim saat publik), rust-cache, artifact NSIS + draft release via softprops.
+- [x] build-desktop-web.mjs self-sufficient: npm ci otomatis bila studio node_modules belum ada (CI & kontributor baru); package-lock.json desktop repo dibuat.
+
