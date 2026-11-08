@@ -151,7 +151,13 @@ before the first user signs in.
 
 When Dokploy already owns ports 80/443 on the server (its Traefik edge),
 the studio must NOT bind them. Use the proxy-less variant instead of the
-standalone one:
+standalone one. Two ways to run it:
+
+- **From the Dokploy UI (no SSH):** create a Docker Compose project, connect
+  this repository, set the compose path to `docker-compose.traefik.yml`,
+  paste the variables from step 4 into the project environment, deploy.
+  Updates: click Redeploy (re-pulls the default branch).
+- **From the CLI:**
 
 ```bash
 cd /opt/Yuika

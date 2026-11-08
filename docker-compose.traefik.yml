@@ -1,9 +1,11 @@
 # Yuika Studio behind an existing reverse proxy (D52, shared VPS with
 # Dokploy): docs/DEPLOY.md "Sharing the VPS with Dokploy".
 #
-# Use this variant when something else already owns ports 80/443 on the VPS
-# (Dokploy's Traefik in this case) instead of docker-compose.prod.yml, which
-# brings its own Caddy edge. No Caddy here: the web and api containers join
+# Two ways to run this file:
+#   1. Dokploy UI (no SSH): Compose project -> connect this repo -> compose
+#      path docker-compose.traefik.yml -> set env in project settings ->
+#      deploy. Updates via Redeploy.
+#   2. Plain CLI on any server with a Traefik edge already on 80/443. No Caddy here: the web and api containers join
 # Dokploy's `dokploy-network` and carry Traefik labels, so Dokploy's edge
 # picks them up automatically (docker provider, exposedByDefault=false) and
 # issues the certificate via its `letsencrypt` resolver.

@@ -126,12 +126,107 @@ isolation, approval persistence, sandbox integration (opt-in with
 
 ## Deployment
 
-Self-host the studio on any Linux VPS with plain Docker: one compose
-project (Caddy edge with automatic HTTPS, web, api) and one DNS record.
-Accounts live on a centrally operated Yuika Portal, so sign-in works the
-same on every instance. Full manual guide, minimum specs, and DNS steps:
-[docs/DEPLOY.md](docs/DEPLOY.md). A fully private single-box variant
-(portal included) ships as `deploy/docker-compose.with-portal.yml`.
+Yuika Studio is self-hostable in two ways. Both need a Linux server, one
+DNS record pointing at it, and the public URL of a Yuika Portal (accounts
+live there; the studio keeps no passwords). Configure the same variables in
+both paths:
+
+- `STUDIO_DOMAIN` - the studio host, e.g. `studio.notu.dev`
+- `YUI_PORTAL_URL` - the central portal, e.g. `https://yuika.notu.dev`
+- `YUI_RELAY_URL` - the portal relay for linked devices, e.g. `wss://relay.notu.dev`
+- `YUI_OPENAI_API_KEY` (+ `YUI_MODEL`, or `YUI_PROVIDER_KIND` for
+  Anthropic/Gemini) - the api container refuses to boot without a provider
+
+Sign-in needs no registration: the portal accepts callbacks from any
+self-hosted studio at `https://<host>/auth/callback` by default.
+
+### Option A - plain Docker on any VPS
+
+For a server with nothing else on ports 80/443. One compose project: a Caddy
+edge with automatic HTTPS, the web UI, and the api (never published).
+
+```bash
+cd /opt && git clone https://github.com/ZamIzzudin/Yuika.git && cd Yuika
+cp .env.example .env && nano .env          # fill the variables above
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml logs -f caddy   # wait for the certificate
+```
+
+Minimum specs: 1 vCPU, 1 GB RAM (add 2 GB swap for the first build), 10 GB
+disk, Docker 24+ with Compose v2. Full walk-through with DNS, swap, and
+firewall steps: [docs/DEPLOY.md](docs/DEPLOY.md).
+
+### Option B - Dokploy on the same server
+
+When Dokploy (or any Traefik edge) already owns ports 80/443, the studio
+deploys without SSH and without touching those ports. In Dokploy: create a
+**Docker Compose** project, connect this repository, set the compose path to
+`docker-compose.traefik.yml`, paste the variables above into the project
+environment, deploy. The web and api containers register themselves with
+Dokploy's Traefik via labels; the certificate is issued automatically.
+Nothing to attach in the UI. The same file also works from the CLI:
+
+```bash
+docker network ls | grep dokploy             # network must exist (default name)
+docker compose -f docker-compose.traefik.yml up -d --build
+```
+
+### Verify the deployment
+
+```bash
+curl -s https://studio.notu.dev/api/meta            # {"version":"0.8.0",...}
+curl -s -o /dev/null -w '%{http_code}\n' \
+  https://studio.notu.dev/api/personas              # 401 (locked, good)
+```
+
+Open the studio, click **Sign in with Yuika Portal**, approve on the portal,
+and you are in. The API requires a token from the first boot
+(`YUI_AUTH_REQUIRED=1`), so strangers never get an open window.
+
+### Updating to a new version
+
+Releases are git tags (`v*`). The Settings panel in the app shows the
+running version and links the latest release when one is newer.
+
+- Option A: `cd /opt/Yuika && ./scripts/update.sh` - fetches the newest
+  release tag, rebuilds, waits for the healthcheck, prints the running
+  version. Add `--main` to track development instead of releases.
+- Option B (Dokploy UI): click **Redeploy** on the compose project; it
+  re-pulls the default branch. From the CLI, the updater works with
+  `YUI_COMPOSE_FILE=docker-compose.traefik.yml ./scripts/update.sh`.
+
+Rollback is the same flow on an older tag:
+`git checkout v0.8.0 && docker compose -f docker-compose.prod.yml up -d --build`.
+Updates never touch user data; expect a few seconds of downtime.
+
+### Backups
+
+Everything user-owned (SQLite databases, workspace files, vault key, auth
+tokens) lives in the `yuika-data` volume:
+
+```bash
+docker run --rm -v yuika_yui-data:/data -v "$PWD:/backup" \
+  alpine tar czf /backup/yuika-$(date +%F).tar.gz -C /data .
+```
+
+Losing the vault key inside means losing every stored secret, so keep
+backups off the server.
+
+### Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| Certificate fails to issue (ACME errors in logs) | DNS record not propagated (`dig +short $STUDIO_DOMAIN`) or port 80 blocked (`ufw status`). Let's Encrypt allows 5 retries per hour; do not spam restarts |
+| First build dies with `exit 137` | Out of memory. Add the 2 GB swap (DEPLOY.md step 2), build again |
+| api container restarts forever | Provider env missing in `.env` (`YUI_OPENAI_API_KEY`, `YUI_MODEL`), or `YUI_PORTAL_URL`/`YUI_RELAY_URL` unset. Check `docker compose logs api` |
+| Sign-in redirects then errors | `YUI_PORTAL_URL` is not the public https URL, or that portal runs strict mode (ask its operator to whitelist the callback) |
+| Studio domain 404 behind Traefik | Labels not picked up: `docker network ls | grep dokploy`, check the network name, then `docker logs <traefik-container> | grep studio` |
+| Live event stream feels frozen | Only when another proxy sits in front: disable response buffering for `/api/*` |
+| Want a total reset | `docker compose -f docker-compose.prod.yml down && docker volume rm yuika_yui-data` (deletes all studio data) |
+
+Fully private single-box variant (portal included):
+`deploy/docker-compose.with-portal.yml`. Complete guide with DNS, swap,
+firewall, and day-2 operations: [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## License
 
