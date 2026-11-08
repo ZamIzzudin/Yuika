@@ -831,3 +831,11 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] MCP filesystem gagal di deployment baru: katalog menunjuk {workspace}/reports tapi tidak ada kode yang membuat dir level-atas itu (yang dibuat hanya per-project/dungeon). Fix: mkdir reports di boot runtime (Docker + desktop sama).
 - [x] MCP git gagal: image node:24-bookworm-slim tidak memuat binary git; mcp-server-git (GitPython) butuh git sistem. Fix: apt-get install git di stage api (bersama python3/make/g++/uv).
 
+
+### D61 — Live browser di deployment: sidecar Chromium + CDP (SELESAI)
+- [x] Mode sidecar: YUI_SCREEN_CDP_URL (http://host:9222 atau ws://...) → koneksi CDP shared browser-level (flat protocol multiplex); kosong = mode lokal (spawn per key, profil persist) tidak berubah → desktop host inline.
+- [x] Isolasi per project×persona = CDP browser context (disposeOnDetach); stop key = closeTarget + disposeBrowserContext, browser & koneksi shared tetap hidup; sidecar restart → sesi remote ditandai failed, buka ulang = reconnect otomatis (login state hilang, context in-memory).
+- [x] resolveCdpEndpoint: http:// → fetch /json/version → webSocketDebuggerUrl (UUID berubah tiap boot sidecar); ws:// lolos langsung.
+- [x] Compose: service chromium (chromedp/headless-shell, --no-sandbox, --disable-dev-shm-usage) jaringan internal saja, tanpa port publik/Traefik; api env YUI_SCREEN_CDP_URL; .env.example + DEPLOY.md diupdate (catatan keamanan CDP).
+- [x] Test baru (16 total screen): resolver, context per key, dispose saat stop satu key, recovery sidecar restart — via fake CDP ws server + http /json/version. Core 401 passed, tsc clean.
+

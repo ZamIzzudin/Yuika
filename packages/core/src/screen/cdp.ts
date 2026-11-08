@@ -30,10 +30,24 @@ export class CdpConnection {
   private pending = new Map<number, Pending>();
   /** event listener per (method, sessionId?), wildcard sessionId=undefined = browser-level. */
   private listeners = new Map<string, Set<(params: unknown, sessionId?: string) => void>>();
+  private closeCbs = new Set<() => void>();
 
   constructor(wsUrl: string) {
     this.ws = new WebSocket(wsUrl);
     this.ws.addEventListener("message", (ev) => this.onMessage(ev));
+    this.ws.addEventListener("close", () => this.fireClose(), { once: true });
+  }
+
+  /** Dipanggil sekali saat websocket mati (sidecar down/restart, close()).
+   *  Dipakai mode sidecar utk menandai semua sesi remote failed. */
+  onClose(cb: () => void): () => void {
+    this.closeCbs.add(cb);
+    return () => this.closeCbs.delete(cb);
+  }
+
+  private fireClose(): void {
+    for (const cb of this.closeCbs) cb();
+    this.closeCbs.clear();
   }
 
   static async connect(wsUrl: string, timeoutMs = 10_000): Promise<CdpConnection> {
@@ -115,6 +129,7 @@ export class CdpConnection {
     if (!this.closed) {
       try { this.ws.close(); } catch { /* abaikan */ }
     }
+    this.fireClose();
   }
 }
 
@@ -158,6 +173,34 @@ export async function attachFirstPage(conn: CdpConnection): Promise<CdpPage> {
     flatten: true,
   });
   return new CdpPage(conn, sessionId, page.targetId);
+}
+
+/** Resolve endpoint CDP. ws://wss:// dipakai langsung; http(s):// di-fetch
+ *  /json/version (browser ws URL memuat UUID yang berubah tiap boot sidecar,
+ *  endpoint http stabil adalah konfigurasi yang benar untuk sidecar). */
+export async function resolveCdpEndpoint(url: string): Promise<string> {
+  const u = url.trim();
+  if (u.startsWith("ws://") || u.startsWith("wss://")) return u;
+  const r = await fetch(`${u.replace(/\/+$/, "")}/json/version`, { signal: AbortSignal.timeout(5_000) });
+  if (!r.ok) throw new Error(`CDP endpoint ${u} /json/version returned HTTP ${r.status}`);
+  const v = (await r.json()) as { webSocketDebuggerUrl?: string };
+  if (!v.webSocketDebuggerUrl) throw new Error(`CDP endpoint ${u} did not return webSocketDebuggerUrl`);
+  return v.webSocketDebuggerUrl;
+}
+
+/** Mode sidecar (deployment): satu proses browser REMOTE di-share semua key
+ *  project×persona. Isolasi antar key = browser CONTEXT terpisah (cookie /
+ *  storage tidak terbagi), tanpa profil persist (context in-memory). */
+export async function createIsolatedPage(conn: CdpConnection): Promise<{ page: CdpPage; browserContextId: string }> {
+  const { browserContextId } = await conn.call<{ browserContextId: string }>("Target.createBrowserContext", {
+    disposeOnDetach: true,
+  });
+  const { targetId } = await conn.call<{ targetId: string }>("Target.createTarget", {
+    url: "about:blank",
+    browserContextId,
+  });
+  const { sessionId } = await conn.call<{ sessionId: string }>("Target.attachToTarget", { targetId, flatten: true });
+  return { page: new CdpPage(conn, sessionId, targetId), browserContextId };
 }
 
 /** Parse baris "DevTools listening on ws://..." dari stderr proses browser. */

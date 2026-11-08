@@ -54,6 +54,9 @@ services:
       # Central portal (public URLs as browser and this server see them).
       YUI_PORTAL_URL: ${YUI_PORTAL_URL:?set YUI_PORTAL_URL in .env}
       YUI_RELAY_URL: ${YUI_RELAY_URL:?set YUI_RELAY_URL in .env}
+      # Live browser: headless Chromium sidecar (no local GUI in a container).
+      # Internal docker network only, CDP is never published to the Internet.
+      YUI_SCREEN_CDP_URL: http://chromium:9222
     volumes:
       - yui-data:/data
     networks:
@@ -96,6 +99,26 @@ services:
       traefik.http.routers.studio-web.entrypoints: websecure
       traefik.http.routers.studio-web.tls.certresolver: letsencrypt
       traefik.http.services.studio-web.loadbalancer.server.port: "3000"
+
+  # Live browser sidecar: headless Chromium + CDP for the screen tools
+  # (browser_*), screencast and remote takeover. ONE shared browser for all
+  # project×persona keys (isolation via CDP browser contexts). Internal
+  # network only: no published ports, no Traefik labels, unreachable from
+  # outside the docker network. Restart-safe: sessions reconnect on reopen.
+  chromium:
+    image: chromedp/headless-shell:latest
+    restart: unless-stopped
+    command:
+      - --remote-debugging-address=0.0.0.0
+      - --remote-debugging-port=9222
+      - --no-sandbox # container runs as root; sandbox needs namespaces
+      - --disable-gpu
+      - --disable-dev-shm-usage # avoid /dev/shm exhaustion in containers
+      - --window-size=1280,800
+      - --no-first-run
+      - --no-default-browser-check
+    networks:
+      - edge
 
 volumes:
   yui-data:

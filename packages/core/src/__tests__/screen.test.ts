@@ -4,13 +4,15 @@
 // eksklusi .yuika dari Files (SCR-3).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import { WebSocketServer } from "ws";
 
 import {
   screenLeaseId, parseScreenLeaseId, canTakeScreenLease, canReleaseScreenLease,
 } from "../screen/lease.js";
-import { parseDevToolsUrl } from "../screen/cdp.js";
+import { parseDevToolsUrl, resolveCdpEndpoint } from "../screen/cdp.js";
 import { detectBrowserExec } from "../screen/manager.js";
 import {
   ensureScreen, stopScreen, screenKey, takeLease, yieldLease, leaseOwner,
@@ -326,4 +328,115 @@ describe("SCR-3 files exclusion", () => {
     expect(flat).not.toContain(".yuika");
     expect(flat).toContain("README.md");
   });
+});
+
+// ── Sidecar mode (YUI_SCREEN_CDP_URL): browser remote shared ────────────────
+// Fake CDP server (ws) + http /json/version: buktikan (a) endpoint http
+// di-resolve ke ws URL, (b) tiap key mendapat browser CONTEXT sendiri,
+// (c) stop satu key menutup target+context-nya tanpa membunuh browser
+// shared, dan (d) koneksi dibuat ulang setelah sidecar restart.
+
+describe("screen sidecar (YUI_SCREEN_CDP_URL)", () => {
+  class FakeCdp {
+    readonly calls: string[] = [];
+    private wss = new WebSocketServer({ port: 0 });
+    readonly wsPort: Promise<number>;
+    private seq = 0;
+    private nextId = 0;
+    readonly contexts = new Map<string, string>(); // ctxId → targetId
+
+    constructor() {
+      this.wsPort = new Promise((res) => this.wss.on("listening", () => res((this.wss.address() as { port: number }).port)));
+      this.wss.on("connection", (ws) => {
+        ws.on("message", (raw) => {
+          const m = JSON.parse(String(raw)) as { id?: number; method: string; params: Record<string, unknown>; sessionId?: string };
+          const result = this.handle(m.method, m.params, m.sessionId);
+          this.calls.push(m.method);
+          ws.send(JSON.stringify({ id: m.id, result }));
+        });
+      });
+    }
+
+    private handle(method: string, p: Record<string, unknown>, sessionId?: string): Record<string, unknown> {
+      switch (method) {
+        case "Target.createBrowserContext": {
+          const id = `ctx_${++this.seq}`;
+          this.contexts.set(id, "");
+          return { browserContextId: id };
+        }
+        case "Target.createTarget": {
+          const tid = `tgt_${++this.seq}`;
+          const ctx = String(p.browserContextId ?? "");
+          if (this.contexts.has(ctx)) this.contexts.set(ctx, tid);
+          return { targetId: tid };
+        }
+        case "Target.attachToTarget":
+          return { sessionId: `sess_${++this.seq}` };
+        case "Target.closeTarget":
+          return { success: true };
+        case "Target.disposeBrowserContext":
+          return {};
+        default:
+          // Page.enable, Runtime.enable, Page.startScreencast, dst.
+          return { ok: !!sessionId };
+      }
+    }
+
+    async close(): Promise<void> {
+      for (const c of this.wss.clients) c.terminate();
+      await new Promise<void>((res) => this.wss.close(() => res()));
+    }
+  }
+
+  it("http endpoint → /json/version → ws; context per key; stop = dispose context saja", async () => {
+    const fake = new FakeCdp();
+    const wsPort = await fake.wsPort;
+    const httpSrv = http.createServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ webSocketDebuggerUrl: `ws://127.0.0.1:${wsPort}/devtools/browser/fake` }));
+    }).listen(0);
+    await new Promise<void>((res) => httpSrv.once("listening", res));
+    const httpPort = (httpSrv.address() as { port: number }).port;
+
+    // (a) resolver: ws:// lolos langsung, http → /json/version
+    expect(await resolveCdpEndpoint(`ws://x/devtools/browser/y`)).toBe("ws://x/devtools/browser/y");
+    expect(await resolveCdpEndpoint(`http://127.0.0.1:${httpPort}`)).toContain(`127.0.0.1:${wsPort}`);
+
+    vi.stubEnv("YUI_SCREEN_CDP_URL", `http://127.0.0.1:${httpPort}`);
+    const K1 = screenKey("p_sidecar", "yui-side-a");
+    const K2 = screenKey("p_sidecar", "yui-side-b");
+
+    // (b) dua key → dua context terpisah, keduanya running di satu "browser"
+    const a = await ensureScreen(dir, "p_sidecar", "yui-side-a");
+    expect(a.status).toBe("running");
+    const b = await ensureScreen(dir, "p_sidecar", "yui-side-b");
+    expect(b.status).toBe("running");
+    expect(fake.calls.filter((c) => c === "Target.createBrowserContext")).toHaveLength(2);
+
+    // (c) stop key a → closeTarget + disposeBrowserContext utk ctx a SAJA;
+    // koneksi shared & sesi b tidak tersentuh.
+    const ctxCountBefore = fake.calls.filter((c) => c === "Target.disposeBrowserContext").length;
+    await stopScreen(K1, "test");
+    expect(fake.calls.filter((c) => c === "Target.disposeBrowserContext").length).toBeGreaterThan(ctxCountBefore);
+    expect(fake.calls).toContain("Target.closeTarget");
+    expect(getScreenState(K2)?.status).toBe("running");
+
+    // (d) sidecar restart → sesi b gagal & terhapus; buka ulang → koneksi baru
+    await fake.close();
+    await new Promise((res) => setTimeout(res, 50));
+    expect(getScreenState(K2)?.status ?? "gone").not.toBe("running");
+    const fake2 = new FakeCdp();
+    const wsPort2 = await fake2.wsPort;
+    httpSrv.removeAllListeners("request");
+    httpSrv.on("request", (_req, res) => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ webSocketDebuggerUrl: `ws://127.0.0.1:${wsPort2}/devtools/browser/fake` }));
+    });
+    const c = await ensureScreen(dir, "p_sidecar", "yui-side-b");
+    expect(c.status).toBe("running");
+
+    await stopScreen(K2, "test");
+    await fake2.close();
+    await new Promise<void>((res) => httpSrv.close(() => res()));
+  }, 30_000);
 });

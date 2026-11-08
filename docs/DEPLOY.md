@@ -250,9 +250,14 @@ means losing every stored secret, so keep backups off the server.
 - Browser traffic is always HTTPS. Browser and API share one origin, so no
   CORS is involved.
 - Agent tool availability on a server: file tools, research, MCP servers,
-  and vault work as on desktop. Features that need host hardware are off by
-  default: the live screen and its Chromium, and workshop containers (which
-  would need the Docker socket mounted). The terminal tab falls back to a
+  and vault work as on desktop. The live screen runs against a headless
+  Chromium SIDECAR (`chromium` service in `docker-compose.traefik.yml`, env
+  `YUI_SCREEN_CDP_URL=http://chromium:9222`): one shared browser, one CDP
+  browser context per project x persona, internal network only (no
+  published ports, no Traefik route; CDP on the public Internet would mean
+  full remote-control of the browser). Cookies do not survive a sidecar
+  restart (contexts are in-memory). Workshop containers would need the
+  Docker socket mounted and stay off. The terminal tab falls back to a
   shell inside the api container, isolated from the host system.
 
 ## Troubleshooting

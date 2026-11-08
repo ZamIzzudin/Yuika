@@ -16,13 +16,17 @@
 //     (YUI_TAKEOVER_TIMEOUT_MS default 120s; 0 = tanpa deadline).
 //   - Idle auto-close (YUI_SCREEN_IDLE_MS default 15 menit; 0 = off):
 //     tanpa viewer + tanpa aktivitas → browser dimatikan.
-// - Headless Edge/Chrome di host (Docker absen, catatan kelas 0).
-// Env: YUI_BROWSER_EXEC override executable.
+// - Mode LOKAL (default): headless Edge/Chrome di-spawn di host per key
+//   dengan profil persist. Mode SIDECAR (deployment, YUI_SCREEN_CDP_URL =
+//   http://host:9222): koneksi CDP ke Chromium remote (sidecar compose),
+//   isolasi per key = browser context, tanpa profil persist.
+// Env: YUI_BROWSER_EXEC override executable (mode lokal); YUI_SCREEN_CDP_URL
+// endpoint sidecar (mode remote).
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { moduleLogger } from "../logger.js";
-import { CdpConnection, CdpPage, attachFirstPage, parseDevToolsUrl } from "./cdp.js";
+import { CdpConnection, CdpPage, attachFirstPage, createIsolatedPage, parseDevToolsUrl, resolveCdpEndpoint } from "./cdp.js";
 import { canTakeScreenLease, canReleaseScreenLease, parseScreenLeaseId, screenLeaseId } from "./lease.js";
 
 const log = moduleLogger("screen");
@@ -100,6 +104,12 @@ interface ScreenSession {
   proc: ChildProcess | null;
   conn: CdpConnection | null;
   page: CdpPage | null;
+  /** Mode sidecar: context browser (isolasi per key) yang harus dibuang saat stop. */
+  browserContextId: string | null;
+  /** Mode sidecar (YUI_SCREEN_CDP_URL): tanpa spawn lokal, koneksi CDP shared. */
+  remote: boolean;
+  /** Guard cleanup: detached event akibat closeTarget milik sendiri bukan crash. */
+  closing: boolean;
   lastFrame: ScreenFrame | null;
   frameListeners: Set<(f: ScreenFrame) => void>;
   stateListeners: Set<(s: ScreenState) => void>;
@@ -135,6 +145,12 @@ G.__yuikaScreenSessions = sessions;
 function fpsIdle(): number { return Math.max(1, Number(process.env.YUI_SCREEN_FPS_IDLE ?? 2) || 2); }
 function fpsActive(): number { return Math.min(30, Math.max(1, Number(process.env.YUI_SCREEN_FPS_ACTIVE ?? 15) || 15)); }
 function idleMs(): number { return Math.max(0, Number(process.env.YUI_SCREEN_IDLE_MS ?? 15 * 60_000) || 0); }
+/** Mode sidecar (deployment): endpoint CDP remote (http://chromium:9222 atau
+ *  ws://...). Kosong = mode lokal: spawn per key dengan profil persist. */
+function remoteCdpUrl(): string | null {
+  const u = process.env.YUI_SCREEN_CDP_URL?.trim();
+  return u ? u : null;
+}
 /** Tool-idle close (default 120s): sesi tanpa viewer DAN tanpa aktivitas tool
  *  persona ditutup, persona "selesai memakai browser" → shutdown otomatis
  *  (0 = off). YUI_SCREEN_IDLE_MS tetap hard cap. */
@@ -200,6 +216,37 @@ function scheduleIdleCheck(s: ScreenSession): void {
   s.idleTimer.unref?.();
 }
 
+// ── koneksi sidecar shared (HMR-safe) ───────────────────────────────────────
+
+const RG = globalThis as unknown as { __yuikaRemoteCdp?: Promise<CdpConnection> | null };
+
+/** Satu koneksi ws browser-level untuk SEMUA key (flat protocol multiplex
+ *  sessionId). Dibuat ulang otomatis bila sidecar restart. */
+async function getRemoteConn(): Promise<CdpConnection> {
+  const cur = await RG.__yuikaRemoteCdp?.then((c) => c).catch(() => null);
+  if (cur && !cur.closed) return cur;
+  const endpoint = remoteCdpUrl();
+  if (!endpoint) throw new Error("YUI_SCREEN_CDP_URL is not set");
+  const wsUrl = await resolveCdpEndpoint(endpoint);
+  const conn = await CdpConnection.connect(wsUrl);
+  // sidecar down/restart → semua sesi remote gagal; buka ulang layar untuk
+  // reconnect (login state hilang bersama context in-memory).
+  conn.onClose(() => {
+    RG.__yuikaRemoteCdp = null;
+    for (const [k, s] of sessions) {
+      if (!s.remote) continue;
+      s.status = "failed";
+      s.error = "browser sidecar connection lost";
+      fireState(s);
+      sessions.delete(k);
+      for (const v of loginSecrets.get(k) ?? []) releaseActiveSecret(v);
+      loginSecrets.delete(k);
+    }
+  });
+  RG.__yuikaRemoteCdp = Promise.resolve(conn);
+  return conn;
+}
+
 // ── lifecycle ────────────────────────────────────────────────────────────────
 
 export async function ensureScreen(
@@ -211,8 +258,9 @@ export async function ensureScreen(
   const existing = sessions.get(key);
   if (existing && (existing.status === "running" || existing.status === "starting")) return stateOf(existing);
 
-  const exec = detectBrowserExec();
-  if (!exec) {
+  const remote = remoteCdpUrl() !== null;
+  const exec = remote ? null : detectBrowserExec();
+  if (!remote && !exec) {
     throw new Error(
       "No browser executable found, set YUI_BROWSER_EXEC to a Chrome/Edge/Chromium path",
     );
@@ -233,6 +281,9 @@ export async function ensureScreen(
     watchers: new Set(),
     lease: null,
     fence: 0,
+    browserContextId: null,
+    remote,
+    closing: false,
     url: "about:blank",
     title: "",
     startedAt: Date.now(),
@@ -243,37 +294,48 @@ export async function ensureScreen(
   sessions.set(key, s);
 
   try {
-    // profil persist per project×persona (SCR-3), di dataDir, BUKAN workspace
-    const profile = path.join(dataDir, ".yuika", "browser", projectId, personaId);
-    fs.mkdirSync(profile, { recursive: true });
-    const proc = spawn(exec, [
-      "--headless=new",
-      "--remote-debugging-port=0",
-      "--remote-debugging-address=127.0.0.1",
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--disable-gpu",
-      "--disable-extensions",
-      "--window-size=1280,800",
-      `--user-data-dir=${profile}`,
-      "about:blank",
-    ], { stdio: ["ignore", "pipe", "pipe"] });
-    s.proc = proc;
+    let conn: CdpConnection;
+    let page: CdpPage;
+    if (remote) {
+      // Sidecar: satu browser remote; isolasi per key = browser context
+      // terpisah (SCR-3 berubah jadi context-scoped, tanpa profil persist).
+      conn = await getRemoteConn();
+      const iso = await createIsolatedPage(conn);
+      page = iso.page;
+      s.browserContextId = iso.browserContextId;
+    } else {
+      // profil persist per project×persona (SCR-3), di dataDir, BUKAN workspace
+      const profile = path.join(dataDir, ".yuika", "browser", projectId, personaId);
+      fs.mkdirSync(profile, { recursive: true });
+      const proc = spawn(exec!, [
+        "--headless=new",
+        "--remote-debugging-port=0",
+        "--remote-debugging-address=127.0.0.1",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--disable-gpu",
+        "--disable-extensions",
+        "--window-size=1280,800",
+        `--user-data-dir=${profile}`,
+        "about:blank",
+      ], { stdio: ["ignore", "pipe", "pipe"] });
+      s.proc = proc;
 
-    const wsUrl = await new Promise<string>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error("browser did not expose DevTools websocket in 10s")), 10_000);
-      const onData = (d: Buffer): void => {
-        const u = parseDevToolsUrl(d.toString());
-        if (u) { clearTimeout(t); resolve(u); }
-      };
-      proc.stderr!.on("data", onData);
-      proc.stdout!.on("data", onData);
-      proc.on("close", (code) => { clearTimeout(t); reject(new Error(`browser exited early (code ${code})`)); });
-    });
+      const wsUrl = await new Promise<string>((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error("browser did not expose DevTools websocket in 10s")), 10_000);
+        const onData = (d: Buffer): void => {
+          const u = parseDevToolsUrl(d.toString());
+          if (u) { clearTimeout(t); resolve(u); }
+        };
+        proc.stderr!.on("data", onData);
+        proc.stdout!.on("data", onData);
+        proc.on("close", (code) => { clearTimeout(t); reject(new Error(`browser exited early (code ${code})`)); });
+      });
 
-    const conn = await CdpConnection.connect(wsUrl);
+      conn = await CdpConnection.connect(wsUrl);
+      page = await attachFirstPage(conn);
+    }
     s.conn = conn;
-    const page = await attachFirstPage(conn);
     s.page = page;
 
     await page.call("Page.enable");
@@ -284,7 +346,7 @@ export async function ensureScreen(
       if (fp && !fp.parentId && fp.url) { s.url = fp.url; fireState(s); }
     });
     conn.on("Target.detachedFromTarget", async (p) => {
-      if ((p as { sessionId?: string }).sessionId === page.sessionId && s.status === "running") {
+      if ((p as { sessionId?: string }).sessionId === page.sessionId && s.status === "running" && !s.closing) {
         log.warn({ key }, "page target detached → closing screen");
         await stopScreen(key, "detached");
       }
@@ -341,15 +403,23 @@ async function startScreencast(s: ScreenSession): Promise<void> {
 async function cleanup(s: ScreenSession): Promise<void> {
   if (s.ackTimer) { clearTimeout(s.ackTimer); s.ackTimer = null; }
   if (s.idleTimer) { clearTimeout(s.idleTimer); s.idleTimer = null; }
-  try { await s.conn?.close(); } catch { /* abaikan */ }
-  if (s.proc && !s.proc.killed) {
-    // tunggu proses BENAR-BENAR mati (Windows: user-data-dir terkunci sampai
-    // exit, restart cepat akan gagal spawn bila tidak ditunggu)
-    await new Promise<void>((resolve) => {
-      const t = setTimeout(resolve, 3_000);
-      s.proc!.once("close", () => { clearTimeout(t); resolve(); });
-      try { s.proc!.kill(); } catch { /* abaikan */ }
-    });
+  s.closing = true;
+  if (s.remote) {
+    // Sidecar: tutup target + context milik key ini saja; koneksi shared dan
+    // proses browser dibiarkan hidup (dipakai key lain).
+    try { await s.conn?.call("Target.closeTarget", { targetId: s.page?.targetId }); } catch { /* abaikan */ }
+    try { await s.conn?.call("Target.disposeBrowserContext", { browserContextId: s.browserContextId }); } catch { /* abaikan */ }
+  } else {
+    try { await s.conn?.close(); } catch { /* abaikan */ }
+    if (s.proc && !s.proc.killed) {
+      // tunggu proses BENAR-BENAR mati (Windows: user-data-dir terkunci sampai
+      // exit, restart cepat akan gagal spawn bila tidak ditunggu)
+      await new Promise<void>((resolve) => {
+        const t = setTimeout(resolve, 3_000);
+        s.proc!.once("close", () => { clearTimeout(t); resolve(); });
+        try { s.proc!.kill(); } catch { /* abaikan */ }
+      });
+    }
   }
   s.conn = null;
   s.page = null;
