@@ -826,3 +826,8 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Verifikasi unlink live: portal Devices → relay sweep bye 4001 → sesi studio dicabut (butuh redeploy image studio agar aktif).
 - [ ] Antrian: host relay service auto-start saat SSO + slot multi-host di portal (kind desktop 1-slot belum cukup untuk web host + desktop host bersamaan) + portal Devices page sederhanakan (token issuing dihapus) + mobile login → daftar host → interaksi relay.
 
+
+### D60 — Fix MCP di deployment (SELESAI)
+- [x] MCP filesystem gagal di deployment baru: katalog menunjuk {workspace}/reports tapi tidak ada kode yang membuat dir level-atas itu (yang dibuat hanya per-project/dungeon). Fix: mkdir reports di boot runtime (Docker + desktop sama).
+- [x] MCP git gagal: image node:24-bookworm-slim tidak memuat binary git; mcp-server-git (GitPython) butuh git sistem. Fix: apt-get install git di stage api (bersama python3/make/g++/uv).
+

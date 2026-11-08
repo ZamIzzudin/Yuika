@@ -93,6 +93,12 @@ function safeList<T>(fn: () => T[]): T[] {
 export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const paths = { ...resolvePaths(), ...cfg.paths } as YuiPaths;
   fs.mkdirSync(paths.workspacePath, { recursive: true });
+  // Dir bersama untuk MCP filesystem (katalog: "{workspace}/reports").
+  // Dir per-project dibuat saat project lahir, tapi level-atas ini tidak
+  // pernah dibuat oleh siapa pun: deployment baru (volume Docker kosong)
+  // membuat server filesystem skip semua direktorinya. Satu mkdir di boot
+  // menutup Docker + desktop sekaligus.
+  fs.mkdirSync(path.join(paths.workspacePath, "reports"), { recursive: true });
 
   const store: ISessionStore = createSessionStore(paths.dbPath);
  // approval pending dari proses sebelumnya → expired (turn-nya mati

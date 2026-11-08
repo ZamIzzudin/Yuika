@@ -404,6 +404,7 @@ sudah disiapkan di portal (D23). **Jangan dikerjakan tanpa instruksi user.**
 - **D57 — Persona stage density**: seluruh elemen CharacterStage (maskot, orbit, card kaca, tipografi) dikecilkan agar aman di zoom 100% / viewport 1280×800.
 - **D58 — Naming dua "remote"**: copy semua titik kebingungan (welcome shell, Remote console, Portal settings); antrian: pindahkan console dari /dev agar tersedia di build prod Docker.
 - **D59 — Pairing final**: /dev/remote + seksi pairing manual dihapus; owner-lock 403 account beda; unlink live terverifikasi; multi-host slots + mobile menyusul.
+- **D60 — MCP deployment**: mkdir {workspace}/reports saat boot; git ditambahkan ke image api.
 - Est = perkiraan; ubah hanya via kesepakatan sinkron (aturan TASKS.md).
 - **DOCS · ROADMAP-NEXT AMANDEMEN PLATFORM (2026-11, disetujui user)**: sisip #7 Desktop Tauri (P2-DTL-1+3, ~4d, pasca-Workshop, boleh swap maju bila test relay mendesak) + Mobile Expo naik jadi #12 (P2-MOB-1..5 + push, ~13d, dep portal live + SCR-7). Catatan: relay multi-platform bisa diuji HARI INI via halaman dev /dev/remote (kontrak sama dengan platform native nanti).
 - **DOCS · ROADMAP-NEXT + REKONSILIASI (2026-11)**: dokumen baru `docs/ROADMAP-NEXT.md` = antrian prioritas tunggal sisa pekerjaan (#1 reconciliation … #12 pra-publik) + keputusan desain VLT-4 fill_login v0. Rekonsiliasi: P2-FLOW-2..7 TASKS dicoret sesuai realitas (engine/gate/event/board/steering teruji e2e; FLOW-1 [~] yaml deklaratif tidak diadopsi, chat-driven), P2-SCR-1..4 di PLAN-WORKSHOP ditandai ✅ Batch 14a.

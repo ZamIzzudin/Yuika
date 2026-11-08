@@ -69,9 +69,10 @@ CMD ["node", "apps/web/server.js"]
 FROM node:24-bookworm-slim AS api
 WORKDIR /app
 
-RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends python3 make g++ git && rm -rf /var/lib/apt/lists/*
 
 # uv untuk server MCP berbasis uvx (git, time), binary tunggal, tanpa python image
+# (mcp-server-git/GitPython butuh binary git sistem, lihat paket di atas)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 # Prod deps seluruh workspaces (npm workspaces tidak punya filter per-package
