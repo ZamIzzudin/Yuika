@@ -1,13 +1,13 @@
-// @yuika/core, P2-PM-4/5: dashboard progres terukur.
+// @yuika/core, : dashboard progres terukur.
 // Murni fungsi agregasi (tanpa I/O sendiri): dipanggil runtime dengan data
 // store → ProjectDashboard (kontrak). Semua angka dihitung ulang per request
 // (read-only, murah: task/run roster kecil; event scan ekor 500/sesi).
 //
-// P2-PM-4 (RACI ringan): tiap fase → owner persona (roster phases[]) +
+// (RACI ringan): tiap fase → owner persona (roster phases[]) +
 // metrik live (% acceptance utk planning, gate utk design, done/total
 // utk develop, verdict QA utk testing, dst, semua turun dari data yang
 // sama: TaskItem.phase + WorkflowRunRow.phaseStates + qa.check events).
-// P2-PM-5: burndown task + health (reopened, pending approvals, qa fail,
+// burndown task + health (reopened, pending approvals, qa fail,
 // delegation error) + ringkasan iterasi (run ke-N + delta vs sebelumnya).
 import type {
   DashboardPhase,

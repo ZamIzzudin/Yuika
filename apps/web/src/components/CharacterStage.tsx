@@ -6,7 +6,7 @@
 // progress bar & galeri, otomatis ikut saat karakter/wujud diganti.
 // DATA: persona/growth/skill-bindings NYATA dari API; radar & bonus skill =
 // lapisan kosmetik deterministik (hash id/nama), BUKAN hasil evaluasi.
-// DS-1: utility Tailwind + token semantik; tanpa file CSS baru (keyframes di globals).
+// utility Tailwind + token semantik; tanpa file CSS baru (keyframes di globals).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   PersonaGrowth,

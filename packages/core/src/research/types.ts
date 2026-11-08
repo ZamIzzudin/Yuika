@@ -1,4 +1,4 @@
-// Batch 7 (RS), Research Engine: kontrak provider search & fetch.
+// (RS), Research Engine: kontrak provider search & fetch.
 // Brief "Remote Browser & Research Tool" §B: tanpa UI, tanpa API berbayar,
 // defensif (cache + fallback + hasil parsial). Plan: docs/PLAN-RESEARCH-LIVE-BROWSER.md
 

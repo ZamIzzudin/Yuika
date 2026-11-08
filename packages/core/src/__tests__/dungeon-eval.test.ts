@@ -1,4 +1,4 @@
-// P1-DUN-3: eval buta, parser verdict, prompt anti-bias, evaluator penuh
+// eval buta, parser verdict, prompt anti-bias, evaluator penuh
 // (pending → pass = promote ready; fail = tetap tested + alasan; throw = fail rapi).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -30,7 +30,7 @@ targetSkill:
 
 const mission = () => Mission.parse(YAML.parse(missionYaml));
 
-describe("parseVerdict (P1-DUN-3)", () => {
+describe("parseVerdict ()", () => {
   it("LULUS + alasan GAGAL; verdict TERAKHIR yang dihitung (model kadang nulis draft di tengah)", () => {
     expect(parseVerdict("analisis...\nVERDICT: GAGAL, kekurangan contoh").verdict).toBe("fail");
     expect(parseVerdict("VERDICT: LULUS").reason).toBe("semua kriteria terpenuhi");
@@ -40,7 +40,7 @@ describe("parseVerdict (P1-DUN-3)", () => {
   });
 });
 
-describe("evaluator (P1-DUN-3)", () => {
+describe("evaluator ()", () => {
   it("prompt buta: kriteria + skill_view + tanpa cerita pembuat", () => {
     const p = buildEvalPrompt(mission(), "Demo Skill");
     expect(p).toContain("EVALUASI BUTA");

@@ -1,13 +1,13 @@
-// @yuika/contracts, project schema (PLAN §13.1–13.3, D14: project = entitas first-class).
-// Project duduk DI ATAS workspace: sesi/persona/tool mengikat ke project, tasklist
-// milik project. Roster & binding dideklarasikan di `project.yaml` (P1-PRJ-3/5),
-// kontrak di sini menjadi bentuk tervalidasi yang sama untuk loader maupun REST.
+// @yuika/contracts, project schema (projects are first-class entities).
+// Projects sit ABOVE the workspace: sessions/personas/tools bind to a project,
+// tasklists belong to it. Roster and bindings are declared in `project.yaml`;
+// these contracts are the validated shape shared by loader and REST.
 import { z } from "zod";
 
 export const ProjectStatus = z.enum(["active", "archived"]);
 export type ProjectStatus = z.infer<typeof ProjectStatus>;
 
-/** Ringkasan sesi untuk riwayat/resume percakapan project (P1-PRJ-6 UX). */
+/** Ringkasan sesi untuk riwayat/resume percakapan project ( UX). */
 export const ProjectSessionSummary = z.object({
   sessionId: z.string(),
   personaId: z.string(),
@@ -22,25 +22,25 @@ export const ProjectInfo = z.object({
   name: z.string().min(1).max(80),
   description: z.string().max(280).default(""),
   status: ProjectStatus.default("active"),
-  /** Root relatif terhadap workspace (mis. `projects/p_demo`), isolasi penuh di P1-PRJ-2. */
+ /** Root relatif terhadap workspace (mis. `projects/p_demo`), isolasi penuh di . */
   rootPath: z.string(),
-  /** P1-DUN-1: ruang `dungeon` = arena latihan persona (sandbox, bukan produksi). */
+ /** ruang `dungeon` = arena latihan persona (sandbox, bukan produksi). */
   kind: z.enum(["project", "dungeon"]).default("project"),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
 });
 export type ProjectInfo = z.infer<typeof ProjectInfo>;
 
-// Roster & binding, dipakai `project.yaml` loader (P1-PRJ-3) dan UI project home.
+// Roster & binding, dipakai `project.yaml` loader dan UI project home.
 export const McpToolBinding = z.object({
   /** Nama server MCP di mcp.json. */
   server: z.string().min(1),
-  /** Pola tool; `*` = semua tool server (D17: binding granular project×persona×tool). */
+ /** Pola tool; `*` = semua tool server (: binding granular project×persona×tool). */
   tools: z.array(z.string()).default(["*"]),
 });
 export type McpToolBinding = z.infer<typeof McpToolBinding>;
 
-/** Fase workflow template 7 fase (D15), roster entry menandai fase aktif persona. */
+/** The seven template workflow phases; roster entries mark the active one. */
 export const WORKFLOW_PHASES = [
   "planning",
   "research",
@@ -61,13 +61,13 @@ export const RosterEntry = z.object({
 });
 export type RosterEntry = z.infer<typeof RosterEntry>;
 
-/** `project.yaml` di root project, sumber roster (P1-PRJ-3) & binding MCP (P1-PRJ-5). */
+/** `project.yaml` di root project, sumber roster & binding MCP . */
 export const ProjectManifest = z.object({
   roster: z.array(RosterEntry).default([]),
 });
 export type ProjectManifest = z.infer<typeof ProjectManifest>;
 
-// ---- TaskTree (P1-PRJ-7, PLAN §13.7/D19), hierarki pemantauan delegasi ----
+// ---- TaskTree: hierarchy for monitoring delegations ----
 
 export const TaskStatus = z.enum(["todo", "doing", "review", "done"]);
 export type TaskStatus = z.infer<typeof TaskStatus>;
@@ -84,7 +84,7 @@ export interface TaskNode {
   refs: string[];
   /** Artefak nyata yang dihasilkan node (path file, link). */
   artefak: string[];
-  /** P2-PM-3: detail task (optional, node/event lama tetap valid). */
+ /** detail task (optional, node/event lama tetap valid). */
   description?: string | null;
   acceptance?: string[];
   dependsOn?: string[];
@@ -104,7 +104,7 @@ export const TaskNode: z.ZodType<TaskNode> = z.object({
   assignee: z.string().nullable(),
   refs: z.array(z.string()),
   artefak: z.array(z.string()),
-  // P2-PM-3: detail task ikut ter-replay di pohon
+ // detail task ikut ter-replay di pohon
   description: z.string().nullable().optional(),
   acceptance: z.array(z.string()).optional(),
   dependsOn: z.array(z.string()).optional(),
@@ -124,7 +124,7 @@ export const ProjectEvent = z.discriminatedUnion("type", [
     parent: z.string().nullable(),
     title: z.string(),
     assignee: z.string().nullable(),
-    // P2-PM-3: detail task, optional (event lama tetap parse)
+ // detail task, optional (event lama tetap parse)
     description: z.string().nullable().optional(),
     acceptance: z.array(z.string()).optional(),
     dependsOn: z.array(z.string()).optional(),
@@ -141,7 +141,7 @@ export const ProjectEvent = z.discriminatedUnion("type", [
     assignee: z.string().nullable().optional(),
     addRefs: z.array(z.string()).optional(),
     addArtefak: z.array(z.string()).optional(),
-    // P2-PM-3: replace-semantik (bukan append)
+ // replace-semantik (bukan append)
     description: z.string().nullable().optional(),
     acceptance: z.array(z.string()).optional(),
     dependsOn: z.array(z.string()).optional(),
@@ -170,7 +170,7 @@ export const DelegationEdge = z.object({
 });
 export type DelegationEdge = z.infer<typeof DelegationEdge>;
 
-/** P0-DEL-1: job delegasi PERSIST di DB, audit & status lintas restart.
+/** job delegasi PERSIST di DB, audit & status lintas restart.
  *  Sumber kebenaran status delegasi (event delegation.* tetap jalan untuk UI live). */
 export const DelegationJob = z.object({
   id: z.number(),
@@ -188,8 +188,7 @@ export const DelegationJob = z.object({
 });
 export type DelegationJob = z.infer<typeof DelegationJob>;
 
-// Tasklist per project (P1-PRJ-4 memakai kontrak ini; TaskTree = D19 menyusul).
-// TaskList flat (P1-PRJ-4), row di project_tasks.
+// Per-project tasklist; rows live in project_tasks.
 export const TaskItem = z.object({
   id: z.string().regex(/^t_[a-z0-9-]+$/),
   projectId: z.string(),
@@ -197,10 +196,10 @@ export const TaskItem = z.object({
   status: TaskStatus.default("todo"),
   /** Persona assignee (id persona di roster); null = belum di-assign. */
   assignee: z.string().nullable().default(null),
-  /** Referensi artefak (path workspace / job id / event id), dipakai TaskTree (D19). */
+  /** Artifact references (workspace path / job id / event id), used by TaskTree. */
   refs: z.array(z.string()).default([]),
-  // ── P2-PM-3: task list detail first-class (Planner) ──────────────────────
-  /** Deskripsi lengkap (apa & mengapa), beda dari judul imperatif. */
+  // ── first-class task details ────────────────────────────────────────────
+  /** Full description (what & why), distinct from the imperative title. */
   description: z.string().max(2_000).nullable().default(null),
   /** Acceptance criteria, list kalimat terverifikasi-able. */
   acceptance: z.array(z.string().min(3).max(500)).max(20).default([]),
@@ -215,7 +214,7 @@ export const TaskItem = z.object({
 });
 export type TaskItem = z.infer<typeof TaskItem>;
 
-/** P2-STU-3 v0: tab File, node tree (relPath pakai "/" lintas OS). */
+/** v0: tab File, node tree (relPath pakai "/" lintas OS). */
 export interface FileNode {
   name: string;
   relPath: string;
@@ -233,26 +232,26 @@ export const FileNode: z.ZodType<FileNode> = z.lazy(() =>
   }),
 );
 
-// ---- Dungeon: arena latihan persona (P1-DUN-1..3, PLAN §13.8) ----
+// ---- Missions: the persona training arena ----
 
 /** Format misi `mission.yaml` di workspace/dungeons/<slug>/. */
 export const Mission = z.object({
   id: z.string().min(1),
   title: z.string().min(3).max(120),
-  /** Persona yang dilatih (target skill milik dia, P1-DUN-2). */
+ /** Persona yang dilatih (target skill milik dia, ). */
   persona: z.string().min(3),
   goal: z.string().min(10),
   /** Sumber belajar: URL / path file di folder misi. */
   resources: z.array(z.string()).default([]),
-  /** Kriteria lulus, dievaluasi blind (P1-DUN-3), v0: dibaca agent sebagai target. */
+ /** Kriteria lulus, dievaluasi blind , v0: dibaca agent sebagai target. */
   acceptance: z.array(z.string()).min(1),
   targetSkill: z.object({ name: z.string().min(3), description: z.string().min(10) }),
-  /** seed = bawaan; user = dibuat lewat halaman Dungeon (P1-DUN-4). */
+ /** seed = bawaan; user = dibuat lewat halaman Dungeon . */
   origin: z.enum(["seed", "user"]).default("seed"),
 });
 export type Mission = z.infer<typeof Mission>;
 
-/** POST /api/dungeons/mission, latihan buatan user (P1-DUN-4):
+/** POST /api/dungeons/mission, latihan buatan user
  *  mode `research` = persona riset mandiri (sumber URL);
  *  mode `documents` = bahan ajar file (diunggah setelah misi dibuat). */
 export const CreateMissionRequest = z.object({
@@ -281,7 +280,7 @@ export const DungeonRun = z.object({
 });
 export type DungeonRun = z.infer<typeof DungeonRun>;
 
-/** Hasil eval buta satu skill (`.eval.json` di folder skill), P1-DUN-3. */
+/** Hasil eval buta satu skill (`.eval.json` di folder skill), . */
 export const SkillEval = z.object({
   verdict: z.enum(["pending", "pass", "fail"]),
   reason: z.string().nullable(),
@@ -290,7 +289,7 @@ export const SkillEval = z.object({
 });
 export type SkillEval = z.infer<typeof SkillEval>;
 
-/** P1-DUN-5: readiness satu fase untuk satu persona (skill siap = tested/ready). */
+/** readiness satu fase untuk satu persona (skill siap = tested/ready). */
 export const PhaseReadiness = z.object({
   phase: z.enum(WORKFLOW_PHASES),
   ready: z.boolean(),
@@ -298,8 +297,8 @@ export const PhaseReadiness = z.object({
 });
 export type PhaseReadiness = z.infer<typeof PhaseReadiness>;
 
-// ── P2-PM-4/5: dashboard progres terukur, dihitung server (read-only) ─────
-/** RACI ringan per fase (P2-PM-4): owner dari roster + metrik live. */
+// ── : dashboard progres terukur, dihitung server (read-only) ─────
+/** RACI ringan per fase : owner dari roster + metrik live. */
 export const DashboardPhase = z.object({
   phase: z.enum(WORKFLOW_PHASES),
   /** Persona owner fase ini (roster `phases[]`), bisa kosong (belum diisi). */
@@ -321,7 +320,7 @@ export const DashboardPhase = z.object({
 });
 export type DashboardPhase = z.infer<typeof DashboardPhase>;
 
-/** Ringkasan iterasi (P2-PM-5): run ke-N, selesai/total, delta vs run sebelumnya. */
+/** Ringkasan iterasi : run ke-N, selesai/total, delta vs run sebelumnya. */
 export const DashboardRun = z.object({
   /** Urutan run di project (1 = pertama). */
   index: z.number().int().min(1),
@@ -349,7 +348,7 @@ export const ProjectDashboard = z.object({
     reopened: z.number().int(),
     withAcceptancePct: z.number().int(),
   }),
-  /** Health project (P2-PM-5): blocker aktif + hold. */
+ /** Health project : blocker aktif + hold. */
   health: z.object({
     pendingApprovals: z.number().int(),
     qaFail: z.number().int(),
@@ -361,7 +360,7 @@ export const ProjectDashboard = z.object({
 });
 export type ProjectDashboard = z.infer<typeof ProjectDashboard>;
 
-/** Hasil hapus project + artefak terkait (P1-PRJ-8, request user).
+/** Hasil hapus project + artefak terkait (, request user).
  *  Skill persona yang lahir dari project INI TIDAK ikut dihapus (milik persona,
  *  hidup di packages/skills, keputusan user). Metering (usage ledger) juga
  *  dipertahankan, akuntansi jujur; projectId tinggal baris historis. */
@@ -379,10 +378,10 @@ export const DeleteProjectResult = z.object({
     revisions: z.number().int(),
     auditRows: z.number().int(),
     workspaceDir: z.string(),
-    /** Batch 13e: workshop (container+volume+row) ikut dihapus. */
+ /** The workshop (container, volume, row) is deleted with it. */
     workshop: z.boolean(),
-    /** D31 (fix user): sesi terminal project dimatikan, container sandbox
-     *  `yui-ses-*` ikut ter-kill saat project dihapus. */
+    /** The project's terminal sessions are killed and its sandbox
+     *  containers stopped when the project is deleted. */
     terminalSessions: z.number().int(),
   }),
   keptUsage: z.literal(true),

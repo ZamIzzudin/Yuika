@@ -1,4 +1,4 @@
-// P2-FLOW-5/6 e2e, SATU COMPOSER (keputusan user 2026-11-08 tahap 2):
+// e2e, SATU COMPOSER (keputusan user 2026-11-08 tahap 2):
 // toggle Workflow Mode (sejajar Hardcore Mode) ON → pesan chat = brief run;
 // run hidup → pesan chat = steer; OFF & tanpa run → chat biasa. Strip status
 // (chip/gate/pause) tetap di bar; observasi alur = tab TEAM (canvas delegasi,
@@ -82,7 +82,7 @@ test("FLOW-6: steer + reassign (Task) + pause/resume mid-run, semua via chat", a
 
   // 2) reassign step pending fase research → analyst, di TAB TASK (fokus assign)
   await page.getByRole("tab", { name: "Task" }).click();
-  // P2-PM-4/5: dashboard progres tampil di atas board (run hidup → iterasi #1)
+ // dashboard progres tampil di atas board (run hidup → iterasi #1)
   const dash = page.getByLabel("Project dashboard");
   await expect(dash).toBeVisible({ timeout: 10_000 });
   await expect(dash.getByText("Iterations")).toBeVisible();

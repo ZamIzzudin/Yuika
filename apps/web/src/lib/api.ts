@@ -1,4 +1,4 @@
-// P0-INF-1: API hidup di proses TERPISAH (apps/api, Fastify, default
+// API hidup di proses TERPISAH (apps/api, Fastify, default
 // http://127.0.0.1:3211). Frontend tidak lagi fetch same-origin ke Next.
 // Override via NEXT_PUBLIC_API_BASE (build-time; prod di balik reverse proxy
 // bisa set "" untuk same-origin). Semua komponen WAJIB lewat apiUrl().
@@ -9,7 +9,7 @@ export function apiUrl(path: string): string {
   return `${API_BASE}${path}`;
 }
 
-// P1-INF-1: bearer token auth (disimpan saat login/register oleh AuthGate).
+// bearer token auth (disimpan saat login/register oleh AuthGate).
 const TOKEN_KEY = "yuika.auth.token";
 
 export function setAuthToken(token: string): void {
@@ -37,7 +37,7 @@ export function clearAuthToken(): void {
 }
 
 /** fetch + Authorization Bearer (bila token ada). Dipakai SEMUA panggilan
- *  API supaya gerbang auth (P1-INF-1) tak memutus request yang sah. */
+ * API supaya gerbang auth tak memutus request yang sah. */
 export function authFetch(input: string, init?: RequestInit): Promise<Response> {
   const token = getAuthToken();
   const headers = new Headers(init?.headers);

@@ -1,9 +1,9 @@
 "use client";
-// AuthGate, gerbang sign-in di depan workspace. Portal-only (CP-3):
-// akun & signup hidup di yuika-portal; Yuika tidak punya form kredensial.
-// Selama server belum punya user (mode terbuka) children langsung dirender;
-// user pertama lahir dari portal sign-in pertama, setelah itu wajib login.
-// Token disimpan di localStorage (authFetch memakai).
+// AuthGate: the sign-in gate in front of the workspace. Portal-only:
+// accounts and signup live in yuika-portal; Yuika has no credential form.
+// While the server has no users yet (open mode) children render directly;
+// the first user is created by the first portal sign-in, after which
+// login is required. The token lives in localStorage (see authFetch).
 import { useEffect, useState } from "react";
 import { Globe, Key, SignIn } from "@phosphor-icons/react";
 import type { AuthStatusT } from "@yuika/contracts";
@@ -46,7 +46,7 @@ export function AuthPill({ compact = false }: { compact?: boolean }) {
     window.location.reload();
   }
 
-  /** CP-3 SSO: minta URL authorize lalu arahkan browser ke portal. */
+  /** SSO: request the authorize URL and send the browser to the portal. */
   async function startPortal() {
     if (busy) return;
     setBusy(true);
@@ -130,7 +130,7 @@ export function AuthPill({ compact = false }: { compact?: boolean }) {
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatusT | null>(null);
   const [busy, setBusy] = useState(false);
-  // D48: di dalam shell desktop → tawarkan kembali ke onboarding host/remote.
+  // Inside the desktop shell: offer going back to the host/remote onboarding.
   const [desktop, setDesktop] = useState(false);
   useEffect(() => setDesktop(isDesktopShell()), []);
   useEffect(() => {
@@ -154,8 +154,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  /** CP-3 SSO: minta URL authorize lalu arahkan browser ke portal
-   *  (user tinggal Accept di portal, tanpa salin token). */
+  /** SSO: request the authorize URL and send the browser to the portal
+   *  (the user just clicks Accept there; no token copying). */
   async function startPortal() {
     if (busy) return;
     setBusy(true);
@@ -207,9 +207,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         <div className="absolute top-[44%] left-1/2 h-[320px] w-[54vw] max-w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
       </div>
 
-      {/* PLAYGROUND zero-g full satu layar (D46): maskot melayang bisa
-        dilempar DI DEPAN oval, DI BELAKANG kartu sign-in. List statis —
-        mode gerbang = API minta Bearer token (401), tak bisa fetch roster. */}
+      {/* Full-screen zero-g playground: floating mascots can be thrown
+        IN FRONT of the oval, BEHIND the sign-in card. Static list: behind
+        the gate the API requires a Bearer token (401), no roster fetch. */}
       <HomeSpace fit="viewport" personas={GATE_PERSONAS} />
 
       <section

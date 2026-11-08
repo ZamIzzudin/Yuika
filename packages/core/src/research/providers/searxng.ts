@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a), SearXNG self-host (multi-engine, output JSON). Opsional:
+// (RS-1a), SearXNG self-host (multi-engine, output JSON). Opsional:
 // aktif hanya bila YUI_SEARXNG_URL dikonfigurasi (settings.yml harus mengaktifkan
 // formats: [html, json]).
 import type { SearchProvider, SearchResult } from "../types.js";

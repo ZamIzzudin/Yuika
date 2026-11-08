@@ -11,7 +11,7 @@ export const ProviderSettings = z.object({
   baseUrl: z.string(),
   model: z.string(),
   fallbackModel: z.string().default(""),
-  /** P1-INF-3: model aux (tugas ringan, learn nudge); kosong = model utama. */
+ /** model aux (tugas ringan, learn nudge); kosong = model utama. */
   auxModel: z.string().default(""),
   hasApiKey: z.boolean(),
   keyPreview: z.string(),
@@ -26,7 +26,7 @@ export const UpdateProviderSettingsRequest = z.object({
   model: z.string().min(1).max(200).optional(),
   /** String kosong = hapus fallback. */
   fallbackModel: z.string().max(200).nullable().optional(),
-  /** P1-INF-3: model aux, null/kosong = pakai model utama. */
+ /** model aux, null/kosong = pakai model utama. */
   auxModel: z.string().max(200).nullable().optional(),
 });
 export type UpdateProviderSettingsRequest = z.infer<typeof UpdateProviderSettingsRequest>;
@@ -55,7 +55,7 @@ export const UpdateModelRouteRequest = z.object({
 });
 export type UpdateModelRouteRequest = z.infer<typeof UpdateModelRouteRequest>;
 
-/** P1-MDL-3: harga per model, dasar indikator biaya dari metering (P1-CRED-1).
+/** harga per model, dasar indikator biaya dari metering .
  *  perMillion = harga per 1.000.000 token; 0/absen = biaya tak dihitung (jujur). */
 export const ModelPrice = z.object({
   inputPerMillion: z.number().nonnegative().default(0),
@@ -74,7 +74,7 @@ export const UpdateModelPriceRequest = z.object({
 });
 export type UpdateModelPriceRequest = z.infer<typeof UpdateModelPriceRequest>;
 
-/** P1-MDL-2: hasil smoke test satu model (tool-call 2 langkah minimal). */
+/** hasil smoke test satu model (tool-call 2 langkah minimal). */
 export const ModelSmokeResult = z.object({
   model: z.string(),
   ok: z.boolean(),

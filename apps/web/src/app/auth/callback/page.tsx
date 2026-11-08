@@ -1,5 +1,5 @@
 "use client";
-// CP-3 SSO, halaman callback portal: ?code&state → tukar jadi sesi Yuika.
+// SSO, halaman callback portal: ?code&state → tukar jadi sesi Yuika.
 // Portal mengarahkan ke sini setelah user menekan Accept; token sesi Yuika
 // disimpan seperti login biasa (localStorage via lib/api) lalu kembali ke /.
 import { Suspense, useEffect, useRef, useState } from "react";

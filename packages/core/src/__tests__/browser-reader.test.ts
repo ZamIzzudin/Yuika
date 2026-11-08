@@ -1,4 +1,4 @@
-// P2-STU-4, browser reader: allowlist, SSRF guard, sanitizer, redirect
+// browser reader: allowlist, SSRF guard, sanitizer, redirect
 // re-validation, content-type/size gate. Server lokal utk fetch nyata.
 import { afterEach, describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -26,7 +26,7 @@ function serve(handler: http.RequestListener): Promise<string> {
   });
 }
 
-describe("P2-STU-4 browser reader", () => {
+describe(" browser reader", () => {
   it("allowlist: eksak & suffix dot", () => {
     const allow = ["example.com", ".npmjs.org"];
     expect(hostAllowedBrowser("example.com", allow)).toBe(true);

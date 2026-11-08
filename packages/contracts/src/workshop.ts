@@ -1,4 +1,4 @@
-// P2-WKS, Workshop persisten per project (D24, Batch 13).
+// P2-WKS, Workshop persisten per project .
 // Workshop = kelas eksekusi KEDUA (selain sandbox disposable): container yang
 // MENETAP (volume /home/yui persist, tidur/bangun, egress allowlist) sebagai
 // rumah kerja persona. Milik PROJECT (1 project = ≤1 workshop).

@@ -5,7 +5,7 @@ import { apiUrl, authFetch } from "@/lib/api";
  * pesan agent = teks polos + gutter wajah + nama muted; user = bubble terang rata kanan;
  * tool = langkah senyap yang bisa dilipat; delegasi = baris subagent; approval = kartu tenang.
  * Logika event tetap dari page.tsx (semua tipe @yuika/contracts).
- * DS-1: Tailwind semantik + komponen ui/*, tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
+ * Tailwind semantik + komponen ui/*, tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PersonaState } from "@yuika/contracts";
@@ -79,31 +79,31 @@ export interface ChatItem {
   /** Feed live anak (delegation.delta), streaming saat delegasi berjalan. */
   liveText?: string;
   liveKind?: "text" | "reasoning" | "tool";
-  /** P1-DEL-3: anak di-pause, menunggu resume (chip + tombol jadi Resume). */
+ /** anak di-pause, menunggu resume (chip + tombol jadi Resume). */
   paused?: boolean;
   // approval
   requestId?: string;
   reason?: string;
   resolved?: "approved" | "denied" | "expired" | null;
-  // vault (Batch 12): kartu protected, nilai TIDAK pernah di item/event;
+ // vault : kartu protected, nilai TIDAK pernah di item/event;
   // user mengisi via REST fill langsung dari kartu.
   vkind?: "api_key" | "command" | "login";
   originHint?: string;
   saved?: boolean;
   vresolved?: "filled" | "skipped" | "expired" | null;
-  // takeover (Batch 14a SCR-4): persona minta kontrol screen, non-blocking.
+ // takeover ( SCR-4): persona minta kontrol screen, non-blocking.
   tresolved?: "granted" | "denied" | "expired" | null;
-  // login (VLT-4): kartu kredensial, nilai via REST fill saja, TIDAK di item.
+ // login : kartu kredensial, nilai via REST fill saja, TIDAK di item.
   loginRequestId?: string;
   loginOrigin?: string;
   lresolved?: "filled" | "skipped" | "expired" | "failed" | null;
   lsaved?: boolean;
-  // screen (Batch 14a++): bubble "persona membuka browser" → Open Browser.
+ // screen (++): bubble "persona membuka browser" → Open Browser.
   screenUrl?: string;
   screenOpen?: boolean | null;
-  // noted (P1-MEM-2: hasil learn nudge)
+ // noted (: hasil learn nudge)
   scope?: "user" | "project";
-  // compressed (P0-CORE-4: chip transparansi kompresi konteks)
+ // compressed (: chip transparansi kompresi konteks)
   n?: number;
   before?: number;
   after?: number;
@@ -111,11 +111,11 @@ export interface ChatItem {
 
 export { STATE_LABEL };
 
-/** Batch 12 (D27): input nilai rahasia, uncontrolled (nilai hanya dibaca saat
+/** input nilai rahasia, uncontrolled (nilai hanya dibaca saat
  *  submit lalu input di-clear) + toggle "Save to Vault" (off = run-only).
  *  Nilai dikirim LANGSUNG ke POST /api/vault/fill/:id, tidak pernah masuk
  *  state React / event / chat. */
-/** VLT-4: kartu login, dua field (username/password, uncontrolled; dibaca
+/** kartu login, dua field (username/password, uncontrolled; dibaca
  *  HANYA saat submit lalu di-clear DOM-side) + Save to Vault + Auto submit.
  *  Nilai dikirim LANGSUNG ke POST /api/login/:id/fill, tidak pernah masuk
  *  state React / event / chat. */
@@ -370,7 +370,7 @@ export function ChatView({
   personaId: string;
   personaName: string;
   onSend: (text: string) => void;
-  /** P0-CORE-1: tombol Stop, batalkan turn aktif (progres tersimpan). */
+ /** tombol Stop, batalkan turn aktif (progres tersimpan). */
   onCancel?: () => void;
   /** Konten state kosong (hero + saran), composer tetap tampil, user bisa langsung menulis. */
   emptySlot?: ReactNode;
@@ -387,7 +387,7 @@ export function ChatView({
   busy: boolean;
 }) {
   const [input, setInput] = useState("");
-  // P0-DEL-2: kontrol delegasi aktif, steer input per kartu + cancel.
+ // kontrol delegasi aktif, steer input per kartu + cancel.
   const [steerOpenFor, setSteerOpenFor] = useState<string | null>(null);
   const [steerText, setSteerText] = useState("");
   async function sendSteer(childSessionId: string) {
@@ -576,7 +576,7 @@ export function ChatView({
                           Paused
                         </span>
                       ) : null}
-                      {/* P0-DEL-2: kontrol anak saat masih bekerja (belum ada ringkasan). */}
+                      {/* : kontrol anak saat masih bekerja (belum ada ringkasan). */}
                       {!it.text && (
                         <span className="ml-auto flex items-center gap-1">
                           {steerOpenFor === it.childSessionId ? (
@@ -775,7 +775,7 @@ export function ChatView({
               );
             }
             if (it.kind === "vault") {
-              // Batch 12 (D27): kartu protected, nilai dikirim LANGSUNG ke REST
+ // kartu protected, nilai dikirim LANGSUNG ke REST
               // fill (bukan lewat chat/event); input di-clear DOM-side saat submit.
               return (
                 <div
@@ -813,7 +813,7 @@ export function ChatView({
               );
             }
             if (it.kind === "login") {
-              // VLT-4: kartu login, dua field; nilai LANGSUNG ke REST fill,
+ // kartu login, dua field; nilai LANGSUNG ke REST fill,
               // tidak pernah lewat state/event chat. resolved via SSE.
               return (
                 <div
@@ -854,7 +854,7 @@ export function ChatView({
               );
             }
             if (it.kind === "takeover") {
-              // Batch 14a (SCR-4): kartu non-blocking, persona minta kontrol
+ // (SCR-4): kartu non-blocking, persona minta kontrol
               // shared screen. Turn TIDAK diblok UI; tombol memanggil REST
               // resolve; deadline auto-expired di backend.
               return (
@@ -930,7 +930,7 @@ export function ChatView({
               );
             }
             if (it.kind === "screen") {
-              // Batch 14a++: persona menjalankan browser_open → bubble dengan
+ // ++: persona menjalankan browser_open → bubble dengan
               // tombol membuka floating window (satu bubble per persona).
               return (
                 <div
@@ -973,7 +973,7 @@ export function ChatView({
                 it.kind === "noted"
                   ? "Learn nudge after a task, editable/removable on the Memory tab"
                   : it.kind === "compressed"
-                    ? "P0-CORE-4: old history is summarized into a checkpoint so long sessions still fit the model window, the original history stays fully stored"
+                    ? ": old history is summarized into a checkpoint so long sessions still fit the model window, the original history stays fully stored"
                     : "Skill proposed from experience, validate it on the Skill tab";
               return (
                 <div

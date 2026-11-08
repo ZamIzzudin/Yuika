@@ -1,4 +1,4 @@
-// P1-PRT-6, GERBANG remote control (Batch 1 · Remote Control).
+// GERBANG remote control ( · Remote Control).
 // Bukti end-to-end via /dev/remote (browser kedua = device remote sejati,
 // kunci WebCrypto di browser) terhadap host apps/api + SpecRelay double
 // (semantik SPEC-PROTOCOL v1). Live run vs relay yuika-portal menyusul

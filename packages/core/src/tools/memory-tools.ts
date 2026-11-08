@@ -1,4 +1,4 @@
-// @yuika/core, memory tools (P1-MEM-1 + P1-MEM-6): agent menyimpan catatan reusable.
+// @yuika/core, memory tools ( + ): agent menyimpan catatan reusable.
 // USER.md (scope user) / MEMORY.md (scope project) / memory/domains/<domain>.md
 // (scope domain, keahlian persona lintas project, milik persona).
 // Append terkurasi + dedupe (memory/manager). Tanpa approval: catatan
@@ -28,7 +28,7 @@ export function registerMemoryTools(deps: {
   sessionStore: ISessionStore;
   projects: ProjectStore;
   workspacePath: string;
-  /** P1-MEM-6: domain persona pemanggil (dari manifest), undefined bila tak tersedia. */
+ /** domain persona pemanggil (dari manifest), undefined bila tak tersedia. */
   domainOfPersona?: (personaId: string) => string | null;
 }): void {
   registry.register({
@@ -48,7 +48,7 @@ export function registerMemoryTools(deps: {
         if (!project) throw new Error(`project tidak ditemukan: ${pid}`);
         projectRootPath = `${deps.workspacePath}/${project.rootPath}`;
       }
-      // P1-MEM-6: scope domain → memori bidang persona pemanggil (lintas project).
+ // scope domain → memori bidang persona pemanggil (lintas project).
       const domain = scope === "domain" ? deps.domainOfPersona?.(session.personaId) ?? null : null;
       if (scope === "domain" && !domain) throw new Error("domain persona tidak diketahui, scope domain tidak tersedia");
       const personaName = personaDisplayName(session.personaId);

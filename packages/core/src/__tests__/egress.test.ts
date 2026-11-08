@@ -1,4 +1,4 @@
-// P1-MCP-4: egress allowlist proxy, unit hermetic (upstream = server lokal).
+// Egress allowlist proxy, hermetic unit (upstream = a local server).
 import { afterAll, describe, expect, it, vi } from "vitest";
 import http from "node:http";
 import net from "node:net";

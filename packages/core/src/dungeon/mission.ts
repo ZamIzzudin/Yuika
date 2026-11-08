@@ -1,4 +1,4 @@
-// @yuika/core, dungeon missions (P1-DUN-1, PLAN §13.8): arena latihan persona.
+// @yuika/core, dungeon missions : arena latihan persona.
 // Format `mission.yaml` di workspace/dungeons/<slug>/, goal, sumber belajar,
 // acceptance, skill target. Sesi latihan jalan di ruangan sandbox (project
 // kind="dungeon") sehingga file tools terisolasi dari workspace produksi.
@@ -10,7 +10,7 @@ import { slugify } from "../skills/manager.js";
 
 export const DUNGEONS_DIRNAME = "dungeons";
 
-/** Misi contoh (dibuat bila dungeons/ kosong, acceptance P1-DUN-1:
+/** Misi contoh (dibuat bila dungeons/ kosong, acceptance
  *  "misi contoh riset dokumentasi Phaser parse & jalan"). */
 const SEED_MISSIONS: Record<string, string> = {
   "phaser-research": `id: phaser-research
@@ -62,7 +62,7 @@ export function missionDir(workspacePath: string, missionId: string): string {
   return path.join(dungeonsDir(workspacePath), missionId);
 }
 
-// ---- P1-DUN-4: latihan buatan user (halaman Dungeon) ----
+// ---- : latihan buatan user (halaman Dungeon) ----
 
 export interface CreateMissionInput {
   title: string;

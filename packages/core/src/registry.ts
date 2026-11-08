@@ -1,7 +1,7 @@
 // @yuika/core, tool registry (pola registry Hermes §4.2)
 // register() → dispatch() dengan validasi zod + gerbang approval. Semua tool return JSON.
-// P0-MCP-2: parameters boleh zod schema ATAU JSON Schema mentah (dari server MCP
-// `t.inputSchema`), validasi JSON Schema via ajv (compile sekali, di-cache).
+// Parameters may be a zod schema OR raw JSON Schema (from MCP servers);
+// JSON Schema is validated via ajv (compiled once, cached).
 import { z } from "zod";
 import Ajv, { type ValidateFunction } from "ajv";
 import type { EventDraft } from "@yuika/contracts";
@@ -10,8 +10,8 @@ export interface ToolContext {
   sessionId: string;
   turnId: string;
   workspacePath: string;
-  /** P2-VLT: persona/project pemanggil, utk scope visibility vault (D27).
-   *  Opsional (tool lama tak peduli; test bisa omit). */
+  /** Caller persona/project, used for vault scope visibility.
+   *  Optional (legacy tools and tests may omit it). */
   personaId?: string;
   projectId?: string | null;
   emit: (draft: EventDraft) => void;
@@ -26,7 +26,7 @@ export interface ToolResult {
 export interface ToolDefinition {
   name: string;
   description: string;
-  /** zod schema (tool internal) ATAU JSON Schema object (tool MCP, P0-MCP-2). */
+  /** zod schema (internal tool) OR a JSON Schema object (MCP tool). */
   parameters: z.ZodTypeAny | Record<string, unknown>;
   handler: (args: any, ctx: ToolContext) => Promise<ToolResult>;
   /** Return alasan (string) bila panggilan ini butuh approval manusia; null = langsung jalan. */
@@ -36,7 +36,7 @@ export interface ToolDefinition {
 const tools = new Map<string, ToolDefinition>();
 const isZod = (p: ToolDefinition["parameters"]): p is z.ZodTypeAny => typeof (p as z.ZodTypeAny).safeParse === "function";
 
-/** P0-MCP-2: validator ajv per tool (compile sekali, dispatch panas tidak re-compile). */
+/** Per-tool ajv validator (compiled once; hot dispatch never recompiles). */
 const ajv = new Ajv({ allErrors: true, strict: false });
 const ajvCache = new Map<string, ValidateFunction>();
 function jsonSchemaValidator(name: string, schema: Record<string, unknown>): ValidateFunction {
@@ -82,7 +82,7 @@ export const registry = {
   registerMany(defs: ToolDefinition[]): void {
     defs.forEach((d) => registry.register(d));
   },
-  /** Lepas tool (dipakai disconnect MCP dinamis, P1-MCP-3). */
+  /** Unregister a tool (used by dynamic MCP disconnects). */
   unregister(name: string): boolean {
     return tools.delete(name);
   },
@@ -113,7 +113,7 @@ export const registry = {
     const def = tools.get(name);
     if (!def) return { result: { error: `unknown tool: ${name}` }, isError: true };
 
-    // P0-MCP-2: dua jalur validasi, zod (tool internal) atau ajv (JSON Schema MCP).
+    // Two validation paths: zod (internal tools) or ajv (MCP JSON Schema).
     let args: Record<string, unknown>;
     if (isZod(def.parameters)) {
       const parsed = def.parameters.safeParse(rawArgs ?? {});
@@ -154,5 +154,5 @@ export const registry = {
 /** Reset untuk tests. */
 export function resetRegistryForTests(): void {
   tools.clear();
-  ajvCache.clear(); // P0-MCP-2: validator ter-compile ikut reset (schema lama tak nyangkut)
+  ajvCache.clear(); // compiled validators reset too (no stale schemas linger)
 }

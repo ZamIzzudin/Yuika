@@ -1,4 +1,4 @@
-// @yuika/core, model router (P1-MDL-1 + P0-CORE-2): model & fallback PER PERSONA.
+// @yuika/core, model router ( + ): model & fallback PER PERSONA.
 // Sumber resolusi (urut): override file (Settings UI) → persona.yaml
 // (model.primary.name / .fallback) → default env (YUI_MODEL + YUI_MODEL_FALLBACK).
 // Cooldown: model yang gagal dicap "unhealthy" 5 menit, resolve berikutnya
@@ -71,7 +71,7 @@ export function buildModelRouter(opts: {
     markUnhealthy(model: string): void {
       unhealthy.set(model, Date.now() + COOLDOWN_MS);
     },
-    /** P1-MDL-2: smoke lulus → bersihkan cooldown (model dipercaya lagi). */
+ /** smoke lulus → bersihkan cooldown (model dipercaya lagi). */
     markHealthy(model: string): void {
       unhealthy.delete(model);
     },

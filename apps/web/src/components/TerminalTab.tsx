@@ -1,5 +1,5 @@
 "use client";
-// P2-STU-2, tab Terminal: xterm.js ↔ sesi shell di apps/api (SSE + REST).
+// tab Terminal: xterm.js ↔ sesi shell di apps/api (SSE + REST).
 // Sesi SHARED dengan agent (tool `terminal`): output agent muncul live di
 // sini, dan ketikan user mengalir ke stdin proses yang sama.
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -11,8 +11,8 @@ import { apiUrl, authTokenQuery, authFetch } from "@/lib/api";
 
 export interface TerminalTabProps {
   project: { id: string; name: string };
-  /** D31: slot pojok kanan baris status, switcher Shell/Commands milik
-   *  TerminalFullTab duduk sebaris dengan pill status. */
+  /** Status-row right corner slot: the Shell/Commands switcher of
+   *  TerminalFullTab sits in line with the status pill. */
   toolbar?: React.ReactNode;
 }
 
@@ -58,8 +58,8 @@ export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
         cursorBlink: true,
         convertEol: true,
         scrollback: 5_000,
-        // D30: selaras design system, bg persis --yui-bg-inset (#101010,
-        // sama dengan pane Files), foreground sekunder, kursor & seleksi aksen.
+        // Design-system aligned: bg exactly --yui-bg-inset (#101010,
+        // same as the Files pane), secondary foreground, accent cursor/selection.
         theme: {
           background: "#101010",
           foreground: "#dcdcdc",
@@ -89,7 +89,7 @@ export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
         // - Enter  \r    → \r\n (baris baru)
         // - Backspace \x7f → \b \b (hapus karakter terakhir di layar).
         //   Menulis \x7f mentah memicu "xterm.js: Parsing error: {}" (parser
-        //   menolak DEL) DAN tidak menghapus apa pun di layar (D32, lapor user).
+        //   rejects DEL) AND erases nothing on screen (user report).
         // Ke backend tetap dikirim byte asli, pemrosesan tetap di sisi shell.
         if (d === "\r") term?.write("\r\n");
         else if (d === "\x7f") term?.write("\b \b");

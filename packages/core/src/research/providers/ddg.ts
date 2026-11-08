@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a), DuckDuckGo lite/html sebagai ENGINE UMUM fallback (nonofficial,
+// (RS-1a), DuckDuckGo lite/html sebagai ENGINE UMUM fallback (nonofficial,
 // bisa berubah/rate-limit, makanya posisinya terakhir setelah API resmi, dan bisa
 // dimatikan YUI_RESEARCH_DDG=0). Parser diekspor utk unit test (fixture).
 import type { SearchProvider, SearchResult } from "../types.js";

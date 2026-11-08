@@ -1,6 +1,6 @@
-// @yuika/core, roster project (P1-PRJ-3, PLAN §13.4): siapa mengerjakan apa di project.
+// @yuika/core, roster project : siapa mengerjakan apa di project.
 // Sumber kebenaran = `project.yaml` di root project (deklaratif, ter-replay via file,
-// bukan state DB kedua). Binding MCP di file yang sama dipakai P1-PRJ-5 (D17).
+// bukan state DB kedua). Binding MCP di file yang sama dipakai .
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";

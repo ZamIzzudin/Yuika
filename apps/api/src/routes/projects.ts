@@ -39,7 +39,7 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return { project };
   });
 
-  /** DELETE, hapus project + SEMUA artefak terkait (P1-PRJ-8).
+ /** DELETE, hapus project + SEMUA artefak terkait .
    *  DIPERTAHANKAN: skill persona (milik persona) & usage ledger (akuntansi jujur). */
   app.delete("/api/projects/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -98,7 +98,7 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
     }
   });
 
-  /** GET /:id/roster, roster dari project.yaml + readiness skill (P1-DUN-5). */
+ /** GET /:id/roster, roster dari project.yaml + readiness skill . */
   app.get("/api/projects/:id/roster", async (req, reply) => {
     const { id } = req.params as { id: string };
     const rt = getRt();
@@ -123,7 +123,7 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return { tasks: rt.listProjectTasks(id) };
   });
 
-  /** P2-PM-4/5: dashboard progres terukur, burndown task, RACI fase +
+ /** dashboard progres terukur, burndown task, RACI fase +
    *  metrik live, health (blocker/revisi/hold), ringkasan iterasi run. */
   app.get("/api/projects/:id/dashboard", async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -149,7 +149,7 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return reply.code(201).send({ task });
   });
 
-  /** P2-PM-3: validator task list, DAG + coverage fase + kelengkapan detail. */
+ /** validator task list, DAG + coverage fase + kelengkapan detail. */
   app.get("/api/projects/:id/tasks/validate", async (req, reply) => {
     const { id } = req.params as { id: string };
     const rt = getRt();
@@ -166,7 +166,7 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return { task: getRt().updateProjectTask(taskId, body) };
   });
 
-  /** GET /:id/tree, TaskTree (P1-PRJ-7, PLAN §13.7): pohon utuh dari replay
+ /** GET /:id/tree, TaskTree : pohon utuh dari replay
    *  event project (append-only). Refresh = fold ulang, tanpa state kedua. */
   app.get("/api/projects/:id/tree", async (req, reply) => {
     const { id } = req.params as { id: string };

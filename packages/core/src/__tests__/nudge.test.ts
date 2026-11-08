@@ -1,4 +1,4 @@
-// P1-MEM-2: learn nudge, aux call pasca-turn memutuskan 0/1 catatan.
+// learn nudge, aux call pasca-turn memutuskan 0/1 catatan.
 // Provider palsu mengembalikan JSON; verifikasi: note → memory_append + event
 // memory.noted; none → tak ada tulisan; JSON rusak → skip aman; YUI_LEARN=0 → off.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -29,7 +29,7 @@ const transcript = [
   { role: "assistant" as const, content: "Siap, dicatat." },
 ];
 
-describe("learn nudge (P1-MEM-2)", () => {
+describe("learn nudge ()", () => {
   let ws: string;
   let sessions: SessionStore;
   const noted: unknown[] = [];
@@ -132,7 +132,7 @@ describe("learn nudge (P1-MEM-2)", () => {
     expect(readMemory(ws, "project", path.join(ws, "projects/p_a"), "A")).toContain("Next.js");
   });
 
-  it("P1-INF-3: model aux dipakai bila YUI_AUX_MODEL diset (preferensi aux > alias lama > model utama)", async () => {
+  it(": model aux dipakai bila YUI_AUX_MODEL diset (preferensi aux > alias lama > model utama)", async () => {
     process.env.YUI_AUX_MODEL = "m-aux-murah";
     const seen: string[] = [];
     const p: ProviderAdapter = {
@@ -149,7 +149,7 @@ describe("learn nudge (P1-MEM-2)", () => {
     delete process.env.YUI_AUX_MODEL;
   });
 
-  it("P1-INF-3/CRED: panggilan aux ter-meter lewat recordUsage (token jujur di ledger)", async () => {
+  it("/CRED: panggilan aux ter-meter lewat recordUsage (token jujur di ledger)", async () => {
     const usages: { model: string; prompt: number; output: number }[] = [];
     const p: ProviderAdapter = {
       id: "fake",

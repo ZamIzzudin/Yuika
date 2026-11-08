@@ -1,5 +1,5 @@
-// P1-MCP-3 (TASKS.md): trust gate per-workspace (fail-closed) + izin granular
-// per tool + audit log panggilan. P1-PRJ-5: binding project×persona (D17).
+// trust gate per-workspace (fail-closed) + izin granular
+// per tool + audit log panggilan. : binding project×persona .
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -58,7 +58,7 @@ describe("MCP audit store", () => {
   });
 });
 
-describe("P1-PRJ-5, binding MCP project×persona (applyMcpBinding)", () => {
+describe(", binding MCP project×persona (applyMcpBinding)", () => {
   const schemas = [
     { name: "read_file" },
     { name: "mcp__filesystem__list_directory" },

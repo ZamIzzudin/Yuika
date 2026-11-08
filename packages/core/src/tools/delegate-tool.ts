@@ -1,4 +1,4 @@
-// @yuika/core, delegate_task: delegasi ke persona spesialis (prioritas #3, PLAN §4.6).
+// @yuika/core, delegate_task: delegasi ke persona spesialis (prioritas #3, ).
 import { z } from "zod";
 import { registry } from "../registry.js";
 import type { DelegationDeps, ChildRunHandle } from "../delegation/runner.js";
@@ -18,7 +18,7 @@ export function registerDelegateTool(deps: DelegationDeps): void {
       "Kembalikan ringkasan hasil anak. Gunakan untuk tugas yang butuh keahlian domain.",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
-      // P1-PRJ-2: anak mewarisi scope workspace sesi pemanggil (project root bila
+ // anak mewarisi scope workspace sesi pemanggil (project root bila
       // sesi parent melekat ke project), bukan workspace global proses.
       const handle: ChildRunHandle = runChildPersona(
         { ...deps, workspacePath: ctx.workspacePath },

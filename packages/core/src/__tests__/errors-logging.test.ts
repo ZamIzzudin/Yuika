@@ -1,4 +1,4 @@
-// P0-INF-3/4, logging terstruktur + error taxonomy.
+// logging terstruktur + error taxonomy.
 // (a) classifyError: bentuk dikenal → kind/code/retryable yang benar; unknown →
 //     fallbackKind; YuiError masuk-keluar idempoten; abort TIDAK dianggap error.
 // (b) loop: kegagalan provider → event session.error membawa kind+code (UI/log
@@ -90,7 +90,7 @@ describe("logger, singleton globalThis + child", () => {
   });
 });
 
-describe("loop, session.error bermakna (P0-INF-4 wire)", () => {
+describe("loop, session.error bermakna ( wire)", () => {
   it("provider throw → kind provider + code di event", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-err-"));
     const store = new SessionStore(path.join(dir, "t.db"));

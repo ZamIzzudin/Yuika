@@ -1,4 +1,4 @@
-// @yuika/core, P0-DATA-1: SessionStore driver PostgreSQL (postgres.js).
+// @yuika/core, : SessionStore driver PostgreSQL (postgres.js).
 // Hanya dimuat oleh WORKER (session/pg-worker.ts), paket `postgres` tak pernah
 // masuk proses utama/bundle web. Interface-nya ASYNC (pg memang begitu); proses
 // utama memakainya lewat sync-bridge (pg-bridge.ts) sehingga ISessionStore

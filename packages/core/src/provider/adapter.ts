@@ -1,5 +1,5 @@
-// @yuika/core, provider abstraction (D12: OpenAI-compatible dulu; adapter lain P1)
-// Invariant: SEMUA akses model lewat interface ini, tidak ada import OpenAI di loop.ts.
+// @yuika/core, provider abstraction (OpenAI-compatible first; more adapters later).
+// Invariant: ALL model access goes through this interface; loop.ts never imports a provider.
 
 export interface ToolCallRequest {
   id: string;

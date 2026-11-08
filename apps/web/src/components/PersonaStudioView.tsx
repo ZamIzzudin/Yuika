@@ -3,10 +3,10 @@ import { apiUrl, authFetch } from "@/lib/api";
 // 🎮 Persona Studio, menu Persona (permintaan user 2026-11):
 // tab Characters = CharacterStage (layar character-select penuh, konstelasi,
 // maskot hero, dua card kaca, galeri dock; lihat CharacterStage.tsx).
-// Tab Missions (melatih skill baru) + Training history = warisan Dungeon (P1-DUN).
-// D37 redesign: minimalis tapi informatif — kartu misi = identitas + meta ringkas
-// + hasil run terakhir + aksi; history = baris tanggal·status·ringkasan.
-// DS-1: hanya komponen ui/* + utility Tailwind semantik (docs/DESIGN-SYSTEM.md).
+// Missions tab (skill training) + Training history, formerly Dungeon.
+// Minimalist but informative: mission cards show identity + short meta
+// + last run result + actions; history rows are date.status.summary.
+// UI: only ui/* components + semantic Tailwind (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PersonaInfo } from "@yuika/contracts";
 import {
@@ -258,8 +258,8 @@ export function PersonaStudioView({
   const userMissions =
     dungeons?.filter((d) => d.mission.origin === "user") ?? [];
 
-  /** Kartu misi D37: identitas + Run di baris atas, meta skill singkat,
-   *  hasil run terakhir terpisah oleh garis, aksi alat di baris bawah. */
+  /** Mission card: identity + Run on the top row, short skill meta,
+   *  last run result separated by a line, tool actions on the bottom row. */
   const card = (d: DungeonRow) => {
     const active = d.runs.find((r) => r.status === "running");
     const last = d.runs[d.runs.length - 1];

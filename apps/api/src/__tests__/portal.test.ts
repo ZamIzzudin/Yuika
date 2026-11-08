@@ -1,4 +1,4 @@
-// P1-PRT-3, host worker portal: dispatch RemoteAction → runtime (fake) dan
+// host worker portal: dispatch RemoteAction → runtime (fake) dan
 // proyeksi YuiEvent → RemoteEvent (seq + ring resume), lewat SpecRelay nyata
 // + koneksi SDK nyata (sama seperti produksi, runtime saja dipalsukan).
 // SCR-7: bridge screen JUGA dipalsukan (vi.mock), stream frame sintetis.

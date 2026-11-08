@@ -1,4 +1,4 @@
-// @yuika/core, dungeon eval buta (P1-DUN-3, PLAN §13.8): gerbang tested→ready.
+// @yuika/core, dungeon eval buta : gerbang tested→ready.
 // "Buta" = sesi hakim FRESH (tanpa riwayat sesi latihan) di folder misi yang
 // sama; hanya melihat kriteria acceptance + bukti di folder + isi skill
 // (skill_view). Lulus semua kriteria → VERDICT: LULUS → status `ready`;
@@ -77,7 +77,7 @@ export interface SkillEvaluatorDeps {
   ensureRoom: (mission: Mission) => string;
   runTurn: (sessionId: string, text: string) => Promise<void>;
   lastAssistantText: (sessionId: string) => string | null;
-  /** Lulus → naikkan status skill jadi ready (P1-DUN-2 setSkillStatus). */
+ /** Lulus → naikkan status skill jadi ready ( setSkillStatus). */
   promote: (skillName: string) => void;
 }
 

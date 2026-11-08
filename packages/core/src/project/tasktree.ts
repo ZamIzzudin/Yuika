@@ -1,4 +1,4 @@
-// @yuika/core, TaskTree projector (P1-PRJ-7, PLAN §13.7/D19): hierarki pemantauan
+// @yuika/core, TaskTree projector (, /): hierarki pemantauan
 // delegasi DIPROYEKSIKAN dari event stream project (append-only), bukan state kedua.
 // Replay = fold ulang seluruh event → pohon utuh; refresh/reconnect gratis.
 import type { ProjectEvent, TaskNode } from "@yuika/contracts";
@@ -19,7 +19,7 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
         assignee: e.assignee,
         refs: [],
         artefak: [],
-        // P2-PM-3: detail task ikut ke pohon
+ // detail task ikut ke pohon
         description: e.description ?? null,
         acceptance: e.acceptance ?? [],
         dependsOn: e.dependsOn ?? [],
@@ -41,7 +41,7 @@ export function taskTreeFromEvents(events: ProjectEvent[]): TaskNode[] {
       if (e.assignee !== undefined) n.assignee = e.assignee;
       if (e.addRefs?.length) n.refs = [...new Set([...n.refs, ...e.addRefs])];
       if (e.addArtefak?.length) n.artefak = [...new Set([...n.artefak, ...e.addArtefak])];
-      // P2-PM-3: detail, replace-semantik
+ // detail, replace-semantik
       if (e.description !== undefined) n.description = e.description;
       if (e.acceptance !== undefined) n.acceptance = e.acceptance;
       if (e.dependsOn !== undefined) n.dependsOn = e.dependsOn;

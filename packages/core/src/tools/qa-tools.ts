@@ -1,4 +1,4 @@
-// @yuika/core, SCR-6 (Batch 14b): QA watch tools untuk persona QA (Sherlock).
+// @yuika/core, SCR-6 : QA watch tools untuk persona QA (Sherlock).
 // Sherlock MENONTON live screen persona lain (read-only, tanpa lease) dan
 // mencatat hasil verifikasi sebagai event qa.check, NON-BLOCKING: tidak ada
 // approval/gate, murni sinyal kualitas utk activity feed (tab Logs) dan

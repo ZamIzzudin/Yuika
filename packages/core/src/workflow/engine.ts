@@ -1,4 +1,4 @@
-// @yuika/core, workflow engine v0 (P2-FLOW-2/3, PLAN §13.2–13.3).
+// @yuika/core, workflow engine v0 (, –13.3).
 // Run = DAG → job graph: fase berjalan BERURUTAN; fase sequential satu-per-satu
 // (output fase = konteks fase berikut), fase parallel N delegation anak dengan
 // scheduling topo-wave by depends_on + cap paralel. Gate antar fase = status
@@ -94,7 +94,7 @@ export class WorkflowEngine {
   startRun(opts: StartRunOptions): StartRunResult {
     const def = validated(opts.workflow);
     if (!this.deps.projects.getProject(opts.projectId)) throw new Error(`project tidak ditemukan: ${opts.projectId}`);
-    // Batch 16 (Team Assembly): satu workflow run = SELURUH tim ter-assign
+ // (Team Assembly): satu workflow run = SELURUH tim ter-assign
     // otomatis (merge, entry roster custom tak tersentuh).
     this.deps.ensureFullRoster?.(opts.projectId);
     const runId = `wf_${randomUUID().slice(0, 8)}`;

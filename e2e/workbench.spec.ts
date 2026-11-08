@@ -1,5 +1,5 @@
-// Batch 6 e2e, P2-STU-1 (chat state survive pindah tab + layout kolom),
-// P2-STU-7 (Docs: deliverable md terbaca), P2-STU-4 (Browser read-only via
+// e2e, (chat state survive pindah tab + layout kolom),
+// (Docs: deliverable md terbaca), (Browser read-only via
 // proxy allowlist: server halaman lokal di-spec, script distrip).
 import { expect, test } from "@playwright/test";
 import type { Server } from "node:http";
@@ -9,7 +9,7 @@ import { openProjectWithLead } from "./lib";
 
 const API = "http://127.0.0.1:3291";
 
-test("STU-1: pindah tab → chat tertutup penuh, draft tetap selamat", async ({ page, request }) => {
+test(": pindah tab → chat tertutup penuh, draft tetap selamat", async ({ page, request }) => {
   const name = `Workbench E2E ${Date.now()}`;
   const r = await request.post(`${API}/api/projects`, { data: { name, description: "workbench e2e" } });
   expect(r.ok()).toBeTruthy();
@@ -22,7 +22,7 @@ test("STU-1: pindah tab → chat tertutup penuh, draft tetap selamat", async ({ 
   await composer.fill("draft yang harus selamat");
 
   // pindah ke tab Files, SATU TAB SATU HALAMAN: chat tertutup penuh,
-  // tab aktif lebar penuh (bukan lagi layout kolom Batch 6 awal)
+ // tab aktif lebar penuh (bukan lagi layout kolom awal)
   await page.getByRole("tab", { name: "Files" }).click();
   await expect(page.getByLabel("Project files")).toBeVisible({ timeout: 15_000 });
   await expect(composer).toBeHidden();
@@ -33,7 +33,7 @@ test("STU-1: pindah tab → chat tertutup penuh, draft tetap selamat", async ({ 
   await expect(composer).toHaveValue("draft yang harus selamat");
 });
 
-test("STU-7 (merge ke Files): upload md → Files tab ter-render markdown + seksi Run reports", async ({ page, request }) => {
+test(" (merge ke Files): upload md → Files tab ter-render markdown + seksi Run reports", async ({ page, request }) => {
   const name = `Docs E2E ${Date.now()}`;
   const r = await request.post(`${API}/api/projects`, { data: { name, description: "docs e2e" } });
   const { project } = (await r.json()) as { project: { id: string } };
@@ -65,7 +65,7 @@ test("STU-7 (merge ke Files): upload md → Files tab ter-render markdown + seks
   await expect(page.getByText("Run reports")).toBeVisible();
 });
 
-test("STU-4 (Batch 14a++): policy browser di Config + fetch reader via REST", async ({ page, request }) => {
+test(" (++): policy browser di Config + fetch reader via REST", async ({ page, request }) => {
   // Reader UI dihapus dari tab (user 2026-11), policy kini di Config →
   // Browser; halaman tetap bisa di-fetch via REST (sanitasi jalan). Server
   // lokal loopback; API e2e di-set YUI_BROWSER_ALLOW=127.0.0.1 +

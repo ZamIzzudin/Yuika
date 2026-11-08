@@ -1,4 +1,4 @@
-// @yuika/contracts, workflow deklaratif (P2-FLOW-1, PLAN §13.2).
+// @yuika/contracts, workflow deklaratif .
 // SATU sumber schema `workflow.yaml`: fase 7-langkah (planning→riset→desain→
 // develop→testing→dokumentasi→deliverable), mode sequential/parallel, steps
 // {persona, task, depends_on}, gate human-approval default ON.
@@ -162,7 +162,7 @@ export function loadWorkflowYaml(text: string): WorkflowDef {
 
 // ── template 7 fase (default project baru) ─────────────────────────────────
 
-export const SEVEN_PHASE_TEMPLATE_YAML = `# workflow.yaml, template 7 fase (PLAN §13)
+export const SEVEN_PHASE_TEMPLATE_YAML = `# workflow.yaml, template 7 fase ()
 # Fase berjalan berurutan; mode parallel = N agent delegation anak sekaligus
 # (cap max_concurrent per step / cap global per project). gate = human approval
 # "fase X selesai, lanjut?" SEBELUM fase berikut (default ON).

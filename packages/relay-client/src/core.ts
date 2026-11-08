@@ -188,7 +188,7 @@ export class RelayClient {
         this.handlers.onBye?.(msg.code, msg.error);
         // 4000 replaced / 4200 proto / 4201 account-limit = permanen (retry
         // tak mengubah apa pun, hanya menambah beban relay); 4001
-        // unknown-device permanen sejak CP-5: device di-unlink dari portal →
+        // unknown-device is permanent once the device is unlinked from the portal:
         // row device hilang, retry tidak akan pernah berhasil.
         // Lainnya transien → reconnect backoff + handshake ulang (SPEC §10),
         // role layer register/join ulang.

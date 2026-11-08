@@ -1,4 +1,4 @@
-// @yuika/core, project files (P2-STU-3 v0): tree + baca file untuk tab File.
+// @yuika/core, project files ( v0): tree + baca file untuk tab File.
 // Guard: path HARUS resolve di dalam dir project (anti path-traversal);
 // skip .git/node_modules; file > 256 KB tak dibaca (tampil di UI sebagai terlalu besar).
 import fs from "node:fs";

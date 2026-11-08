@@ -82,7 +82,7 @@ export class RelayRemote {
       // 4104 host-not-online → bye menutup koneksi; RelayClient reconnect +
       // flush outbox saat auth_ok, tunggu, lalu coba join ulang (backoff).
       // Bye join LAIN (4003 lintas akun, 4102 field invalid, 4200…) permanen:
-      // retry tidak mengubah hasil, terminal segera (SPEC §10, CP-1/CP-2).
+ // retry tidak mengubah hasil, terminal segera (SPEC §10, /).
       if ("code" in res && res.code !== undefined && res.code !== ByeCode.HOST_NOT_ONLINE) {
         this.setState("host-gone");
         throw new Error(res.error);

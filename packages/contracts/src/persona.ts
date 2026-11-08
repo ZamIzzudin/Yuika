@@ -1,4 +1,4 @@
-// @yuika/contracts, persona manifest schema (PLAN §7.2)
+// @yuika/contracts, persona manifest schema
 // Loader (@yuika/core) menggabungkan persona.yaml + PERSONA.md + toolsets.yaml + skills.yaml
 // + delegation.yaml menjadi bentuk tervalidasi ini.
 import { z } from "zod";
@@ -15,7 +15,7 @@ const AssetSpec = z.object({
 
 const ModelRoute = z.object({
   quality: z.enum(["low", "medium", "high"]),
-  /** P1-MDL-1: nama model konkret (OpenAI-compatible id). Kosong = default env YUI_MODEL. */
+ /** nama model konkret (OpenAI-compatible id). Kosong = default env YUI_MODEL. */
   name: z.string().optional(),
   fallback: z.string().optional(),
 });
@@ -33,7 +33,7 @@ const SkillsBinding = z.object({
 const DelegationRules = z.object({
   can_spawn: z.array(z.string()).default([]),
   spawnable_by: z.array(z.string()).default(["user"]),
-  /** P1-DEL-1: cap paralel MILIK SI PENDELEGASI (persona yang memegang
+ /** cap paralel MILIK SI PENDELEGASI (persona yang memegang
    *  delegate_task), berlaku pada delegation.yaml persona tsb.; persona anak
    *  tanpa delegate_task mengabaikannya. Dikombinasikan min() dengan cap
    *  budget workspace (Settings → Metering). */

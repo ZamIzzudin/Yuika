@@ -1,4 +1,4 @@
-// @yuika/core, Batch 13 (P2-WKS-4): tool persona run_in_workshop.
+// @yuika/core, : tool persona run_in_workshop.
 // Eksekusi di container workshop PERSISTEN project (home selamat lintas
 // tidur/bangun, node_modules & cache hangat). Berbeda dari run_command
 // (sandbox disposable): workshop harus DIBUKA USER dulu dari panel Workshop

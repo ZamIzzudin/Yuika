@@ -1,6 +1,6 @@
-// @yuika/api, P1-PRT-3: portal device store (kredential device HOST).
-// Gaya auth.db: SQLite terpisah dari sesi; private key TIDAK pernah keluar
-// dari proses host (browser tidak menyimpan kunci host, keputusan D23).
+// @yuika/api, : portal device store (kredential device HOST).
+// Like auth.db: SQLite separate from sessions; the private key never
+// leaves the host process (the browser never holds the host key).
 // DB path: env YUI_PORTAL_DEVICE_DB || <repo>/portal-device.db (gitignore *.db).
 import fs from "node:fs";
 import path from "node:path";
@@ -91,9 +91,9 @@ export function clearHostDevice(): void {
   open().prepare("DELETE FROM host_device WHERE id = 1").run();
 }
 
-// ── CP-4: auto-link browser (device WEB hasil SSO) ─────────────────────
-// Terpisah dari host manual (Settings pairing): satu instalasi bisa punya
-// keduanya, host (desktop) utk remote-control, web (auto SSO) utk presence.
+// ── browser auto-link (the WEB device created by SSO) ──────────────────
+// Separate from the manual host (Settings pairing): one install can have
+// both, a host (desktop) for remote control and a web device for presence.
 function ensureWebTable(d: Database.Database): void {
   d.exec(`
     CREATE TABLE IF NOT EXISTS web_device (

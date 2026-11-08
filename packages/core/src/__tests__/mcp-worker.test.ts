@@ -1,5 +1,5 @@
-// P1-MCP-4: MCP worker sandbox, fail-closed bila `sandbox: true` tanpa
-// Docker; `sandbox: "auto"` fallback stdio host; flag container benar.
+// MCP worker sandbox: fail-closed when `sandbox: true` without Docker;
+// `sandbox: "auto"` falls back to host stdio; container flags correct.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import os from "node:os";
 import path from "node:path";
@@ -22,7 +22,7 @@ afterEach(() => {
   dockerUp = false;
 });
 
-describe("MCP worker sandbox (P1-MCP-4)", () => {
+describe("MCP worker sandbox", () => {
   it("sandbox: true tanpa Docker → FAIL-CLOSED (bukan stdio bare diam-diam)", async () => {
     dockerUp = false;
     await expect(

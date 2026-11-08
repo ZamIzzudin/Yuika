@@ -1,6 +1,6 @@
 "use client";
 
-// Batch 14a++ (user 2026-11): tab Browser dibongkar, reader + Live pindah
+// ++ (user 2026-11): tab Browser dibongkar, reader + Live pindah
 // (reader dihapus; live screen = floating window via bubble chat). Tab ini
 // kini TERMINAL PENUH: Shell (xterm, sesi shared agent) | Commands (log
 // run_command). View pilihan persist localStorage yui.termView.
@@ -112,8 +112,8 @@ function CommandsView({ projectId }: { projectId: string }) {
   );
 }
 
-/** D31: switcher Shell/Commands, dipasang di POJOK KANAN baris status
- *  (sebaris dengan pill "● live"), bukan header terpisah di atas. */
+/** The Shell/Commands switcher, mounted on the RIGHT END of the status row
+ *  (in line with the "● live" pill), not a separate header above. */
 function ViewSwitcher({
   view,
   onPick,

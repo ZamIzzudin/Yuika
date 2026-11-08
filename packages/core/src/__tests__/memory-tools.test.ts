@@ -1,4 +1,4 @@
-// P1-MEM-1: tool memory_append, agent menyimpan catatan reusable; scope user
+// tool memory_append, agent menyimpan catatan reusable; scope user
 // lintas project, scope project hanya untuk sesi yang melekat ke project.
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";
@@ -12,7 +12,7 @@ import { ProjectStore } from "../project/store.js";
 
 const ctx = { sessionId: "s_prj", turnId: "t1", workspacePath: "/tmp", emit: () => {}, requestApproval: async () => true };
 
-describe("memory_append tool (P1-MEM-1)", () => {
+describe("memory_append tool ()", () => {
   let projects: ProjectStore;
   let sessions: SessionStore;
   let ws: string;

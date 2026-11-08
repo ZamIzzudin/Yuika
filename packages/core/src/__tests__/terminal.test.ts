@@ -1,4 +1,4 @@
-// P2-STU-2: TerminalManager + tool `terminal`, sesi shared user & agent.
+// TerminalManager + tool `terminal`, sesi shared user & agent.
 // Shell deterministik via fixture echo-shell.mjs (YUI_TERMINAL_CMD).
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
@@ -28,7 +28,7 @@ afterEach(async () => {
 
 const ctx = () => ({ sessionId: "s1", turnId: "t1", workspacePath: dir, emit: () => {} });
 
-describe("command log persist (Batch 13b)", () => {
+describe("command log persist ()", () => {
   it("logCommand menulis JSONL + listCommandLog me-load dari file (restart API)", () => {
     process.env.YUI_TERMINAL_LOG_DIR = path.join(dir, "cmdlog");
     const wsA = path.join(dir, "ws-a");
@@ -57,7 +57,7 @@ describe("command log persist (Batch 13b)", () => {
 });
 
 describe("TerminalManager", () => {
-  it("killSessionsUnder (D31 delete-project): sesi di bawah root dimatikan, sesi lain utuh", async () => {
+  it("killSessionsUnder ( delete-project): sesi di bawah root dimatikan, sesi lain utuh", async () => {
     const dirA = fs.mkdtempSync(path.join(os.tmpdir(), "yui-term-a-"));
     const dirB = fs.mkdtempSync(path.join(os.tmpdir(), "yui-term-b-"));
     const nested = path.join(dirA, "sub");
@@ -131,8 +131,8 @@ describe.skipIf(!(await dockerUp()))("terminal docker sandbox (regresi -i, 13d)"
     const d = fs.mkdtempSync(path.join(os.tmpdir(), "yui-term-dkr-"));
     const info = await tm.ensureSession(d);
     expect(info.backend).toBe("docker");
-    // D34: saat 5 suite turbo jalan paralel di mesin yang sibuk, container
-    // docker butuh waktu ekstra sebelum PTY siap, quietMs longgar + retry.
+    // With 5 suites running in parallel on a busy machine, the docker
+    // container needs extra time before the PTY is ready; be lenient + retry.
     let r = await tm.runInSession(d, "pwd", { timeoutMs: 20_000, quietMs: 5_000 });
     if (!r.output.includes("/workspace"))
       r = await tm.runInSession(d, "pwd", { timeoutMs: 20_000, quietMs: 5_000 });

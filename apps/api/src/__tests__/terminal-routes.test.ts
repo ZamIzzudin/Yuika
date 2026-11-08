@@ -1,4 +1,4 @@
-// P2-STU-2: kontrak HTTP routes terminal, runtime PALSU (pola api.test.ts),
+// kontrak HTTP routes terminal, runtime PALSU (pola api.test.ts),
 // TerminalManager asli dengan shell fixture (echo-shell.mjs) via
 // YUI_TERMINAL_CMD → deterministik lintas OS.
 import { afterAll, describe, expect, it } from "vitest";
@@ -26,7 +26,7 @@ afterAll(async () => {
   await app.close();
 });
 
-describe("routes terminal (P2-STU-2)", () => {
+describe("terminal routes", () => {
   it("POST sessions: project tak dikenal → 404; ok → info sesi", async () => {
     const bad = await app.inject({ method: "POST", url: "/api/terminal/sessions", payload: { projectId: "p_x" } });
     expect(bad.statusCode).toBe(404);

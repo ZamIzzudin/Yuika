@@ -1,4 +1,4 @@
-// @yuika/api, P1-PRT-3: portal host worker.
+// @yuika/api, : portal host worker.
 // Memegang koneksi relay sebagai HOST (proses apps/api, bukan browser):
 // host online tanpa tab terbuka; Tauri nanti memakai kode yang sama.
 //
@@ -50,8 +50,8 @@ export interface PortalStatus {
   relayUrl: string | null;
   relayState: "offline" | "connecting" | "authed" | "closed";
   remotes: Array<{ deviceId: string; kind: string; name: string }>;
-  /** CP-5: alasan terakhir worker berhenti, "unlinked" = device dihapus
-   *  dari portal (bye 4001), BUKAN error jaringan; UI mengarahkan pairing ulang. */
+  /** Last stop reason; "unlinked" = the device was deleted from the
+   *  portal (bye 4001), NOT a network error; the UI points to re-pairing. */
   note?: "unlinked";
 }
 
@@ -115,16 +115,16 @@ export class PortalHostService {
   private known = new Set<string>(); // session id yang pernah divalidasi/dibuat
   private unsubAll: (() => void) | null = null;
   private introSent = new Set<string>();
-  /** CP-5: bye 4001 terakhir (untuk note status, jaring ≠ unlinked). */
+  /** Timestamp of the last bye 4001 (drives the status note). */
   private unlinkedAt = 0;
 
   get running(): boolean {
     return !!this.host;
   }
 
-  /** CP-5: bye 4001 (UNKNOWN_DEVICE) = device di-unlink dari portal →
-   *  permanen: hentikan loop, hapus row host_device (pairing ulang),
-   *  status menampilkan "unlinked", bukan error jaringan generik. */
+  /** bye 4001 (UNKNOWN_DEVICE) = the device was unlinked from the portal:
+   *  permanent. Stop the loop, drop the host_device row (pair again),
+   *  and show "unlinked" instead of a generic network error. */
   private onHostBye(code: number, error: string): void {
     if (code !== ByeCode.UNKNOWN_DEVICE) return;
     console.warn(`[portal-host] device di-unlink dari portal (bye 4001: ${error}), berhenti, pairing ulang diperlukan`);

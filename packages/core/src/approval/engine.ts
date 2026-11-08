@@ -1,9 +1,9 @@
 // @yuika/core, approval engine: pause turn → approval.requested → tunggu keputusan user
-// (pola server_requests Hermes; di SaaS nanti bisa via push notification, PLAN §4.11).
-// P0-DATA-3: pending approval & "Setujui & ingat" PERSIST di SQLite, permintaan
+// (pola server_requests Hermes; di SaaS nanti bisa via push notification, ).
+// pending approval & "Setujui & ingat" PERSIST di SQLite, permintaan
 // yang menggantung saat server restart ditandai expired (event approval.expired),
 // bukan menghilang diam-diam; remembered tool dimuat ulang tiap engine baru.
-// P0-SEC-4: deadline + auto-deny, approval yang diabaikan user TIDAK menggantung
+// deadline + auto-deny, approval yang diabaikan user TIDAK menggantung
 // selamanya; setelah `YUI_APPROVAL_TIMEOUT_MS` (default 5 menit; 0 = nonaktif utk
 // test) turn dilanjutkan FAIL-CLOSED (denied), event approval.expired ke UI.
 import { randomUUID } from "node:crypto";
@@ -13,7 +13,7 @@ import type { ISessionStore } from "../session/store.js";
 /**
  * Registry pending lintas engine: satu engine per turn, tapi route handler
  * hanya tahu requestId. Live promise hanya hidup selama proses, statusnya
- * yang permanen ada di tabel `approvals` (P0-DATA-3).
+ * yang permanen ada di tabel `approvals` .
  *
  * QUIRK dev (dipelajari dev-10, fix bug user "approval 404 saat disetujui"):
  * Next.js dev membundel @yuika/core TERPISAH per route, route approvals mendapat
@@ -42,8 +42,8 @@ export function setApprovalMode(mode: ApprovalMode): void {
   approvalGlobal.__yuiApprovalMode = mode;
 }
 
-/** Deadline approval per policy (P0-SEC-4). Env tervalidasi terpusat di
- *  env.ts (P0-INF-2) tapi tetap dibaca ulang tiap pemanggilan agar test &
+/** Deadline approval per policy . Env tervalidasi terpusat di
+ * env.ts tapi tetap dibaca ulang tiap pemanggilan agar test &
  *  hot-reload bisa mengatur tanpa restart (parse di sini tetap fail-soft:
  *  nilai rusak → default). Default 5 menit. */
 export function APPROVAL_TIMEOUT_MS(): number {
@@ -65,7 +65,7 @@ export interface ApprovalPersistOptions {
 export class ApprovalEngine {
   private pending = new Map<string, { tool: string; resolve: (approved: boolean) => void; clearTimeout: () => void }>();
   /** Tool yang di-approve + "ingat", skip approval sesi ini (mengurangi round-trip user).
-   *  Persist di approval_memory → bertahan restart server (P0-DATA-3). */
+ * Persist di approval_memory → bertahan restart server . */
   private remembered = new Set<string>();
 
   constructor(private emit: Emit, private persist?: ApprovalPersistOptions) {
@@ -91,7 +91,7 @@ export class ApprovalEngine {
     this.persist?.store.insertApproval({ requestId, sessionId: this.persist.sessionId, tool, args, reason });
     pendingEngines.set(requestId, this);
     return new Promise<boolean>((resolve) => {
-      // P0-SEC-4: deadline auto-deny, fail-closed, turn tidak menggantung tanpa batas.
+ // deadline auto-deny, fail-closed, turn tidak menggantung tanpa batas.
       const timeoutMs = APPROVAL_TIMEOUT_MS();
       const timer = timeoutMs > 0 ? setTimeout(() => this.expire(requestId), timeoutMs) : null;
       timer?.unref?.(); // jangan tahan proses hidup hanya karena timer approval
@@ -103,7 +103,7 @@ export class ApprovalEngine {
     });
   }
 
-  /** P0-SEC-4: lewat deadline → tolak (fail-closed) + tandai expired di DB + event
+ /** lewat deadline → tolak (fail-closed) + tandai expired di DB + event
    *  `approval.expired` (bentuk sama dengan boot-heal restart) → kartu UI mati rapi. */
   private expire(requestId: string): void {
     const entry = this.pending.get(requestId);
@@ -122,7 +122,7 @@ export class ApprovalEngine {
     if (!entry) return false;
     this.pending.delete(requestId);
     pendingEngines.delete(requestId);
-    entry.clearTimeout(); // P0-SEC-4: user menjawab sebelum deadline, matikan timer
+    entry.clearTimeout(); // : user menjawab sebelum deadline, matikan timer
     if (approved && remember) {
       this.remembered.add(entry.tool);
       this.persist?.store.rememberApproval(this.persist.sessionId, entry.tool);

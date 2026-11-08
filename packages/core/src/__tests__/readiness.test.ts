@@ -1,4 +1,4 @@
-// P1-DUN-5: assign gating, readiness = inventory skill persona per fase.
+// assign gating, readiness = inventory skill persona per fase.
 import { describe, expect, it } from "vitest";
 import { RosterEntry } from "@yuika/contracts";
 import { computeReadiness, PHASE_CATEGORIES } from "../project/readiness.js";
@@ -13,7 +13,7 @@ const SKILLS = [
   { name: "phaser-basics", category: "research", personas: ["yui-scholar"], status: "tested" as const },
 ];
 
-describe("computeReadiness (P1-DUN-5)", () => {
+describe("computeReadiness ()", () => {
   it("persona siap bila tiap fase gated-nya punya skill tested/ready milik dia", () => {
     const scholar = computeReadiness([entry("yui-scholar", ["research", "documentation"])], SKILLS)[0]!;
     expect(scholar.ready).toBe(false); // documentation: tidak ada skill productivity milik scholar

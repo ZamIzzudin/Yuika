@@ -8,7 +8,7 @@ function tmpWs() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "yui-mem-"));
 }
 
-describe("memory manager (P1-MEM-1)", () => {
+describe("memory manager ()", () => {
   it("readMemory membuat file dengan header bila belum ada (user & project terpisah)", () => {
     const ws = tmpWs();
     const user = readMemory(ws, "user");

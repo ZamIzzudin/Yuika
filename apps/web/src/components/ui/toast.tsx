@@ -1,5 +1,5 @@
 "use client";
-// DS-1, toast global (react-hot-toast) untuk feedback aksi success/error.
+// toast global (react-hot-toast) untuk feedback aksi success/error.
 // Semua operasi async (simpan, upload, install, accept, hapus) WAJIB pakai
 // toastOk/toastErr, bukan banner inline tersebar (docs/DESIGN-SYSTEM.md §Toast).
 // Ikon Phosphor (§5b), gaya dari token --yui-*.

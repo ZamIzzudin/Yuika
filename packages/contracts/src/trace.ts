@@ -1,4 +1,4 @@
-// P1-INF-4: observability, kontrak trace view per turn (UI "apa yang terjadi
+// observability, kontrak trace view per turn (UI "apa yang terjadi
 // di balik layar"): langkah event (tool call/result, delegasi, approval) +
 // panggilan model (dari ledger: latensi/token/biaya via price book opsional).
 import { z } from "zod";

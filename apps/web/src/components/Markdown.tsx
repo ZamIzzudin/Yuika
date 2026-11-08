@@ -4,7 +4,7 @@
 // `code`, **bold**, *italic*, ~~strike~~, [teks](url), autolink http(s),
 // hr, dan TABEL GFM | a | b | (fix 2026-11: riset Scholar mengeluarkan tabel,
 // sebelumnya dirender mentah sebagai baris pipe). Sisanya teks polos.
-// DS-1: gaya via utility Tailwind semantik (docs/DESIGN-SYSTEM.md), komponen
+// gaya via utility Tailwind semantik (docs/DESIGN-SYSTEM.md), komponen
 // ini self-contained, tidak lagi bergantung pada kelas `.md` di globals.css.
 import React from "react";
 
@@ -157,7 +157,7 @@ export function Markdown({
   /** "chat" (default, kompak) atau "doc" (Files tab: heading besar + spasi
    *  lega, pengalaman baca dokumen). */
   variant?: "chat" | "doc";
-  /** D29 (Files): jika ada, fenced code digambar komponen eksternal
+ /** (Files): jika ada, fenced code digambar komponen eksternal
    *  (CodeBlock dgn syntax highlight + header). Chat tetap <pre> polos. */
   renderCode?: (code: string, lang: string) => React.ReactNode;
 }) {

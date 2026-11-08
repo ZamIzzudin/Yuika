@@ -14,8 +14,8 @@ Accounts are NOT stored here. Sign-in happens against a centrally operated
 Yuika Portal (account portal plus linked-device relay). As a studio operator
 you receive two URLs from the portal operator:
 
-- `YUI_PORTAL_URL` - e.g. `https://account.yourdomain.example`
-- `YUI_RELAY_URL` - e.g. `wss://relay.yourdomain.example`
+- `YUI_PORTAL_URL` - the central portal: `https://yuika.notu.dev`
+- `YUI_RELAY_URL` - the portal relay for linked devices: `wss://yuika-relay.notu.dev`
 
 Want everything private on one box, portal included? The optional variant
 `deploy/docker-compose.with-portal.yml` bundles the portal and relay too.
@@ -101,8 +101,8 @@ Fill in the `Production VPS` block at the bottom of `.env`:
 
 ```ini
 STUDIO_DOMAIN=studio.yourdomain.example
-YUI_PORTAL_URL=https://account.yourdomain.example
-YUI_RELAY_URL=wss://relay.yourdomain.example
+YUI_PORTAL_URL=https://yuika.notu.dev
+YUI_RELAY_URL=wss://yuika-relay.notu.dev
 ```
 
 Also set the model provider credentials in the same file (`YUI_OPENAI_API_KEY`

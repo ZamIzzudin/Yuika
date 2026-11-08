@@ -1,4 +1,4 @@
-// DS-1, komponen global: TabPills + primitif kecil (EmptyState, Skeleton, MetaRow, SectionTitle).
+// komponen global: TabPills + primitif kecil (EmptyState, Skeleton, MetaRow, SectionTitle).
 // TabPills: tab kapsul terpusat (aria lengkap; konten digele pemanggil).
 // Center sejati: pemanggil pakai grid 3 kolom [1fr_auto_1fr], kolom kiri &
 // kanan sama lebar, pills di kolom tengah (lihat PersonaStudioView & page.tsx).

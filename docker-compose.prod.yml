@@ -7,8 +7,8 @@
 #
 # Accounts live on the Yuika Portal (central, owner-operated; see the portal
 # repo for its own deployment). Point the studio at it with:
-#   YUI_PORTAL_URL  e.g. https://account.yuika.example
-#   YUI_RELAY_URL   e.g. wss://relay.yuika.example   (linked devices)
+#   YUI_PORTAL_URL  e.g. https://yuika.notu.dev (central portal)
+#   YUI_RELAY_URL   e.g. wss://yuika-relay.notu.dev  (linked devices)
 # Want to run your own private portal on the same box instead? See
 # deploy/docker-compose.with-portal.yml.
 #

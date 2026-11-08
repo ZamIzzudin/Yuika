@@ -1,4 +1,4 @@
-// @yuika/core, provider factory (P1-INF-2): pilih adapter per settings.
+// @yuika/core, provider factory : pilih adapter per settings.
 export type ProviderKind = "openai-compat" | "anthropic" | "gemini";
 
 export const PROVIDER_KINDS: { kind: ProviderKind; label: string; defaultBaseUrl: string }[] = [

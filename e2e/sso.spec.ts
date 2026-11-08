@@ -1,8 +1,8 @@
-// CP-3 SSO via portal, e2e browser penuh (double portal :3110):
+// SSO via portal, e2e browser penuh (double portal :3110):
 // mode terbuka → Settings → Account → "Sign in with Yuika Portal" → portal
 // /authorize (auto-accept) → /auth/callback?code&state → sesi Yuika → email
 // di panel Account → sign out → gerbang portal-only. afterAll wipe users →
-// spec lain tetap mode terbuka. (D37: pill sidebar diganti Settings → Account.)
+// Other specs stay in open mode (the sidebar pill became Settings -> Account).
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
 const API = "http://127.0.0.1:3291";
@@ -61,7 +61,7 @@ test("SSO, Settings→Account sign-in → authorize (auto-accept) → callback �
     "e2e-portal@yuika.test",
   );
 
-  // 4b) CP-4 auto-link: browser ter-claim sebagai device web di portal
+ // 4b) auto-link: browser ter-claim sebagai device web di portal
   // (deviceToken ikut exchange → /api/devices/claim kind=web).
   const st = await page.evaluate(async () => {
     const token = localStorage.getItem("yuika.auth.token");
@@ -80,8 +80,8 @@ test("SSO, Settings→Account sign-in → authorize (auto-accept) → callback �
   await dlg3.getByTitle("Sign out").click();
   const gate = page.getByLabel("Sign in to Yuika");
   await expect(gate).toBeVisible({ timeout: 15_000 });
-  // D46: gerbang login punya playground zero-g full-screen — maskot statis
-  // (mode gerbang 401 utk fetch roster) melayang & bisa dilempar.
+  // The login gate has a full-screen zero-g playground: static mascots
+  // (the gate cannot fetch the roster, 401) floating and throwable.
   const gateMascots = page.locator("[data-mascot]");
   await expect(gateMascots.first()).toBeVisible({ timeout: 5_000 });
   console.log("gate mascots:", await gateMascots.count());

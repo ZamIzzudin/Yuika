@@ -1,4 +1,4 @@
-// P0-QA-2: load ringan, 10 sesi paralel × 5 turn TANPA deadlock/leak.
+// load ringan, 10 sesi paralel × 5 turn TANPA deadlock/leak.
 // Provider fake instan; fokus: concurrency loop + store + cap delegasi konsisten,
 // semua turn selesai dengan utuh & urutan history benar per sesi.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -39,7 +39,7 @@ afterEach(() => {
   }
 });
 
-describe("load ringan 10 sesi × 5 turn (P0-QA-2)", () => {
+describe("load ringan 10 sesi × 5 turn ()", () => {
   it("semua turn selesai; history sesi utuh & berurutan; tanpa kontaminasi antar-sesi", async () => {
     const provider = new JitterProvider();
     const ws = path.join(dir, "ws");

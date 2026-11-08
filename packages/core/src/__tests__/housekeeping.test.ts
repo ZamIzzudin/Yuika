@@ -1,4 +1,4 @@
-// P0-DATA-2, retention & housekeeping events (tabel aktif tetap ramping,
+// retention & housekeeping events (tabel aktif tetap ramping,
 // arsip dibaca via UNION sehingga replay/hidrasi/growth tetap utuh).
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -22,7 +22,7 @@ function setTs(store: SessionStore, eventId: number, ts: number): void {
 
 const FUTURE = Date.now() + 40 * 86_400_000; // "sekarang" 40 hari ke depan → cutoff = +10 hari
 
-describe("P0-DATA-2 retention events", () => {
+describe(" retention events", () => {
   it("events sesi dingin terarsip; getEvents tetap lengkap & berurutan (UNION) + idempoten", () => {
     const store = mkStore();
     const sid = `s${++n}`;

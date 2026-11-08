@@ -9,7 +9,7 @@ function tmpFile() {
   return path.join(dir, "mcp.json");
 }
 
-describe("install MCP dari katalog (P1-MCP-1)", () => {
+describe("install MCP dari katalog ()", () => {
   it("install server tanpa env → tulis deklarasi ke mcp.json", () => {
     const file = tmpFile();
     const { name, decl } = installFromCatalog(file, "fetch", {});

@@ -1,4 +1,4 @@
-// @yuika/api, kontrol anak delegasi (P0-DEL-2 steer/cancel + P1-DEL-3 pause/resume).
+// @yuika/api, kontrol anak delegasi ( steer/cancel + pause/resume).
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { YuiRuntime } from "@yuika/core";

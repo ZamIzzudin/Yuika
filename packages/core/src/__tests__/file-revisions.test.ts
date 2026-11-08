@@ -9,7 +9,7 @@ import { registerFileTools } from "../tools/file-tools.js";
 
 let dir: string;
 
-describe("diffLines (P2-STU-3)", () => {
+describe("diffLines ()", () => {
   it("deteksi tambah/hapus/tetap dengan LCS", () => {
     const ops = diffLines("a\nb\nc", "a\nx\nc\nd");
     expect(ops).toEqual([
@@ -28,7 +28,7 @@ describe("diffLines (P2-STU-3)", () => {
   });
 });
 
-describe("FileRevisionStore + write_file (P2-STU-3)", () => {
+describe("FileRevisionStore + write_file ()", () => {
   beforeEach(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-rev-"));
   });

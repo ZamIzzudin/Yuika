@@ -1,4 +1,4 @@
-// Batch 7 (RS-5), config riset dari env (kill-switch + searxng opsional + limit).
+// (RS-5), config riset dari env (kill-switch + searxng opsional + limit).
 // Budget singleton per proses (tahan HMR via globalThis, pattern runtime).
 import { ResearchBudget } from "./budget.js";
 

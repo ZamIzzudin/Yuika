@@ -1,9 +1,9 @@
-// @yuika/core, skill lifecycle manager (P1-MEM-3): pengalaman terbukti → skill.
+// @yuika/core, skill lifecycle manager : pengalaman terbukti → skill.
 // Alur: agent `skill_propose` → DRAFT di <skillsDir>/drafts/<slug>/SKILL.md
 // (metadata.yui.status: draft) → user validasi di tab Skill (edit bebas) →
 // Terima = lint (parse ulang frontmatter) + pindah ke <skillsDir>/<slug>/ =
 // siap dipakai agent via skills_list/skill_view. Tolak = hapus.
-// P1-MEM-4: usage tracking (`.usage.json` per skill: views/patches/used).
+// usage tracking (`.usage.json` per skill: views/patches/used).
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
@@ -65,7 +65,7 @@ export function updateDraft(skillsDir: string, slug: string, name: string, descr
   const dir = path.join(draftsDir(skillsDir), slug);
   if (!fs.existsSync(dir)) throw new Error(`draft '${slug}' tidak ditemukan`);
   fs.writeFileSync(path.join(dir, "SKILL.md"), skillMd(name, description, body, "draft"), "utf-8");
-  bumpUsage(dir, "patches"); // P1-MEM-4
+  bumpUsage(dir, "patches"); // 
 }
 
 /** Terima draft: lint (parse ulang) + pindah keluar drafts/ → siap dipakai. */
@@ -75,10 +75,10 @@ export function acceptDraft(skillsDir: string, slug: string): { name: string; st
   const skill = loadSkill(from); // lint v0: frontmatter valid (throw → route 400)
   const to = path.join(skillsDir, slugify(skill.name));
   if (fs.existsSync(to)) throw new Error(`skill aktif '${slugify(skill.name)}' sudah ada`);
-  bumpUsage(from, "patches"); // accept = patch final (P1-MEM-4), ikut pindah folder
+  bumpUsage(from, "patches"); // accept = patch final (), ikut pindah folder
   fs.renameSync(from, to);
-  // tulis ulang dengan status `tested`, P1-DUN-2: direview manusia, belum
-  // lulus eval acceptance blind (P1-DUN-3 yang menaikkan ke `ready` otomatis).
+ // tulis ulang dengan status `tested`, : direview manusia, belum
+ // lulus eval acceptance blind ( yang menaikkan ke `ready` otomatis).
   const fm = { ...skill.frontmatter } as { metadata?: { yui?: Record<string, unknown> } };
   fm.metadata = fm.metadata ?? {};
   fm.metadata.yui = { ...(fm.metadata.yui ?? {}), status: "tested" };
@@ -87,7 +87,7 @@ export function acceptDraft(skillsDir: string, slug: string): { name: string; st
   return { name: skill.name, status: "tested" };
 }
 
-/** P1-DUN-2/3: ubah status lifecycle skill aktif (tested→ready via eval, dsb.). */
+/** ubah status lifecycle skill aktif (tested→ready via eval, dsb.). */
 export function setSkillStatus(skillsDir: string, name: string, status: "tested" | "ready"): void {
   const skill = listSkills(skillsDir).find((s) => s.name === name || slugify(s.name) === slugify(name));
   if (!skill) throw new Error(`skill aktif '${name}' tidak ditemukan`);
@@ -102,7 +102,7 @@ export function rejectDraft(skillsDir: string, slug: string): void {
   fs.rmSync(path.join(draftsDir(skillsDir), slug), { recursive: true, force: true });
 }
 
-// ---- P1-MEM-4: usage tracking per skill (`.usage.json` di folder skill) ----
+// ---- : usage tracking per skill (`.usage.json` di folder skill) ----
 export interface SkillUsage {
   views: number;
   patches: number;

@@ -1,4 +1,4 @@
-// Batch 7 (RS-1b), Market: harga crypto (CoinGecko, gratis tanpa key) +
+// (RS-1b), Market: harga crypto (CoinGecko, gratis tanpa key) +
 // saham/forex (Stooq CSV, delayed). Hasil = baris harga sintetis, bukan link:
 // Scholar langsung dapat angka + tautan verifikasi.
 import type { SearchProvider, SearchResult } from "../types.js";

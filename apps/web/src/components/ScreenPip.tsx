@@ -1,6 +1,6 @@
 "use client";
 
-// Batch 14a++ (user 2026-11): floating shared screen, melayang di atas semua
+// ++ (user 2026-11): floating shared screen, melayang di atas semua
 // tab. Perubahan dari versi pertama:
 //   - header drag TIDAK lagi menelan klik tombol (pointer-capture hanya mulai
 //     di background header, bukan di atas button);

@@ -1,8 +1,8 @@
 "use client";
-// Panel Proyek (sidebar), Batch 16: HANYA daftar + hapus. Membuat project
+// Panel Proyek (sidebar), : HANYA daftar + hapus. Membuat project
 // pindah ke halaman HOME (kartu "New project" + form modal); workspace/
 // freespace dihapus total, semua sesi hidup di dalam project.
-// v0 (P1-PRJ-6): pilih · P1-PRJ-8: hapus project + artefak terkait
+// v0 : pilih · : hapus project + artefak terkait
 // (sesi, file, memory project), skill persona & metering DIPERTAHANKAN.
 import { useState } from "react";
 import { DeleteProjectResult, type ProjectInfo } from "@yuika/contracts";

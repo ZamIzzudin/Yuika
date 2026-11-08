@@ -1,4 +1,4 @@
-// @yuika/core, dungeon runner (P1-DUN-1): jalankan MISI sebagai sesi sandbox.
+// @yuika/core, dungeon runner : jalankan MISI sebagai sesi sandbox.
 // Ruangan = project kind="dungeon" (root workspace/dungeons/<id>) → semua file
 // tools persona terisolasi di sana. Run bersifat async: status dipolling UI
 // (running/done/failed) & dipersist di <dungeon>/runs.json (restart → failed).
@@ -9,7 +9,7 @@ import type { DungeonRun, Mission } from "@yuika/contracts";
 import { missionDir } from "./mission.js";
 
 /** Prompt misi: agent tahu goal, sumber, acceptance, dan WAJIB menutup dengan
- *  skill_propose (skill hasil latihan → draf P1-MEM-3, milik persona ini). */
+ * skill_propose (skill hasil latihan → draf , milik persona ini). */
 export function buildMissionPrompt(m: Mission): string {
   const res = m.resources.length ? m.resources.map((r) => `  - ${r}`).join("\n") : "  (tidak ada, cari sumber sendiri via web research)";
   const acc = m.acceptance.map((a) => `  - ${a}`).join("\n");

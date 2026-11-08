@@ -1,9 +1,9 @@
-// @yuika/core, web tools (Batch 7 · Research Engine):
+// @yuika/core, web tools ( · Research Engine):
 //  · web_search, provider chain (wikipedia/github/hn/stackex/docsites/news/market/
 //    social + searxng/ddg fallback); hasil parsial + daftar provider gagal.
 //  · web_fetch , pipeline riset: SSRF/policy guard (browser/reader) + robots +
 //    throttle domain + Readability→markdown; cache + budget per sesi.
-// P2-STU-4 tetap: fetch agent tercatat di riwayat tab Browser project.
+// tetap: fetch agent tercatat di riwayat tab Browser project.
 import { z } from "zod";
 import { registry } from "../registry.js";
 import type { ProjectStore } from "../project/store.js";
@@ -108,7 +108,7 @@ export function registerWebTools(deps?: {
           45_000,
           "web_fetch timed out (45s watchdog)",
         );
-        // P2-STU-4: catat kunjungan agent utk riwayat tab Browser project.
+ // catat kunjungan agent utk riwayat tab Browser project.
         if (deps) {
           try {
             const pid = deps.sessionStore.getSession(ctx.sessionId)?.projectId;

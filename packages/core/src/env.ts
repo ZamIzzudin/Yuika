@@ -1,4 +1,4 @@
-// @yuika/core, konfigurasi terpusat & tervalidasi (P0-INF-2).
+// @yuika/core, konfigurasi terpusat & tervalidasi .
 // SEMUA env numerik/boolean YUI_* diparse DI SATU TEMPAT dengan zod:
 // nilai rusak (mis. YUI_MAX_ITER="abc") → FAIL-FAST saat modul ini pertama
 // diakses, bukan jadi NaN yang bocor ke runtime (dulu: Number(env) diam-diam
@@ -22,7 +22,7 @@ const schema = z.object({
   /** Timeout provider (ms), default 5 mnt: model reasoning + context MCP besar
    *  bisa >120 dtk sampai token pertama (fix "Socket timeout" 2026-11). */
   providerTimeoutMs: int(300_000, 1_000, 600_000),
-  /** Estimasi jendela konteks model (token), acuan kompresi (P0-CORE-4). */
+ /** Estimasi jendela konteks model (token), acuan kompresi . */
   contextTokens: int(128_000, 4_000, 2_000_000),
   /** Kompresi: fraksi jendela pemicu ×1000 (700 = 70%). */
   compressThresholdPct: int(700, 10, 1000),
@@ -32,7 +32,7 @@ const schema = z.object({
   compressMinMessages: int(10, 4, 512),
   /** Trace loop ke stdout (1) / matikan (0). */
   trace: z.preprocess((v) => (v === undefined ? true : v !== "0" && v !== "false"), z.boolean()),
-  /** Level logging terstruktur pino (P0-INF-3): trace|debug|info|warn|error|fatal.\n   *  Kosong = otomatis: "debug" saat YUI_TRACE aktif, selain itu "info"
+ /** Level logging terstruktur pino : trace|debug|info|warn|error|fatal.\n * Kosong = otomatis: "debug" saat YUI_TRACE aktif, selain itu "info"
    *  (di bawah vitest default "warn" agar output test bersih). */
   logLevel: z
     .string()
@@ -40,11 +40,11 @@ const schema = z.object({
     .optional(),
   /** Learn nudge pasca-turn (0 = matikan). */
   learn: z.preprocess((v) => v !== "0", z.boolean()),
-  /** P0-DATA-2: retensi events (hari), lebih tua dari ini diarsipkan ke
+ /** retensi events (hari), lebih tua dari ini diarsipkan ke
    *  events_archive (tabel aktif tetap ramping; bacaan UNION agar replay
    *  tetap utuh). 0 = housekeeping mati. */
   eventsRetentionDays: int(30, 0, 3650),
-  /** P0-SEC-1: mode eksekusi `node` via run_command, auto (docker bila ada,
+ /** mode eksekusi `node` via run_command, auto (docker bila ada,
    * fallback lokal), docker (fail-closed), off (selalu lokal). Dibaca ulang
    * per pemanggilan tool (hot-reload test), validasi di sini = fail-fast boot. */
   sandbox: z.enum(["auto", "docker", "off"]).default("auto"),
@@ -55,7 +55,7 @@ const schema = z.object({
    *  di stdout, struktur stabil untuk find/tracing manual; 0 = JSON-lines asli
    *  pino (dipakai docker-compose: agregator log grep per field). */
   logPretty: z.preprocess((v) => v !== "0" && v !== "false", z.boolean()),
-  /** P0-DATA-1: driver penyimpanan sesi, sqlite (default; embedded, desktop/
+ /** driver penyimpanan sesi, sqlite (default; embedded, desktop/
    *  dev) atau postgres (server: multi-worker, skala besar). Lain-lain store
    *  (project/memory/skills) tetap SQLite di workspace, menyusul bertahap. */
   dbDriver: z.enum(["sqlite", "postgres"]).default("sqlite"),

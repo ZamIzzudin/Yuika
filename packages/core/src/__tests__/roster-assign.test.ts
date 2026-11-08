@@ -1,4 +1,4 @@
-// Batch 16 (Team Assembly), assign roster otomatis:
+// (Team Assembly), assign roster otomatis:
 //  · workflow run start → ensureFullRoster(projectId) dipanggil (semua persona
 //    masuk roster, merge, entry custom utuh)
 //  · delegasi (runChildPersona) → onChildSpawn(personaId, projectId) dipanggil
@@ -38,7 +38,7 @@ function makeStores() {
   return { dir, projects, store };
 }
 
-describe("Batch 16, Team Assembly (roster assign)", () => {
+describe(", Team Assembly (roster assign)", () => {
   it("workflow engine.start → ensureFullRoster dipanggil dengan projectId", async () => {
     const { dir: dirRef, projects, store } = makeStores();
     try {

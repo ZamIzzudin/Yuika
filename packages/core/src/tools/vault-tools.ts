@@ -1,4 +1,4 @@
-// @yuika/core, vault tools (Batch 12 / P2-VLT-2..3, D27).
+// @yuika/core, vault tools ( / ..3, ).
 // INVARIAN KEAMANAN: nilai rahasia TIDAK PERNAH muncul di hasil tool (yang
 // dibaca model) maupun event/trace, tool mengembalikan metadata saja.
 //   vault_list     → metadata yang terlihat persona/project ini
@@ -42,7 +42,7 @@ const secretHttpSchema = z.object({
   maxChars: z.number().int().min(500).max(20_000).default(8_000),
 });
 
-/** http:// hanya utk loopback dev; produksi HTTPS wajib (D27). */
+/** http:// hanya utk loopback dev; produksi HTTPS wajib . */
 function assertAllowedOrigin(rawUrl: string): URL {
   const u = new URL(rawUrl);
   const loopback = u.hostname === "localhost" || u.hostname === "127.0.0.1" || u.hostname === "[::1]" || u.hostname === "::1";
@@ -172,7 +172,7 @@ export function registerVaultTools(opts: { vault?: VaultManager } = {}): void {
         }
         const ctype = res.headers.get("content-type") ?? "";
         const raw = new TextDecoder().decode(buf);
-        // P2-VLT-5: redaksi ganda, nilai aktif (vault) lalu pola bentuk-baku.
+ // redaksi ganda, nilai aktif (vault) lalu pola bentuk-baku.
         const body = redactSecrets(redactActive(raw)).slice(0, args.maxChars);
         ctx.emit({ type: "vault.used", name: args.auth.name, kind: "api_key", channel: "http", target: url.origin });
         return {

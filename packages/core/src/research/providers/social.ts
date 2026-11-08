@@ -1,4 +1,4 @@
-// Batch 7 (RS-1b), Social: sentimen publik tanpa login, Reddit RSS search +
+// (RS-1b), Social: sentimen publik tanpa login, Reddit RSS search +
 // Bluesky public API (keduanya gratis). Best-effort: satu gagal → sumber lain
 // tetap jalan (pattern hasil parsial). Platform tertutup (X/TikTok/IG) bukan
 // sasaran di sini, jalurnya authenticated preview (LB-2), bukan scraping.

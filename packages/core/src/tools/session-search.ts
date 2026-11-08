@@ -1,4 +1,4 @@
-// @yuika/core, session_search tool (P1-MEM-5): agent menelusuri riwayat
+// @yuika/core, session_search tool : agent menelusuri riwayat
 // percakapan sesi-sesi sebelumnya, jawaban atas "kita pernah bahas X di mana?".
 // Scope default = project sesi ini; "all" = lintas proyek (tetap satu user/workspace).
 import { z } from "zod";

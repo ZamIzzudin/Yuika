@@ -1,4 +1,4 @@
-// W2-A2 (TASKS.md): file tools + path safety, path escape WAJIB ditolak.
+// W2-A2 : file tools + path safety, path escape WAJIB ditolak.
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -91,7 +91,7 @@ describe("file tools, path safety", () => {
   });
 });
 
-describe("file tools, isolasi project (P1-PRJ-2)", () => {
+describe("file tools, isolasi project ()", () => {
   beforeEach(() => {
     resetRegistryForTests();
     registerFileTools();

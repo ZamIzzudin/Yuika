@@ -1,10 +1,10 @@
 "use client";
 
-// Batch 14a++ (user 2026-11): tab Logs = observability PROJECT-WIDE, dua view:
+// ++ (user 2026-11): tab Logs = observability PROJECT-WIDE, dua view:
 //   Activity      : feed semua persona di project ini (tool calls, browser,
 //                   vault, delegasi, approval, browsing history), realtime
 //                   via poll ringan 2.5s; TIDAK lagi terikat sesi chat aktif.
-//   Session Trace : timeline per turn sesi aktif (lama, P1-INF-4).
+// Session Trace : timeline per turn sesi aktif (lama, ).
 import { useCallback, useEffect, useState } from "react";
 import { apiUrl, authFetch } from "@/lib/api";
 import { TracePanel } from "./TracePanel";

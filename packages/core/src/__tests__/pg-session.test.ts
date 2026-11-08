@@ -1,4 +1,4 @@
-// P0-DATA-1, integrasi driver Postgres (gated: YUI_PG_IT=1 + DATABASE_URL).
+// integrasi driver Postgres (gated: YUI_PG_IT=1 + DATABASE_URL).
 // Menguji PgSessionStore (async) LANGSUNG, bukan pg-bridge (worker tsx tidak
 // termuat di vitest worker; bridge diverifikasi via skrip live).
 // Run lokal: docker run --rm -d -e POSTGRES_USER=yui -e POSTGRES_PASSWORD=yui \

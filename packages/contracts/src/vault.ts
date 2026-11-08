@@ -1,20 +1,20 @@
-// @yuika/contracts, Vault kredensial (Batch 12 / D27).
-// INVARIAN: nilai rahasia TIDAK PERNAH muncul di kontrak ini, hanya metadata.
-// Kartu protected mengisi nilai via POST /api/vault/fill/:id (body VaultFillSubmit);
-// event hanya membawa `hasValue`. Jalur balik nilai ke model TIDAK ADA.
+// @yuika/contracts, credential vault.
+// INVARIANT: secret VALUES never appear here, only metadata.
+// Protected cards are filled via POST /api/vault/fill/:id (VaultFillSubmit);
+// events only carry `hasValue`. There is no path back to the model.
 import { z } from "zod";
 
-/** Kind rahasia v0 (D27): api_key = utk secret_http (bearer/header);
- *  command = utk env export run_command; login = fill_login (VLT-4 blok C,
- *  value = JSON {user,pass}, dipakai CDP fill ke live browser, tak pernah
- *  kembali ke konteks model). */
+/** Secret kinds: api_key = for secret_http (bearer/header);
+ *  command = for env-exported run_command; login = fill_login
+ *  (value = JSON {user,pass}, filled into the live browser via CDP,
+ *  never returned to the model context). */
 export const VAULT_KINDS = ["api_key", "command", "login"] as const;
 export const VaultKind = z.enum(VAULT_KINDS);
 export type VaultKind = z.infer<typeof VaultKind>;
 
-/** Scope penyimpanan (D27: sharing lintas persona). v0: workspace = semua
- *  persona; persona = hanya persona pemilik; project = semua persona di
- *  project itu. Grant eksplisit lintas-scope = menyusul bersama fill_login. */
+/** Storage scope. workspace = every persona; persona = only the owner;
+ *  project = every persona in that project. Explicit cross-scope grants
+ *  will arrive together with fill_login. */
 export const VAULT_SCOPES = ["workspace", "project", "persona"] as const;
 export const VaultScope = z.enum(VAULT_SCOPES);
 export type VaultScope = z.infer<typeof VaultScope>;

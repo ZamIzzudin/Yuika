@@ -1,4 +1,4 @@
-// @yuika/api, Batch 14a++: activity feed project-wide untuk tab Logs.
+// @yuika/api, ++: activity feed project-wide untuk tab Logs.
 // GET /api/projects/:id/activity?limit=200 → langkah semua persona (tool
 // calls, screen, vault, delegasi, approval) + browsing history, digabung,
 // urut waktu terbaru. Realtime via poll ringan di web.

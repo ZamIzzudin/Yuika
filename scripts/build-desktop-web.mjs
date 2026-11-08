@@ -1,4 +1,4 @@
-// D48: build UI web statis untuk shell desktop. Dipanggil tauri.conf
+// Static web build for the desktop shell. Invoked by the tauri.conf
 // beforeBuildCommand (cwd = apps/desktop): menghasilkan apps/web/out
 // (frontendDist shell). NEXT_EXPORT=1 → next.config output:"export".
 import { spawnSync } from "node:child_process";

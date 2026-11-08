@@ -1,4 +1,4 @@
-// W2-B2 (TASKS.md): session store, id monotonic, replay ?since=, prompt/toolset frozen.
+// W2-B2 : session store, id monotonic, replay ?since=, prompt/toolset frozen.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -54,7 +54,7 @@ describe("SessionStore", () => {
     store.close();
   });
 
-  it("P1-PRJ-2: projectId melekat di sesi (nullable); migrasi db lama jalan", () => {
+  it(": projectId melekat di sesi (nullable); migrasi db lama jalan", () => {
     const store = makeStore();
     store.createSession("s_free", "yui-scholar", "SYS", []);
     store.createSession("s_prj", "yui-coder", "SYS", [], "p_demo123");
@@ -76,8 +76,8 @@ describe("SessionStore", () => {
   });
 });
 
-// P1-MEM-5: session_search, scope project vs all, snippet, exclude tool role.
-describe("SessionStore.searchMessages (P1-MEM-5)", () => {
+// session_search, scope project vs all, snippet, exclude tool role.
+describe("SessionStore.searchMessages ()", () => {
   it("cari lintas sesi: scope project memfilter, all menembus; tool role dikecualikan", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-ss-"));
     const s = new SessionStore(path.join(dir, "t.db"));

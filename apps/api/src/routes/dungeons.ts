@@ -9,7 +9,7 @@ const MAX_UPLOAD = 10 * 1024 * 1024;
 const OK_EXT = new Set([".pdf", ".xlsx", ".xls", ".csv", ".md", ".txt", ".json", ".html", ".htm", ".xml", ".yaml", ".yml"]);
 
 export function registerDungeonRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
-  /** GET /api/dungeons, daftar misi + riwayat run (P1-DUN-1). */
+ /** GET /api/dungeons, daftar misi + riwayat run . */
   app.get("/api/dungeons", async () => ({ dungeons: getRt().listDungeons() }));
 
   /** POST /api/dungeons, jalankan misi ({missionId}) → run sandbox dimulai. */
@@ -22,7 +22,7 @@ export function registerDungeonRoutes(app: FastifyInstance, getRt: () => YuiRunt
     }
   });
 
-  /** POST /api/dungeons/mission, buat latihan buatan user (P1-DUN-4). */
+ /** POST /api/dungeons/mission, buat latihan buatan user . */
   app.post("/api/dungeons/mission", async (req, reply) => {
     const input = CreateMissionRequest.parse(req.body);
     try {
@@ -53,7 +53,7 @@ export function registerDungeonRoutes(app: FastifyInstance, getRt: () => YuiRunt
   });
 
   /** POST /api/dungeons/:slug/materials?name=… body = raw bytes, bahan ajar
-   *  user untuk latihan (P1-DUN-4), disimpan <dungeon>/materials/. Mirror
+ * user untuk latihan , disimpan <dungeon>/materials/. Mirror
    *  sanitasi upload proyek. */
   app.post("/api/dungeons/:slug/materials", async (req, reply) => {
     const { slug } = req.params as { slug: string };

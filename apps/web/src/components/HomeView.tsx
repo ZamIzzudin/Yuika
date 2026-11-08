@@ -1,5 +1,5 @@
 "use client";
-// Batch 16 (Home & Team Assembly): halaman HOME, landing pertama aplikasi.
+// (Home & Team Assembly): halaman HOME, landing pertama aplikasi.
 // Tidak ada lagi workspace/freespace: semua sesi hidup di dalam project.
 // - Typing headline: "Hello, Let's Build Something!" → hapus → "Hello, Wanna
 //   Build Something?" (sekali jalan; prefers-reduced-motion → langsung final).
@@ -17,8 +17,8 @@ import { HomeSpace } from "./HomeSpace";
 const FIRST = "Hello, Wanna Build Something?";
 const FINAL = "Hello, Let's Build Something!";
 
-/** D28: "2 Hours Ago", relative time English, di-refresh tiap 30s supaya
- *  kartu Home tidak basi tanpa reload. <45s → "Just Now". */
+/** "2 Hours Ago" relative times in English, refreshed every 30s so the
+ *  Home cards never go stale without a reload. <45s -> "Just Now". */
 function timeAgo(ts: number, now: number): string {
   const s = Math.max(0, Math.floor((now - ts) / 1000));
   if (s < 45) return "Just Now";
@@ -126,7 +126,7 @@ export function HomeView({
   onOpenProject,
   onCreated,
 }: {
-  /** Maskot latar antariksa (D44): melayang, bisa dilempar, bertabrakan. */
+  /** Space mascots in the background: floating, throwable, colliding. */
   personas: PersonaInfo[];
   projects: ProjectInfo[];
   booted: boolean;

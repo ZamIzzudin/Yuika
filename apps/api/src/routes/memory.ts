@@ -1,4 +1,4 @@
-// @yuika/api, USER.md / MEMORY.md editor (P1-MEM-1).
+// @yuika/api, USER.md / MEMORY.md editor .
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { MemoryScope, SaveMemoryRequest } from "@yuika/contracts";

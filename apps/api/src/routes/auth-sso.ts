@@ -1,6 +1,6 @@
-// @yuika/api, CP-3 SSO login via portal (OAuth2-style + PKCE S256).
-// Portal = satu-satunya identity provider (signup hanya di portal); Yuika
-// tetap mint sesinya SENDIRI (portal tidak tahu secret sesi Yuika).
+// @yuika/api, portal SSO login (OAuth2-style + PKCE S256).
+// The portal is the only identity provider (signup happens there); Yuika
+// issues its own sessions (the portal never learns the Yuika secret).
 //
 // POST /api/auth/portal/start    {redirectUri} → {authorizeUrl}
 //   attempt (state+verifier+challenge) disimpan in-memory 5 menit; state
@@ -114,11 +114,11 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
 
     try {
       const user = findOrCreatePortalUser(exchanged.accountId, exchanged.email);
-      // CP-4: auto-link browser, portal menyertakan deviceToken sekali-pakai
-      // di exchange; klaim dengan kunci STABIL (tersimpan lokal) agar
-      // idempotent (deviceId stabil, CP-4 portal). Re-claim SETIAP login:
-      // menyembuhkan drift bila device terhapus di portal (unlink/reset db)
-      //, bukan skip. Gagal klaim ≠ gagal login (row lama tetap utuh).
+      // Browser auto-link: the portal includes a one-time deviceToken in
+      // the exchange; claim it with a STABLE key (stored locally) so the
+      // deviceId is stable. Re-claim on EVERY login: it heals drift when
+      // the device was deleted on the portal side (unlink/db reset).
+      // A failed claim is NOT a failed login (the old row stays intact).
       if (exchanged.deviceToken) {
         const existing = getWebDevice();
         const sameAccount = existing?.accountId === exchanged.accountId;
@@ -147,8 +147,8 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
             relayUrl: defaultRelayUrl(),
             linkedAt: Date.now(),
           });
-          // CP-5: presence online (device tampil online di portal Devices;
-          // bye 4001 saat di-unlink → row dihapus + sesi dicabut).
+          // Online presence (the device shows online on the portal Devices
+          // page; bye 4001 on unlink drops the row and revokes sessions).
           void getWebPresence()
             .start(getWebDevice()!)
             .catch(() => undefined);

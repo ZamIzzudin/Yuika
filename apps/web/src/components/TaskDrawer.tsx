@@ -91,7 +91,7 @@ const PERSONA_NAME: Record<string, string> = {
 };
 
 /** Ikon status simpul pohon (○ ◐ ◑ ● → Phosphor). */
-/** Config → Browser (Batch 14a++): policy reader pindah ke Config, toggle
+/** Config → Browser (++): policy reader pindah ke Config, toggle
  *  allowAll per project (SSRF guard IP-private TETAP jalan di backend). */
 function BrowserPolicySection({ projectId }: { projectId: string }) {
   const [policy, setPolicy] = useState<{
@@ -223,7 +223,7 @@ function TaskStatusIcon({ s, size = 10 }: { s: TaskStatus; size?: number }) {
   return <Circle size={size} aria-hidden className="text-dim" />;
 }
 
-/** Satu simpul pohon task (rekursif), proyeksi event `task.node.*` (D19). */
+/** One recursive task tree node, a projection of `task.node.*` events. */
 function TreeNode({
   node,
   depth,
@@ -286,11 +286,11 @@ function TreeNode({
 }
 
 /**
- * Tab proyek di area utama shell (P1-PRJ-4/6/7): Chat | Tim | Pohon | Roster | Sesi
+ * Tab proyek di area utama shell : Chat | Tim | Pohon | Roster | Sesi
  * berbagi satu area konten, nav tab dirender page.tsx, komponen ini = konten non-chat.
- * DS-1: ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
+ * ui/* + Tailwind semantik + Phosphor (docs/DESIGN-SYSTEM.md).
  */
-/** Batch 16: edit nama & deskripsi project (Config → Project), PATCH lalu
+/** edit nama & deskripsi project (Config → Project), PATCH lalu
  *  parent refresh (header/sidebar ikut berubah). */
 function ProjectEditCard({
   project,
@@ -299,8 +299,8 @@ function ProjectEditCard({
 }: {
   project: ProjectInfo;
   onSaved?: () => void;
-  /** D33: dipanggil setelah project terhapus dari Config (parent: refresh
-   *  daftar project & keluar dari scope project yang dihapus). */
+  /** Called after the project is deleted from Config (parent: refresh the
+   *  project list and leave the deleted project's scope). */
   onDeleted?: (projectId: string) => void;
 }) {
   const [name, setName] = useState(project.name);
@@ -571,9 +571,9 @@ export function ProjectTabs({
     parentState: PersonaState;
     delegations: LiveDelegation[];
   };
-  /** Batch 16: setelah edit nama/deskripsi (menu Project), parent refresh. */
+ /** setelah edit nama/deskripsi (menu Project), parent refresh. */
   onProjectUpdated?: () => void;
-  /** D33: project dihapus dari Config → parent reset scope + refresh. */
+  /** Project deleted from Config: parent resets scope + refreshes. */
   onDeleted?: (projectId: string) => void;
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -584,8 +584,8 @@ export function ProjectTabs({
   >("roster");
   // Drawer "Log Task" (bekas tab Pohon), dibuka dari tab Task.
   const [treeOpen, setTreeOpen] = useState(false);
-  /** D33: sheet "Log Task" slide kanan→kiri saat buka, mundur saat tutup.
-   *  treeOpen = mounted; sheetVis = posisi (translate-x). */
+  /** The "Log Task" sheet slides in from the right when opening and back
+   *  when closing. treeOpen = mounted; sheetVis = position (translate-x). */
   const [sheetVis, setSheetVis] = useState(false);
   const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Jam live untuk durasi "sudah berjalan Xm" (tab Pohon & Tim)
@@ -603,7 +603,7 @@ export function ProjectTabs({
     }[]
   >([]);
   const [busy, setBusy] = useState(false);
-  // D34: baseline utk dirty-check dokumen memori (Save hanya aktif saat berubah).
+  // Baselines for the memory-doc dirty check (Save only activates on change).
   const [userMd, setUserMd] = useState("");
   const [projMd, setProjMd] = useState("");
   const [userMdBase, setUserMdBase] = useState("");
@@ -654,7 +654,7 @@ export function ProjectTabs({
       );
       if (res.ok) {
         setRoster(((await res.json()) as { roster: RosterEntry[] }).roster);
-        // Batch 16: assignment berubah → gating tab Terminal (Hiro/Neo) hidup.
+ // assignment berubah → gating tab Terminal (Hiro/Neo) hidup.
         window.dispatchEvent(new Event("yui:roster-changed"));
       }
     } finally {
@@ -666,14 +666,14 @@ export function ProjectTabs({
     void refresh();
   }, [rev, refresh]);
 
-  /** D33: buka sheet, mount dulu, frame berikutnya geser masuk (transisi jalan). */
+  /** Open: mount first, slide in on the next frame (so the transition runs). */
   const openSheet = useCallback(() => {
-    // batal sisa timer close sebelumnya (race buka-tutup cepat).
+    // cancel any leftover close timer (fast open-close race).
     if (sheetTimer.current) clearTimeout(sheetTimer.current);
     setTreeOpen(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setSheetVis(true)));
   }, []);
-  /** D33: tutup sheet, mundur dulu, unmount setelah animasi selesai. */
+  /** Close: slide back first, unmount after the animation finishes. */
   const closeSheet = useCallback(() => {
     setSheetVis(false);
     sheetTimer.current = setTimeout(() => setTreeOpen(false), 280);
@@ -718,7 +718,7 @@ export function ProjectTabs({
     })();
   }, [activeTab, cfgMenu, project.id]);
 
-  /** Simpan dokumen memori (PUT /api/memory), D34: busy state + baseline. */
+  /** Save a memory doc (PUT /api/memory): busy state + baseline refresh. */
   async function saveMemoryDoc(scope: "user" | "project") {
     setMemBusy(scope);
     try {
@@ -745,7 +745,7 @@ export function ProjectTabs({
     }
   }
 
-  /** P2-FLOW-7: pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
+ /** pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
   async function moveTask(taskId: string, status: TaskStatus) {
     await authFetch(apiUrl(`/api/projects/${project.id}/tasks/${taskId}`), {
       method: "PATCH",
@@ -756,7 +756,7 @@ export function ProjectTabs({
   }
 
   const done = tasks.filter((t) => t.status === "done").length;
-  /** P2-FLOW-7: kartu papan = flatten TaskTree + task pra-migrasi (hanya di DB) di depth 0. */
+ /** kartu papan = flatten TaskTree + task pra-migrasi (hanya di DB) di depth 0. */
   const treeFlat = tree.flatMap((n) => {
     const out: Array<{ node: TaskNode; depth: number }> = [];
     const walk = (x: TaskNode, d: number) => {
@@ -824,8 +824,8 @@ export function ProjectTabs({
                 aria-label="Project roster"
                 className="flex flex-col gap-4"
               >
-                {/* D34: playground identik dgn "Build Your Team", tanpa
-                    dropdown Start session (footer = ringkasan tim). */}
+                {/* The same playground as "Build Your Team", without the
+                    Start session dropdown (footer = team summary). */}
                 <TeamSetupView
                   project={{ id: project.id, name: project.name }}
                   personas={personas}
@@ -947,7 +947,7 @@ export function ProjectTabs({
             {loaded && cfgMenu === "browser" && (
               <BrowserPolicySection projectId={project.id} />
             )}
-            {/* Batch 13 (P2-WKS-6): workshop persisten, status/lifecycle/log/egress */}
+            {/*  (): workshop persisten, status/lifecycle/log/egress */}
             {loaded && cfgMenu === "workshop" && (
               <WorkshopPanel projectId={project.id} rev={rev} />
             )}
@@ -960,7 +960,7 @@ export function ProjectTabs({
           aria-label="Task kanban board"
           className="flex flex-col gap-4 min-h-[87dvh]"
         >
-          {/* P2-PM-4/5: dashboard progres & health di paling atas, dibaca
+          {/* : dashboard progres & health di paling atas, dibaca
               sekali lihat sebelum masuk board/detail. */}
           <ProjectDashboardView
             projectId={project.id}
@@ -1051,7 +1051,7 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
-      {/* Batch 14a++ (user 2026-11): tab Browser dibongkar, reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
+      {/* ++ (user 2026-11): tab Browser dibongkar, reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
       {loaded && activeTab === "terminal" && (
         <TerminalFullTab project={{ id: project.id, name: project.name }} />
       )}
@@ -1066,7 +1066,7 @@ export function ProjectTabs({
           }`}
           onClick={closeSheet}
         >
-          {/* D33: slide kanan→kiri saat buka, mundur saat tutup (bukan pop). */}
+          {/* Slide in from the right when opening, back when closing (no pop). */}
           <div
             className={`flex h-full w-full max-w-[560px] flex-col gap-3 overflow-y-auto border-l border-line bg-canvas p-4 shadow-pop transition-transform ease-[var(--ease-out-yui)] duration-[240ms] ${
               sheetVis ? "translate-x-0" : "translate-x-full"

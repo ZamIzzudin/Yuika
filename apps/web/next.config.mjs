@@ -22,13 +22,13 @@ loadRootEnv();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Docker (P0-INF-5): standalone saat build image, bundle minimal tanpa devDeps;
+ // Docker : standalone saat build image, bundle minimal tanpa devDeps;
   // lokal & CI tetap default (next dev/start biasa).
   output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
-  // Desktop (D48): export statis untuk shell Tauri — UI web murni client,
+ // Desktop : export statis untuk shell Tauri — UI web murni client,
   // dibundel sebagai frontendDist apps/desktop. Paralel pola standalone.
   ...(process.env.NEXT_EXPORT === "1" ? { output: "export" } : {}),
-  // D50 (mini launch): sembunyikan halaman internal /dev/* (playground rive,
+ // (mini launch): sembunyikan halaman internal /dev/* (playground rive,
   // remote debug) pada build production server (Docker). Flag dipasang di
   // Dockerfile build stage; mode dev & static export tidak terpengaruh
   // (redirects tidak didukung output:"export").

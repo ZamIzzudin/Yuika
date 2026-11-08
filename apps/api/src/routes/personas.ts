@@ -1,4 +1,4 @@
-// @yuika/api, daftar persona + growth (P1-PER-4) + bentuk maskot (menu Persona).
+// @yuika/api, daftar persona + growth + bentuk maskot (menu Persona).
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { PersonaGrowth, PersonaShapesResponse, SetPersonaShapeRequest } from "@yuika/contracts";

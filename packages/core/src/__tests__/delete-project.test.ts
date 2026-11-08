@@ -1,4 +1,4 @@
-// P1-PRJ-8 (request user): hapus project = bersihkan SEMUA artefak terkait,
+// (request user): hapus project = bersihkan SEMUA artefak terkait,
 // sesi & eventnya, task & project_events, file workspace (MEMORY.md project,
 // uploads), revisi file, audit MCP. YANG DIPERTAHANKAN: skill persona & usage
 // ledger (akuntansi jujur). Test ini mereplikasi urutan runtime.deleteProject
@@ -46,7 +46,7 @@ function setup() {
   return { db, ws, projects, sessions, revisions, audit, ledger };
 }
 
-describe("hapus project + artefak (P1-PRJ-8)", () => {
+describe("hapus project + artefak ()", () => {
   it("urutan runtime.deleteProject: sesi/task/file/revisi/audit bersih, project lain & usage utuh", () => {
     const { ws, projects, sessions, revisions, audit, ledger } = setup();
     projects.createProject({ id: "p_a", name: "A", rootPath: "projects/p_a" });
@@ -104,8 +104,8 @@ describe("hapus project + artefak (P1-PRJ-8)", () => {
         revisions: nRev,
         auditRows,
         workshop: false, // replika tanpa workshop manager (runtime asli: destroy)
-        // D31: runtime asli memanggil terminal.killSessionsUnder(root),
-        // replika store-level: 0 sesi terminal (tanpa manager).
+        // The real runtime calls terminal.killSessionsUnder(root); this
+        // store-level replica has 0 terminal sessions (no manager).
         terminalSessions: 0,
         workspaceDir: rootA,
       },

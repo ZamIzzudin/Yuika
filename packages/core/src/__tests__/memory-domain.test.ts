@@ -1,4 +1,4 @@
-// P1-MEM-6: memory per-domain persona, file terpisah per domain (lintas
+// memory per-domain persona, file terpisah per domain (lintas
 // project, milik persona), di-inject ke system prompt saat sesi DIBUAT
 // (frozen), tool memory_append scope "domain" menulis ke file domain
 // persona PEMANGGIL (bukan sembarang domain).
@@ -30,7 +30,7 @@ afterEach(() => {
   }
 });
 
-describe("memory per-domain (P1-MEM-6)", () => {
+describe("memory per-domain ()", () => {
   it("file domain terpisah dari USER.md; slug aman dari nama aneh", () => {
     expect(memoryPath(ws, "domain", null, "Research & Analisis!")).toBe(
       path.join(ws, "memory", "domains", "research-analisis.md"),

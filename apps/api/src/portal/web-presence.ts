@@ -1,14 +1,14 @@
-// @yuika/api, CP-5: web presence worker.
-// Koneksi relay ringan memakai identitas WEB DEVICE (hasil auto-link SSO,
-// CP-4), tanpa RelayHost (tidak menerima aksi): tujuannya presence (device
-// tampil ONLINE di halaman Devices portal) + kanal bye 4001.
+// @yuika/api, web presence worker.
+// A lightweight relay connection using the WEB device identity (from SSO
+// auto-link) without RelayHost (no incoming actions): its purpose is
+// presence (shown ONLINE on the portal Devices page) plus the bye 4001 channel.
 //
-// bye 4001 (UNKNOWN_DEVICE) = device di-unlink dari portal → permanen:
+// bye 4001 (UNKNOWN_DEVICE) = the device was unlinked from the portal:
 //   1. hentikan presence (SDK sudah stopped, tidak reconnect),
-//   2. hapus row web_device (login berikutnya auto-link ulang via
-//      deviceToken CP-4),
-//   3. sign-out SEMUA sesi web milik portal account itu (sesi dicabut,
-//      konsisten: akses portal-side dicabut, sisi Yuika ikut).
+//   2. drop the web_device row (the next login auto-links again
+//      via deviceToken),
+//   3. sign out every web session of that portal account (portal-side
+//      access was revoked, so the studio side follows).
 import { RelayClient } from "@yuika/relay-client";
 import { ByeCode } from "@yuika/relay-client";
 import { nodeSocket } from "@yuika/relay-client/node";
@@ -23,10 +23,10 @@ export interface WebPresenceStatus {
 export class WebPresenceService {
   private client: RelayClient | null = null;
   private record: HostDeviceRecord | null = null;
-  /** CP-5 guard: bye 4001 = unlink HANYA bila koneksi pernah authed di relay
-   *  ini (device dikenal lalu dihapus). 4001 di auth PERTAMA = relay tidak
-   *  mengenal device (env mismatch / relay lain) → stop diam, JANGAN cabut
-   *  sesi, coba lagi boot/login berikutnya. */
+  /** Guard: bye 4001 means unlink ONLY if the connection was authed before
+   *  (the device was known, then deleted). 4001 on the FIRST auth = the relay
+   *  never knew the device (env mismatch / another relay): stop quietly, do
+   *  NOT revoke sessions; retry on the next boot/login. */
   private everAuthed = false;
 
   get running(): boolean {

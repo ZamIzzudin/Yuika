@@ -1,5 +1,5 @@
 // @yuika/core, session store: SQLite append-only (DEMO-WEEK-1 §3.1).
-// INVARIANT (PLAN §3.2): messages & events hanya INSERT, tidak ada UPDATE/DELETE.
+// INVARIANT : messages & events hanya INSERT, tidak ada UPDATE/DELETE.
 // System prompt & toolset DIBEKUKAN saat createSession (prompt-cache discipline).
 import Database from "better-sqlite3";
 import fs from "node:fs";
@@ -14,11 +14,11 @@ export interface SessionRow {
   systemPrompt: string;
   toolsets: string[]; // frozen saat create
   createdAt: number;
-  /** Project tempat sesi melekat (P1-PRJ-2/6); null = sesi workspace global. */
+ /** Project tempat sesi melekat ; null = sesi workspace global. */
   projectId: string | null;
 }
 
-/** P0-DATA-1: kontrak penyimpanan sesi, SATU interface, dua driver:
+/** kontrak penyimpanan sesi, SATU interface, dua driver:
  *  SQLite (default, embedded, zero-config, desktop/dev) & Postgres (server:
  *  multi-worker, skala events besar). Implementasi PG memakai worker-thread +
  *  sync-bridge sehingga interface tetap SINKRON (paritas dengan better-sqlite3,
@@ -27,7 +27,7 @@ export interface ISessionStore {
   createSession(id: string, personaId: string, systemPrompt: string, toolsets: string[], projectId?: string | null): SessionRow;
   getSession(id: string): SessionRow | undefined;
   listProjectSessions(projectId: string): Array<{ id: string; personaId: string; createdAt: number; lastEventAt: number; lastEventId: number }>;
-  /** P1-PRT-3: sesi terbaru lintas project (host.state / list_sessions remote). */
+ /** sesi terbaru lintas project (host.state / list_sessions remote). */
   listRecentSessions(limit: number): Array<{ id: string; personaId: string; title: string | null; updatedAt: number }>;
   personaSessionCounts(): Map<string, number>;
   personaDoneTurnCounts(): Map<string, number>;
@@ -55,7 +55,7 @@ export interface ISessionStore {
   close(): void;
 }
 
-/** Factory driver (P0-DATA-1): YUI_DB_DRIVER=sqlite (default) | postgres.
+/** Factory driver : YUI_DB_DRIVER=sqlite (default) | postgres.
  *  postgres → sync-bridge worker (session/pg-bridge.ts, hanya
  *  node:worker_threads, worker dibuat lazy); DATABASE_URL wajib (divalidasi
  *  fail-fast di env.ts). Sinkron: createYuiRuntime tidak berubah bentuk. */
@@ -97,7 +97,7 @@ export class SessionStore implements ISessionStore {
         ts INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id, id);
-      -- P0-DATA-2: arsip retention, baris events lama dipindah ke sini (id ASLI
+      -- : arsip retention, baris events lama dipindah ke sini (id ASLI
       -- dipertahankan; identitas event tidak berubah). Bacaan memakai UNION
       -- events + events_archive sehingga replay/hidrasi tetap utuh.
       CREATE TABLE IF NOT EXISTS events_archive (
@@ -109,7 +109,7 @@ export class SessionStore implements ISessionStore {
         archived_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_archive_session ON events_archive(session_id, id);
-      -- P0-CORE-4: checkpoint kompresi konteks, append-only; baris ter-id TERBESAR
+      -- : checkpoint kompresi konteks, append-only; baris ter-id TERBESAR
       -- per sesi = checkpoint aktif (view prompt memakainya; messages tak pernah diubah).
       CREATE TABLE IF NOT EXISTS context_checkpoints (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,7 +120,7 @@ export class SessionStore implements ISessionStore {
         created_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_ctxcp_session ON context_checkpoints(session_id, id);
-      -- P0-DEL-1: job delegasi persist, status lintas restart (audit + heal).
+      -- : job delegasi persist, status lintas restart (audit + heal).
       CREATE TABLE IF NOT EXISTS delegation_jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         parent_session_id TEXT NOT NULL,
@@ -202,7 +202,7 @@ export class SessionStore implements ISessionStore {
     return rows.map((r) => ({ id: r.id, personaId: r.persona_id, createdAt: r.created_at, lastEventAt: r.last_event_at, lastEventId: r.last_event_id }));
   }
 
-  /** P1-PRT-3: sesi terbaru lintas project, judul = pesan user pertama.
+ /** sesi terbaru lintas project, judul = pesan user pertama.
    *  Dipakai host worker utk host.state / list_sessions (RemoteEvent). */
   listRecentSessions(limit: number): Array<{ id: string; personaId: string; title: string | null; updatedAt: number }> {
     const rows = this.db
@@ -225,16 +225,16 @@ export class SessionStore implements ISessionStore {
     return rows.map((r) => ({ id: r.id, personaId: r.persona_id, title: r.title, updatedAt: r.updated_at }));
   }
 
-  /** P1-PER-4: jumlah sesi per persona (lintas project, growth tracking). */
+ /** jumlah sesi per persona (lintas project, growth tracking). */
   personaSessionCounts(): Map<string, number> {
     const rows = this.db.prepare(`SELECT persona_id, COUNT(*) AS n FROM sessions GROUP BY persona_id`).all() as Array<{ persona_id: string; n: number }>;
     return new Map(rows.map((r) => [r.persona_id, r.n]));
   }
 
-  /** P1-PER-4: jumlah turn SELESAI per persona (event persona.state done).
+ /** jumlah turn SELESAI per persona (event persona.state done).
    *  Scan events sekali, cukup cepat di skala demo; index menyusul bila perlu. */
   personaDoneTurnCounts(): Map<string, number> {
-    // P0-DATA-2: scan events ∪ arsip, statistik growth tidak berubah karena retensi.
+ // scan events ∪ arsip, statistik growth tidak berubah karena retensi.
     const rows = this.db
       .prepare(
         `SELECT payload FROM events WHERE type = 'persona.state'
@@ -266,7 +266,7 @@ export class SessionStore implements ISessionStore {
       );
   }
 
-  /** P1-MEM-5: agent menelusuri riwayat sesinya sendiri (v0: LIKE + recency;
+ /** agent menelusuri riwayat sesinya sendiri (v0: LIKE + recency;
    *  hanya role user/assistant, snippet di sekitar kecocokan pertama). */
   searchMessages(q: {
     query: string;
@@ -311,7 +311,7 @@ export class SessionStore implements ISessionStore {
     }));
   }
 
-  /** P0-CORE-4: messages + seq (untuk memotong batas kompresi yang aman,
+ /** messages + seq (untuk memotong batas kompresi yang aman,
    *  tidak boleh memotong di tengah pasangan assistant-toolCalls/tool-result). */
   getMessagesWithSeq(sessionId: string): Array<{ seq: number; msg: InternalMessage }> {
     const rows = this.db
@@ -328,14 +328,14 @@ export class SessionStore implements ISessionStore {
     }));
   }
 
-  /** P0-CORE-4: simpan checkpoint kompresi (append-only, tidak mengubah messages). */
+ /** simpan checkpoint kompresi (append-only, tidak mengubah messages). */
   saveContextCheckpoint(sessionId: string, uptoSeq: number, summary: string, model: string): void {
     this.db
       .prepare("INSERT INTO context_checkpoints (session_id, upto_seq, summary, model, created_at) VALUES (?, ?, ?, ?, ?)")
       .run(sessionId, uptoSeq, summary, model, Date.now());
   }
 
-  /** P0-CORE-4: checkpoint aktif = id terbesar sesi (null bila belum pernah dikompresi). */
+ /** checkpoint aktif = id terbesar sesi (null bila belum pernah dikompresi). */
   latestContextCheckpoint(sessionId: string): { uptoSeq: number; summary: string; model: string } | null {
     const row = this.db
       .prepare("SELECT upto_seq, summary, model FROM context_checkpoints WHERE session_id = ? ORDER BY id DESC LIMIT 1")
@@ -343,7 +343,7 @@ export class SessionStore implements ISessionStore {
     return row ? { uptoSeq: row.upto_seq, summary: row.summary, model: row.model } : null;
   }
 
-  // ── P0-DEL-1: delegation job persist ─────────────────────────────
+ // ── : delegation job persist ─────────────────────────────
 
   startDelegationJob(input: { parentSessionId: string; parentTurnId: string; childSessionId: string; personaId: string; goal: string }): number {
     const now = Date.now();
@@ -396,7 +396,7 @@ export class SessionStore implements ISessionStore {
     }));
   }
 
-  /** P0-DATA-2, pindahkan events lama ke events_archive.
+ /** pindahkan events lama ke events_archive.
    *
    *  Kandidat: baris `ts < cutoff` dari sesi DINGIN (event terakhir sesi < cutoff,
    *  sesi aktif tidak disentuh). Sesi dengan turn GANTUNG (belum ada penutup,
@@ -463,7 +463,7 @@ export class SessionStore implements ISessionStore {
   }
 
   getEvents(sessionId: string, sinceId = 0): YuiEventType[] {
-    // P0-DATA-2: UNION dengan arsip, replay SSE & hidrasi melihat riwayat
+ // UNION dengan arsip, replay SSE & hidrasi melihat riwayat
     // lengkap walau baris lama sudah dipindah dari tabel aktif.
     const rows = this.db
       .prepare(
@@ -501,7 +501,7 @@ export class SessionStore implements ISessionStore {
     return rows.map((r) => ({ sessionId: r.sid, personaId: r.pid, lastTurnEventId: r.last_turn_id }));
   }
 
-  /** P0-DATA-3: approval persist, kartu pending survive restart (jika mati →
+ /** approval persist, kartu pending survive restart (jika mati →
    *  expired), dan "Setujui & ingat" lintas restart via approval_memory. */
   insertApproval(row: { requestId: string; sessionId: string; tool: string; args: Record<string, unknown>; reason: string }): void {
     this.db
@@ -542,7 +542,7 @@ export class SessionStore implements ISessionStore {
     return pending.length;
   }
 
-  /** P1-PRJ-8: hapus SEMUA sesi milik project + turunannya (events, messages,
+ /** hapus SEMUA sesi milik project + turunannya (events, messages,
    *  approvals, approval_memory) dalam SATU transaksi. Return jumlah yang dihapus. */
   deleteProjectSessions(projectId: string): { sessions: number; events: number; approvals: number } {
     const ids = (this.db.prepare("SELECT id FROM sessions WHERE project_id = ?").all(projectId) as { id: string }[]).map(
@@ -554,7 +554,7 @@ export class SessionStore implements ISessionStore {
     let approvals = 0;
     const tx = this.db.transaction(() => {
       events = this.db.prepare(`DELETE FROM events WHERE session_id IN (${ph})`).run(...ids).changes;
-      // P0-DATA-2: arsip ikut dibersihkan (paritas driver PG, project terhapus
+ // arsip ikut dibersihkan (paritas driver PG, project terhapus
       // tidak meninggalkan jejak events arsip); angka laporan tetap dari tabel aktif
       this.db.prepare(`DELETE FROM events_archive WHERE session_id IN (${ph})`).run(...ids).changes;
       this.db.prepare(`DELETE FROM messages WHERE session_id IN (${ph})`).run(...ids);

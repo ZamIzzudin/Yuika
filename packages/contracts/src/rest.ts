@@ -7,14 +7,14 @@ export const PersonaInfo = z.object({
   id: z.string(),
   name: z.string(),
   expertise: z.string(),
-  /** ≤ 60 char, standar deskripsi skill/persona (warisan Hermes, PLAN §7.2). */
+ /** ≤ 60 char, standar deskripsi skill/persona (warisan Hermes, ). */
   description: z.string().max(60),
   portrait: z.string().nullable(),
   states: z.array(PersonaState),
 });
 export type PersonaInfo = z.infer<typeof PersonaInfo>;
 
-/** P1-PER-4: growth persona, DIKURASI dari data nyata (sesi/turn/task), bukan
+/** growth persona, DIKURASI dari data nyata (sesi/turn/task), bukan
  *  state gamifikasi palsu. Level dari `turns` (aktivitas paling jujur). */
 export const PersonaGrowth = z.object({
   id: z.string(),
@@ -39,7 +39,7 @@ export type PersonaGrowth = z.infer<typeof PersonaGrowth>;
 // POST /api/sessions
 export const CreateSessionRequest = z.object({
   personaId: z.string().min(1),
-  /** Sesi melekat ke project (P1-PRJ-2), opsional: null = sesi workspace global. */
+ /** Sesi melekat ke project , opsional: null = sesi workspace global. */
   projectId: z.string().min(1).nullish(),
 });
 export const CreateSessionResponse = z.object({
@@ -69,7 +69,7 @@ export const EventReplayQuery = z.object({
   since: z.coerce.number().int().nonnegative().default(0),
 });
 
-// ---- Projects (PLAN §13.1, P1-PRJ-1) ----
+// ---- Projects ----
 
 // POST /api/projects
 export const CreateProjectRequest = z.object({
@@ -84,13 +84,13 @@ export const UpdateProjectRequest = z.object({
   status: ProjectStatus.optional(),
 });
 
-// GET/POST /api/projects/:id/tasks (P1-PRJ-4)
+// GET/POST /api/projects/:id/tasks
 export const CreateTaskRequest = z.object({
   title: z.string().min(1).max(140),
   assignee: z.string().nullish(),
-  /** Parent task id, null = root (P1-PRJ-7 TaskTree). */
+ /** Parent task id, null = root ( TaskTree). */
   parentId: z.string().nullish(),
-  // P2-PM-3: detail first-class, Planner mengisi saat generate task list
+ // detail first-class, Planner mengisi saat generate task list
   description: z.string().max(2_000).nullish(),
   acceptance: z.array(z.string().min(3).max(500)).max(20).optional(),
   dependsOn: z.array(z.string()).max(50).optional(),
@@ -104,9 +104,9 @@ export const UpdateTaskRequest = z.object({
   status: TaskStatus.optional(),
   assignee: z.string().nullable().optional(),
   addRefs: z.array(z.string().max(400)).max(100).optional(),
-  /** Artefak node (masuk event TaskTree; P1-PRJ-7). */
+ /** Artefak node (masuk event TaskTree; ). */
   addArtefak: z.array(z.string().max(400)).max(100).optional(),
-  // P2-PM-3: detail, replace-semantik
+ // detail, replace-semantik
   description: z.string().max(2_000).nullable().optional(),
   acceptance: z.array(z.string().min(3).max(500)).max(20).optional(),
   dependsOn: z.array(z.string()).max(50).optional(),
@@ -114,7 +114,7 @@ export const UpdateTaskRequest = z.object({
   phase: z.enum(WORKFLOW_PHASES).nullable().optional(),
 });
 
-// GET/PUT /api/projects/:id/roster (P1-PRJ-3), sumber: project.yaml di root project
+// GET/PUT /api/projects/:id/roster , sumber: project.yaml di root project
 export const SaveRosterRequest = z.object({
   roster: z.array(RosterEntry).min(0).max(64),
 });

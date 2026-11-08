@@ -1,7 +1,7 @@
 // @yuika/core, agent turn loop (pola fase Hermes §4.1, versi demo linear):
 // assembly → api_call → tool_round → (iterate) → finalizer.
-// TODO(P0) lihat TASKS.md: interrupt/AbortSignal end-to-end (P0-CORE-1),
-// compression v0 (P0-CORE-4), celebrating detection. Fallback model // repetition guard, iteration budget proper, compression, celebrating detection. guard repetisi: DONE dev 9.
+// TODO(P0) lihat : interrupt/AbortSignal end-to-end
+// compression v0 , celebrating detection. Fallback model // repetition guard, iteration budget proper, compression, celebrating detection. guard repetisi: DONE dev 9.
 import { randomUUID } from "node:crypto";
 import type { ProviderAdapter, InternalMessage, ToolCallRequest } from "./provider/adapter.js";
 import { registry } from "./registry.js";
@@ -21,13 +21,13 @@ import { getApprovalMode } from "./approval/engine.js";
 
 const MAX_ITERATIONS = env.maxIter;
 
-/** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0). P0-INF-3:
+/** Tracing durasi (default aktif; matikan dengan YUI_TRACE=0).
  *  kini lewat pino, baris trace = logger.debug bermakna (JSON, machine-parseable). */
 function trace(msg: string): void {
   if (env.trace) getLogger().child({ mod: "loop.trace" }).debug(msg);
 }
 
-/** P1-PRJ-5 (D17): terapkan binding MCP pada daftar tool sesi, tool `mcp__*`
+/** terapkan binding MCP pada daftar tool sesi, tool `mcp__*`
  *  hanya lolos bila ada di allowlist (prefix `...__*` atau nama persis). null = blokir semua. */
 export function applyMcpBinding<T extends { name: string }>(
   schemas: T[],
@@ -45,26 +45,26 @@ export interface LoopDeps {
   provider: ProviderAdapter;
   /** Model default sesi (env/Settings). Bisa dioverride per persona via `routeModel`. */
   model: string;
-  /** P1-MDL-1: resolusi model PER PERSONA (override Settings → persona.yaml → default).
-   *  Mengembalikan juga fallback model, P0-CORE-2: provider mati → fallback otomatis. */
+ /** resolusi model PER PERSONA (override Settings → persona.yaml → default).
+ * Mengembalikan juga fallback model, : provider mati → fallback otomatis. */
   routeModel?: (personaId: string) => { model: string; fallback?: string; markUnhealthy?: (model: string) => void };
   workspacePath: string;
   approvals: ApprovalEngine;
   emit: Emit;
-  /** P1-PRJ-5 (D17): allowlist tool MCP untuk sesi ini (prefix `mcp__<srv>__*` / nama persis).
+ /** allowlist tool MCP untuk sesi ini (prefix `mcp__<srv>__*` / nama persis).
    *  null/undefined = sesi tanpa binding → SEMUA tool MCP disembunyikan (fail-closed). */
   mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
-  /** P1-CRED-1: catat pemakaian per panggilan model sukses (token dari provider,
+ /** catat pemakaian per panggilan model sukses (token dari provider,
    *  tanpa estimasi). Diisi runtime → ledger SQLite. */
   recordUsage?: (u: UsageEvent) => void;
-  /** P0-CORE-4: model aux murah untuk kompresi konteks (getter, swap panas via
+ /** model aux murah untuk kompresi konteks (getter, swap panas via
    *  Settings). Kosong/null → fallback ke model utama sesi. */
   auxModel?: () => string;
-  /** P0-DEL-2: antrean steering, arahan user mid-turn di-drain (dipop) di awal
+ /** antrean steering, arahan user mid-turn di-drain (dipop) di awal
    *  tiap iterasi loop, di-inject sebagai pesan user berlabel. Dipakai runner
    *  delegasi untuk arahkan anak tanpa membatalkannya. */
   steerFor?: (sessionId: string) => string[];
-  /** P1-DEL-3: gate pause per sesi (delegasi), dipanggil di awal TIAP iterasi.
+ /** gate pause per sesi (delegasi), dipanggil di awal TIAP iterasi.
    *  Resolve `true` = lanjut (tidak sedang pause); `false` = dibatalkan saat
    *  ter-pause → loop keluar graceful (progress & parsial tersimpan). */
   pauseGateFor?: (sessionId: string) => Promise<boolean>;
@@ -79,12 +79,12 @@ export class AgentLoop {
     const { store, provider, emit } = this.deps;
     const session = store.getSession(sessionId);
     if (!session) throw new Error(`session ${sessionId} tidak ditemukan`);
-    // P1-MDL-1: model sesi ini = route persona (override/persona.yaml) atau default.
+ // model sesi ini = route persona (override/persona.yaml) atau default.
     const route = this.deps.routeModel?.(session.personaId) ?? { model: this.deps.model };
     let model = route.model;
 
     const turnId = `t_${randomUUID()}`;
-    // P0-INF-3: child logger per turn, traceId (=turnId) otomatis menempel di
+ // child logger per turn, traceId (=turnId) otomatis menempel di
     // SEMUA log turn ini; satu id = satu alur penuh di stdout.
     const log = getLogger().child({ mod: "loop", sessionId, turnId, persona: session.personaId });
 
@@ -95,13 +95,13 @@ export class AgentLoop {
     emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
 
     // 2) assembly: system prompt FROZEN (dari sesi) + history, via view kompresi
-    // (P0-CORE-4): bila estimasi token > ambang, history lama diringkas aux model
+ // bila estimasi token > ambang, history lama diringkas aux model
     // jadi CHECKPOINT (tabel messages tetap append-only; ini murni lapisan view).
     const tAsm = Date.now();
     const ctx = await buildContextMessages(
       store,
       provider,
-      this.deps.auxModel?.() || model, // P0-CORE-4: ringkasan pakai model aux MURAH bila dikonfigurasi
+      this.deps.auxModel?.() || model, // : ringkasan pakai model aux MURAH bila dikonfigurasi
       sessionId,
       {
         contextTokens: env.contextTokens,
@@ -109,7 +109,7 @@ export class AgentLoop {
         keepRecent: env.compressKeepRecent,
         minMessages: env.compressMinMessages,
       },
-      // P1-INF-3: aux kompresi ter-meter (hanya dari usage provider).
+ // aux kompresi ter-meter (hanya dari usage provider).
       (u) =>
         this.deps.recordUsage?.({
           sessionId,
@@ -138,12 +138,12 @@ export class AgentLoop {
       { role: "system", content: session.systemPrompt },
       ...ctx.messages,
     ];
-    // P1-PRJ-5 (D17): tool MCP hanya muncul bila persona DI-BIND di roster project.
+ // tool MCP hanya muncul bila persona DI-BIND di roster project.
     const tools = applyMcpBinding(registry.toolSchemas(session.toolsets), this.deps.mcpAllowlistFor?.(session) ?? null);
 
     let usedDelegation = false;
-    let usedTools = false; // P1-MEM-2: turn yang melibatkan tool = kandidat nudge belajar
-    // P0-CORE-1: teks parsial yang sudah mengalir ke UI, dipakai saat cancel
+    let usedTools = false; // : turn yang melibatkan tool = kandidat nudge belajar
+ // teks parsial yang sudah mengalir ke UI, dipakai saat cancel
     // supaya history tetap koheren (pesan assistant tidak menggantung).
     let streamedText = "";
     const cancelledExit = (): void => {
@@ -167,8 +167,8 @@ export class AgentLoop {
     // iterasi lanjut sampai jawaban final, cap pengaman jauh lebih tinggi (64).
     const iterCap = getApprovalMode() === "auto" ? env.maxIterHardcore : MAX_ITERATIONS;
     for (let i = 0; i < iterCap; i++) {
-      if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop ditekan sebelum iterasi dimulai
-      // P0-DEL-2: steering, arahan user mid-turn di-drain tiap awal iterasi.
+      if (signal?.aborted) return cancelledExit(); // : Stop ditekan sebelum iterasi dimulai
+ // steering, arahan user mid-turn di-drain tiap awal iterasi.
       // Pesan user berlabel (bukan system, kompatibel semua provider OpenAI-compat)
       // agar model memperlakukannya sebagai prioritas tertinggi berikutnya.
       const steers = this.deps.steerFor?.(sessionId) ?? [];
@@ -178,12 +178,12 @@ export class AgentLoop {
         store.appendMessage(sessionId, steerMsg);
         trace(`  steer: ${st.slice(0, 80)}`);
       }
-      // P1-DEL-3: pause (delegasi), anak menunggu di sini TANPA memanggil
+ // pause (delegasi), anak menunggu di sini TANPA memanggil
       // provider; resume/abort membangunkan gate. Abort saat pause → graceful.
       if (this.deps.pauseGateFor && !(await this.deps.pauseGateFor(sessionId))) {
         return cancelledExit();
       }
-      // 3) api phase, rantai attempt: primary → fallback (P0-CORE-2). Provider
+ // 3) api phase, rantai attempt: primary → fallback . Provider
       // sudah retry transien ×2 di dalam (maxRetries); sampai sini = model itu
       // benar-benar gagal → tandai unhealthy (cooldown) & coba fallback SEKALI.
       let done: Awaited<ReturnType<ProviderAdapter["chatStream"]>> | undefined;
@@ -195,7 +195,7 @@ export class AgentLoop {
           const attemptModel = attempts[ai]!;
           done = await provider.chatStream({ model: attemptModel, messages, tools, signal }, (chunk) => {
             if (chunk.type === "text_delta") {
-              streamedText += chunk.delta; // P0-CORE-1: simpan parsial untuk jalur cancel
+              streamedText += chunk.delta; // : simpan parsial untuk jalur cancel
               emit({ type: "message.delta", turnId, delta: chunk.delta });
             }
             if (chunk.type === "reasoning_delta") {
@@ -205,7 +205,7 @@ export class AgentLoop {
               emit({ type: "reasoning.delta", turnId, delta: chunk.delta, personaId: session.personaId });
             }
           });
-          // P1-CRED-1: metering, HANYA dari usage provider (tanpa estimasi).
+ // metering, HANYA dari usage provider (tanpa estimasi).
           if (done.usage) {
             this.deps.recordUsage?.({
               sessionId,
@@ -225,9 +225,9 @@ export class AgentLoop {
           lastErr = undefined;
           break;
         } catch (err) {
-          // P0-CORE-1: abort oleh user BUKAN error provider, keluar graceful.
+ // abort oleh user BUKAN error provider, keluar graceful.
           if (signal?.aborted) return cancelledExit();
-          const ye = classifyError(err, "provider"); // P0-INF-4: kind/code/retryable
+          const ye = classifyError(err, "provider"); // : kind/code/retryable
           lastErr = ye;
           if (ai < attempts.length - 1) {
             route.markUnhealthy?.(attempts[ai]!);
@@ -239,7 +239,7 @@ export class AgentLoop {
         }
       }
       if (lastErr || !done) {
-        // P0-INF-4: error diklasifikasi (provider/abort/…) → event + log satu bahasa.
+ // error diklasifikasi (provider/abort/…) → event + log satu bahasa.
         const ye =
           lastErr !== undefined
             ? classifyError(lastErr, "provider")
@@ -308,7 +308,7 @@ export class AgentLoop {
         );
         for (const { call, res } of roundResults) {
           if (res.isError) {
-            // P0-INF-4: kegagalan tool ter-log terstruktur (event tool.result sudah jujur isError).
+ // kegagalan tool ter-log terstruktur (event tool.result sudah jujur isError).
             log.warn({ tool: call.name, kind: "tool", code: ErrorCodes.TOOL_EXEC }, `tool ${call.name} returned error`);
           }
           emit({ type: "tool.result", turnId, callId: call.id, result: res.result, isError: !!res.isError });
@@ -320,7 +320,7 @@ export class AgentLoop {
           messages.push(toolMsg);
           store.appendMessage(sessionId, toolMsg);
         }
-        if (signal?.aborted) return cancelledExit(); // P0-CORE-1: Stop antar tool round
+        if (signal?.aborted) return cancelledExit(); // : Stop antar tool round
         emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
         const sig = JSON.stringify(done.toolCalls.map((c) => [c.name, c.args]));
         if (sig === lastRoundSig) repeatRounds++;
@@ -349,7 +349,7 @@ export class AgentLoop {
         personaId: session.personaId,
         state: usedDelegation ? "celebrating" : "done",
       });
-      // P1-MEM-2: learn nudge, aux call ringan pasca-turn yang MELIBATKAN TOOL.
+ // learn nudge, aux call ringan pasca-turn yang MELIBATKAN TOOL.
       // Fire-and-forget: tidak memblokir UI; hasil lewat event memory.noted + trace.
       if (usedTools) {
         const tLearn = Date.now();
@@ -364,7 +364,7 @@ export class AgentLoop {
           turnId,
           workspacePath: this.deps.workspacePath,
           emit,
-          recordUsage: this.deps.recordUsage, // P1-INF-3: aux ter-meter
+          recordUsage: this.deps.recordUsage, // : aux ter-meter
         })
           .then((r) =>
             trace(

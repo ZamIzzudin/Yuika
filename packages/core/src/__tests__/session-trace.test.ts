@@ -1,4 +1,4 @@
-// P1-INF-4: trace view, event store + ledger digabung jadi timeline per turn.
+// trace view, event store + ledger digabung jadi timeline per turn.
 // Catatan: store menstempel ts/id sendiri → test memakai ts dari appendEvent.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";

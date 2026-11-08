@@ -9,7 +9,7 @@ import { listSkills } from "../skills/loader.js";
 
 let dir: string;
 
-describe("skill lifecycle (P1-MEM-3)", () => {
+describe("skill lifecycle ()", () => {
   beforeEach(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-skills-"));
   });
@@ -43,7 +43,7 @@ describe("skill lifecycle (P1-MEM-3)", () => {
     const active = listSkills(dir);
     expect(active).toHaveLength(1);
     expect(active[0]!.name).toBe("Flow B");
-    expect((active[0]!.frontmatter.metadata as { yui?: { status?: string } } | undefined)?.yui?.status).toBe("tested"); // P1-DUN-2: accept = tested (eval DUN-3 → ready)
+    expect((active[0]!.frontmatter.metadata as { yui?: { status?: string } } | undefined)?.yui?.status).toBe("tested"); // : accept = tested (eval DUN-3 → ready)
   });
 
   it("update draft sebelum accept (validasi user)", () => {
@@ -78,7 +78,7 @@ describe("skill lifecycle (P1-MEM-3)", () => {
   });
 });
 
-describe("skill usage tracking (P1-MEM-4)", () => {
+describe("skill usage tracking ()", () => {
   it("skill_view → views++; updateDraft → patches++ (ikut pindah saat accept)", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-sk-u-"));
     resetRegistryForTests();

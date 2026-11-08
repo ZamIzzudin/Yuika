@@ -1,8 +1,8 @@
-// P0-MCP-1: server MCP stdio fixture untuk test, initialize + tools/list OK,
-// lalu MATI (exit 1) saat tools/call pertama → transport.onclose harus memicu onDown.
+// Test fixture MCP stdio server: initialize + tools/list succeed,
+// then it DIES (exit 1) on the first tools/call so onclose triggers onDown.
 import readline from "node:readline";
 
-const TOOLS = [{ name: "boom", description: "selalu crash saat dipanggil", inputSchema: { type: "object", properties: {} } }];
+const TOOLS = [{ name: "boom", description: "always crashes when called", inputSchema: { type: "object", properties: {} } }];
 
 const rl = readline.createInterface({ input: process.stdin });
 rl.on("line", (line) => {

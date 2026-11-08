@@ -1,4 +1,4 @@
-// P1-PRJ-4 (TASKS.md): tool todo_*, agent mengelola tasklist project dari turn.
+// tool todo_*, agent mengelola tasklist project dari turn.
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -10,7 +10,7 @@ import { ProjectStore } from "../project/store.js";
 
 const ctx = { sessionId: "s_prj", turnId: "t1", workspacePath: "/tmp", emit: () => {}, requestApproval: async () => true };
 
-describe("todo tools (P1-PRJ-4)", () => {
+describe("todo tools ()", () => {
   let projects: ProjectStore;
   let sessions: SessionStore;
 

@@ -128,12 +128,22 @@ isolation, approval persistence, sandbox integration (opt-in with
 
 Yuika Studio is self-hostable in two ways. Both need a Linux server, one
 DNS record pointing at it, and the public URL of a Yuika Portal (accounts
-live there; the studio keeps no passwords). Configure the same variables in
-both paths:
+live there; the studio keeps no passwords).
+
+Which compose file to use:
+
+| File | What it is for |
+| --- | --- |
+| `docker-compose.prod.yml` | Option A: any plain VPS, the studio brings its own Caddy edge on ports 80/443 with automatic HTTPS |
+| `docker-compose.traefik.yml` | Option B: the server already runs Dokploy (or any Traefik) on ports 80/443; deploy via the Dokploy UI or CLI, no host ports taken |
+| `deploy/docker-compose.with-portal.yml` | Optional: one private VPS running studio, portal, and relay together |
+| `docker-compose.yml` + `docker-compose.smoke.yml` | Development only: local stack and isolated smoke tests. Not for servers |
+
+Configure the same variables in both options:
 
 - `STUDIO_DOMAIN` - the studio host, e.g. `studio.notu.dev`
-- `YUI_PORTAL_URL` - the central portal, e.g. `https://yuika.notu.dev`
-- `YUI_RELAY_URL` - the portal relay for linked devices, e.g. `wss://relay.notu.dev`
+- `YUI_PORTAL_URL` - the central portal: `https://yuika.notu.dev`
+- `YUI_RELAY_URL` - the portal relay for linked devices: `wss://yuika-relay.notu.dev`
 - `YUI_OPENAI_API_KEY` (+ `YUI_MODEL`, or `YUI_PROVIDER_KIND` for
   Anthropic/Gemini) - the api container refuses to boot without a provider
 

@@ -1,4 +1,4 @@
-// SCR-6 (Batch 14b), QA watch: Sherlock menonton live screen persona lain.
+// SCR-6 , QA watch: Sherlock menonton live screen persona lain.
 // Browser ASLI (skipIf tak ada executable). Yang diuji:
 //  - qa_watch → state target (watchers naik), read-only tanpa lease
 //  - qa_snapshot → snapshot sesi TARGET (title page target terbaca)

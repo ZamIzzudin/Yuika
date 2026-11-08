@@ -1,4 +1,4 @@
-// P1-DEL-4: audit isolasi konteks anak, sesi anak FRESH: tidak membawa
+// audit isolasi konteks anak, sesi anak FRESH: tidak membawa
 // history parent (pesan user/model/tool parent), prompt anak hanya goal +
 // system persona anak + memori global. Diverifikasi lewat messages &
 // systemPrompt tersimpan, bukan sekadar asumsi "fresh session".
@@ -50,7 +50,7 @@ afterEach(() => {
   }
 });
 
-describe("isolasi konteks anak (P1-DEL-4)", () => {
+describe("isolasi konteks anak ()", () => {
   it("anak tidak melihat history parent: messages & request provider bersih", async () => {
     // Parent history "kotor": rahasia & tool call yang TIDAK boleh bocor ke anak.
     store.appendMessage(PARENT, { role: "user", content: "RAHASIA-INTERNAL jangan bocor" });

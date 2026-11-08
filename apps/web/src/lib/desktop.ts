@@ -1,6 +1,6 @@
-// D48: deteksi shell desktop Tauri. Shell meng-inject window.__TAURI__
-// (withGlobalTauri) di semua halaman; dipakai untuk menampilkan kontrol
-// khusus desktop (mis. "Switch mode" kembali ke welcome.html onboarding).
+// Tauri desktop shell detection. The shell injects window.__TAURI__
+// (withGlobalTauri) into every page; used to show desktop-only controls
+// (e.g. "Switch mode" back to the welcome.html onboarding).
 export function isDesktopShell(): boolean {
   return typeof window !== "undefined" && "__TAURI__" in window;
 }

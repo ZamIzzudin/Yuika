@@ -1,6 +1,6 @@
-// @yuika/core, Install/uninstall server MCP (P1-MCP-1): tulis deklarasi ke
+// @yuika/core, Install/uninstall server MCP : tulis deklarasi ke
 // `mcp.json` (root repo). Tidak ada auto-connect, fail-closed tetap berlaku:
-// setelah install, user harus Trust server di panel MCP (P1-MCP-3) sebelum
+// setelah install, user harus Trust server di panel MCP sebelum
 // runtime menghubungkannya. Placeholder `{workspace}` disimpan apa adanya;
 // substitusi path absolut dilakukan runtime saat load (lihat runtime.ts).
 import fs from "node:fs";

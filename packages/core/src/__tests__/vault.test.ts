@@ -1,4 +1,4 @@
-// Batch 12 (P2-VLT), Vault v0: store AES-256-GCM (AAD tamper, key file,
+// (P2-VLT), Vault v0: store AES-256-GCM (AAD tamper, key file,
 // purge run-only), redaksi nilai aktif (plain/base64/urlencode), kartu fill
 // via manager (deadline skip, nilai TIDAK pernah di event), tools
 // vault_request/vault_list/vault_forget/secret_http (origin-bound, redirect
@@ -66,9 +66,9 @@ function serve(handler: http.RequestListener): Promise<string> {
   });
 }
 
-// ── P2-VLT-1: store ──────────────────────────────────────────────────────────
+// ── : store ──────────────────────────────────────────────────────────
 
-describe("VLT-1 store", () => {
+describe(" store", () => {
   it("roundtrip encrypt/decrypt + metadata list TANPA nilai", () => {
     const s = new VaultStore(path.join(dir, "a.db"), loadVaultMasterKey(dir).key);
     s.put({ name: "alpha", kind: "api_key", scope: "workspace", value: TOKEN });
@@ -115,9 +115,9 @@ describe("VLT-1 store", () => {
   });
 });
 
-// ── P2-VLT-5: redaksi nilai aktif ────────────────────────────────────────────
+// ── : redaksi nilai aktif ────────────────────────────────────────────
 
-describe("VLT-5 redactActive", () => {
+describe(" redactActive", () => {
   it("plain + base64 + urlencode diganti; nilai pendek dilewati; idempotent; release bersih", () => {
     registerActiveSecret(TOKEN);
     expect(activeSecretCount()).toBe(1);
@@ -136,9 +136,9 @@ describe("VLT-5 redactActive", () => {
   });
 });
 
-// ── P2-VLT-2: manager fill flow ──────────────────────────────────────────────
+// ── : manager fill flow ──────────────────────────────────────────────
 
-describe("VLT-2 fill flow", () => {
+describe(" fill flow", () => {
   it("request → resolveFill: tersimpan, event metadata SAJA (nilai tak pernah bocor)", async () => {
     const log: EventDraft[] = [];
     const p = V.requestFill({ name: "svc", kind: "api_key", reason: "call API X", runId: "t1", emit: (d) => log.push(d) });
@@ -148,7 +148,7 @@ describe("VLT-2 fill flow", () => {
     const ok = V.resolveFill(log.find((e) => e.type === "vault.requested")!.requestId, TOKEN, true);
     expect(ok).toBe(true);
     expect(await p).toEqual({ status: "filled", name: "svc", saved: true });
-    expect(JSON.stringify(log)).not.toContain(TOKEN); // P2-VLT-5 acceptance
+    expect(JSON.stringify(log)).not.toContain(TOKEN); //  acceptance
     expect(V.list().find((m) => m.name === "svc")!.runOnly).toBe(false);
   });
 
@@ -184,7 +184,7 @@ describe("VLT-2 fill flow", () => {
   });
 });
 
-// ── P2-VLT-2/3: tools ────────────────────────────────────────────────────────
+// ── : tools ────────────────────────────────────────────────────────
 
 describe("VLT tools", () => {
   it("vault_request → fill via manager → hasil metadata only; kedua kalinya tanpa kartu", async () => {
@@ -261,9 +261,9 @@ describe("VLT tools", () => {
   });
 });
 
-// ── P2-VLT-3: run_command env refs ───────────────────────────────────────────
+// ── : run_command env refs ───────────────────────────────────────────
 
-describe("VLT-3 run_command env", () => {
+describe(" run_command env", () => {
   it("env vault: ref di-resolve backend-side; stdout token ter-redact; event vault.used; release", async () => {
     vi.stubEnv("YUI_SANDBOX", "off");
     V.store.put({ name: "npm_tok", kind: "command", scope: "workspace", value: TOKEN });
@@ -299,9 +299,9 @@ describe("VLT-3 run_command env", () => {
   });
 });
 
-// ── VLT-5: acceptance negatif lintas permukaan ───────────────────────────────
+// ── : acceptance negatif lintas permukaan ───────────────────────────────
 
-describe("VLT-5 negative acceptance", () => {
+describe(" negative acceptance", () => {
   it("nilai TIDAK pernah muncul di event, hasil tool, meta list, maupun ciphertext", async () => {
     const log: EventDraft[] = [];
     const p = V.requestFill({ name: "sec", kind: "api_key", reason: "r", runId: "t", emit: (d) => log.push(d) });

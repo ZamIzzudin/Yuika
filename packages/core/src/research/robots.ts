@@ -1,4 +1,4 @@
-// Batch 7 (RS-2), robots.txt guard untuk fetch riset: fetch → parse → cache 1 jam.
+// (RS-2), robots.txt guard untuk fetch riset: fetch → parse → cache 1 jam.
 // Kesopanan riset: 404/timeout = diizinkan (standar umum), Disallow dihormati
 // untuk group "*". Wildcard * dan anchor $ didukung.
 const ROBOTS_TTL_MS = 60 * 60 * 1000;

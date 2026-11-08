@@ -1,10 +1,10 @@
-// @yuika/core, Memory manager (P1-MEM-1): dokumen editable,
+// @yuika/core, Memory manager : dokumen editable,
 //   USER.md                      (workspace, lintas project): preferensi & fakta user.
 //   MEMORY.md                    (per project): keputusan, pelajaran, konteks proyek.
-//   memory/domains/<domain>.md   (P1-MEM-6, per persona-domain): keahlian yang
+// memory/domains/<domain>.md (, per persona-domain): keahlian yang
 //                                persona pelajari tentang cara bekerja bersama user
 //                               , lintas project, milik persona (TIDAK ikut
-//                                terhapus saat project dihapus, kebijakan P1-PRJ-8).
+// terhapus saat project dihapus, kebijakan ).
 // Prinsip Hermes §4.7: file milik user, transparan, editable langsung;
 // agent hanya menambah (append terkurasi, dedupe) lewat tool memory_append.
 // Kapan dibaca: di-inject ke system prompt saat sesi DIBUAT (frozen per sesi,
@@ -27,7 +27,7 @@ export const PROJECT_HEADER = (projectName: string) => `# MEMORY.md, memori proj
 
 `;
 
-/** P1-MEM-6: memori domain persona, lintas project, milik persona. */
+/** memori domain persona, lintas project, milik persona. */
 export const DOMAIN_HEADER = (domain: string) => `# ${domain}.md, memori bidang "${domain}"
 
 > Keahlian yang persona bidang ini pelajari tentang cara bekerja bersama user
@@ -43,7 +43,7 @@ function domainSlug(domain: string): string {
 const MAX_NOTES = 200; // guard: file tak berlipat tanpa batas
 
 /** Path dokumen memori. user = workspace/USER.md; project = projectRoot/MEMORY.md;
- *  domain = workspace/memory/domains/<domain>.md (P1-MEM-6). */
+ * domain = workspace/memory/domains/<domain>.md . */
 export function memoryPath(
   workspacePath: string,
   scope: MemoryScope,
@@ -127,7 +127,7 @@ export function appendCurated(
 /**
  * Bagian system prompt: catatan memori yang dibaca agent.
  * Dipanggil saat sesi DIBUAT (frozen), bukan tiap turn.
- * P1-MEM-6: domain = memori persona ini (lintas project), dari manifest.
+ * domain = memori persona ini (lintas project), dari manifest.
  */
 export function memoryPromptSection(workspacePath: string, projectRootPath?: string | null, domain?: string | null): string {
   const parts: string[] = [];

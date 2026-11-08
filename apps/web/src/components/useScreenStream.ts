@@ -1,6 +1,6 @@
 "use client";
 
-// Batch 14a follow-up: hook SSE screen share (frame+state) + relay input +
+// follow-up: hook SSE screen share (frame+state) + relay input +
 // lease, dipakai ScreenPip (floating). Satu sumber logika.
 import { useCallback, useEffect, useState } from "react";
 import { apiUrl, authFetch, authTokenQuery } from "@/lib/api";

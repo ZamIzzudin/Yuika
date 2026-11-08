@@ -1,4 +1,4 @@
-// P2-WKS, registry workshop persist (Batch 13).
+// P2-WKS, registry workshop persist .
 // SQLite SENDIRI (file db runtime yang sama, koneksi sendiri, WAL aman):
 // workshop = artefak HOST-LOCAL (container docker di host ini), maka TIDAK
 // lewat ISessionStore, mode session Postgres (YUI_DB_DRIVER=postgres) tetap

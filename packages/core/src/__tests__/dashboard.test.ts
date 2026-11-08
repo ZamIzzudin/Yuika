@@ -1,4 +1,4 @@
-// P2-PM-4/5, unit test agregasi dashboard: burndown task, RACI owner dari
+// unit test agregasi dashboard: burndown task, RACI owner dari
 // roster, reopened dari event transisi, gate mapping, delta iterasi run,
 // sinyal QA + pending approval. Murni fungsi, store dipalsukan minimal.
 import { describe, expect, it } from "vitest";

@@ -1,4 +1,4 @@
-// W1-A3 (TASKS.md): loop vs fake provider, stream, final, append-only, error path.
+// W1-A3 : loop vs fake provider, stream, final, append-only, error path.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -139,9 +139,9 @@ describe("AgentLoop (fake provider)", () => {
     store.close();
   });
 
-  // P0-CORE-2: primary gagal (setelah retry internal) → fallback model SEKALI,
+ // primary gagal (setelah retry internal) → fallback model SEKALI,
   // lalu iterasi berikutnya TETAP di fallback (jangan bolak-balik).
-  it("P0-CORE-2: primary mati → fallback aktif otomatis + markUnhealthy dipanggil", async () => {
+  it(": primary mati → fallback aktif otomatis + markUnhealthy dipanggil", async () => {
     resetRegistryForTests();
     class FlakyProvider implements ProviderAdapter {
       readonly id = "flaky";
@@ -187,8 +187,8 @@ describe("AgentLoop (fake provider)", () => {
     store.close();
   });
 
-  // P1-MDL-1: loop memakai model dari routeModel(personaId), bukan deps.model.
-  it("P1-MDL-1: routeModel per persona menentukan model sesi", async () => {
+ // loop memakai model dari routeModel(personaId), bukan deps.model.
+  it(": routeModel per persona menentukan model sesi", async () => {
     resetRegistryForTests();
     const provider = new FakeProvider([
       { deltas: ["ok"], done: { type: "done", finishReason: "stop", text: "ok", toolCalls: [] } },
@@ -214,9 +214,9 @@ describe("AgentLoop (fake provider)", () => {
   });
 });
 
-  // P0-CORE-1: Stop ditekan saat provider streaming → abort → graceful cancel
+ // Stop ditekan saat provider streaming → abort → graceful cancel
   // (parsial tersimpan, turn.cancelled + persona.state idle, BUKAN error).
-  it("P0-CORE-1: abort saat streaming → turn.cancelled graceful + parsial tersimpan", async () => {
+  it(": abort saat streaming → turn.cancelled graceful + parsial tersimpan", async () => {
     resetRegistryForTests();
     const ac = new AbortController();
     class HangingProvider implements ProviderAdapter {
@@ -257,7 +257,7 @@ describe("AgentLoop (fake provider)", () => {
     store.close();
   });
 
-describe("P0-CORE-4 aux routing: kompresi pakai model murah", () => {
+describe(" aux routing: kompresi pakai model murah", () => {
   it("summary call pergi ke auxModel (bukan model utama) + checkpoint merekam model aux", async () => {
     resetRegistryForTests();
     // ~50 pesan × 10k chars ≈ 125k token, melampaui ambang default 70%×128k.

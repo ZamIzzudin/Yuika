@@ -9,9 +9,9 @@ export function useMenuAutoClose<T extends HTMLDetailsElement>() {
   const ref = useRef<T>(null);
 
   useEffect(() => {
-    // D40: baca ref.current LIVE tiap event — details bisa mount LAMBAT
-    // (mis. Sessions menu setelah project termuat); menangkap el sekali
-    // di mount membuat listener mati & klik-luar tak menutup.
+    // Read ref.current LIVE on every event: the details element can mount
+    // LATE (e.g. the Sessions menu after a project loads); capturing el
+    // once at mount leaves a dead listener and outside clicks never close.
     const onPointerDown = (e: PointerEvent) => {
       const el = ref.current;
       if (el?.open && !el.contains(e.target as Node)) el.open = false;

@@ -1,15 +1,15 @@
 "use client";
-// D44/D45: PLAYGROUND latar HOME — maskot zero-g melayang di area MAIN saja
-// (kotak fixed diukur dari rect parent = root HomeView, via ResizeObserver,
-// jadi tak pernah masuk area sidebar walau sidebar toggle). TANPA bintang/
-// nebula (D45: latar biasa). Fisika: tanpa gravitasi/lompat; drift "angin
-// luar angkasa" pelan, wrap tepi area, tumble; drag & throw (sampel ≤110ms)
-// + collision bermassa dipertahankan. Render imperatif per-frame, ala
+// HOME background playground: zero-g mascots float within the MAIN area only
+// (the fixed box is measured from the parent rect = HomeView root, via
+// ResizeObserver, so it never enters the sidebar, even when toggled). No
+// stars or nebula. Physics: no gravity or jumping; a slow "space wind"
+// drift with edge wrap and tumble; drag & throw (<=110ms sampling)
+// plus mass-based collisions. Imperative per-frame rendering, like
 // TeamSetupView.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OrinPortrait } from "./OrinPortrait";
 
-const S = 44; // ukuran maskot (D45: balik ke 44 setelah 2x terbukti terlalu besar)
+const S = 44; // mascot size (44px; 2x proved too large)
 const R = 19; // radius collision (skala dengan S)
 
 type Body = {
@@ -41,8 +41,8 @@ export function HomeSpace({
 }: {
   /** Minimal {id,name}; PersonaInfo lengkap juga oke (structural). */
   personas: { id: string; name: string }[];
-  /** "parent" = fit ke rect parent (area main Home, D45); "viewport" =
-   *  full satu layar (D46: background gerbang login). Default "parent". */
+  /** "parent" = fit the parent rect (the Home main area); "viewport" =
+   *  the full screen (the login gate background). Default "parent". */
   fit?: "parent" | "viewport";
 }) {
   const zoneRef = useRef<HTMLDivElement>(null);

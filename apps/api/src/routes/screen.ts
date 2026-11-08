@@ -1,4 +1,4 @@
-// @yuika/api, Batch 14a (P2-SCR): routes shared live screen.
+// @yuika/api, (P2-SCR): routes shared live screen.
 //   GET    /api/projects/:id/screens                       → daftar sesi (selector tab Browser)
 //   POST   /api/projects/:id/screens                       {personaId} → start/ambil
 //   DELETE /api/projects/:id/screens/:persona              → stop

@@ -1,4 +1,4 @@
-// P0-SEC-1, integrasi SANDBOX NYATA (docker run sungguhan).
+// integrasi SANDBOX NYATA (docker run sungguhan).
 // Gate: hanya jalan bila YUI_SANDBOX_IT=1, menjaga CI/laptop tanpa Docker
 // tetap hijau. Docker tak hidup → skip dinamis (probe async, bukan skipIf
 // statis yang dievaluasi sebelum hooks). Jalankan manual:
@@ -23,7 +23,7 @@ afterAll(() => {
   if (dir) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-describe("P0-SEC-1 sandbox integration (docker nyata)", () => {
+describe(" sandbox integration (docker nyata)", () => {
   it.skipIf(!GATED)("node -v berjalan & exit 0", { timeout: 30_000 }, async (ctx) => {
     if (!haveDocker) return ctx.skip();
     const r = await runInSandbox("node", ["-v"], dir);

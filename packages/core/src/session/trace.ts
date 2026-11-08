@@ -1,4 +1,4 @@
-// @yuika/core, trace view per turn (P1-INF-4). Sumber: event store append-only
+// @yuika/core, trace view per turn . Sumber: event store append-only
 // (sudah ada) + usage ledger (latensi/token per panggilan model), TANPA tabel
 // baru; join berdasarkan window waktu turn per sesi. (pino + tabel log terpisah
 // menyusul bersama deploy INF-5.)
@@ -118,7 +118,7 @@ function summarizeArgs(args: Record<string, unknown>): string {
   return `(${first}: ${val}${keys.length > 1 ? `, +${keys.length - 1}` : ""})`;
 }
 
-// ── Project activity feed (Batch 14a++, user 2026-11) ────────────────────────
+// ── Project activity feed (++, user 2026-11) ────────────────────────
 // Logs tab = observability PROJECT-WIDE: semua langkah persona di semua sesi
 // project (tool calls, screen, vault, delegasi, approval), bukan hanya sesi
 // chat aktif. Digabung dengan browser visits di layer route.

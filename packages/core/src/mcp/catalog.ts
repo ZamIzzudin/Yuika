@@ -1,6 +1,6 @@
-// @yuika/core, Katalog MCP internal (P1-MCP-1): daftar kurasi ~20 server yang
+// @yuika/core, Katalog MCP internal : daftar kurasi ~20 server yang
 // bisa dipasang lewat UI. Install = menulis deklarasi ke `mcp.json` (stdio npx).
-// Tetap fail-closed (P1-MCP-3): setelah install user masih harus Trust server
+// Tetap fail-closed : setelah install user masih harus Trust server
 // sebelum dihubungkan; deny list per-tool tersedia di panel MCP.
 // Env yang diisi user hanya disimpan lokal di mcp.json, jangan commit key.
 import type { McpCatalogEntry } from "@yuika/contracts";

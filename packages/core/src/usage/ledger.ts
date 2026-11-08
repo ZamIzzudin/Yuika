@@ -1,4 +1,4 @@
-// @yuika/core, usage ledger (P1-CRED-1): tabel `usage_events` append-only.
+// @yuika/core, usage ledger : tabel `usage_events` append-only.
 // Sumber data: `usage` dari chunk done provider (loop & delegasi anak),
 // TIDAK ada estimasi; provider tanpa usage = tidak tercatat (jujur > penuh).
 import Database from "better-sqlite3";

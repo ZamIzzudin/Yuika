@@ -1,4 +1,4 @@
-// P1-PRJ-1 (TASKS.md): project store, CRUD project first-class + tabel tasks siap PRJ-4.
+// Project store: first-class project CRUD + the tasks table.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -22,7 +22,7 @@ describe("ProjectStore", () => {
     expect(a.rootPath).toBe("projects/p_a");
   });
 
-  it("D28: touchProject menandai aktivitas, updatedAt naik (kartu Home \u201c\u2026 Ago\u201d)", () => {
+  it("touchProject marks activity, updatedAt rises (Home '... Ago' cards)", () => {
     const store = makeStore();
     store.createProject({ id: "p_a", name: "A", rootPath: "projects/p_a" });
     const before = store.getProject("p_a")!.updatedAt;
@@ -55,7 +55,7 @@ describe("ProjectStore", () => {
     expect(store.getProject("p_nope")).toBeUndefined();
   });
 
-  it("tasks: CRUD penuh (P1-PRJ-4), create, list scoped, update parsial + refs append", () => {
+  it("tasks: CRUD penuh (), create, list scoped, update parsial + refs append", () => {
     const store = makeStore();
     store.createProject({ id: "p_a", name: "A", rootPath: "projects/p_a" });
     store.createProject({ id: "p_b", name: "B", rootPath: "projects/p_b" });

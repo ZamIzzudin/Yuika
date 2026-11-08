@@ -1,4 +1,4 @@
-// DS-1, komponen global: Chip (badge status/label kecil) & Dot (indikator titik).
+// komponen global: Chip (badge status/label kecil) & Dot (indikator titik).
 // Chip NON-interaktif: menampilkan status/kategori (✓ selesai, ● berjalan, draf).
 // Untuk tombol pilihan → pakai <Button active> atau Chip dengan onSelect.
 import type { ReactNode } from "react";
@@ -21,7 +21,7 @@ export function Chip({
   children,
 }: {
   tone?: ChipTone;
-  /** md = default; sm = chip mini untuk card/baris compact (D42). */
+ /** md = default; sm = chip mini untuk card/baris compact . */
   size?: "md" | "sm";
   className?: string;
   children: ReactNode;

@@ -1,4 +1,4 @@
-// @yuika/contracts, P2-PM-3: validator task list (Planner).
+// @yuika/contracts, : validator task list (Planner).
 // Pure function browser-safe: DAG (dependsOn valid + tanpa siklus) + coverage
 // fase (setiap fase wajib ter-cover ≥1 task) + kelengkapan detail
 // (acceptance/assignee/estimate) sebagai warning.

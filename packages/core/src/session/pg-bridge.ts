@@ -1,4 +1,4 @@
-// @yuika/core, P0-DATA-1: sync-bridge SessionStore → worker PostgreSQL.
+// @yuika/core, : sync-bridge SessionStore → worker PostgreSQL.
 // Main thread memanggil metode SINKRON (identik API better-sqlite3), panggilan
 // dikirim ke worker (pg-worker.ts), lalu main memblokir via Atomics.wait sampai
 // hasil ditulis worker ke SharedArrayBuffer. Blokir event loop per query ==

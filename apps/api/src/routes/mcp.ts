@@ -12,11 +12,11 @@ export function registerMcpRoutes(app: FastifyInstance, getRt: () => YuiRuntime)
     return { entries: getRt().mcpAuditRecent(limit) };
   });
 
-  /** GET /api/mcp/catalog, katalog kurasi server MCP (P1-MCP-1). */
+  /** GET /api/mcp/catalog, curated MCP server catalog. */
   app.get("/api/mcp/catalog", async () => ({ catalog: getRt().mcpCatalog() }));
 
-  /** POST /api/mcp/install, pasang server dari katalog ke mcp.json (P1-MCP-1).
-   *  Tidak auto-connect: fail-closed, user harus Trust setelah ini. */
+  /** POST /api/mcp/install, add a catalog server to mcp.json.
+   *  No auto-connect (fail-closed): the user must Trust it afterwards. */
   app.post("/api/mcp/install", async (req, reply) => {
     const body = InstallMcpRequest.parse(req.body);
     try {
@@ -50,8 +50,8 @@ export function registerMcpRoutes(app: FastifyInstance, getRt: () => YuiRuntime)
   /** GET /api/mcp/servers, status trust + koneksi semua server MCP workspace. */
   app.get("/api/mcp/servers", async () => ({ servers: getRt().mcpServerStatuses() }));
 
-  /** POST /api/mcp/servers, P0-MCP-1: hubungkan ulang server (parked/reconnecting)
-   *  sekarang juga, tanpa menunggu backoff. */
+  /** POST /api/mcp/servers: reconnect a parked/reconnecting server now,
+   *  without waiting for the backoff. */
   app.post("/api/mcp/servers", async (req, reply) => {
     const { server } = z.object({ server: z.string().min(1) }).parse(req.body);
     try {

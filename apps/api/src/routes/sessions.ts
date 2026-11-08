@@ -1,4 +1,4 @@
-// @yuika/api, routes sesi (P0-INF-1, port 1:1 dari Next route handlers).
+// @yuika/api, routes sesi (, port 1:1 dari Next route handlers).
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import type { YuiEvent } from "@yuika/contracts";
@@ -18,7 +18,7 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return { sessions: getRt().listProjectSessions(projectId) };
   });
 
-  /** POST /api/sessions/:id/cancel, tombol Stop (P0-CORE-1).
+ /** POST /api/sessions/:id/cancel, tombol Stop .
    *  Abort HTTP provider + loop; progres tersimpan, turn berakhir graceful. */
   app.post("/api/sessions/:id/cancel", async (req) => ({ cancelled: getRt().cancelTurn((req.params as { id: string }).id) }));
 
@@ -41,7 +41,7 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
     return reply.code(200).send({ accepted: true });
   });
 
-  /** GET → trace per turn sesi ini (P1-INF-4): langkah kronologis (model/tool/
+ /** GET → trace per turn sesi ini : langkah kronologis (model/tool/
    *  delegasi/approval/error) + token per turn dari ledger. UI: panel Trace. */
   app.get("/api/sessions/:id/trace", async (req) => getRt().getTrace((req.params as { id: string }).id));
 

@@ -1,5 +1,5 @@
 "use client";
-// P1-PRT-3, badge "N remote connected" (poll ringan /api/portal/status).
+// badge "N remote connected" (poll ringan /api/portal/status).
 // compact = varian titik hijau utk sidebar kolaps.
 import { useEffect, useState } from "react";
 import { apiUrl, authFetch } from "@/lib/api";

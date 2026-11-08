@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a), docsites: query yang menyebut domain dokumen (react.dev, nodejs.org,
+// (RS-1a), docsites: query yang menyebut domain dokumen (react.dev, nodejs.org,
 // …) → cari halaman lewat llms.txt; fallback sitemap.xml. Provider ringan utk
 // "dokumentasi resmi lebih otoritatif daripada aggregator" (PERSONA scholar).
 import type { SearchProvider, SearchResult } from "../types.js";

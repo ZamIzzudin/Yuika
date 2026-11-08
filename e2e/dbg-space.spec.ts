@@ -17,8 +17,8 @@ test("dbg space home renders mascots & stars", async ({ page }) => {
   if (errors.length) throw new Error("pageerror: " + errors.join(" | "));
 });
 
-// D47: onboarding desktop (welcome.html) di browser biasa — tanpa shell
-// Tauri → fallback note + link ke app; kartu mode tak memicu apa pun.
+// Desktop onboarding (welcome.html) in a plain browser (no Tauri shell):
+// fallback note + link to the app; the mode cards trigger nothing.
 test("dbg welcome.html fallback in plain browser", async ({ page }) => {
   await page.goto("/welcome.html");
   await expect(page.getByRole("heading", { name: "Welcome to Yuika" })).toBeVisible();
@@ -28,8 +28,8 @@ test("dbg welcome.html fallback in plain browser", async ({ page }) => {
   await page.screenshot({ path: "e2e/.tmp/welcome-plain.png" });
 });
 
-// D48: mode shell (window.__TAURI__ ada) → kartu mode tampil; invoke
-// di-stub agar klik tak error. Menjaga layout kartu onboarding.
+// Shell mode (window.__TAURI__ present): the mode cards appear; invoke
+// is stubbed so clicks do not error. Guards the onboarding card layout.
 test("dbg welcome.html shell mode shows mode cards", async ({ page }) => {
   await page.addInitScript(() => {
     window.__TAURI__ = { core: { invoke: async () => undefined } };

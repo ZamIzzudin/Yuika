@@ -1,6 +1,6 @@
-// E2E auth gate (portal-only, CP-3+): mode terbuka + kontrak register/login
+// E2E auth gate (portal-only, +): mode terbuka + kontrak register/login
 // lokal DIHAPUS (404). Alur sign-in via portal diuji di sso.spec.ts.
-// D37: sign in/out pindah ke Settings → Account (pill sidebar dihapus).
+// Sign in/out lives in Settings -> Account (the sidebar pill is gone).
 import { expect, test } from "@playwright/test";
 
 const API = "http://127.0.0.1:3291";

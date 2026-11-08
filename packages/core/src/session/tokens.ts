@@ -1,4 +1,4 @@
-// @yuika/core, util estimasi token (P0-CORE-4).
+// @yuika/core, util estimasi token .
 // Heuristik chars/4 (kira-kira 1 token ≈ 4 char untuk teks campuran EN/ID).
 // Sengaja KONSERVATIF dan sederhana: dipakai hanya untuk keputusan "perlu
 // kompresi atau tidak", bukan untuk metering (metering memakai usage provider).

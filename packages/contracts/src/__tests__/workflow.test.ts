@@ -1,4 +1,4 @@
-// P2-FLOW-1, workflow.yaml: schema zod + normalisasi + lint + template 7 fase.
+// workflow.yaml: schema zod + normalisasi + lint + template 7 fase.
 // Acceptance: template valid parse & lint (errors kosong); aturan struktural
 // (id unik, depends_on valid, siklus, persona roster) teruji.
 import { describe, expect, it } from "vitest";
@@ -15,7 +15,7 @@ const PERSONAS = [
   "yui-designer", "yui-analyst", "yui-operator", "yui-planner",
 ];
 
-describe("P2-FLOW-1, template 7 fase", () => {
+describe(", template 7 fase", () => {
   it("parse & lint hijau (termasuk cek roster persona)", () => {
     const def = loadWorkflowYaml(SEVEN_PHASE_TEMPLATE_YAML);
     expect(def.phases.map((p) => p.id)).toEqual([

@@ -102,7 +102,7 @@ export function registerWorkflowRoutes(app: FastifyInstance, getRt: () => YuiRun
     return { ok: true };
   });
 
-  // ── P2-FLOW-6: steering mid-run ──────────────────────────────────────────
+ // ── : steering mid-run ──────────────────────────────────────────
   app.post("/api/workflows/runs/:runId/steer", async (req, reply) => {
     const { runId } = req.params as { runId: string };
     const body = SteerRequest.parse(req.body);

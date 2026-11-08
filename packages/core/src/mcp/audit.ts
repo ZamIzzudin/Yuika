@@ -1,4 +1,4 @@
-// @yuika/core, MCP audit log (P1-MCP-3): setiap panggilan tool MCP dicatat
+// @yuika/core, MCP audit log : setiap panggilan tool MCP dicatat
 // append-only (siapa/sesi, server, tool, hasil, durasi), bahan trust analytics.
 import Database from "better-sqlite3";
 import fs from "node:fs";
@@ -67,7 +67,7 @@ export class McpAuditStore {
     }));
   }
 
-  /** P1-PRJ-8: hapus baris audit milik sesi-sesi yang dihapus (cleanup project). */
+ /** hapus baris audit milik sesi-sesi yang dihapus (cleanup project). */
   deleteForSessions(sessionIds: string[]): number {
     if (sessionIds.length === 0) return 0;
     const ph = sessionIds.map(() => "?").join(",");

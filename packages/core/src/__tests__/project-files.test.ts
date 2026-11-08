@@ -6,7 +6,7 @@ import { buildFileTree, readProjectFile, safeProjectPath } from "../project/file
 
 let root: string;
 
-describe("project files (P2-STU-3 v0)", () => {
+describe("project files ( v0)", () => {
   beforeEach(() => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "yui-files-"));
   });

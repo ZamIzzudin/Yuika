@@ -1,4 +1,4 @@
-// P1-CRED-1: metering ledger, rollup per persona/model, filter, dan integrasi
+// metering ledger, rollup per persona/model, filter, dan integrasi
 // AgentLoop (usage dari provider → event; TANPA usage → tidak tercatat; multi-
 // iterasi tool round → event per panggilan model).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -25,7 +25,7 @@ function makeLedger(): UsageLedger {
 const ev = (over: Partial<UsageEvent>): UsageEvent =>
   UsageEvent.parse({ sessionId: "s1", projectId: null, personaId: "yui-scholar", model: "m-a", promptTokens: 100, outputTokens: 20, latencyMs: 500, at: 1_000, ...over });
 
-describe("UsageLedger (P1-CRED-1)", () => {
+describe("UsageLedger ()", () => {
   it("summary: rollup per persona & model + total", () => {
     const l = makeLedger();
     l.record(ev({}));

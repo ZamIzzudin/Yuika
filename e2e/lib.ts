@@ -1,4 +1,4 @@
-// e2e helpers, Batch 16 (Home & Team Assembly).
+// e2e helpers, (Home & Team Assembly).
 // Freespace dihapus: alur standar kini HOME → kartu project → TeamSetup
 // (playground assign) → Start Session (dropdown persona) dengan lead.
 import type { Page } from "@playwright/test";

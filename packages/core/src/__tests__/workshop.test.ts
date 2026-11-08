@@ -1,4 +1,4 @@
-// P2-WKS-1/2 (Batch 13), workshop manager: lifecycle + persist + uptime +
+// workshop manager: lifecycle + persist + uptime +
 // egress config + audit ring, dengan host PALSU (cepat); integrasi Docker
 // ASLI di suite kedua (skip bila daemon tak ada).
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -164,7 +164,7 @@ async function dockerUp(): Promise<boolean> {
   });
 }
 
-describe.skipIf(!(await dockerUp()))("workshop docker asli (P2-WKS-1)", () => {
+describe.skipIf(!(await dockerUp()))("workshop docker asli ()", () => {
   // anti-leak: bila test gagal di tengah, container test dibuang (pid test
   // selalu p_it_/p_eg_/p_mg_, container project user tak tersentuh).
   afterEach(async () => {

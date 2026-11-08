@@ -1,4 +1,4 @@
-// @yuika/core, P2-SCR-2/4 (Batch 14a): lease layar user↔persona.
+// @yuika/core, : lease layar user↔persona.
 // Pola "fence" di-port dari rokazo packages/core/src/screen-lease.ts (benchmark
 // D:\projects\rokazo), satu pengendali input; pengambilalihan hanya boleh
 // bila fence LEBIH TINGGI (monotonic), pelepasan hanya oleh owner dengan

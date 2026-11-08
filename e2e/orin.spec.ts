@@ -6,12 +6,12 @@ import { openProject, openProjectWithLead } from "./lib";
 
 const API = "http://127.0.0.1:3291";
 
-test("Orin v8: ring TeamSetup ter-render (Batch 16, home tanpa orbit)", async ({ page, request }) => {
+test("Orin v8: ring TeamSetup ter-render (, home tanpa orbit)", async ({ page, request }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   const name = `Orin Ring ${Date.now()}`;
   await request.post(`${API}/api/projects`, { data: { name, description: "ring e2e" } });
-  // Batch 16: "/" = HOME (typing + kartu). Orbit persona kini hidup di layar
+ // "/" = HOME (typing + kartu). Orbit persona kini hidup di layar
   // TeamSetup project baru, buka project → ring 9 PersonaFace mengambang.
   await openProject(page, name);
   // ring = 9 kartu PersonaFace (svg viewBox Orin), tunggu kartu pertama.
@@ -41,7 +41,7 @@ test("Orin: pointer di atas portret tersembunyi tak menghasilkan NaN console", a
   });
   page.on("pageerror", (e) => consoleErrs.push("PAGEERROR " + String(e).slice(0, 200)));
 
-  // Batch 16: buka project + mulai sesi (maskot arena + portret chat aktif).
+ // buka project + mulai sesi (maskot arena + portret chat aktif).
   await openProjectWithLead(page, name);
   await expect(page.getByRole("tab", { name: "Team" })).toBeVisible({ timeout: 15_000 });
 

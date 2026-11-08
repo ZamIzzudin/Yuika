@@ -1,4 +1,4 @@
-// P0-CORE-4: kompresi konteks v0, view prompt memakai checkpoint saat estimasi
+// kompresi konteks v0, view prompt memakai checkpoint saat estimasi
 // token melewati ambang. Invariant: TABEL MESSAGES TIDAK PERNAH DIUBAH
 // (append-only dijaga); kompresi = lapisan view + tabel checkpoint terpisah.
 // Fail-soft: aux model gagal → turn jalan tanpa kompresi.
@@ -55,7 +55,7 @@ function seedLongSession(sessionId: string, rounds: number) {
   }
 }
 
-describe("buildContextMessages (P0-CORE-4)", () => {
+describe("buildContextMessages ()", () => {
   it("di bawah ambang → view utuh, tanpa checkpoint, tanpa aux call", async () => {
     seedLongSession("s1", 3); // 6 pesan < minMessages
     const p = new FakeProvider();

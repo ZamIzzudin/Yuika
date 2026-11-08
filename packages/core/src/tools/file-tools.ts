@@ -1,5 +1,5 @@
 // @yuika/core, file tools (contoh pola: zod schema → registry.register).
-// Path safety: semua path di-resolve di dalam workspace (PLAN §4.11).
+// Path safety: semua path di-resolve di dalam workspace .
 import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -52,7 +52,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
           offset: args.offset,
           totalChars: content.length,
           nextOffset: args.offset + slice.length < content.length ? args.offset + slice.length : null,
-          content: redactSecrets(slice), // P0-SEC-2: kunci/token di file tidak masuk konteks agent
+          content: redactSecrets(slice), // : kunci/token di file tidak masuk konteks agent
         },
       };
     },
@@ -74,7 +74,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
       }
       const p = safeResolve(ctx.workspacePath, target);
       await fs.mkdir(path.dirname(p), { recursive: true });
-      // P2-STU-3: snapshot isi LAMA sebelum ditimpa → tab File bisa menampilkan diff.
+ // snapshot isi LAMA sebelum ditimpa → tab File bisa menampilkan diff.
       if (revisions) {
         try {
           const old = await fs.readFile(p, "utf-8");
@@ -136,7 +136,7 @@ export function registerFileTools(revisions?: import("../project/revisions.js").
           const lines = text.split(/\r?\n/);
           for (let i = 0; i < lines.length && hits.length < 100; i++) {
             if (lines[i]!.toLowerCase().includes(needle)) {
-              hits.push({ path: path.relative(ctx.workspacePath, abs).split(path.sep).join("/"), line: i + 1, text: redactSecrets(lines[i]!.trim().slice(0, 160)) }); // P0-SEC-2
+              hits.push({ path: path.relative(ctx.workspacePath, abs).split(path.sep).join("/"), line: i + 1, text: redactSecrets(lines[i]!.trim().slice(0, 160)) }); // 
             }
           }
         }

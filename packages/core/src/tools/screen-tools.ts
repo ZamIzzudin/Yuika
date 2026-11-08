@@ -1,7 +1,7 @@
-// @yuika/core, Batch 14a (SCR-2): browser_* tools agent via sesi screen
+// @yuika/core, (SCR-2): browser_* tools agent via sesi screen
 // SHARED dengan user (satu Chromium per project×persona). Input dikirim ke
 // browser yang SAMA yang sedang di-stream ke user, yang dilihat user =
-// yang dilihat agent (take control dua arah, D25).
+// yang dilihat agent (take control dua arah, ).
 //
 // Lease: agent tools butuh lease (owner personaId); bila user pegang →
 // error jelas + saran request_takeover. browser_snapshot = READ-ONLY,
@@ -101,7 +101,7 @@ export function registerScreenTools(opts: { dataDir: string }): void {
     handler: (_args: Record<string, never>, ctx) =>
       withScreen(ctx, async (key) => {
         const snap = await screenSnapshot(key);
-        // VLT-4 defense-in-depth: scrub active secret (password login terisi
+ // defense-in-depth: scrub active secret (password login terisi
         // via kartu) sebelum hasil masuk konteks model, di luar masking
         // input[type=password] yang sudah dilakukan di sumber snapshot.
         return JSON.parse(redactActive(JSON.stringify(snap)));
@@ -245,7 +245,7 @@ export function registerScreenTools(opts: { dataDir: string }): void {
           }
           const origin = args.origin.replace(/\/+$/, "");
           const name = `login:${origin}`;
-          // 1) Vault auto-use (VLT-4): kredensial tersimpan → pakai diam-diam.
+ // 1) Vault auto-use : kredensial tersimpan → pakai diam-diam.
           //    Nilai tetap di proses ini (resolveForUse → registerActiveSecret).
           try {
             const used = getVault().resolveForUse(name, { personaId: actorOf(ctx), projectId: ctx.projectId });

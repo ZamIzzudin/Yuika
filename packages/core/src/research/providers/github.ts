@@ -1,4 +1,4 @@
-// Batch 7 (RS-1a), GitHub repo search (API resmi, unauth 10 req/menit, cukup utk riset).
+// (RS-1a), GitHub repo search (API resmi, unauth 10 req/menit, cukup utk riset).
 import type { SearchProvider, SearchResult } from "../types.js";
 import { httpJson } from "../util.js";
 

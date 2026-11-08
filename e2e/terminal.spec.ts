@@ -1,4 +1,4 @@
-// Batch 2 · Agent Developer, GERBANG e2e (P1-MCP-4 egress + P2-STU-2 terminal).
+// · Agent Developer, GERBANG e2e ( egress + terminal).
 // Bukti end-to-end user-facing:
 //  T1 tab Terminal hidup (sesi via UI, user bisa mengetik → output muncul)
 //  T2 agent menjalankan CLI (tool `terminal`, aman node -v) → output muncul
@@ -30,11 +30,11 @@ test("T1-T3, terminal shared user & agent + approval perintah berisiko", async (
 
   await page.goto("/");
 
-  // ── project "Terminal Batch" + tab Terminal (Batch 14a++: terminal penuh) ──
+ // ── project "Terminal Batch" + tab Terminal (++: terminal penuh) ──
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByPlaceholder("Project Name").fill("Terminal Batch");
   await page.getByRole("button", { name: "Create", exact: true }).click();
-  // Batch 16: create → auto-open TeamSetup; tab Terminal HIDDEN sampai
+ // create → auto-open TeamSetup; tab Terminal HIDDEN sampai
   // Hiro/Neo di-assign (hemat resource docker) → assign Hiro lalu mulai sesi
   // dengannya (tab bar muncul setelah sesi pertama ada).
   await page.getByRole("button", { name: "Hiro Yui", exact: true }).click();

@@ -1,12 +1,11 @@
-// D51: GET /api/meta — versi build studio + indikator update (self-host).
-// - version dibaca dari package.json root (satu sumber kebenaran, di-release
-//   via git tag v*).
-// - latest diambil dari GitHub Releases (API publik, tanpa auth, cache 1 jam,
-//   dijalankan SERVER-side sehingga bebas CORS & tak membocorkan IP user ke
-//   pihak ketiga selain IP VPS). Kegagalan jaringan BUKAN error: latest=null,
-//   UI cukup menampilkan versi lokal.
-// Route ini DIKECUALIKAN dari gerbang auth (informasi versi bersifat publik,
-// bergali sebelum login untuk debugging upgrade).
+// GET /api/meta: the studio build version plus a self-host update indicator.
+// - version comes from the root package.json (single source of truth,
+//   released as v* git tags).
+// - latest comes from GitHub Releases (public API, no auth, cached 1h,
+//   fetched SERVER-side: CORS-free and no user IP leaks; on network
+//   failure latest=null and the UI just shows the local version).
+// This route is exempt from the auth gate (version info is public and
+// useful before login when debugging upgrades).
 import fs from "node:fs";
 import type { FastifyInstance } from "fastify";
 

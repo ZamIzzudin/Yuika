@@ -1,9 +1,9 @@
-// @yuika/core, P1-MCP-4: egress allowlist proxy.
-// Sandbox container default TANPA jaringan (--network none). Bila sebuah
-// eksekusi butuh akses jaringan terbatas (mis. `npm install` → registry),
-// container dijalankan dgn network + env HTTP(S)_PROXY diarahkan ke proxy
-// ini di host. Proxy hanya meneruskan CONNECT/absolute-request ke host yang
-// ada di allowlist (port 80/443), selain itu 403. Jadi egress policy =
+// @yuika/core, egress allowlist proxy.
+// Sandbox containers have NO network by default (--network none). When an
+// execution needs limited network access (e.g. `npm install` -> registry),
+// the container runs with network and HTTP(S)_PROXY pointed at this proxy
+// on the host. It only forwards CONNECT/absolute-request to allowlisted
+// hosts (port 80/443); everything else is 403.
 // SATU titik kebenatan di sisi host, bukan iptables per container.
 //
 // Allowlist per proyek (urutan pencarian):

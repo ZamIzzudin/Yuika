@@ -1,4 +1,4 @@
-// P0-DEL-1: delegation job persist, baris job di DB (status lintas restart),
+// delegation job persist, baris job di DB (status lintas restart),
 // audit done/error, dan boot-heal menutup job 'running' jadi 'interrupted'.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -58,7 +58,7 @@ function deps(provider: OkProvider) {
   };
 }
 
-describe("delegation job persist (P0-DEL-1)", () => {
+describe("delegation job persist ()", () => {
   it("job row: running → done + summary saat anak sukses", async () => {
     const handle = runChildPersona(deps(new OkProvider()), { sessionId: PARENT, turnId: "t1" }, "yui-scribe", "tulis ringkasan", null, () => {});
     await handle.summary;

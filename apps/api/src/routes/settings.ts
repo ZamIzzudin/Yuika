@@ -21,7 +21,7 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
 
   app.put("/api/settings/budget", async (req) => getRt().updateBudget(UpdateBudgetRequest.parse(req.body)));
 
-  /** GET/PUT /api/settings/models, route model per persona (P1-MDL-1). */
+ /** GET/PUT /api/settings/models, route model per persona . */
   app.get("/api/settings/models", async () => getRt().getModelRoutes());
 
   app.put("/api/settings/models", async (req, reply) => {
@@ -34,7 +34,7 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
     }
   });
 
-  /** GET/PUT /api/settings/models/prices, price book (P1-MDL-3). */
+ /** GET/PUT /api/settings/models/prices, price book . */
   app.get("/api/settings/models/prices", async () => getRt().getModelPrices());
 
   app.put("/api/settings/models/prices", async (req, reply) => {
@@ -59,7 +59,7 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
     }
   });
 
-  /** GET → hasil smoke terakhir (P1-MDL-2). POST → jalankan smoke semua model
+ /** GET → hasil smoke terakhir . POST → jalankan smoke semua model
    *  aktif; gagal → router fallback otomatis. */
   app.get("/api/settings/provider/smoke", async () => getRt().getModelSmoke());
 
@@ -68,7 +68,7 @@ export function registerSettingsRoutes(app: FastifyInstance, getRt: () => YuiRun
     return { running: false, results };
   });
 
-  /** P0-DATA-2: jalankan housekeeping retention sekarang (manual/diagnosa,
+ /** jalankan housekeeping retention sekarang (manual/diagnosa,
    *  otomatis: boot + interval harian; retensi YUI_EVENTS_RETENTION_DAYS). */
   app.post("/api/settings/housekeeping", async () => getRt().housekeepEvents());
 }

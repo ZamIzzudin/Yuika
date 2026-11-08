@@ -1,4 +1,4 @@
-// @yuika/api, vault REST (Batch 12 / P2-VLT-1..2). METADATA-ONLY: nilai
+// @yuika/api, vault REST ( / ..2). METADATA-ONLY: nilai
 // masuk SATU kali via POST fill (dari kartu protected web), tidak pernah
 // dikembalikan / di-log / di-event.
 import type { FastifyInstance } from "fastify";

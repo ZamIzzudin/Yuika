@@ -1,4 +1,4 @@
-// P0-INF-1: REST contract test apps/api, buildApp dengan runtime PALSU
+// REST contract test apps/api, buildApp dengan runtime PALSU
 // (cast) → fastify.inject. Menguji kontrak HTTP (path/status/body), BUKAN
 // logika runtime (sudut itu milik suite core).
 import { describe, expect, it } from "vitest";
@@ -72,7 +72,7 @@ const fake = {
 const app = buildApp(fake);
 
 describe("apps/api REST contract", () => {
-  it("GET /api/projects/:id/activity, 200 shape {activity:[…]} (Batch 14a++ Logs)", async () => {
+  it("GET /api/projects/:id/activity returns {activity:[…]}", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/activity?limit=50" });
     expect(r.statusCode).toBe(200);
     const d = r.json() as { activity: { personaId: string; kind: string; label: string }[] };
@@ -85,7 +85,7 @@ describe("apps/api REST contract", () => {
     expect(r.statusCode).toBe(404);
     expect(r.json()).toMatchObject({ error: "project not found" });
   });
-  it("GET /api/projects/:id/dashboard, 200 shape {dashboard} (P2-PM-4/5); tak dikenal → 404", async () => {
+  it("GET /api/projects/:id/dashboard returns {dashboard}; unknown id 404s", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/dashboard" });
     expect(r.statusCode).toBe(200);
     const d = r.json() as { dashboard: { tasks: { total: number }; phases: unknown[] } };
@@ -148,7 +148,7 @@ describe("apps/api REST contract", () => {
     expect(ok.json().path).toBe("uploads/doc.pdf");
   });
 
-  it("P2-PM-3: GET /tasks/validate, lint DAG + coverage (kontrak bentuk)", async () => {
+  it("GET /tasks/validate lints the DAG + coverage (contract shape)", async () => {
     const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/tasks/validate" });
     expect(r.statusCode).toBe(200);
     const body = r.json();
@@ -158,7 +158,7 @@ describe("apps/api REST contract", () => {
     expect(body.stats.phaseCoverage.length).toBe(7);
   });
 
-  it("P2-STU-4: GET /browser/fetch, proxy read-only + 403 host_denied; GET /browser/visits", async () => {
+  it("GET /browser/fetch read-only proxy + 403 host_denied; GET /browser/visits", async () => {
     const ok = await app.inject({ method: "GET", url: "/api/projects/p_ok/browser/fetch?url=https%3A%2F%2Fexample.com" });
     expect(ok.statusCode).toBe(200);
     expect(ok.json()).toMatchObject({ title: "Doc", html: "<h1>Hi</h1>" });
@@ -180,7 +180,7 @@ describe("apps/api REST contract", () => {
 
   it("CORS di SSE stream: hijack() melewati pipeline fastify, ACAO harus tetap ada (fix E2E 2026-11)", async () => {
     // hijack + raw.writeHead menimpa header; tanpa refleksi manual browser
-    // memblokir EventSource (kejadian E2E P0-QA-1: web:3990 → api:3291).
+ // memblokir EventSource (kejadian E2E : web:3990 → api:3291).
     const r = await app.inject({ method: "GET", url: "/api/sessions/s1/stream?snapshot=1", headers: { origin: "http://localhost:3990" } });
     expect(r.statusCode).toBe(200);
     expect(r.headers["access-control-allow-origin"]).toBe("http://localhost:3990");

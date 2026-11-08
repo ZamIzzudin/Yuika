@@ -1,4 +1,4 @@
-// @yuika/core, assign gating (P1-DUN-5, PLAN §13.8): roster menampilkan skill
+// @yuika/core, assign gating : roster menampilkan skill
 // readiness persona per fase, persona tanpa skill fase ditandai "belum siap"
 // (hint: latih di Dungeon). Pure function, gampang dites, runtime tinggal
 // memanggil dengan skills inventory.

@@ -1,4 +1,4 @@
-// P0-QA-1, mock provider OpenAI-compatible untuk E2E smoke.
+// mock provider OpenAI-compatible untuk E2E smoke.
 // Deterministik & tanpa biaya: spec mengantri "script" jawaban via POST /__script,
 // server menjawab POST /v1/chat/completions dengan SSE stream standar OpenAI.
 // Panggilan tanpa script (mis. learn nudge) dijawab fallback "ok".

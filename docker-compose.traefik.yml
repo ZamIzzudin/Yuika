@@ -5,10 +5,16 @@
 #   1. Dokploy UI (no SSH): Compose project -> connect this repo -> compose
 #      path docker-compose.traefik.yml -> set env in project settings ->
 #      deploy. Updates via Redeploy.
-#   2. Plain CLI on any server with a Traefik edge already on 80/443. No Caddy here: the web and api containers join
-# Dokploy's `dokploy-network` and carry Traefik labels, so Dokploy's edge
-# picks them up automatically (docker provider, exposedByDefault=false) and
-# issues the certificate via its `letsencrypt` resolver.
+#   2. Plain CLI on any server where a Traefik edge already owns 80/443.
+#
+# No Caddy here: the web and api containers join Dokploy's `dokploy-network`
+# and carry Traefik labels, so Dokploy's edge picks them up automatically
+# (docker provider, exposedByDefault=false) and issues the certificate via
+# its `letsencrypt` resolver.
+#
+# Point the studio at the central portal (same variables as .env):
+#   YUI_PORTAL_URL  e.g. https://yuika.notu.dev (central portal)
+#   YUI_RELAY_URL   e.g. wss://yuika-relay.notu.dev  (linked devices)
 #
 #   https://STUDIO_DOMAIN           → web  (router studio-web,  priority 10)
 #   https://STUDIO_DOMAIN/api/*     → api  (router studio-api,  priority 100)

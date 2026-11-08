@@ -1,4 +1,4 @@
-// P1-DUN-4: latihan buatan user, create (mission.yaml + folder), duplikat
+// latihan buatan user, create (mission.yaml + folder), duplikat
 // ditolak, append resource bahan ajar (dedupe), delete, sanitasi nama bahan.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -22,7 +22,7 @@ const INPUT = {
   skillDescription: "Membandingkan fitur produk kompetitor secara sistematis.",
 };
 
-describe("createMission (P1-DUN-4)", () => {
+describe("createMission ()", () => {
   it("menulis mission.yaml (origin user) + folder materials/reports/code → kebaca loadMissions", () => {
     const m = createMission(dir, INPUT);
     expect(m.id).toBe("product-compare"); // slug dari skillName

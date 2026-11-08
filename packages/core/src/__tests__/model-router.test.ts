@@ -20,7 +20,7 @@ function setup(py = "") {
   overridesFile = path.join(dir, "model-overrides.json");
 }
 
-describe("model router (P1-MDL-1 + P0-CORE-2)", () => {
+describe("model router ( + )", () => {
   it("tanpa override/persona.yaml → default + fallback env", () => {
     setup();
     const r = buildModelRouter({ defaultModel: "glm/glm-5.1", defaultFallback: "glm/glm-5", personasDir: personas, overridesFile });

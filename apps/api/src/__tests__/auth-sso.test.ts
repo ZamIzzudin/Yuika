@@ -1,7 +1,7 @@
-// CP-3 SSO via portal, kontrak & alur lengkap apps/api:
-// start (PKCE S256 + state-attempt) → complete (tukar code di double portal
-// /api/oauth/token) → sesi Yuika. Double portal minimal inline (semantik
-// sama dengan e2e/portal-double.mts + portal nyata CP-3).
+// Portal SSO, full apps/api contract and flow:
+// start (PKCE S256 + state) -> complete (code exchange against an inline
+// portal double /api/oauth/token) -> a Yuika session. The inline double
+// matches e2e/portal-double.mts and the real portal semantics).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
@@ -72,7 +72,7 @@ beforeAll(async () => {
       });
       return;
     }
-    // CP-4 double: claim device (deviceId deterministik dari signPub, id stabil)
+    // Device claim double (deterministic deviceId from signPub, stable id)
     if (req.method === "POST" && req.url === "/api/devices/claim") {
       let body = "";
       req.on("data", (c) => (body += c));
@@ -141,7 +141,7 @@ async function start(): Promise<{ authorizeUrl: string; state: string; challenge
   return { authorizeUrl: body.authorizeUrl, state, challenge, verifier };
 }
 
-describe("CP-3 SSO via portal", () => {
+describe("portal SSO", () => {
   it("start: URL authorize lengkap (client/redirect/state/S256)", async () => {
     const r = await app.inject({ method: "POST", url: "/api/auth/portal/start", payload: { redirectUri: REDIRECT } });
     expect(r.statusCode).toBe(200);
@@ -167,7 +167,7 @@ describe("CP-3 SSO via portal", () => {
     expect(body.user.email).toBe("sso@yuika.test");
     const me = await app.inject({ method: "GET", url: "/api/auth/me", headers: { authorization: `Bearer ${body.token}` } });
     expect((me.json() as { user: { email: string } }).user.email).toBe("sso@yuika.test");
-    // CP-4: auto-link, browser diklaim sebagai device web; kunci STABIL
+    // Auto-link: the browser is claimed as a web device; stable key
     expect(claims).toHaveLength(1);
     expect(claims[0]!.kind).toBe("web");
     const web = getWebDevice();

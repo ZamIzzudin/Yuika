@@ -1,4 +1,4 @@
-// @yuika/api, P2-STU-2: routes terminal, sesi shell shared user & agent.
+// @yuika/api, : routes terminal, sesi shell shared user & agent.
 //   POST   /api/terminal/sessions        {projectId} → mulai/ambil sesi
 //   GET    /api/terminal/sessions        → daftar
 //   GET    /api/terminal/sessions/:id/stream → SSE (replay ring + live)

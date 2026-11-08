@@ -1,4 +1,4 @@
-// @yuika/api, usage metering (P1-CRED-1) + attribution matrix (CRED-4).
+// @yuika/api, usage metering + attribution matrix (CRED-4).
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { UsageFilter } from "@yuika/contracts";

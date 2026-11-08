@@ -1,4 +1,4 @@
-// @yuika/core, uv/uvx support (P1-MCP-1 lanjutan): server MCP Python (git, time,
+// @yuika/core, uv/uvx support ( lanjutan): server MCP Python (git, time,
 // sentry) berjalan via uvx. Modul ini: (1) deteksi uvx di PATH, (2) fallback
 // path absolut (installer uv masuk %USERPROFILE%\.local\bin, DI LUAR PATH
 // proses dev server), (3) one-click install installer resmi astral.sh.

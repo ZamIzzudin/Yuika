@@ -1,4 +1,4 @@
-// P1-MDL-2: smoke test model, model harus MEMANGGIL tool (2 langkah tool-call),
+// smoke test model, model harus MEMANGGIL tool (2 langkah tool-call),
 // bukan sekadar balas teks; gagal → router markUnhealthy → fallback otomatis.
 import { describe, expect, it } from "vitest";
 import type { ProviderAdapter, ProviderChunk, ChatRequest, ProviderDone } from "../provider/adapter.js";
@@ -24,7 +24,7 @@ const okDone: ProviderDone = {
 };
 const textDone: ProviderDone = { type: "done", finishReason: "stop", text: "Baik, saya cek kesehatan.", toolCalls: [] };
 
-describe("smokeModel (P1-MDL-2)", () => {
+describe("smokeModel ()", () => {
   it("lulus: model memanggil ping_check; schema dikirim sudah ternormalisasi (pelajaran GLM)", async () => {
     let seenSchema: unknown;
     const p = fakeProvider({

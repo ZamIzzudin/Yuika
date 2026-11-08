@@ -1,4 +1,4 @@
-// P1-INF-2: adapter Anthropic & Gemini, konversi format internal + streaming
+// adapter Anthropic & Gemini, konversi format internal + streaming
 // SSE via fetch FAKE (tanpa network). Fokus: mapping pesan/tool, akumulasi
 // tool-call stream, usage, finishReason.
 import { describe, expect, it, afterEach } from "vitest";

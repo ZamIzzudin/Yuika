@@ -1,11 +1,11 @@
-// @yuika/core, P2-STU-2: TerminalManager.
+// @yuika/core, : TerminalManager.
 // Sesi terminal PERSISTEN yang SHARED antara user (tab Terminal via SSE) dan
 // agent (tool `terminal`). Satu sesi per workspace, keduanya menulis ke
 // stdin proses yang sama, output mengalir ke semua pendengar.
 //
 // Backend sesi (mode, urutan):
 //   docker , `startSandboxSession("sh")`: shell DI DALAM container sandbox
-//             (egress allowlist utk npm, generalisasi run_command, P1-MCP-4).
+// (egress allowlist utk npm, generalisasi run_command, ).
 //   local  , fallback: shell host via pipes (cmd.exe / bin/sh) TANPA isolasi
 //             (catatan eksplisit; PTY asli menyusul, v1 pipe murni).
 // Env:
@@ -68,7 +68,7 @@ let cmdSeq = 0;
 
 /** Catat eksekusi perintah (dipanggil tool run_command SETELAH eksekusi;
  *  stdout/stderr sudah di-redact oleh pemanggil).
- *  Batch 13b: persist ring ke JSONL per workspace (dir data terminal),
+ * persist ring ke JSONL per workspace (dir data terminal),
  *  restart API tidak lagi mengosongkan view "Commands". */
 const commandLogFiles = new Map<string, string>();
 
@@ -174,7 +174,7 @@ function fireExit(s: Session, code: number | null): void {
 /** Mulai (atau ambil) sesi terminal utk sebuah workspace, satu sesi aktif per
  * workspace (user & agent selalu bertemu di sesi yang sama). */
 export interface EnsureSessionOptions {
-  /** Batch 13 (WKS-3): container workshop hidup → shell di dalamnya. */
+ /** (WKS-3): container workshop hidup → shell di dalamnya. */
   workshopContainer?: string;
 }
 
@@ -220,7 +220,7 @@ export async function ensureSession(
 
   if (useDocker) {
     // Egress npm registry supaya `npm install` di terminal bisa jalan
-    // (allowlist per-project sama dengan run_command, P1-MCP-4).
+ // (allowlist per-project sama dengan run_command, ).
     const egress = readEgressAllow(resolved);
     const ses = await sandbox.startSandboxSession("sh", [], resolved, { egress });
     s.docker = ses;
@@ -293,7 +293,7 @@ export async function closeAll(): Promise<void> {
   for (const id of [...sessions.keys()]) await killSession(id);
 }
 
-/** D31 (fix user "delete project → container tak ikut terhapus"): matikan
+/** (fix user "delete project → container tak ikut terhapus"): matikan
  * SEMUA sesi terminal yang workspace-nya berada di bawah `rootPath`.
  * Dipanggil runtime.deleteProject SEBELUM dir workspace di-rm, tanpa ini
  * container sandbox `yui-ses-*` (backend docker) tetap hidup di host setelah

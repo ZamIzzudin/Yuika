@@ -1,4 +1,4 @@
-// P0-DATA-3: approval persist, pending survive restart (→ expired + event),
+// approval persist, pending survive restart (→ expired + event),
 // "Setujui & ingat" bertahan lintas restart via approval_memory.
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -22,7 +22,7 @@ function newStore() {
   return new SessionStore(dbPath);
 }
 
-describe("approval persist (P0-DATA-3)", () => {
+describe("approval persist ()", () => {
   it("request → baris pending; resolve(approve, remember) → approved + memory", async () => {
     const store = newStore();
     const eng = new ApprovalEngine(emit, { sessionId: "s1", store });

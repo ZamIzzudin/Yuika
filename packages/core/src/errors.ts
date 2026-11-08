@@ -1,8 +1,8 @@
-// @yuika/core, error taxonomy konsisten (P0-INF-4): SEMUA error yang melintasi
+// @yuika/core, error taxonomy konsisten : SEMUA error yang melintasi
 // batas (provider → loop, tool → loop, internal) diklasifikasi ke SATU bentuk:
 //   kind  : kategori penanganan (provider | tool | mcp | budget | abort | internal)
 //   code  : string stabil untuk grep/alert (mis. PROVIDER_TIMEOUT, TOOL_EXEC)
-//   retryable : apakah aman mencoba ulang otomatis (dipakai route fallback P0-CORE-2)
+// retryable : apakah aman mencoba ulang otomatis (dipakai route fallback )
 //
 // `SessionErrorEvent` (contracts) membawa kind+code → UI/log/alert satu bahasa.
 // Enam kind dipilih minimal & eksklusif: cukup untuk memutuskan tindakan
@@ -87,7 +87,7 @@ export function classifyError(err: unknown, fallbackKind: ErrorKind = "internal"
   const errName = err instanceof Error ? err.name : "";
   const rawCode = e?.code;
 
-  // 1) Abort user (P0-CORE-1), BUKAN error; pemanggil wajib cek kind "abort".
+ // 1) Abort user , BUKAN error; pemanggil wajib cek kind "abort".
   if (
     (typeof rawCode === "string" && (rawCode === "ABORT_ERR" || rawCode === "ABORTED")) ||
     errName === "AbortError" ||

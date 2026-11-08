@@ -1,5 +1,5 @@
 "use client";
-// P1-PRT-4, /dev/remote: BUKTI E2E remote control via relay (browser kedua
+// /dev/remote: BUKTI E2E remote control via relay (browser kedua
 // sebagai device remote SEJATI: kunci dibuat di browser via WebCrypto,
 // envelope seal/open lokal; API host hanya mem-proxy CLAIM, tidak pernah
 // melihat private key remote maupun isi envelope).
@@ -538,7 +538,7 @@ export default function DevRemotePage() {
         <div>
           <h1 className="text-title font-semibold">Remote (dev)</h1>
           <p className="text-caption text-dim">
-            P1-PRT-4, second-device proof: keys live in this browser, relay is
+            , second-device proof: keys live in this browser, relay is
             blind.
           </p>
         </div>

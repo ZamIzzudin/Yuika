@@ -1,4 +1,4 @@
-// P1-PRJ-3 (TASKS.md): roster project, project.yaml deklaratif, ter-replay via file.
+// roster project, project.yaml deklaratif, ter-replay via file.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";

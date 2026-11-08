@@ -1,4 +1,4 @@
-// P0-MCP-2: tool MCP memakai JSON Schema ASLI dari server (t.inputSchema),
+// tool MCP memakai JSON Schema ASLI dari server (t.inputSchema),
 // bukan passthrough kosong. Validasi dispatch via ajv (compile-cache);
 // toolSchemas meneruskan schema asli ke provider.
 import { describe, expect, it, beforeEach } from "vitest";
@@ -30,7 +30,7 @@ beforeEach(() => {
   });
 });
 
-describe("registry: dua jalur schema (P0-MCP-2)", () => {
+describe("registry: dua jalur schema ()", () => {
   it("dispatch JSON Schema: arg valid lolos, arg tidak valid ditolak dengan issues", async () => {
     const ok = await registry.dispatch("mcp__demo__weather", { city: "Bandung", days: 3 }, ctx);
     expect(ok.isError).toBeFalsy();

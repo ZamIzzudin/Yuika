@@ -1,4 +1,4 @@
-// @yuika/core, Batch 14a (D25) ScreenManager: Chromium headless per
+// @yuika/core, ScreenManager: Chromium headless per
 // (project, persona) + screencast JPEG + input relay + lease user↔persona.
 //
 // Desain:
@@ -16,7 +16,7 @@
 //     (YUI_TAKEOVER_TIMEOUT_MS default 120s; 0 = tanpa deadline).
 //   - Idle auto-close (YUI_SCREEN_IDLE_MS default 15 menit; 0 = off):
 //     tanpa viewer + tanpa aktivitas → browser dimatikan.
-//   - Headless Edge/Chrome di host (Docker absen, catatan PLAN §6.5 kelas 0).
+// - Headless Edge/Chrome di host (Docker absen, catatan kelas 0).
 // Env: YUI_BROWSER_EXEC override executable.
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
@@ -366,7 +366,7 @@ export async function stopScreen(key: string, reason = "manual"): Promise<boolea
   s.status = "stopped";
   fireState(s);
   sessions.delete(key);
-  // VLT-4: password kartu login (active secret) dilepas bersama sesinya.
+ // password kartu login (active secret) dilepas bersama sesinya.
   for (const v of loginSecrets.get(key) ?? []) releaseActiveSecret(v);
   loginSecrets.delete(key);
   return true;
@@ -596,7 +596,7 @@ const SNAPSHOT_EXPR = `(() => {
   const nodes = [...document.querySelectorAll(sel)].filter(vis).slice(0, 120);
   const items = nodes.map((el, i) => {
     const r = el.getBoundingClientRect();
-    // VLT-4: input[type=password] DILARANG expose value/attr-value ke agent,
+ // input[type=password] DILARANG expose value/attr-value ke agent,
     // di-mask DI SUMBER (apapun jalur isinya: kartu login / vault / user ketik).
     const pw = el.tagName === "INPUT" && String(el.getAttribute("type") || "text").toLowerCase() === "password";
     const shown = pw ? "" : String(el.value ?? "");
@@ -714,7 +714,7 @@ export function listPendingTakeovers(key?: string): { requestId: string; key: st
     .map(({ requestId, key: k, personaId, reason, deadline }) => ({ requestId, key: k, personaId, reason, deadline }));
 }
 
-// ── VLT-4: fill_login pending + CDP fill, nilai TIDAK pernah masuk event ──
+// ── : fill_login pending + CDP fill, nilai TIDAK pernah masuk event ──
 
 export interface LoginFillResult {
   ok: boolean;
@@ -853,7 +853,7 @@ export async function resolveLogin(
     rec.resolve({ status: "failed", saved: false, fill });
     return true;
   }
-  // VLT-4 hardening: password jadi active secret (VLT-5) selama sesi hidup,
+ // hardening: password jadi active secret selama sesi hidup,
   // apa pun yang mencoba membacanya balik (snapshot/teks/log) di-scrub.
   const prev = loginSecrets.get(rec.key) ?? [];
   registerActiveSecret(creds.pass);

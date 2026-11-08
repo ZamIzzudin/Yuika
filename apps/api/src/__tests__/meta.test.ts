@@ -1,5 +1,5 @@
-// D51: /api/meta — versi + indikator update self-host.
-// Isolasi: YUI_AUTH_DB tmp (pola suite auth); fetch di-stub per kasus.
+// /api/meta: version + self-host update indicator.
+// Isolation: tmp YUI_AUTH_DB (auth suite pattern); fetch stubbed per case.
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";

@@ -2,7 +2,7 @@
 // SATU-SATUNYA sumber tipe lintas core & klien. Dilarang menulis tipe tangan di apps/web.
 import { z } from "zod";
 
-/** State animasi persona, map 1:1 ke input Rive state machine (PLAN §7.6, D8). */
+/** State animasi persona, map 1:1 ke input Rive state machine . */
 export const PersonaState = z.enum([
   "idle",
   "thinking",
@@ -95,7 +95,7 @@ export const DelegationDoneEvent = EventMeta.extend({
   summary: z.string(),
 });
 
-/** P0-DEL-2: arahan mid-flight user → anak (kartu delegasi di UI parent). */
+/** arahan mid-flight user → anak (kartu delegasi di UI parent). */
 export const DelegationSteeredEvent = EventMeta.extend({
   type: z.literal("delegation.steered"),
   turnId: z.string(),
@@ -103,7 +103,7 @@ export const DelegationSteeredEvent = EventMeta.extend({
   text: z.string(),
 });
 
-/** P1-DEL-3: anak di-PAUSE dari UI parent, loop anak berhenti memanggil
+/** anak di-PAUSE dari UI parent, loop anak berhenti memanggil
  *  provider di batas iterasi (progres tersimpan); parent turn ikut menunggu.
  *  Resume = delegation.resumed; cancel saat pause tetap jalan (graceful). */
 export const DelegationPausedEvent = EventMeta.extend({
@@ -139,7 +139,7 @@ export const ApprovalResolvedEvent = EventMeta.extend({
   tool: z.string().optional(),
 });
 
-/** P0-DATA-3: approval pending saat server restart, turn-nya ikut mati,
+/** approval pending saat server restart, turn-nya ikut mati,
  *  kartu approval di UI ditandai kedaluwarsa (bukan 404 diam-diam). */
 export const ApprovalExpiredEvent = EventMeta.extend({
   type: z.literal("approval.expired"),
@@ -147,7 +147,7 @@ export const ApprovalExpiredEvent = EventMeta.extend({
   tool: z.string(),
 });
 
-/** P0-INF-4: taksonomi error lintas core, sumber kebenaran wire. `kind` =
+/** taksonomi error lintas core, sumber kebenaran wire. `kind` =
  *  kategori penanganan (provider = selesai model/transport, tool = eksekusi
  *  tool, mcp = server eksternal, budget = iterasi habis, abort = stop user,
  *  internal = bug kita); `code` stabil untuk grep/alert. Keduanya opsional di
@@ -162,7 +162,7 @@ export const SessionErrorEvent = EventMeta.extend({
   code: z.string().max(64).optional(),
 });
 
-// ── P2-FLOW: workflow.* (aditif; PLAN §13.3) ─────────────────────────────
+// ── P2-FLOW: workflow.* (aditif; ) ─────────────────────────────
 // Emit di sesi LEAD (Conductor) run, board & replay gratis via stream sesi.
 export const WorkflowStartedEvent = EventMeta.extend({
   type: z.literal("workflow.started"),
@@ -225,7 +225,7 @@ export const WorkflowDoneEvent = EventMeta.extend({
   error: z.string().optional(),
 });
 
-/** P2-FLOW-6: steering mid-run, pause/resume, suntik instruksi, reassign step. */
+/** steering mid-run, pause/resume, suntik instruksi, reassign step. */
 export const WorkflowSteerEvent = EventMeta.extend({
   type: z.literal("workflow.steer"),
   runId: z.string(),
@@ -242,7 +242,7 @@ export const WorkflowResumedEvent = EventMeta.extend({
   runId: z.string(),
 });
 
-// ── Vault (Batch 12 / D27), nilai TIDAK PERNAH ada di event; hasValue saja. ─
+// ── Vault ( / ), nilai TIDAK PERNAH ada di event; hasValue saja. ─
 
 export const VaultRequestedEvent = EventMeta.extend({
   type: z.literal("vault.requested"),
@@ -281,7 +281,7 @@ export const StepReassignedEvent = EventMeta.extend({
   toPersona: z.string(),
 });
 
-/** P1-MEM-2: learn nudge menghasilkan catatan ( transparansi, tampil sebagai chip di chat). */
+/** learn nudge menghasilkan catatan ( transparansi, tampil sebagai chip di chat). */
 export const MemoryNotedEvent = EventMeta.extend({
   type: z.literal("memory.noted"),
   turnId: z.string(),
@@ -289,7 +289,7 @@ export const MemoryNotedEvent = EventMeta.extend({
   note: z.string().min(1),
 });
 
-/** P1-MEM-3: agent mengusulkan skill dari pengalaman → draf menunggu validasi user. */
+/** agent mengusulkan skill dari pengalaman → draf menunggu validasi user. */
 export const SkillProposedEvent = EventMeta.extend({
   type: z.literal("skill.proposed"),
   turnId: z.string(),
@@ -297,13 +297,13 @@ export const SkillProposedEvent = EventMeta.extend({
   description: z.string(),
 });
 
-/** P0-CORE-1: user membatalkan turn (tombol Stop), bukan error; progres tersimpan. */
+/** user membatalkan turn (tombol Stop), bukan error; progres tersimpan. */
 export const TurnCancelledEvent = EventMeta.extend({
   type: z.literal("turn.cancelled"),
   turnId: z.string(),
 });
 
-/** P0-CORE-4: konteks sesi dikompresi, history LAMA diringkas aux model jadi
+/** konteks sesi dikompresi, history LAMA diringkas aux model jadi
  *  checkpoint (append-only tetap dijaga: tabel messages TIDAK pernah diubah;
  *  ini murni lapisan VIEW saat menyusun prompt). tampil sebagai info di chat. */
 export const ContextCompressedEvent = EventMeta.extend({
@@ -325,7 +325,7 @@ export const ScreenStateEvent = EventMeta.extend({
   leaseOwner: z.string().nullable(),
 });
 
-/** Batch 14a (SCR-4): persona minta user ambil alih / serahkan kontrol,
+/** (SCR-4): persona minta user ambil alih / serahkan kontrol,
  *  kartu NON-BLOCKING (chat tetap hidup; deadline auto-expired). */
 export const TakeoverRequestedEvent = EventMeta.extend({
   type: z.literal("takeover.requested"),
@@ -344,8 +344,8 @@ export const TakeoverResolvedEvent = EventMeta.extend({
   status: z.enum(["granted", "denied", "expired"]),
 });
 
-// ── VLT-4 (blok C): fill_login, kartu permintaan kredensial login. ──────
-// INVARIAN (sama dgn vault Batch 12): nilai user/password TIDAK PERNAH ada
+// ── (blok C): fill_login, kartu permintaan kredensial login. ──────
+// INVARIAN (sama dgn vault ): nilai user/password TIDAK PERNAH ada
 // di event, hanya origin + deadline. Nilai masuk lewat REST fill saja.
 export const LoginRequestedEvent = EventMeta.extend({
   type: z.literal("login.requested"),
@@ -365,7 +365,7 @@ export const LoginResolvedEvent = EventMeta.extend({
   saved: z.boolean(),
 });
 
-// ── SCR-6 (Batch 14b): persona QA (Sherlock) menonton live screen persona lain
+// ── SCR-6 : persona QA (Sherlock) menonton live screen persona lain
 // dan mencatat hasil verifikasi, NON-BLOCKING (tak ada gate/kartu), murni
 // observability: muncul di activity feed (tab Logs) sebagai sinyal kualitas.
 export const QACheckEvent = EventMeta.extend({
@@ -379,7 +379,7 @@ export const QACheckEvent = EventMeta.extend({
   note: z.string().max(500).optional(),
 });
 
-// ── P2-WKS (Batch 13): workshop persisten, transisi lifecycle + audit cmd ──
+// ── P2-WKS : workshop persisten, transisi lifecycle + audit cmd ──
 export const WorkshopStateEvent = EventMeta.extend({
   type: z.literal("workshop.state"),
   projectId: z.string(),

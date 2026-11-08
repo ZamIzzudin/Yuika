@@ -1,9 +1,9 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
-// Panel MCP (P1-MCP-3 + P1-MCP-1): trust gate workspace + status koneksi live
-// + audit tail + KATALOG server (install → mcp.json, uninstall). Fail-closed:
-// install TIDAK menghubungkan, user harus Trust dulu (toggle di atas).
-// DS-1: ui/* + Tailwind + Phosphor (docs/DESIGN-SYSTEM.md).
+// MCP panel: workspace trust gate + live connection status + audit tail +
+// a curated server catalog (install -> mcp.json, uninstall). Fail-closed:
+// installing does NOT connect; the user must Trust it first (toggle above).
+// UI: ui/* components + Tailwind + Phosphor icons (docs/DESIGN-SYSTEM.md).
 import { useCallback, useEffect, useState } from "react";
 import type {
   McpAuditEntry,
@@ -81,8 +81,8 @@ export function McpPanel() {
 
   useEffect(() => {
     void refresh();
-    // P1-MCP-6: daftar tool server bisa berubah kapan pun (notifikasi
-    // tools/list_changed di core), poll ringan agar panel selalu segar.
+    // A server's tool list can change at any time (tools/list_changed
+    // in core); a light poll keeps the panel fresh.
     const t = setInterval(() => void refresh(), 10_000);
     return () => clearInterval(t);
   }, [refresh]);
@@ -139,7 +139,7 @@ export function McpPanel() {
     }
   }
 
-  /** P0-MCP-1: coba hubungkan ulang server parked/reconnecting sekarang. */
+  /** Try to reconnect a parked/reconnecting server right now. */
   async function retry(name: string) {
     setBusy(name);
     try {
@@ -214,7 +214,7 @@ export function McpPanel() {
         c.description.toLowerCase().includes(q) ||
         c.category.includes(q),
     )
-    // D39: server yang sudah ter-install selalu di urutan paling awal.
+    // Installed servers always sort first.
     .sort((a, b) => Number(declared.has(b.id)) - Number(declared.has(a.id)));
 
   const rowBtn = "h-7 shrink-0 whitespace-nowrap px-2.5 text-caption";

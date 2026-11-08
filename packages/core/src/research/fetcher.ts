@@ -1,4 +1,4 @@
-// Batch 7 (RS-2), pipeline fetch halaman riset:
+// (RS-2), pipeline fetch halaman riset:
 //   SSRF/policy guard (browser/reader) → robots.txt → throttle domain →
 //   fetch (redirect tervalidasi) → cap ukuran → Readability→markdown (fallback plain).
 // Cache halaman 72 jam; budget page per sesi (cache hit tidak dihitung).

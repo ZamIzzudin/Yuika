@@ -1,9 +1,9 @@
-// @yuika/api, VLT-4 fill_login (blok C): jawaban kartu login dari user.
+// @yuika/api, fill_login (blok C): jawaban kartu login dari user.
 //   POST /api/login/:requestId/fill  {user, pass, save?, submit?} → isi form
 //   POST /api/login/:requestId/skip                              → tolak
 //   GET  /api/login/pending                                      → replay kartu
 //
-// INVARIAN Batch 12/14: nilai user/pass HANYA hidup di request ini, masuk
+// INVARIAN /14: nilai user/pass HANYA hidup di request ini, masuk
 // CDP fill (+ optional vault store), TIDAK PERNAH ke event/log/model.
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";

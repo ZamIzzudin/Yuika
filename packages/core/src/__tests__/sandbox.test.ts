@@ -1,4 +1,4 @@
-// P0-SEC-1, sandbox container run_command:
+// sandbox container run_command:
 //  1. kontrak flag `docker run` (network none, cap, ro-rootfs, mount), tanpa spawn
 //  2. mode routing: docker fail-closed / auto fallback lokal + catatan / off
 //  3. timeout → docker kill (bukan cuma CLI)
@@ -31,7 +31,7 @@ afterEach(() => {
 const ctx = () => ({ sessionId: "s1", turnId: "t1", workspacePath: dir, emit: () => {} });
 const approve = () => ({ ...ctx(), requestApproval: vi.fn(async () => true) });
 
-describe("P0-SEC-1 sandboxArgv, kontrak flag docker run", () => {
+describe(" sandboxArgv, kontrak flag docker run", () => {
   const argv = sandboxArgv("n1", "node", ["x.js"], "/tmp/ws");
 
   it("network default-deny", () => {
@@ -76,7 +76,7 @@ describe("P0-SEC-1 sandboxArgv, kontrak flag docker run", () => {
   });
 });
 
-describe("P0-SEC-1 mode routing", () => {
+describe(" mode routing", () => {
   it("YUI_SANDBOX=off → eksekusi lokal + catatan eksplisit non-isolasi", async () => {
     process.env.YUI_SANDBOX = "off";
     const res = await registry.dispatch("run_command", { command: "node", args: ["-v"] }, approve());

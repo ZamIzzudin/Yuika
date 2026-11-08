@@ -1,4 +1,4 @@
-// DS-1, komponen global: Button.
+// komponen global: Button.
 // SATU sumber tombol untuk seluruh app. Jangan tulis <button> mentah di fitur
 // baru (docs/DESIGN-SYSTEM.md §Button). Variant:
 //   primary   aksi utama satu per layar (Kirim, Simpan, Jalankan)

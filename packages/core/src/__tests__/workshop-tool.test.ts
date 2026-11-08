@@ -1,4 +1,4 @@
-// P2-WKS-4, tool run_in_workshop: absent → error + hint (workshop dibuka
+// tool run_in_workshop: absent → error + hint (workshop dibuka
 // user), running → exec by persona + output ter-redact.
 import { beforeEach, describe, expect, it } from "vitest";
 import { resetRegistryForTests, registry } from "../registry.js";
@@ -45,7 +45,7 @@ function wireManager(state0: "absent" | "running" | "asleep") {
   registerWorkshopTool({ manager: () => m });
 }
 
-describe("run_in_workshop (P2-WKS-4)", () => {
+describe("run_in_workshop ()", () => {
   it("workshop absent → KARTU APPROVAL pembukaan (13d); disetujui → start + exec", async () => {
     wireManager("absent");
     const r = await registry.dispatch("run_in_workshop", { cmd: "npm", args: ["ls"] }, ctx());

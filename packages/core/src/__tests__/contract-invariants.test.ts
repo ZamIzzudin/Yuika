@@ -1,4 +1,4 @@
-// P0-CORE-5: CONTRACT INVARIANT TESTS, dua jaminan fondasi yang TIDAK BOLEH
+// CONTRACT INVARIANT TESTS, dua jaminan fondasi yang TIDAK BOLEH
 // pernah regresi, dijaga sebagai test eksplisit (bukan asumsi):
 //   (a) HISTORY APPEND-ONLY, messages hanya INSERT: seq monotonic, konten
 //       pesan lama tidak pernah berubah/dihapus walau kompresi aktif.

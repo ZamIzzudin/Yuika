@@ -1,11 +1,11 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
-// Config → Skills (P1-MEM-3, redesign D36): lifecycle draft → tested → ready.
-// Draf: agent usulkan via tool skill_propose; user edit → Accept (aktif,
-// terlihat agent via skills_list) atau Reject (hapus permanen).
-// Skill tested bisa dijalankan ke EVAL BUTA (P1-DUN-3): lulus → ready.
-// Semua copy UI ENGLISH (aturan proyek). D36: rata kartu surface p-4 ala
-// page Config lain; bahasa campur & list border-left lama dibuang total.
+// Config -> Skills: the draft -> tested -> ready lifecycle.
+// Drafts: the agent proposes via the skill_propose tool; the user edits,
+// then Accepts (live, visible to the agent via skills_list) or Rejects.
+// Tested skills can run a blind eval; passing marks them ready.
+// UI copy is English (project rule). Cards share the surface p-4 style
+// of other Config pages; the old mixed-language lists are gone.
 import { useCallback, useEffect, useState } from "react";
 import {
   Check,
@@ -95,7 +95,7 @@ export function SkillsTab() {
     return () => clearInterval(t);
   }, [refresh]);
 
-  /** P1-DUN-3: eval buta skill tested, lulus → ready (polling 5 dtk mengambil hasil). */
+ /** eval buta skill tested, lulus → ready (polling 5 dtk mengambil hasil). */
   async function evalSkill(name: string) {
     try {
       const r = await authFetch(apiUrl("/api/skills/eval"), {
@@ -423,7 +423,7 @@ export function SkillsTab() {
                         variant="secondary"
                         onClick={() => void evalSkill(s.name)}
                         disabled={busy}
-                        title="P1-DUN-3: a judge persona runs the skill blind; pass → ready"
+                        title=": a judge persona runs the skill blind; pass → ready"
                       >
                         Run blind eval
                       </Button>

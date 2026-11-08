@@ -1,4 +1,4 @@
-// @yuika/core, OpenAI-compatible streaming adapter (D12)
+// @yuika/core, OpenAI-compatible streaming adapter
 import OpenAI from "openai";
 import { env } from "../env.js";
 import type {
@@ -59,7 +59,7 @@ export class OpenAICompatProvider implements ProviderAdapter {
     this.client = new OpenAI({
       baseURL: cfg.baseUrl,
       apiKey: cfg.apiKey,
-      // P0-CORE-2 (parsial): panggilan provider bisa menggantung menit-lamanya
+ // (parsial): panggilan provider bisa menggantung menit-lamanya
       // (di test: 139 dtk dan 35 dtk), timeout per request + retry transien.
       timeout: Number(process.env.YUI_PROVIDER_TIMEOUT_MS ?? env.providerTimeoutMs),
       maxRetries: 2,
@@ -74,7 +74,7 @@ export class OpenAICompatProvider implements ProviderAdapter {
         tools: req.tools.length ? toApiTools(req.tools) : undefined,
         stream: true,
       },
-      // P0-CORE-1: abort HTTP in-flight saat user menekan Stop (tanpa menunggu timeout).
+ // abort HTTP in-flight saat user menekan Stop (tanpa menunggu timeout).
       { signal: req.signal },
     );
 

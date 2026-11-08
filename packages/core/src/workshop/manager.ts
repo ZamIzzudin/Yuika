@@ -1,4 +1,4 @@
-// P2-WKS-1/2 (Batch 13), Workshop persisten per project (D24).
+// Workshop persisten per project .
 // Container yang MENETAP: volume /home/yui persist, tidur (docker stop) /
 // bangun (docker start) cepat, egress allowlist via proxy host (reuse
 // tools/egress.ts), cap resource + least-privilege (pola sandboxArgv).

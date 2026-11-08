@@ -2,7 +2,7 @@
 // Modal model per persona, DIPINDAH dari SettingsModal (permintaan user):
 // dibuka lewat tombol gear di card identitas page Persona. Berisi form model
 // persona aktif (primary + fallback, kosong = ikut default) + tombol
-// "Check connection" (smoke test P1-MDL-2: tool-call 2 langkah per model aktif).
+// "Check connection" (smoke test : tool-call 2 langkah per model aktif).
 // Data: GET/PUT /api/settings/models · POST/GET /api/settings/provider/smoke.
 import { useCallback, useEffect, useState } from "react";
 import type { ModelRoutes } from "@yuika/contracts";

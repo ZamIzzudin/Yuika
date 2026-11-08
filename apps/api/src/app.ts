@@ -1,4 +1,4 @@
-// @yuika/api, Fastify app factory (P0-INF-1): semua REST/SSE yang dulu Next
+// @yuika/api, Fastify app factory : semua REST/SSE yang dulu Next
 // route handlers di apps/web/src/app/api/**. Path DIPERTAHANKAN persis
 // (prefix /api/…) sehingga frontend hanya ganti base URL (lib/api.ts).
 // buildApp(rt?), runtime bisa di-inject (test); default: singleton proses api.
@@ -28,17 +28,16 @@ import { registerTerminalRoutes } from "./routes/terminal.js";
 import { registerScreenRoutes } from "./routes/screen.js";
 import { getRuntime } from "./runtime.js";
 import { registerAuthRoutes, bearerToken } from "./routes/auth.js";
-import { registerAuthSsoRoutes } from "./routes/auth-sso.js"; // CP-3 SSO portal
-import { registerMetaRoutes } from "./routes/meta.js"; // D51: versi + update check
+import { registerAuthSsoRoutes } from "./routes/auth-sso.js"; // portal SSO
+import { registerMetaRoutes } from "./routes/meta.js"; // version + update check
 import { authUserCount, validateToken } from "./auth/store.js";
 
 export function buildApp(rt?: YuiRuntime): FastifyInstance {
   const app = Fastify({ logger: false, bodyLimit: 12 * 1024 * 1024 });
-  // D50: default tetap reflect-origin (web:3000 ↔ api:3211 di mesin lokal).
-  // Deploy publik split-origin boleh mempersempit via YUI_CORS_ORIGIN
-  // (daftar origin dipisah koma, mis. https://studio.example.com). Saat web
-  // dan api berada di belakang satu reverse proxy (same-origin), CORS tidak
-  // dievaluasi browser sama sekali.
+  // Default reflects the request origin (dev: web :3000 -> api :3211).
+  // Split-origin deployments can pin allowed origins with YUI_CORS_ORIGIN
+  // (comma separated, e.g. https://studio.example.com). Behind one reverse
+  // proxy (same-origin) the browser never evaluates CORS at all.
   const corsOrigin: string[] | true = process.env.YUI_CORS_ORIGIN
     ? process.env.YUI_CORS_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean)
     : true;
@@ -62,13 +61,13 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
 
   const getRt = (): YuiRuntime => rt ?? getRuntime();
 
-  // P1-INF-1: gerbang tenant. Selama belum ada user terdaftar → mode lokal
+ // gerbang tenant. Selama belum ada user terdaftar → mode lokal
   // (API terbuka, backward-compatible self-hosted). Setelah user pertama:
   // semua route non-/api/auth/* wajib Bearer token (header, atau ?auth_token=
   // untuk EventSource SSE yang tak bisa set header).
-  // D50: YUI_AUTH_REQUIRED=1 (default compose prod) menutup mode terbuka
-  // sejak boot: instance publik tidak pernah "open window" menunggu user
-  // pertama; sign-in portal tetap jalan (route /api/auth/* dikecualikan).
+  // YUI_AUTH_REQUIRED=1 (the prod compose default) closes open mode from
+  // the first boot: a public instance never has an open window waiting for
+  // the first user; portal sign-in still works (/api/auth/* is exempt).
   app.addHook("preHandler", async (req, reply) => {
     const url = req.raw.url ?? "";
     if (url.startsWith("/api/auth") || url.startsWith("/api/meta")) return;
@@ -80,12 +79,12 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   });
 
   registerAuthRoutes(app);
-  registerAuthSsoRoutes(app); // CP-3: sign-in via portal (start+complete)
-  registerMetaRoutes(app); // D51: /api/meta (versi + indikator update)
+  registerAuthSsoRoutes(app); // portal sign-in (start + complete)
+  registerMetaRoutes(app); // /api/meta (version + update indicator)
   registerSessionRoutes(app, getRt);
   registerDelegationRoutes(app, getRt);
   registerApprovalRoutes(app, getRt);
-  registerVaultRoutes(app, getRt); // Batch 12 (P2-VLT): metadata-only + fill
+  registerVaultRoutes(app, getRt); // metadata-only + fill
   registerProjectRoutes(app, getRt);
   registerDungeonRoutes(app, getRt);
   registerMcpRoutes(app, getRt);
@@ -94,13 +93,13 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   registerSettingsRoutes(app, getRt);
   registerSkillRoutes(app, getRt);
   registerUsageRoutes(app, getRt);
-  registerTerminalRoutes(app, getRt); // P2-STU-2: tab Terminal
-  registerScreenRoutes(app, getRt); // Batch 14a (P2-SCR): shared live screen + lease
-  registerActivityRoutes(app, getRt); // Batch 14a++: project-wide activity feed (tab Logs)
-  registerLoginRoutes(app, getRt); // VLT-4: fill_login card resolve
+  registerTerminalRoutes(app, getRt); // : tab Terminal
+  registerScreenRoutes(app, getRt); //  (P2-SCR): shared live screen + lease
+  registerActivityRoutes(app, getRt); // ++: project-wide activity feed (tab Logs)
+  registerLoginRoutes(app, getRt); // : fill_login card resolve
   registerPortalRoutes(app, getRt);
   registerWorkflowRoutes(app, getRt); // P2-FLOW: runs + gate + template
-  registerWorkshopRoutes(app, getRt); // Batch 13 (P2-WKS): workshop persisten
-  registerBrowserRoutes(app, getRt); // P2-STU-4: tab Browser read-only
+  registerWorkshopRoutes(app, getRt); //  (P2-WKS): workshop persisten
+  registerBrowserRoutes(app, getRt); // : tab Browser read-only
   return app;
 }

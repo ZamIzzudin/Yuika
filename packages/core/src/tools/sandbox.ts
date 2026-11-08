@@ -1,4 +1,4 @@
-// @yuika/core, P0-SEC-1: sandbox container untuk run_command.
+// @yuika/core, : sandbox container untuk run_command.
 // Eksekusi `node` berjalan di container Docker SEKALI-PAKAI dengan:
 //   - network default-deny (`--network none`, egress diblokir total)
 //   - resource cap (memory / cpus / pids-limit)
@@ -24,15 +24,15 @@ export interface SandboxOptions {
   tmpfsSize: string;
   timeoutMs: number;
   killGraceMs: number;
-  /** P1-MCP-4: allowlist egress, non-empty = network ON via allowlist proxy
-   * (host-side); kosong = default-deny `--network none` (perilaku lama). */
+  /** Egress allowlist; non-empty = network ON through the allowlist proxy
+   * (host-side); empty = default-deny `--network none` (previous behavior). */
   egress?: string[];
-  /** mode mount workspace: rw (default) | ro (MCP worker, server baca
-   * workspace, tak menulis). */
+  /** Workspace mount mode: rw (default) | ro (MCP worker: the server reads
+   * the workspace but never writes). */
   mountMode?: "rw" | "ro";
   /** sisipkan `-i` (stdin terbuka), MCP worker stdio / terminal. */
   interactive?: boolean;
-  /** P2-VLT-3: env proses anak (nilai vault sudah di-resolve backend-side),
+ /** env proses anak (nilai vault sudah di-resolve backend-side),
    *  dioper sbg `-e KEY=VAL`. */
   env?: NodeJS.ProcessEnv;
 }
@@ -102,9 +102,9 @@ export function sandboxArgv(
     ...(o.interactive ? ["-i"] : []),
     "--rm",
     "--name", name,
-    // default-deny egress: TIDAK ada network di dalam container, KECUALI
-    // mode egress (P1-MCP-4): network nyala tapi SEMUA trafik dipaksa lewat
-    // allowlist proxy di host (lihat tools/egress.ts).
+    // Default-deny egress: NO network inside the container, unless the
+    // egress mode is on: network up but ALL traffic is forced through the
+    // host-side allowlist proxy (see tools/egress.ts).
     ...(egress ? ["--add-host", "host.docker.internal:host-gateway"] : ["--network", "none"]),
     // resource caps
     "--memory", o.memory,
@@ -157,9 +157,9 @@ export async function runInSandbox(
     ...opts,
   };
   const name = `yui-sb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  // P1-MCP-4: allowlist non-kosong → nyalakan proxy host sekali per allowlist,
-  // paksa trafik container lewat situ. Gagal start proxy = jalur gagal (jangan
-  // fail-open ke network penuh).
+  // A non-empty allowlist starts the host proxy once per allowlist and forces
+  // container traffic through it. If the proxy fails to start, the call fails
+  // (never fail-open to full network).
   let proxyPort: number | undefined;
   if ((opts.egress?.length ?? 0) > 0) {
     const proxy = await getEgressProxy(opts.egress!);
@@ -206,10 +206,10 @@ export async function runInSandbox(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// P1-MCP-4 / P2-STU-2: sesi container PERSISTEN (bukan sekali-pakai).
-// Dipakai untuk: (a) MCP worker, server stdio jalan DI DALAM container,
-// stdin/stdout di-pipe ke StdioClientTransport; (b) Terminal tab, shell
-// hidup lama, user & agent menulis ke stdin yang sama.
+// Persistent container sessions (not one-shot).
+// Used for: (a) MCP workers, the stdio server runs INSIDE the container with
+// stdin/stdout piped into StdioClientTransport; (b) the Terminal tab, a
+// long-lived shell where user and agent write to the same stdin.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface SandboxSession {

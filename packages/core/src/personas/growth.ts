@@ -1,4 +1,4 @@
-// @yuika/core, growth tracking (P1-PER-4): persona "tumbuh" seiring pengalaman
+// @yuika/core, growth tracking : persona "tumbuh" seiring pengalaman
 // NYATA, sesi dibuat, turn selesai, task project yang dibereskan. BUKAN state
 // gamifikasi palsu: semua angka dikurasi dari tabel yang sudah ada
 // (sessions / events / project_tasks), jadi tidak bisa inflate tanpa kerja.

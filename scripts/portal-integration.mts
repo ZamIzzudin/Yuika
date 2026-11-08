@@ -1,4 +1,4 @@
-// P1-PRT-6, INTEGRASI PORTAL NYATA (docs/INTEGRATION.md §5, 10 skenario)
+// INTEGRASI PORTAL NYATA (docs/INTEGRATION.md §5, 10 skenario)
 // SDK/crypto Yuika vs PORTAL PRODUKSI yuika-portal: web HTTP nyata
 // (register/pairing/claim/unlink + cookie sesi) dan relay WS nyata
 // (ws://localhost:3101), bukan SpecRelay double, bukan seed lib internal.
@@ -204,7 +204,7 @@ async function main() {
     check("device unlinked → bye 4001", typeof bye1 === "object" && (bye1 as any).code === 4001, JSON.stringify(bye1));
   }
 
-  // ══ S2: join lintas akun → 4003 (CP-1) ════════════════════════════════
+ // ══ S2: join lintas akun → 4003 ════════════════════════════════
   const host1 = conn("A1-host", ids.A1, kA1);
   {
     console.log("[S2] cross-account join");
@@ -218,7 +218,7 @@ async function main() {
     check("B auth_ok sebelum join", r === "auth_ok");
     cB.send({ t: "join", hostId: hostId0, dhPub: kB1.dhPub });
     const bye = await cB.wait((f) => f.t === "bye", 5000);
-    check("join lintas akun → bye 4003 (CP-1)", bye.code === 4003 && String(bye.error ?? bye.reason).includes("host belongs to another account"), JSON.stringify(bye));
+    check("join lintas akun → bye 4003 ()", bye.code === 4003 && String(bye.error ?? bye.reason).includes("host belongs to another account"), JSON.stringify(bye));
     (host1 as any)._hostId = hostId0;
   }
   const hostId = (host1 as any)._hostId as string;

@@ -1,4 +1,4 @@
-// @yuika/core, admission control (P1-CRED-2) + rate limit (P1-CRED-3).
+// @yuika/core, admission control + rate limit .
 // Gas-station pattern: sebelum turn → cek saldo (cache, TTL 10 dtk, di-invalidate
 // tiap usage event) + HOLD perkiraan kasar; saat turn selesai → SETTLE (hold
 // dilepas; biaya actual sudah tercatat di ledger oleh hook recordUsage).

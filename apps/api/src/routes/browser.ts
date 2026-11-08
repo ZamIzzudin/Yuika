@@ -1,4 +1,4 @@
-// @yuika/api, P2-STU-4: routes tab Browser (read-only).
+// @yuika/api, : routes tab Browser (read-only).
 // GET  /api/projects/:id/browser/fetch?url=…  → halaman tersanitasi (+catat kunjungan user)
 // GET  /api/projects/:id/browser/visits       → riwayat (agent riset + user)
 // GET  /api/projects/:id/browser/policy       → { allow, allowAll }

@@ -1,4 +1,4 @@
-// P1-DEL-3: pause/resume anak delegasi, anak berhenti di BATAS ITERASI (tanpa
+// pause/resume anak delegasi, anak berhenti di BATAS ITERASI (tanpa
 // memanggil provider) sampai resume; abort saat pause tetap graceful
 // (job interrupted, bukan error); arahan steer yang datang saat pause
 // ter-delain begitu resume (antrean tak hilang).
@@ -89,7 +89,7 @@ function makeDeps(provider: ProviderAdapter, controls?: DelegationDeps["controls
   };
 }
 
-describe("P1-DEL-3 pause/resume anak", () => {
+describe(" pause/resume anak", () => {
   it("pause menahan iterasi (provider tak dipanggil) → resume menyelesaikan + event parent", async () => {
     const provider = new ScriptedProvider([
       () => ({ type: "done", finishReason: "tool_calls", text: "", toolCalls: [{ id: "c1", name: "todo_list", args: {} }] }),
@@ -111,7 +111,7 @@ describe("P1-DEL-3 pause/resume anak", () => {
     const summary = await handle.summary;
     expect(summary).toContain("selesai setelah resume");
     // iter 1 (pra-pause) + iter 2 (pasca-resume); call ke-3 = learn nudge
-    // pasca-turn (fire-and-forget, P1-MEM-2), boleh ikut tercatat.
+ // pasca-turn (fire-and-forget, ), boleh ikut tercatat.
     expect(provider.calls).toBeGreaterThanOrEqual(2);
     // event audit parent: paused → resumed → done (urut)
     const types = parentEvents.map((e) => e.type);

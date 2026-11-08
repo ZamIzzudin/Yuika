@@ -1,4 +1,4 @@
-// Batch 7 (RS-1), router search: cache → site-router (intent-aware) → engine umum
+// (RS-1), router search: cache → site-router (intent-aware) → engine umum
 // (searxng bila dikonfigurasi, ddg fallback nonofficial). Hasil selalu parsial +
 // daftar provider yang gagal, agent memutuskan ganti query, bukan menabrak ulang.
 import { createHash } from "node:crypto";

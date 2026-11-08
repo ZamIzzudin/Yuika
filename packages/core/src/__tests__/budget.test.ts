@@ -1,4 +1,4 @@
-// P1-CRED-2/3/4: admission control (hold→settle + saldo cache), rate limit
+// admission control (hold→settle + saldo cache), rate limit
 // turn/menit, cap delegasi paralel, attribution matrix persona×model.
 // Prinsip: angka belanja = ledger jujur × price book; model tanpa harga =
 // coverage "partial" (batas bawah, bukan 0); HOLD hanya pre-auth, dilepas settle.

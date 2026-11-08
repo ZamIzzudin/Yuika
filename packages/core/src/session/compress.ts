@@ -1,4 +1,4 @@
-// @yuika/core, kompresi konteks v0 (P0-CORE-4).
+// @yuika/core, kompresi konteks v0 .
 // Saat estimasi token prompt mendekati jendela model (>70%), history LAMA
 // diringkas aux model menjadi CHECKPOINT. Invariant append-only DIJAGA:
 // tabel messages tidak pernah diubah, checkpoint adalah lapisan VIEW:

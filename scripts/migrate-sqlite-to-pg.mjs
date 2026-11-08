@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Yuika, P0-DATA-1: migrasi data SessionStore SQLite → Postgres.
+// Yuika, : migrasi data SessionStore SQLite → Postgres.
 // Sumber: yui.db (sessions/messages/events/events_archive/context_checkpoints/
 // delegation_jobs/approvals/approval_memory) → target Postgres (skema pg-session).
 //

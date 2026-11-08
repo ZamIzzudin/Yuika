@@ -1,10 +1,10 @@
-// P1-PRT-6, double e2e: claim stub (pengganti portal web) + SpecRelay
+// double e2e: claim stub (pengganti portal web) + SpecRelay
 // (pengganti relay produksi yuika-portal). Menjalankan SEMANTIK SPEC-PROTOCOL
 // v1 yang sama; live verification vs relay asli menyusul "PORTAL READY FOR
 // INTEGRATION" (lihat docs/portal/README.md).
 // Claim stub: token APA PUN ≥20 char diterima (single-account e2e); deviceId
 // deterministik dari signPub → host & remote dapat id stabil per kunci.
-// CP-3 SSO double: GET /authorize (AUTO-ACCEPT mode test → 302 balik dengan
+// SSO double: GET /authorize (AUTO-ACCEPT mode test → 302 balik dengan
 // code) + POST /api/oauth/token (verifikasi PKCE S256 + single-use),
 // semantik sama dengan /authorize portal nyata yang menampilkan tombol Accept.
 import http from "node:http";
@@ -18,7 +18,7 @@ const ACCOUNT_ID = "acc_e2edouble0000001";
 const relay = createSpecRelay({ devices: [], port: RELAY_PORT });
 relay.port(); // pastikan listening
 
-// CP-3, code SSO sekali pakai: code → {challenge, redirectUri}
+// code SSO sekali pakai: code → {challenge, redirectUri}
 const oauthCodes = new Map<string, { challenge: string; redirectUri: string }>();
 const SSO_EMAIL = "e2e-portal@yuika.test";
 
@@ -61,7 +61,7 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
-  // ── CP-3 SSO: GET /authorize → auto-accept (302 ke redirect_uri?code&state)
+ // ── SSO: GET /authorize → auto-accept (302 ke redirect_uri?code&state)
   if (req.method === "GET" && url.pathname === "/authorize") {
     const q = url.searchParams;
     const redirectUri = q.get("redirect_uri") ?? "";
@@ -83,7 +83,7 @@ const server = http.createServer((req, res) => {
     res.end();
     return;
   }
-  // ── CP-3 SSO: POST /api/oauth/token (server-to-server; PKCE + single-use)
+ // ── SSO: POST /api/oauth/token (server-to-server; PKCE + single-use)
   if (req.method === "POST" && url.pathname === "/api/oauth/token") {
     let body = "";
     req.on("data", (c) => (body += c));
@@ -105,8 +105,8 @@ const server = http.createServer((req, res) => {
       if (expect !== rec.challenge) return bad("pkce verifier mismatch", 401);
       if (b.redirect_uri !== rec.redirectUri) return bad("redirect_uri mismatch", 401);
       res.writeHead(200, { "content-type": "application/json" });
-      // CP-4 double: deviceToken sekali-pakai (kind web) utk auto-link browser
-      //, kontrak sama dgn portal nyata setelah CP-4 diterima.
+ // double: deviceToken sekali-pakai (kind web) utk auto-link browser
+ //kontrak sama dgn portal nyata setelah diterima.
       res.end(
         JSON.stringify({
           accountId: ACCOUNT_ID,

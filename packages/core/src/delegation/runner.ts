@@ -1,5 +1,5 @@
 // @yuika/core, delegation-lite (DEMO): child = turn loop in-process dengan persona anak.
-// DEMO-SHORTCUT: tanpa job queue persist, tanpa steering, dibayar di P0/P1 (TASKS.md).
+// DEMO-SHORTCUT: tanpa job queue persist, tanpa steering, dibayar di P0/P1 .
 // Parent hanya menerima ringkasan, bukan tool calls anak (context economy, Hermes §4.6).
 import { randomUUID } from "node:crypto";
 import type { PersonaState } from "@yuika/contracts";
@@ -19,28 +19,28 @@ export interface DelegationDeps {
   bus: typeof EventBus;
   provider: ProviderAdapter;
   model: string;
-  /** P1-MDL-1: teruskan ke loop anak, tiap anak resolve model persona-nya sendiri. */
+ /** teruskan ke loop anak, tiap anak resolve model persona-nya sendiri. */
   routeModel?: LoopDeps["routeModel"];
   personasDir: string;
   skillsDir: string;
   workspacePath: string,
   /** Workspace GLOBAL (USER.md), delegasi menimpa workspacePath jadi project root. */
   workspaceGlobalPath?: string;
-  /** P1-PRJ-5: allowlist MCP sesi anak (binding roster persona anak; null = tanpa). */
+ /** allowlist MCP sesi anak (binding roster persona anak; null = tanpa). */
   mcpAllowlistFor?: (session: { id: string; personaId: string; projectId: string | null }) => string[] | null;
   /** Mapping manual skill → persona anak (menu Dungeon; skill-bindings.json). */
   skillBindingsFor?: (personaId: string) => SkillBinding | undefined;
-  /** Batch 16 (Team Assembly): dipanggil saat sesi anak lahir, runtime
+ /** (Team Assembly): dipanggil saat sesi anak lahir, runtime
    *  merge-assign persona anak ke roster project (roster = siapa mengerjakan
    *  project ini; delegasi Maestro = otoritas menambah anggota). */
   onChildSpawn?: (personaId: string, projectId: string | null) => void;
-  /** Batch 16: workflow run = SELURUH tim, engine memanggil ini saat start. */
+ /** workflow run = SELURUH tim, engine memanggil ini saat start. */
   ensureFullRoster?: (projectId: string) => void;
-  /** P1-CRED-1: metering loop anak juga tercatat (persona anak + model anak). */
+ /** metering loop anak juga tercatat (persona anak + model anak). */
   recordUsage?: LoopDeps["recordUsage"];
-  /** P1-CRED-3: cap delegasi paralel dinamis (budget workspace); default 2. */
+ /** cap delegasi paralel dinamis (budget workspace); default 2. */
   maxChildren?: () => number;
-  /** P0-DEL-2: kontrol anak aktif, runtime mendaftarkan agar UI parent bisa
+ /** kontrol anak aktif, runtime mendaftarkan agar UI parent bisa
    *  cancel (abort turn anak) / steer (arahan mid-turn) tanpa menunggu selesai.
    *  unregister dipanggil saat anak selesai (done/error/abort). */
   controls?: {
@@ -72,7 +72,7 @@ export function runChildPersona(
   if (!persona.manifest.delegation.spawnable_by.includes("yui") && !persona.manifest.delegation.spawnable_by.includes("user")) {
     throw new Error(`persona ${personaId} tidak spawnable`);
   }
-  // P1-DEL-1: cap paralel = min(cap budget workspace, cap plan pendelegasi).
+ // cap paralel = min(cap budget workspace, cap plan pendelegasi).
   // max_concurrent dibaca dari delegation.yaml persona PARENT, "resep"
   // seberapa agresif persona itu boleh membuka front paralel (Maestro 3 arah,
   // Planner fokus 1 anak per waktu). Anak tanpa delegate_task tak terdampak.
@@ -89,7 +89,7 @@ export function runChildPersona(
   const childSessionId = `s_${randomUUID()}`;
   // Toolset anak = toolset persona MINUS delegate_task (kedalaman 1 utk demo), TODO(P1): depth policy
   const childTools = persona.manifest.tools.filter((t) => t !== "delegate_task");
-  // P1-MEM-6: anak mewarisi projectId parent (binding roster MCP anak jalan;
+ // anak mewarisi projectId parent (binding roster MCP anak jalan;
   // tool memory_append scope project valid). USER.md + memori DOMAIN persona anak
   // di-inject ke prompt anak (frozen). MEMORY.md project untuk anak menyusul
   // bersama projectRootFor di deps.
@@ -113,16 +113,16 @@ export function runChildPersona(
     memExtra,
     deps.skillBindingsFor?.(persona.manifest.id),
   );
-  // Batch 16: persona anak otomatis masuk roster project (merge).
+ // persona anak otomatis masuk roster project (merge).
   deps.onChildSpawn?.(persona.manifest.id, childProjectId);
 
   parentEmit({ type: "delegation.started", turnId: parent.turnId, childSessionId, personaId, goal });
   activeChildren++;
-  // P0-DEL-2: kontrol anak, abort untuk cancel, steerQueue untuk arahan
+ // kontrol anak, abort untuk cancel, steerQueue untuk arahan
   // mid-turn (di-drain loop anak tiap awal iterasi).
   const ac = new AbortController();
   const steerQueue: string[] = [];
-  // P1-DEL-3: pause/resume, anak berhenti di batas iterasi (gate di loop);
+ // pause/resume, anak berhenti di batas iterasi (gate di loop);
   // abort saat pause membangunkan semua waiter → loop keluar graceful.
   let paused = false;
   let wakeWaiters: Array<() => void> = [];
@@ -150,7 +150,7 @@ export function runChildPersona(
       parentEmit({ type: "delegation.resumed", turnId: parent.turnId, childSessionId });
     },
   });
-  // P0-DEL-1: job persist, baris di DB sebelum loop anak jalan (audit & heal
+ // job persist, baris di DB sebelum loop anak jalan (audit & heal
   // lintas restart); ditutup done/error saat selesai. Gagal tulis job TIDAK
   // membatalkan delegasi (persist = best-effort, eksekusi tetap jalan).
   let jobId = -1;
@@ -206,23 +206,23 @@ export function runChildPersona(
         approvals,
         emit: childEmit,
         mcpAllowlistFor: deps.mcpAllowlistFor,
-        recordUsage: deps.recordUsage, // P1-CRED-1: anak ikut ter-meter
+        recordUsage: deps.recordUsage, // : anak ikut ter-meter
         steerFor: () => {
           const q = [...steerQueue];
           steerQueue.length = 0;
           return q;
-        }, // P0-DEL-2
+        }, // 
         pauseGateFor: async () => {
           // tunggu hingga resume/abort; true = lanjut iterasi, false = abort saat pause
           while (paused && !ac.signal.aborted) await new Promise<void>((res) => wakeWaiters.push(res));
           return !ac.signal.aborted;
-        }, // P1-DEL-3
+        }, // 
       });
       await loop.runTurn(childSessionId, context ? `${goal}\n\nContext:\n${context}` : goal, { signal: ac.signal });
-      // P0-DEL-2: turn anak dibatalkan GRACEFUL (loop keluar rapi, bukan throw)
+ // turn anak dibatalkan GRACEFUL (loop keluar rapi, bukan throw)
       // → job interrupted + kartu ditutup dengan penanda pembatalan.
       if (ac.signal.aborted) {
-        if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: "interrupted", error: "dibatalkan user/parent (P0-DEL-2)" });
+        if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: "interrupted", error: "dibatalkan user/parent ()" });
         parentEmit({
           type: "delegation.done",
           turnId: parent.turnId,
@@ -234,7 +234,7 @@ export function runChildPersona(
       const msgs = deps.store.getMessages(childSessionId);
       const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant" && m.content.trim());
       const summaryText = lastAssistant?.content ?? "(child selesai tanpa output)";
-      // P0-DEL-1: loop menelan error provider (session.error event, bukan throw)
+ // loop menelan error provider (session.error event, bukan throw)
       //, job harus jujur: sesi anak berakhir GAGAL → status error, bukan done.
       const childEvents = deps.store.getEvents(childSessionId);
       const fatalError = [...childEvents].reverse().find((e): e is Extract<(typeof childEvents)[number], { type: "session.error" }> => e.type === "session.error" && e.recoverable === false);
@@ -244,11 +244,11 @@ export function runChildPersona(
       moduleLogger("delegation").info({ personaId, childSessionId, ms: Date.now() - t0 }, `delegation finished (goal: ${goal.slice(0, 60)}…)`);
       return summaryText;
     } catch (err) {
-      // P0-DEL-2: dibatalkan (user/parent) BUKAN kegagalan, job interrupted +
+ // dibatalkan (user/parent) BUKAN kegagalan, job interrupted +
       // kartu delegasi ditutup dengan penanda pembatalan, bukan "gagal".
       const cancelled = ac.signal.aborted;
       const msg = err instanceof Error ? err.message : String(err);
-      if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: cancelled ? "interrupted" : "error", error: cancelled ? "dibatalkan user/parent (P0-DEL-2)" : msg });
+      if (jobId > 0) deps.store.finishDelegationJob(jobId, { status: cancelled ? "interrupted" : "error", error: cancelled ? "dibatalkan user/parent ()" : msg });
       // Tutup kartu delegasi di parent dengan ringkasan gagal, tanpa ini UI
       // menampilkan persona anak "working" selamanya.
       parentEmit({

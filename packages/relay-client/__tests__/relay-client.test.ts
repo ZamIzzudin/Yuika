@@ -1,4 +1,4 @@
-// P1-PRT-1, SDK relay-client terhadap SpecRelay (double spec v1).
+// SDK relay-client terhadap SpecRelay (double spec v1).
 // Skenario SPEC-PROTOCOL §11 butir 1–7 yang bisa diuji di lapisan klien
 // (butir 8 = suite vectors @yuika/crypto; butir 9 = REST claim, di apps/api).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -126,12 +126,12 @@ describe("SPEC §11.2/3/4, host, join, E2E, broadcast", () => {
     });
     const t0 = Date.now();
     await expect(remote.join(host.deviceId, 30_000)).rejects.toThrow(/another account/);
-    expect(Date.now() - t0).toBeLessThan(3_000); // CP-1: kode permanen tak diulang
+    expect(Date.now() - t0).toBeLessThan(3_000); // permanent codes are never repeated
     expect(remote.state).toBe("host-gone");
     c.close();
   });
 
-  it("join dhPub invalid (bukan PEM) → bye 4102, terminal, CP-2", async () => {
+  it("join dhPub invalid (bukan PEM) → bye 4102, terminal, ", async () => {
     const c = makeClient(r1);
     await c.connect();
     const remote = new RelayRemote({
@@ -354,9 +354,9 @@ describe("SDK, outbox & rid", () => {
   });
 });
 
-// CP-5, unlink dari portal: device hilang dari registry relay → semua conn
+// unlink dari portal: device hilang dari registry relay → semua conn
 // aktifnya kena bye 4001 (unknown device) → SDK PERMANEN (tidak reconnect).
-describe("CP-5, unlink device → bye 4001 permanen", () => {
+describe(", unlink device → bye 4001 permanen", () => {
   it("bye 4001 → stopped: state closed & TIDAK reconnect setelah backoff", async () => {
     const d = generateDeviceKeys();
     const rl = createSpecRelay({
@@ -380,7 +380,7 @@ describe("CP-5, unlink device → bye 4001 permanen", () => {
     await client.connect();
     expect(client.getState()).toBe("authed");
 
-    rl.unlink(d.deviceId); // CP-5 test hook: putus dgn bye 4001
+    rl.unlink(d.deviceId); //  test hook: putus dgn bye 4001
     await new Promise((r) => setTimeout(r, 300));
     expect(client.getState()).toBe("closed"); // bye diterima, koneksi putus
 

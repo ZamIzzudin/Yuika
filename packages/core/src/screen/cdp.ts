@@ -1,4 +1,4 @@
-// @yuika/core, P2-SCR-1 (Batch 14a): CDP client raw via global WebSocket
+// @yuika/core, : CDP client raw via global WebSocket
 // (Node 22+; dibuktikan probe SCR-0 di Windows+Edge). NOL dependensi baru,
 // tanpa playwright/puppeteer. Flat protocol: pesan ke page target membawa
 // atribut `sessionId` langsung.

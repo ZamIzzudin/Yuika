@@ -1,5 +1,5 @@
-// P1-PRT-6, LIVE cross-repo smoke: SDK Yuika (@yuika/relay-client + crypto)
-// melawan RELAY PRODUKSI yuika-portal (apps/relay hasil T1/P1-PRT-5) + claim
+// LIVE cross-repo smoke: SDK Yuika (@yuika/relay-client + crypto)
+// melawan RELAY PRODUKSI yuika-portal (apps/relay hasil T1/) + claim
 // nyata (lib portal: issuePairingToken → claimPairingToken, bukan stub).
 // Menjalankan verifikasi kompatibilitas wire dua repo DI ATAS KODE NYATA,
 // di luar gerbang playwright (yang memakai SpecRelay double).

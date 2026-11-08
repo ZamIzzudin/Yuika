@@ -63,7 +63,7 @@ export function registerSkillRoutes(app: FastifyInstance, getRt: () => YuiRuntim
     }
   });
 
-  /** POST /api/skills/eval, P1-DUN-3: eval buta skill `tested` → lulus = ready.
+ /** POST /api/skills/eval, : eval buta skill `tested` → lulus = ready.
    *  Async (sesi hakim jalan di background); hasil di-polling field `eval`. */
   app.post("/api/skills/eval", async (req, reply) => {
     const { slug } = z.object({ slug: z.string().min(1) }).parse(req.body);

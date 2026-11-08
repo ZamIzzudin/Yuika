@@ -1,4 +1,4 @@
-// P1-MDL-3: price book, roundtrip file, biaya = metering × harga,
+// price book, roundtrip file, biaya = metering × harga,
 // model tanpa harga → null (bukan 0, jujur).
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-describe("price book (P1-MDL-3)", () => {
+describe("price book ()", () => {
   it("file belum ada → kosong; upsert → persist & roundtrip", () => {
     expect(loadPriceBook(file)).toEqual({});
     saveModelPrice(file, "glm/glm-5.1", { inputPerMillion: 0.6, outputPerMillion: 2.2, currency: "USD" });

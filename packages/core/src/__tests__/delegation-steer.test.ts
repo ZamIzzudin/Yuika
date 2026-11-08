@@ -1,4 +1,4 @@
-// P0-DEL-2: cancel/steer anak delegasi dari parent, arahan mid-turn di-drain
+// cancel/steer anak delegasi dari parent, arahan mid-turn di-drain
 // loop anak tiap awal iterasi; abort menutup job sebagai interrupted (bukan error)
 // dan kartu delegasi parent ditutup dengan penanda pembatalan.
 import { describe, expect, it, beforeEach } from "vitest";
@@ -103,7 +103,7 @@ function makeDeps(provider: ProviderAdapter, controls?: DelegationDeps["controls
   };
 }
 
-describe("P0-DEL-2 steer anak", () => {
+describe(" steer anak", () => {
   it("arahan mid-turn di-drain di iterasi berikutnya, terlihat provider & sesi anak", async () => {
     const provider = new ScriptedProvider([
       () => ({ type: "done", finishReason: "tool_calls", text: "", toolCalls: [{ id: "c1", name: "todo_list", args: {} }] }),
@@ -140,7 +140,7 @@ describe("P0-DEL-2 steer anak", () => {
   });
 });
 
-describe("P0-DEL-2 cancel anak", () => {
+describe(" cancel anak", () => {
   it("abort → job interrupted (bukan error) + kartu delegasi ditutup penanda pembatalan", async () => {
     const provider = new HangingProvider();
     const { map, deps: ctl } = controlsFixture();

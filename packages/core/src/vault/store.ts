@@ -1,4 +1,4 @@
-// @yuika/core, vault store (Batch 12 / P2-VLT-1, D27; pola rokazo bot-secrets
+// @yuika/core, vault store ( / , ; pola rokazo bot-secrets
 // + scrub): SQLite terpisah `vault.db` (isolasi dari demo.db), tiap record
 // dienkripsi AES-256-GCM dengan master key (env YUI_VAULT_KEY → file
 // <data>/vault.key 0600). AAD = metadata record, rename/tamper kolom membuat

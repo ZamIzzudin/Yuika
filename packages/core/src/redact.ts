@@ -1,4 +1,4 @@
-// @yuika/core, redaction secrets (P0-SEC-2, pola `redact` Hermes): nilai yang
+// @yuika/core, redaction secrets (, pola `redact` Hermes): nilai yang
 // terlihat seperti kunci/token RAHASIA disamarkan SEBELUM masuk konteks agent
 // (tool result → history → dikirim ke provider). Fail-closed: ragu-ragu →
 // redact; teks normal tidak boleh berubah.

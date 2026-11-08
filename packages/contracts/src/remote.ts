@@ -1,4 +1,4 @@
-// P1-PRT-2, Kontrak payload remote (SALINAN VERBATIM dari
+// Kontrak payload remote (SALINAN VERBATIM dari
 // docs/portal/CONTRACTS-REMOTE.md, FROZEN v1, mirror yuika-portal).
 // Isi envelope E2E (SPEC-PROTOCOL §5); OPAQUE bagi relay & portal.
 // Mengubah shape/enum = proto v2 (SPEC-PROTOCOL §12), jangan edit sepihak.

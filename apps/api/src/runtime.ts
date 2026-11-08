@@ -1,4 +1,4 @@
-// @yuika/api, singleton YuiRuntime (P0-INF-1).
+// @yuika/api, singleton YuiRuntime .
 // Diadaptasi dari apps/web/src/lib/runtime.ts (perang HMR terbukti di sana):
 // di proses api TIDAK ada HMR Next, tapi `tsx watch` me-reload modul saat edit,
 // cache globalThis + tag pemilik (hash source createYuiRuntime) tetap dipakai

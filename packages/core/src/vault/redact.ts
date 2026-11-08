@@ -1,4 +1,4 @@
-// @yuika/core, redaksi nilai vault AKTIF (P2-VLT-5, pola rokazo scrub hidden
+// @yuika/core, redaksi nilai vault AKTIF (, pola rokazo scrub hidden
 // fields tapi LEBIH KETAT: proses-wide, bukan per-bot): begitu sebuah nilai
 // di-decrypt untuk dipakai (secret_http / run_command env), nilai itu masuk
 // registry aktif dan disamarkan dari SEMUA output tool (plain + base64 +

@@ -1,5 +1,5 @@
 "use client";
-// Batch 13 (P2-WKS-6), panel Workshop: status + lifecycle + log + egress.
+// panel Workshop: status + lifecycle + log + egress.
 // Rumah kerja persisten project: dibuka SEKALI oleh user (persetujuan
 // pembukaan = klik Start), persona memakainya lewat run_in_workshop.
 import { useCallback, useEffect, useState } from "react";

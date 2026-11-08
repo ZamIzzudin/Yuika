@@ -1,4 +1,4 @@
-// P2-PM-3, task list detail first-class: persist di store, replay di TaskTree,
+// task list detail first-class: persist di store, replay di TaskTree,
 // skenario Planner ≥30 task via tool todo_add → lintTaskList hijau.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -33,7 +33,7 @@ function plannerTasks(): Array<{ phase: string; title: string }> {
   return out;
 }
 
-describe("P2-PM-3 task detail", () => {
+describe(" task detail", () => {
   it("createTask dengan detail → persist; list/get roundtrip", () => {
     const { store } = makeStore();
     store.createProject({ id: "p_a", name: "A", rootPath: "projects/a" });

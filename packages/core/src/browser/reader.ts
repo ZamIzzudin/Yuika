@@ -1,4 +1,4 @@
-// @yuika/core, P2-STU-4: browser reader read-only (security review = gerbang).
+// @yuika/core, : browser reader read-only (security review = gerbang).
 // Proxy server-side utk tab Browser: fetch HTML utk DIRENDER (user melihat apa
 // yang agent riset), BUKAN eksekusi. Pertahanan berlapis:
 //   1. Allowlist domain per project (`.yuika/browser.json` → env → default)

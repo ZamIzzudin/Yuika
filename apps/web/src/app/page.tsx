@@ -5,7 +5,7 @@ import { backToDesktopWelcome, isDesktopShell } from "@/lib/desktop";
 /**
  * Yuika demo shell, orchestrator UI (DEMO-WEEK-1 §2):
  * persona picker → sesi → SSE event stream → render msg/activity/delegation/approval.
- * SEMUA tipe dari @yuika/contracts (dilarang tipe tangan, PLAN §6.3).
+ * All types come from @yuika/contracts (no hand-written types).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PersonaFace } from "@/components/PersonaPicker";
@@ -78,8 +78,8 @@ export default function Home() {
   // Sidebar fold/unfold, persist di localStorage (yui.sidebar: "open" | "folded");
   // layar sempit (<768px) default lipat. Shortcut: Ctrl/Cmd+B.
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  // D48: UI di dalam shell desktop Tauri → tampilkan tombol switch mode
-  // (state via effect: hindari hydration mismatch vs prerender statis).
+  // Inside the Tauri desktop shell: show the switch-mode button
+  // (state set via effect: avoids hydration mismatch vs static prerender).
   const [desktop, setDesktop] = useState(false);
   useEffect(() => setDesktop(isDesktopShell()), []);
   const toggleSidebar = useCallback(() => {
@@ -112,8 +112,8 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const lastEventId = useRef(0);
 
-  // Project scope (P1-PRJ-6 shell v0): sesi yang dibuat melekat ke project aktif,
-  // file-ops & tasklist agent otomatis ter-scope (P1-PRJ-2/4).
+ // Project scope ( shell v0): sesi yang dibuat melekat ke project aktif,
+ // file-ops & tasklist agent otomatis ter-scope .
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
@@ -121,14 +121,14 @@ export default function Home() {
   // Menu auto-close (fix test user #6): dropdown header persona + Sessions.
   const personaMenu = useMenuAutoClose<HTMLDetailsElement>();
   const sessionsMenu = useMenuAutoClose<HTMLDetailsElement>();
-  // Batch 14a follow-up: floating shared screen, melayang di atas SEMUA tab.
+ // follow-up: floating shared screen, melayang di atas SEMUA tab.
   const [pip, setPip] = useState<{
     projectId: string;
     personaId: string;
   } | null>(null);
   const [projSessions, setProjSessions] = useState<ProjectSessionSummary[]>([]);
   const [booted, setBooted] = useState(false); // skeleton hanya selama fetch awal
-  // Batch 16 (Team Assembly): roster project aktif (siapa yang boleh dipakai).
+ // (Team Assembly): roster project aktif (siapa yang boleh dipakai).
   const [rosterIds, setRosterIds] = useState<string[]>([]);
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
@@ -149,7 +149,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Batch 16: TIDAK ada restore project terakhir, aplikasi selalu dibuka
+ // TIDAK ada restore project terakhir, aplikasi selalu dibuka
     // di halaman HOME (typing + kartu project). Freespace dihapus.
     void loadProjects();
   }, [loadProjects]);
@@ -351,7 +351,7 @@ export default function Home() {
           return next;
         });
         break;
-      // P1-DEL-3: pause/resume → tandai kartu (anak menunggu di batas iterasi).
+ // pause/resume → tandai kartu (anak menunggu di batas iterasi).
       case "delegation.paused":
       case "delegation.resumed": {
         const pausedNow = e.type === "delegation.paused";
@@ -419,7 +419,7 @@ export default function Home() {
         );
         break;
       case "login.requested":
-        // VLT-4: kartu kredensial, nilai TIDAK PERNAH di event (origin saja).
+ // kartu kredensial, nilai TIDAK PERNAH di event (origin saja).
         setItems((prev) => [
           ...prev,
           {
@@ -441,7 +441,7 @@ export default function Home() {
         );
         break;
       case "screen.state":
-        // Batch 14a++: persona membuka browser → bubble "Open Browser".
+ // ++: persona membuka browser → bubble "Open Browser".
         // Satu bubble per persona yang DIPAKAI ULANG: sesi baru (mis. user
         // menutup floating window lalu persona buka lagi) memperbarui bubble
         // lama (URL baru), bukan ditumpuk, dan tidak hilang diam-diam.
@@ -543,7 +543,7 @@ export default function Home() {
         ]);
         break;
       case "context.compressed":
-        // P0-CORE-4: transparansi, user tahu konteks lama diringkas (riwayat asli utuh).
+ // transparansi, user tahu konteks lama diringkas (riwayat asli utuh).
         setItems((prev) => [
           ...prev,
           {
@@ -702,7 +702,7 @@ export default function Home() {
     if (projectId) void loadProjectSessions(projectId);
   }
 
-  /** Batch 16: roster project aktif (person yang ter-assign, project.yaml). */
+ /** roster project aktif (person yang ter-assign, project.yaml). */
   const loadRoster = useCallback(async (pid: string) => {
     try {
       const r = await authFetch(apiUrl(`/api/projects/${pid}/roster`));
@@ -724,7 +724,7 @@ export default function Home() {
     return () => window.removeEventListener("yui:roster-changed", h);
   }, [activeProjectId, loadRoster]);
 
-  /** Ganti scope project → Batch 16: sesi ada → buka terbaru; BELUM ada sesi
+ /** Ganti scope project → : sesi ada → buka terbaru; BELUM ada sesi
    *  → layar Team Assembly (playground), TIDAK lagi auto-buka Conductor. */
   async function pickProject(id: string | null) {
     setActiveProjectId(id);
@@ -776,7 +776,7 @@ export default function Home() {
     }
   }
 
-  /** Sesi baru di project aktif (Conductor lead). Batch 16: Conductor harus
+ /** Sesi baru di project aktif (Conductor lead). : Conductor harus
    *  ter-assign, kalau belum, assign dulu (merge roster) lalu buka sesi. */
   async function newProjectSession() {
     if (!activeProjectId) return;
@@ -802,7 +802,7 @@ export default function Home() {
     await pick(p);
   }
 
-  /** Batch 16 (Team Assembly): assign persona → merge roster (project.yaml).
+ /** (Team Assembly): assign persona → merge roster (project.yaml).
    *  Dipakai TeamSetupView (playground) + dropdown Sessions. */
   async function assignPersonas(pid: string, personaIds: string[]) {
     const r0 = await authFetch(apiUrl(`/api/projects/${pid}/roster`));
@@ -859,7 +859,7 @@ export default function Home() {
     window.dispatchEvent(new Event("yui:roster-changed"));
   }
 
-  // Batch 16: tab Terminal hanya muncul bila Hiro/Neo ter-assign, tanpa itu
+ // tab Terminal hanya muncul bila Hiro/Neo ter-assign, tanpa itu
   // docker tak disiapkan (hemat resource), persis permintaan user.
   const showTerminalTab =
     rosterIds.includes("yui-coder") || rosterIds.includes("yui-operator");
@@ -877,7 +877,7 @@ export default function Home() {
     });
   }
 
-  /** P0-CORE-1: tombol Stop, abort turn aktif; progres & parsial tersimpan. */
+ /** tombol Stop, abort turn aktif; progres & parsial tersimpan. */
   async function cancelTurn() {
     if (!sessionId) return;
     await authFetch(apiUrl(`/api/sessions/${sessionId}/cancel`), {
@@ -886,7 +886,7 @@ export default function Home() {
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // P1-PRT-3: badge compact (sidebar kolaps) memancarkan event → buka Settings.
+ // badge compact (sidebar kolaps) memancarkan event → buka Settings.
   useEffect(() => {
     const open = () => setSettingsOpen(true);
     window.addEventListener("yui:open-settings", open);
@@ -1043,7 +1043,7 @@ export default function Home() {
           {sidebarOpen ? (
             <>
               <div className="flex items-center gap-2.5 px-2 pb-4">
-                {/* Logo maskot Orin, Batch 16: klik = kembali ke HOME. */}
+                {/* Logo maskot Orin, : klik = kembali ke HOME. */}
                 <button
                   type="button"
                   onClick={() => void pickProject(null)}
@@ -1278,7 +1278,7 @@ export default function Home() {
                     />
                   </div>
                   {/* Satu tab = satu halaman (keputusan user 2026-11-08,
-                    revisi STU-1): saat tab lain aktif, chat TERTUTUP penuh dan
+                    revisi ): saat tab lain aktif, chat TERTUTUP penuh dan
                     tab aktif mendapat lebar penuh. Kolom chat tetap ter-mount
                     (disembunyikan CSS, bukan unmount) supaya draft/scroll/
                     streaming tetap valid saat kembali. Penggabungan tab
@@ -1533,8 +1533,8 @@ export default function Home() {
                             rev={taskRev}
                             onProjectUpdated={() => void loadProjects()}
                             onDeleted={(pid) => {
-                              // D33: hapus dari Config → refresh daftar; scope
-                              // aktif terhapus → kembali ke HOME.
+                              // Deleted from Config: refresh the list; if the active scope was
+                              // deleted, fall back to HOME.
                               void loadProjects();
                               if (activeProjectId === pid)
                                 void pickProject(null);
@@ -1564,7 +1564,7 @@ export default function Home() {
           )}
         </main>
       </div>
-      {/* Batch 14a follow-up: floating shared screen, di atas SEMUA tab,
+      {/*  follow-up: floating shared screen, di atas SEMUA tab,
           termasuk chat; nonton persona + take/hand over tanpa pindah tab. */}
       {pip && activeProject?.id === pip.projectId && (
         <ScreenPip

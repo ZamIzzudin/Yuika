@@ -1,4 +1,4 @@
-// @yuika/core, Google Gemini adapter (P1-INF-2): streamGenerateContent (alt=sse)
+// @yuika/core, Google Gemini adapter : streamGenerateContent (alt=sse)
 // via fetch. Perbedaan besar vs OpenAI: functionCall TANPA id (nama fungsi =
 // identitas) & hasil tool dikirim sebagai functionResponse di role user,
 // mapping id→nama dibangun saat konversi (urutan pesan internal tetap).

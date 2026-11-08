@@ -8,7 +8,7 @@ import {
   WORKFLOW_PHASES,
 } from "../index.js";
 
-/** Behavior contract: project = entitas first-class (PLAN §13.1, D14). */
+/** Behavior contract: project = entitas first-class . */
 describe("Project contract", () => {
   it("ProjectInfo menerima bentuk valid + default", () => {
     const p = ProjectInfo.parse({
@@ -36,7 +36,7 @@ describe("Project contract", () => {
     expect(() =>
       RosterEntry.parse({ personaId: "yui-coder", role: "x", phases: ["deploy"] as never[] }),
     ).toThrow();
-    expect(WORKFLOW_PHASES).toHaveLength(7); // template 7 fase (D15)
+    expect(WORKFLOW_PHASES).toHaveLength(7); // template 7 fase ()
   });
 
   it("TaskItem status & assignee nullable", () => {

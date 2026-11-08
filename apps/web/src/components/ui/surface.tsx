@@ -1,4 +1,4 @@
-// DS-1, komponen global: permukaan kartu + modal + field form.
+// komponen global: permukaan kartu + modal + field form.
 // Card    → blok konten bertepi (variant: surface default / raised mengambang / inset tenggelam).
 // Modal   → popup glass (ESC & klik overlay menutup), jangan bikin overlay sendiri.
 // Field   → label + kontrol + hint seragam (TextInput/TextArea/Select share style).

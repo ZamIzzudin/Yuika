@@ -1,4 +1,4 @@
-// P0-SEC-4: approval timeout + auto-deny, approval yang diabaikan tidak
+// approval timeout + auto-deny, approval yang diabaikan tidak
 // menggantung selamanya; setelah deadline turn dilanjutkan FAIL-CLOSED
 // (denied), baris DB di-settle "expired", event approval.expired ke UI.
 // Resolve tepat waktu → timer mati, tidak ada expiry ganda.
@@ -34,7 +34,7 @@ afterEach(() => {
   }
 });
 
-describe("approval timeout (P0-SEC-4)", () => {
+describe("approval timeout ()", () => {
   it("diabaikan melewati deadline → auto-deny fail-closed + expired di DB + event", async () => {
     process.env.YUI_APPROVAL_TIMEOUT_MS = "30";
     const e = engine();

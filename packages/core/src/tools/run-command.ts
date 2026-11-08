@@ -1,8 +1,8 @@
 // @yuika/core, run_command: `ls`/`echo` dieksekusi INTERNAL (readdir/print,
 // aman & lintas-OS, bebas approval), `node` dieksekusi di SANDBOX container
-// sekali-pakai (P0-SEC-1: network default-deny, resource cap, timeout, rootfs
+// sekali-pakai (: network default-deny, resource cap, timeout, rootfs
 // ro, detail tools/sandbox.ts). Fallback `off`/`auto-tanpa-docker` = execFile
-// lokal. P0-SEC-2: stdout/stderr di-redact sebelum masuk konteks agent.
+// lokal. : stdout/stderr di-redact sebelum masuk konteks agent.
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -25,7 +25,7 @@ const NPM_SUB = new Set(["install", "ci", "run", "run-script", "exec", "test", "
 const schema = z.object({
   command: z.enum(["node", "npm", "npx", "ls", "echo"]),
   args: z.array(z.string()).default([]),
-  /** P2-VLT-3 command variables: env utk proses anak. NILAI WAJIB referensi
+ /** command variables: env utk proses anak. NILAI WAJIB referensi
    *  vault (`vault:<name>`), nilai polos TIDAK diterima supaya rahasia tak
    *  pernah lewat konteks model. Nama reserved ditolak. */
   env: z.record(z.string(), z.string()).optional(),
@@ -80,7 +80,7 @@ function runLocal(command: string, args: string[], cwd: string, env?: NodeJS.Pro
   });
 }
 
-/** P2-VLT-3: resolve `vault:<name>` refs → nilai env asli (backend-only).
+/** resolve `vault:<name>` refs → nilai env asli (backend-only).
  *  Return { env, releases }, caller WAJIB memanggil semua releases setelah
  *  proses selesai (nilai keluar dari registry redaksi aktif). */
 function resolveVaultEnv(
@@ -114,8 +114,8 @@ export function registerRunCommandTool(): void {
       if (args.command === "ls") return { result: lsInternal(ctx.workspacePath, args.args) };
       if (args.command === "echo") return { result: { stdout: args.args.join(" ") } };
 
-      // node/npm/npx → sandbox (P0-SEC-1). npm install/ci & npx butuh registry
-      // → egress allowlist per-project (P1-MCP-4, default npm/yarn registry,
+ // node/npm/npx → sandbox . npm install/ci & npx butuh registry
+ // → egress allowlist per-project (, default npm/yarn registry,
       // override: <workspace>/.yuika/egress.json atau YUI_EGRESS_ALLOW).
       const mode = sandbox.readSandboxMode();
       const useSandbox = mode === "off" ? false : mode === "docker" ? true : await sandbox.dockerAvailable();
@@ -124,7 +124,7 @@ export function registerRunCommandTool(): void {
         (args.command === "npm" && (args.args[0] === "install" || args.args[0] === "ci"));
       const egress = needsNet ? egressMod.readEgressAllow(ctx.workspacePath) : [];
 
-      // P2-VLT-3: resolve refs vault → env asli (nilai tak pernah masuk args/ctx)
+ // resolve refs vault → env asli (nilai tak pernah masuk args/ctx)
       let vEnv: { env: NodeJS.ProcessEnv | undefined; releases: Array<() => void>; names: string[] };
       try {
         vEnv = resolveVaultEnv(args.env, { personaId: ctx.personaId, projectId: ctx.projectId });

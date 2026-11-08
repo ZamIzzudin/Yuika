@@ -1,4 +1,4 @@
-// Auth gate (portal-only, CP-3+): me/logout + middleware tenant scope.
+// Auth gate (portal-only, +): me/logout + middleware tenant scope.
 // Local register/login DIHAPUS, akun & signup hidup di yuika-portal.
 // Isolasi: YUI_AUTH_DB menunjuk file tmp per suite (di-setup sebelum import).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -39,7 +39,7 @@ describe("auth gate portal-only (me/logout + tenant scope)", () => {
     expect((me.json() as { portalUrl: string }).portalUrl).toMatch(/^https?:\/\//);
   });
 
-  it("D50 YUI_AUTH_REQUIRED=1: instance publik tertutup sejak boot (belum ada user pun non-auth 401; route auth tetap hidup)", async () => {
+  it("YUI_AUTH_REQUIRED=1: a public instance is closed from boot (401 before any user; auth routes stay up)", async () => {
     process.env.YUI_AUTH_REQUIRED = "1";
     try {
       expect(authUserCount()).toBe(0);
@@ -48,7 +48,7 @@ describe("auth gate portal-only (me/logout + tenant scope)", () => {
       expect(no.json()).toEqual({ error: "authentication required" });
       // jalur sign-in portal tetap terbuka (user pertama lahir dari SSO).
       // authRequired true sejak boot: UI gate tampil sebelum user pertama
-      // (perilaku D50 — route /api/auth/me ikut flag).
+ // (perilaku — route /api/auth/me ikut flag).
       const me = await app.inject({ method: "GET", url: "/api/auth/me" });
       expect(me.statusCode).toBe(200);
       expect(me.json()).toMatchObject({ user: null, authRequired: true });

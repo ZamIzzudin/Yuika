@@ -6,7 +6,7 @@ import { apiUrl, authFetch } from "@/lib/api";
 // sama boleh muncul di dua cabang (dua sesi berbeda, label "dari <pemberi>")
 // tanpa menyiratkan atasan permanen. Implementasi canvas murni CSS transform
 // + Pointer Events (tanpa dependency).
-// DS-1: Tailwind semantik, garis penghubung via varian before:/after:.
+// Tailwind semantik, garis penghubung via varian before:/after:.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
 import type { DelegationEdge } from "@yuika/contracts";

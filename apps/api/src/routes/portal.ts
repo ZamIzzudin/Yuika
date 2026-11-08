@@ -1,4 +1,4 @@
-// @yuika/api, P1-PRT-3/4: route portal.
+// @yuika/api, : route portal.
 // - POST /api/portal/pair   : host menukar pairing token portal → device keys
 //   dibuat DI PROSES INI (private tak pernah keluar), claim REST portal,
 //   simpan lokal (portal-device.db), start host worker relay.
@@ -85,7 +85,7 @@ export function registerPortalRoutes(app: FastifyInstance, getRt: () => import("
   app.get("/api/portal/status", async () => {
     const svc = getPortalHost();
     const st = svc.status();
-    // CP-4: device web auto-link (SSO), presence di portal, terpisah dari host.
+    // Web device (SSO auto-link) with portal presence, separate from the host.
     const web = getWebDevice();
     const pres = getWebPresence().status();
     const webDevice = web

@@ -1,4 +1,4 @@
-// @yuika/core, file revision store (P2-STU-3): snapshot isi LAMA sebelum write_file
+// @yuika/core, file revision store : snapshot isi LAMA sebelum write_file
 // menimpa. Satu DB dengan sesi (tabel sendiri); cap 20 revisi per file, konten
 // ≤256 KB per revisi (di luar itu revisi tidak direkam, file terlalu besar untuk diff).
 import Database from "better-sqlite3";
@@ -59,7 +59,7 @@ export class FileRevisionStore {
     return row?.content ?? null;
   }
 
-  /** P1-PRJ-8: hapus revisi semua file di bawah prefix path (root project yang
+ /** hapus revisi semua file di bawah prefix path (root project yang
    *  akan dihapus), tanpa ini revisi jadi yatim. Return jumlah baris terhapus. */
   deleteRevisionsUnder(absPathPrefix: string): number {
     const esc = absPathPrefix.replace(/[\\%_]/g, (c) => "\\" + c) + "%"; // concat, hindari template raw string

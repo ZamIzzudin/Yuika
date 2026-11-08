@@ -1,4 +1,4 @@
-// W2-C2 + W5-C2 (TASKS.md): prompt stack frozen per sesi; USER.md stub.
+// W2-C2 + : prompt stack frozen per sesi; USER.md stub.
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -72,7 +72,7 @@ describe("prompt stack frozen per sesi (W2-C2)", () => {
   });
 });
 
-describe("USER.md stub (W5-C2)", () => {
+describe("USER.md stub ()", () => {
   it("1 catatan preferensi (label preview) per sesi; header sekali; tidak menimpa edit user", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-usermd-"));
     appendUserPreferenceNote(dir, "Maestro Yui");

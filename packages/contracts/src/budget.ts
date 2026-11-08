@@ -1,5 +1,5 @@
-// P1-CRED-2/3/4: budget & admission control per workspace.
-// Prinsip (PLAN §8.2, gas-station pattern): saldo = angka JUJUR dari ledger
+// budget & admission control per workspace.
+// Prinsip (, gas-station pattern): saldo = angka JUJUR dari ledger
 // metering × price book user-set (tanpa estimasi); HOLD hanya perkiraan kasar
 // untuk pre-auth (di-settle saat turn selesai, actual usage sudah tercatat
 // di ledger sendiri). Model tanpa harga = biaya tidak dihitung → coverage

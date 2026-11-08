@@ -1,5 +1,5 @@
-// @yuika/contracts, MCP (P1-MCP-3, PLAN D17/MCP): trust gate per-workspace,
-// izin granular per tool, audit log panggilan. Default = UNTRUSTED (fail-closed).
+// @yuika/contracts, MCP: per-workspace trust gate, granular per-tool
+// permissions, and a call audit log. Default = UNTRUSTED (fail-closed).
 import { z } from "zod";
 
 /** Kepercayaan satu server MCP di workspace ini (file `workspace/mcp-trust.json`). */
@@ -25,7 +25,7 @@ export const McpServerStatus = z.object({
   connected: z.boolean(),
   toolCount: z.number(),
   tools: z.array(z.string()),
-  /** P0-MCP-1: siklus hidup, down → reconnecting (backoff) → parked (retry manual). */
+  /** Lifecycle: down -> reconnecting (backoff) -> parked (manual retry). */
   state: z.enum(["connected", "reconnecting", "parked", "off"]).default("off"),
   lastError: z.string().nullable().default(null),
   nextRetryAt: z.number().nullable().default(null),
@@ -52,8 +52,8 @@ export const SetMcpTrustRequest = z.object({
   denyTools: z.array(z.string().max(200)).max(500).default([]),
 });
 
-// ── Katalog MCP (P1-MCP-1) ─────────────────────────────────────────
-/** Satu env key yang diminta server katalog (label untuk UI form). */
+// ── MCP catalog (curated servers) ─────────────────────────────────
+/** One env key the catalog server asks for (label for the UI form). */
 export const McpCatalogEnvKey = z.object({
   key: z.string().min(1),
   label: z.string().min(1),

@@ -1,10 +1,10 @@
-// P0-SEC-2: redaction secrets, kunci/token di tool result (stdout run_command,
+// redaction secrets, kunci/token di tool result (stdout run_command,
 // isi read_file, baris search_files) disamarkan SEBELUM masuk konteks agent;
 // teks normal tidak berubah; fail-closed (ragu → redact).
 import { describe, expect, it } from "vitest";
 import { redactSecrets, REDACTED } from "../redact.js";
 
-describe("redactSecrets (P0-SEC-2)", () => {
+describe("redactSecrets ()", () => {
   it("token bentuk-baku vendor disamarkan", () => {
     const cases = [
       "sk-abcdefghijklmnopqrstuvwx",

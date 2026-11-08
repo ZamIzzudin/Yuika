@@ -1,4 +1,4 @@
-// Batch 14a (P2-SCR), Live Screen: lease fence (rokazo), CDP parse, manager
+// (P2-SCR), Live Screen: lease fence (rokazo), CDP parse, manager
 // dengan browser ASLI (skipIf tak ada executable, mesin dev Edge terbukti
 // via probe SCR-0), tools browser_* end-to-end, takeover pending, dan guard
 // eksklusi .yuika dari Files (SCR-3).
@@ -218,7 +218,7 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
     await vi.waitFor(() => expect(getScreenState(key)).toBeUndefined(), { timeout: 5_000 });
   }, 30_000);
 
-  // ── VLT-4 fill_login ─────────────────────────────────────────────
+ // ── fill_login ─────────────────────────────────────────────
   // Halaman login deterministik (data: URL, tanpa network): form
   // username+password; submit dicegah default → title berubah jadi marker
   // supaya isi form TERBUKTI tanpa membocorkan nilai ke assertion.
@@ -245,7 +245,7 @@ describe.skipIf(!browserAvailable())("SCR manager (real browser)", () => {
       async () => expect(await screenEvalJson<string>(key, "document.title")).toBe("LOGGED-IN:tester"),
       { timeout: 5_000 },
     );
-    // INVARIAN VLT-4 (hardening): snapshot pasca-fill TIDAK membocorkan
+ // INVARIAN (hardening): snapshot pasca-fill TIDAK membocorkan
     // password, input[type=password] di-mask di sumber + redactActive di
     // tool result. Username (type=text) tetap terlihat (by design).
     const snapRes = await registry.dispatch("browser_snapshot", {}, ctx());

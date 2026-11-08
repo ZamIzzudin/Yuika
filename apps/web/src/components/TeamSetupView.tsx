@@ -1,5 +1,5 @@
 "use client";
-// Batch 16 v3, Team Assembly playground (model fisika docs/Orin Playground):
+// v3, Team Assembly playground (model fisika docs/Orin Playground):
 //  · MASKOT ANIMASI (OrinPortrait), tanpa label nama di playground.
 //  · Spawn SEKALI: objek fisika per personaId dibuat satu kali di ref-map;
 //    hover/detail TIDAK pernah menyentuhnya; maskot digambar DI ATAS overlay
@@ -66,8 +66,8 @@ export function TeamSetupView({
   onStart,
   busy,
   title = "Build Your Team",
-  /** D34: slot footer, jika diisi, MENGGANTI blok "Start Session"
-   *  (dipakai Config → Roster agar interaksinya identik tanpa dropdown). */
+  /** Optional footer slot; when present it REPLACES the "Start Session"
+   *  block (used by Config -> Roster for identical UX without a dropdown). */
   footer,
 }: {
   project: { id: string; name: string };
@@ -647,8 +647,8 @@ export function TeamSetupView({
           })}
         </div>
 
-        {/* ── Start Session: dropdown persona + tombol (≥1 assigned) ─────────
-          D34: bisa diganti slot `footer` (Config → Roster, tanpa dropdown). */}
+        {/* ── Start Session: persona dropdown + button (>=1 assigned) ───────
+          Replaceable by the `footer` slot (Config -> Roster, no dropdown). */}
         {footer ??
           (onStart ? (
             <div

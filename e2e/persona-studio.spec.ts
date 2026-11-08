@@ -59,7 +59,7 @@ test("CharacterStage: constellation stage, carousel, gallery, shape, skills, mis
   // 6) Setup model persona: tombol gear (card kiri) → modal form + tombol
   //    check connection (dipindah dari SettingsModal)
   await page.locator("[data-model-gear]").click();
-  // D48: judul modal diubah user → nama persona saja (dulu "Model (…)"
+  // The dialog title is the persona name (previously "Model (...)").
   const modelDlg = page.getByRole("dialog", { name: "Nighty Yui" });
   await expect(modelDlg).toBeVisible();
   await expect(

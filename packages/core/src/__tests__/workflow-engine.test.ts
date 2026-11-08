@@ -1,4 +1,4 @@
-// P2-FLOW-2/3, workflow engine v0: fase sequential/parallel, gate antar fase,
+// workflow engine v0: fase sequential/parallel, gate antar fase,
 // event workflow.*, persist run + resume pasca-restart (step done tak diulang,
 // gate yang belum diputuskan ditanya ulang).
 // Acceptance FLOW-2: template 7 fase jalan E2E (provider fake tanpa script habis).
@@ -108,7 +108,7 @@ function autoApproveGates(engine: WorkflowEngine): void {
   );
 }
 
-describe("P2-FLOW-2, engine v0", () => {
+describe(", engine v0", () => {
   it("lead dari chat user (2026-11-08): sesi chat conductor dipakai sbg lead, konteks run di-inject, sesi baru TIDAK dibuat, sesi lintas-project ditolak", async () => {
     // sesi chat "user" (persona conductor) di project demo
     store.createSession("s_chatku", "yui-conductor", "system-prompt-chat", [], "p_demo");
@@ -216,7 +216,7 @@ describe("P2-FLOW-2, engine v0", () => {
   }, 30_000);
 });
 
-describe("P2-FLOW-3, gate + resume", () => {
+describe(", gate + resume", () => {
   const twoPhase = (): WorkflowDef => ({
     name: "gate",
     phases: [
@@ -270,7 +270,7 @@ describe("P2-FLOW-3, gate + resume", () => {
   }, 30_000);
 });
 
-// ── P2-FLOW-6: steering mid-run, steer / pause+resume / reassign ──────────
+// ── : steering mid-run, steer / pause+resume / reassign ──────────
 const two = (): WorkflowDef => ({
   name: "two",
   phases: [
@@ -279,7 +279,7 @@ const two = (): WorkflowDef => ({
   ],
 });
 
-describe("P2-FLOW-6, steering mid-run", () => {
+describe(", steering mid-run", () => {
   it("steer: pesan user di sesi lead + event + instruksi masuk konteks fase berikut", async () => {
     const prov = new EndlessProvider();
     const engine = makeEngine(prov);

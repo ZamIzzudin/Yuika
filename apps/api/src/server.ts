@@ -1,4 +1,4 @@
-// @yuika/api, entry (P0-INF-1): service API terpisah dari proses Next.js.
+// @yuika/api, entry : service API terpisah dari proses Next.js.
 // Boot: load .env root (env-boot) → Fastify + runtime singleton → listen.
 import { buildApp } from "./app.js";
 import { getRuntime } from "./runtime.js";
@@ -36,7 +36,7 @@ app
     try {
       getRuntime();
       log.info("runtime siap");
-      // P1-PRT-3: host portal auto-online saat API start (kalau sudah pernah
+ // host portal auto-online saat API start (kalau sudah pernah
       // pair), host harus tetap bisa diremot walau tak ada tab web terbuka.
       const linked = getHostDevice();
       if (linked) {
@@ -45,7 +45,7 @@ app
           .then(() => log.info({ deviceId: linked.deviceId }, "portal host online"))
           .catch((e: unknown) => log.warn({ err: e }, "portal host gagal connect (relay down?), akan terus retry"));
       }
-      // CP-5: web presence (device hasil auto-link SSO) ikut online saat boot.
+      // Web presence (the SSO auto-linked device) comes online at boot too.
       const web = getWebDevice();
       if (web) {
         getWebPresence()

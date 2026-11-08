@@ -1,6 +1,6 @@
 // @yuika/core, skill tools: progressive disclosure (skills_list → skill_view)
-// + skill_propose (P1-MEM-3: pengalaman → draf skill → validasi user).
-// Index hanya nama+deskripsi; isi penuh dimuat on-demand (PLAN §4.4).
+// + skill_propose (: pengalaman → draf skill → validasi user).
+// Index hanya nama+deskripsi; isi penuh dimuat on-demand .
 // Tanpa offset/limit: model harus membaca skill sepenuhnya (standar Hermes).
 import { z } from "zod";
 import { registry } from "../registry.js";
@@ -25,12 +25,12 @@ export function registerSkillTools(skillsDir: string): void {
     handler: async (args: { name: string }) => {
       const skill = listSkills(skillsDir).find((s) => s.name === args.name);
       if (!skill) return { result: { error: `skill tidak ditemukan: ${args.name}` }, isError: true };
-      bumpUsage(skill.dir, "views"); // P1-MEM-4
+      bumpUsage(skill.dir, "views"); // 
       return { result: { name: skill.name, content: skill.body } };
     },
   });
 
-  // P1-MEM-3: usulkan skill dari pengalaman, masuk DRAFT, user validasi di tab
+ // usulkan skill dari pengalaman, masuk DRAFT, user validasi di tab
   // Skill (edit → Terima/Tolak). Bar tinggi seperti memory_append: hanya bila
   // alur kerja terbukti efektif & reusable; bukan catatan biasa (itu memory_append).
   registry.register({

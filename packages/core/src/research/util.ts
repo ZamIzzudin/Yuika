@@ -1,4 +1,4 @@
-// Batch 7 (RS), util bersama provider riset: UA, fetch wrapper, strip HTML.
+// (RS), util bersama provider riset: UA, fetch wrapper, strip HTML.
 
 /** UA browser desktop untuk halaman umum & endpoint nonofficial (fungsi dulu,
  *  sebagian endpoint menolak UA non-browser; identitas jujur dipakai untuk API resmi). */

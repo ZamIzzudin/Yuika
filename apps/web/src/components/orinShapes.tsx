@@ -234,7 +234,7 @@ export const SHAPE_ORDER: OrinShapeKey[] = [
 ];
 
 /** Bentuk per persona, identitas visual maskot (Orin v4→v8).
- *  Bentuk bebas untuk persona mendatang (Analyst/Operator, P1-PER-6, dst.):
+ * Bentuk bebas untuk persona mendatang (Analyst/Operator, , dst.):
  *  pill, bean, drop, star, flower, hex, trap, diamond, dome, tube. */
 export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
   "yui-conductor": "orb",
@@ -242,9 +242,9 @@ export const PERSONA_SHAPE: Record<string, OrinShapeKey> = {
   "yui-scribe": "blob",
   "yui-coder": "square",
   "yui-designer": "tri",
-  "yui-analyst": "diamond", // P1-PER-6: prisma, potongan data
-  "yui-operator": "hex", // P1-PER-6: baut, mesin/otomasi
-  "yui-planner": "star", // P2-PM-1 (D22): bintang, target & metrik PM
+  "yui-analyst": "diamond", // : prisma, potongan data
+  "yui-operator": "hex", // : baut, mesin/otomasi
+  "yui-planner": "star", //  (): bintang, target & metrik PM
 };
 
 const FALLBACK: OrinShape = { ...SHAPES.orb, color: "#9A9A9A" };

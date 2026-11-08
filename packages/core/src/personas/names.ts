@@ -7,9 +7,9 @@
 export const PERSONA_ALIAS: Record<string, string> = {
   "yui-conductor": "Maestro Yui",
   "yui-planner": "Rommel Yui",
-  // D26: "Sherlock" dilepas utk persona QA ke-9, Analyst kini "Nighty"
-  // (dipendekkan user dari "Nightingale", Florence Nightingale, pelopor
-  // visualisasi data; mudah diganti: cukup baris ini + persona.yaml + 2 map web).
+  // "Sherlock" was freed for the 9th QA persona; the Analyst is now "Nighty"
+  // (shortened from "Nightingale", Florence Nightingale, data-viz pioneer);
+  // easy to rename: this line + persona.yaml + the two web maps).
   "yui-analyst": "Nighty Yui",
   "yui-scholar": "Pierre Yui",
   "yui-scribe": "Poe Yui",

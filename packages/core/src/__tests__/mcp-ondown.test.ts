@@ -1,5 +1,5 @@
-// P0-MCP-1: deteksi server MCP mati → onDown terpanggil (pemicu reconnect backoff
-// di runtime). Fixture: server merespons lalu exit(1) saat tools/call pertama.
+// Detecting a dead MCP server: onDown fires (it drives reconnect backoff
+// in the runtime). Fixture: responds, then exit(1) on the first tools/call.
 import { describe, expect, it, beforeEach } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,7 +11,7 @@ const ctx = () => ({ sessionId: "s", turnId: "t", workspacePath: ".", emit: () =
 
 beforeEach(() => resetRegistryForTests());
 
-describe("MCP onDown (P0-MCP-1)", () => {
+describe("MCP onDown", () => {
   it("transport mati (server crash) → onDown terpanggil + tool dilepas panggilan berikutnya error", async () => {
     let down = "";
     const conn = await connectMcpServer("boom", { command: "node", args: [fixture] }, { onDown: (r) => (down = r) });

@@ -1,14 +1,14 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
-// Tab File (P2-STU-3 v0 → merge Docs P2-STU-7, 2026-11-08): SATU konsep
+// Tab File ( v0 → merge Docs , 2026-11-08): SATU konsep
 // "artefak project", tree file kiri (+ seksi Run reports di atasnya) dan
 // viewer kanan. File .md default ter-render (toggle Rendered/Source),
 // revisi & diff tetap utk file asli; run report workflow disintesis
 // markdown lokal. Semua request memakai authFetch (FIX bug user:
 // "authentication required" saat buka file, fetch polos tanpa token).
-// D29: tree profesional-minimalis (indent guides + ikon per tipe file),
-// preview kode = CodeBlock Shiki (highlight + nomor baris + copy), markdown
-// = varian "doc" (heading skenal dokumen, fenced code ikut di-highlight).
+// Minimal, professional tree (indent guides + per-type file icons);
+// code preview = CodeBlock/Shiki (highlight, line numbers, copy), markdown
+// = the "doc" variant (document headings, fenced code highlighted too).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FileNode } from "@yuika/contracts";
 import type { Icon } from "@phosphor-icons/react";
@@ -526,7 +526,7 @@ export function FileTab({ projectId }: { projectId: string }) {
       </div>
       <div className="grid min-h-80 grid-cols-[minmax(210px,290px)_minmax(0,1fr)] gap-3 h-[85dvh]">
         <div className={pane} role="tree">
-          {/* Run reports, diserap dari tab Docs (P2-STU-7 merge, 2026-11-08) */}
+          {/* Run reports, diserap dari tab Docs ( merge, 2026-11-08) */}
           <h3 className="flex items-center gap-1.5 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-dim">
             Run reports
             {runs !== null && runs.length > 0 && (

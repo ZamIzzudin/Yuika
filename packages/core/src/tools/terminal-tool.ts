@@ -1,4 +1,4 @@
-// @yuika/core, P2-STU-2: tool `terminal`, agent memakai sesi terminal SHARED
+// @yuika/core, : tool `terminal`, agent memakai sesi terminal SHARED
 // dengan user (tab Terminal). Perintah di luar daftar aman → approval card
 // (persis approval write_file/run_command: user approve dari chat utama).
 import { z } from "zod";
@@ -40,7 +40,7 @@ export function registerTerminalTool(
       "Jalankan perintah di TERMINAL PROYEK, sesi yang SAMA dengan tab Terminal yang user lihat (output tampil live di UI; user bisa mengetik balik). Bila workshop project hidup, shell jalan DI DALAM container workshop (cwd = root proyek, file = file proyek yang sama dengan tab Files; install/paket menetap). Pakai untuk CLI interaktif/dev-server/npm. Output baru dikembalikan (tail 4000 char) setelah command senyap. Bebas approval: node, npm install|ci|run|test, tsc/vitest/jest, git status|log|diff|add|commit|branch|checkout, ls/cat/echo/pwd/cd/mkdir. Lainnya (npm publish, git push, curl, rm, …) butuh approval user.",
     parameters: schema,
     handler: async (args: z.infer<typeof schema>, ctx) => {
-      // Batch 13 follow-up: agent bekerja di PROJECT workspace (bukan dir
+ // follow-up: agent bekerja di PROJECT workspace (bukan dir
       // workspace global) supaya sesi = sesi yang user lihat, dan bila
       // workshop hidup → shell-nya container workshop (file persist).
       const ws = ctx.projectId && deps.projectRoot ? deps.projectRoot(ctx.projectId) : ctx.workspacePath;

@@ -1,4 +1,4 @@
-// @yuika/core, vault manager (Batch 12 / P2-VLT-2): jembatan tool ↔ store ↔
+// @yuika/core, vault manager ( / ): jembatan tool ↔ store ↔
 // kartu protected. Dua jalur nilai, keduanya backend-only:
 //   1. vault_request → kartu fill (event vault.requested, nilai dikirim user
 //      via POST /api/vault/fill/:id, TIDAK pernah masuk event/trace/model).

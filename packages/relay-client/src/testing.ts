@@ -1,5 +1,5 @@
 // @yuika/relay-client/testing, SpecRelay: DOUBLE relay untuk unit test &
-// e2e gerbang P1-PRT-6. Mengimplementasi SPEC-PROTOCOL v1 secara fideli
+// e2e gerbang . Mengimplementasi SPEC-PROTOCOL v1 secara fideli
 // (handshake, register_host + replace + batch remote_joined, list_hosts,
 // join dhPub, data mux buta, sticky host_offline/host_back, err 4104,
 // bye codes, limit frame & koneksi/akun). BUKAN relay produksi, produksi
@@ -187,7 +187,7 @@ export function createSpecRelay(opts: SpecRelayOpts) {
         if (!dev || dev.accountId !== conn.account) {
           return bye(conn, ByeCode.BAD_SIGNATURE, "host belongs to another account");
         }
-        // SPEC §4.3 + CP-2: join.dhPub wajib string PEM PUBLIC KEY, invalid
+        // join.dhPub must be a PEM PUBLIC KEY string; anything invalid
         // → bye 4102 ("field wajib hilang/tidak valid"), sama dengan relay
         // produksi T1 (errata yang diusulkan).
         if (typeof msg.dhPub !== "string" || !msg.dhPub.includes("BEGIN PUBLIC KEY")) {
@@ -257,7 +257,7 @@ export function createSpecRelay(opts: SpecRelayOpts) {
     await new Promise<void>((resolve) => wss.close(() => resolve()));
   }
 
-  /** CP-5 test hook: device di-unlink dari portal → hapus dari registry
+ /** test hook: device di-unlink dari portal → hapus dari registry
    *  + putus SEMUA conn aktifnya dgn bye 4001 (unknown device), persis
    *  perilaku portal nyata saat user klik Unlink di halaman Devices. */
   function unlink(deviceId: string): void {

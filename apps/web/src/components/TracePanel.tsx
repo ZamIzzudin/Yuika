@@ -1,9 +1,9 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
 /**
- * TracePanel (P1-INF-4), observability per turn: timeline langkah (model call,
+ * TracePanel , observability per turn: timeline langkah (model call,
  * tool, delegasi, approval, error) + token per turn dari ledger. Realtime via
- * prop `live` (SSE), debounce 400ms. DS-1: ui/* + Tailwind + Phosphor.
+ * prop `live` (SSE), debounce 400ms. : ui/* + Tailwind + Phosphor.
  */
 import { useCallback, useEffect, useState } from "react";
 import type { SessionTrace } from "@yuika/contracts";

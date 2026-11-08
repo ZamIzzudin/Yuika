@@ -1,4 +1,4 @@
-// P2-PM-3, validator task list detail: DAG, coverage fase, kelengkapan.
+// validator task list detail: DAG, coverage fase, kelengkapan.
 import { describe, expect, it } from "vitest";
 import { lintTaskList } from "../tasklist-lint.js";
 import { WORKFLOW_PHASES, type TaskItem } from "../project.js";
@@ -44,7 +44,7 @@ function bigPlan(n = 31): TaskItem[] {
   return out;
 }
 
-describe("P2-PM-3 lintTaskList", () => {
+describe(" lintTaskList", () => {
   it("brief besar → ≥30 task lengkap → validator hijau", () => {
     const res = lintTaskList(bigPlan());
     expect(res.stats.total).toBeGreaterThanOrEqual(30);

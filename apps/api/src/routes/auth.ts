@@ -27,9 +27,9 @@ export function registerAuthRoutes(app: FastifyInstance): void {
     const user = token ? validateToken(token) : null;
     return AuthStatus.parse({
       user,
-      // D50: YUI_AUTH_REQUIRED=1 (default compose prod) menutup mode terbuka
-      // sejak boot — UI gate harus tahu itu LEWAT field ini (tanpa menunggu
-      // user pertama).
+      // YUI_AUTH_REQUIRED=1 (prod compose default) closes open mode from
+      // the first boot; the login gate must learn it from THIS field
+      // (not by waiting for the first user).
       authRequired: authUserCount() > 0 || process.env.YUI_AUTH_REQUIRED === "1",
       portalUrl: portalBase(),
     });

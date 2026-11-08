@@ -1,5 +1,5 @@
 "use client";
-// P1-PRT-3, seksi Settings → Portal: pairing host + status link + remote list.
+// seksi Settings → Portal: pairing host + status link + remote list.
 // Kunci device HOST dibuat di proses api (bukan browser), halaman ini hanya
 // menyerahkan pairing token (QR/copy dari portal web) ke /api/portal/pair.
 import { useCallback, useEffect, useState } from "react";
@@ -15,14 +15,14 @@ interface PortalStatus {
   relayUrl: string | null;
   relayState: "offline" | "connecting" | "authed" | "closed";
   remotes: Array<{ deviceId: string; kind: string; name: string }>;
-  /** CP-4: browser auto-link (SSO), presence, terpisah dari host manual. */
+  /** Browser auto-link (SSO) with presence, separate from the manual host. */
   webDevice: {
     deviceId: string;
     name: string;
     linkedAt: number;
     online: boolean;
   } | null;
-  /** CP-5: "unlinked" = device dihapus dari portal (bukan error jaringan). */
+  /** "unlinked" = the device was deleted on the portal (not a network error). */
   note?: "unlinked";
 }
 

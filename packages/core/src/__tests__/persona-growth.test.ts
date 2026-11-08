@@ -1,4 +1,4 @@
-// P1-PER-4: growth persona, level & statistik DIKURASI dari data nyata
+// growth persona, level & statistik DIKURASI dari data nyata
 // (sessions / events persona.state done / project_tasks done). Tidak ada
 // jalur menaikkan level selain benar-benar bekerja.
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
@@ -40,7 +40,7 @@ function seed(personaId: string, doneTurns: number, projectId?: string) {
   }
 }
 
-describe("buildPersonaGrowth (P1-PER-4)", () => {
+describe("buildPersonaGrowth ()", () => {
   it("level naik mengikuti kurva turns; null next di level maksimum", () => {
     seed("yui-scholar", 0);
     seed("yui-coder", 20);

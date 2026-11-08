@@ -1,5 +1,5 @@
 "use client";
-// P2-PM-4/5, Project dashboard: progres & health project terbaca sekali
+// Project dashboard: progres & health project terbaca sekali
 // lihat (target: project 100+ task tanpa scroll-cek satu-satu).
 // Server-computed via GET /api/projects/:id/dashboard; dirender di atas
 // board tab Task. Read-only, tidak ada kontrol di sini.
@@ -112,7 +112,7 @@ export function ProjectDashboardView({
         <HealthChips d={d} />
       </div>
 
-      {/* P2-PM-4, RACI ringan: kolom fase = owner + metrik live */}
+      {/* , RACI ringan: kolom fase = owner + metrik live */}
       <div className="grid items-stretch gap-2 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]">
         {d.phases.map((p) => (
           <div
@@ -176,7 +176,7 @@ export function ProjectDashboardView({
         ))}
       </div>
 
-      {/* P2-PM-5, ringkasan iterasi (run ke-N + delta) */}
+      {/* , ringkasan iterasi (run ke-N + delta) */}
       {d.runs.length > 0 && (
         <div className="flex flex-col gap-1">
           <b className="text-caption font-semibold text-secondary">

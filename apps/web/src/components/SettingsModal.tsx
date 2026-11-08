@@ -1,10 +1,9 @@
 "use client";
 import { apiUrl, authFetch, clearAuthToken } from "@/lib/api";
-// Settings modal (D38): anotasi kode P0/P1 & hint berlebihan dibuang agar
-// bersih; section Usage jadi dashboard informatif (KPI tiles + bar chart
-// token per persona + tabel model). Rumah hal yang tak muat di sidebar:
-// Provider & Model, MCP & Tools, Usage, Portal, Account.
-// DS-1: ui/* + Tailwind semantik + ikon Phosphor (docs/DESIGN-SYSTEM.md).
+// Settings modal: home for everything that does not fit the sidebar:
+// Provider & Model, MCP & Tools, Usage (an informative dashboard with KPI
+// tiles, a per-persona token chart, and a model table), Portal, Account.
+// UI: ui/* components + semantic Tailwind + Phosphor icons.
 import { useCallback, useEffect, useState } from "react";
 import type { AuthStatusT, ProviderSettings } from "@yuika/contracts";
 import {
@@ -291,9 +290,9 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** D51: baris versi + indikator update (GET /api/meta, exempt gerbang).
- * Info rilis diumumkan via portal news; mekanisme update self-host:
- * scripts/update.sh (lihat docs/DEPLOY.md Updates). */
+/** Version line + update indicator (GET /api/meta, gate-exempt).
+ * Release news arrives via the portal; self-host updates run
+ * scripts/update.sh (see docs/DEPLOY.md, Updates). */
 function AboutFooter() {
   const [meta, setMeta] = useState<{ version: string; latest: string | null; updateAvailable: boolean; releaseUrl: string | null } | null>(null);
 
@@ -1024,9 +1023,9 @@ function PriceBookEditor({
   );
 }
 
-/** D37: akun portal, rumah tombol sign in/out (dulu pill AuthPill di footer
- *  sidebar). Sesi aktif: email + tombol Sign out (danger); mode terbuka:
- *  ajakan sign-in + tombol portal (CP-3 SSO). */
+/** Portal account panel, home of the sign in/out buttons. Active session:
+ * email + a danger Sign out button; open mode: a sign-in invite + the
+ * portal SSO button. */
 function AccountPanel() {
   const [status, setStatus] = useState<AuthStatusT | null>(null);
   const [busy, setBusy] = useState(false);
@@ -1051,7 +1050,7 @@ function AccountPanel() {
     window.location.reload();
   }
 
-  /** CP-3 SSO: minta URL authorize portal lalu arahkan browser (PKCE). */
+  /** SSO: request the portal authorize URL and redirect the browser (PKCE). */
   async function signIn() {
     if (busy) return;
     setBusy(true);

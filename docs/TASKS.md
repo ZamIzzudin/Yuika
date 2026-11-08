@@ -781,3 +781,11 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 ### D52 — Varian deploy shared-VPS dengan Dokploy (SELESAI)
 - [x] docker-compose.traefik.yml: tanpa caddy, tanpa host port; web+api join jaringan eksternal dokploy-network + label Traefik (router studio-web prio 10 / studio-api prio 100 /api/*, websecure + letsencrypt). DEPLOY.md section baru Sharing the VPS with Dokploy; update.sh via YUI_COMPOSE_FILE.
 
+
+### D53 — Pembersihan anotasi development untuk repo publik (SELESAI)
+- [x] Backup: d:/projects/yuika-dev-notes/annotations-backup.md (57 file + konteks) + salinan TASKS/BATCHES; sumber utama = git history
+- [x] Pass 1-3 (terjemah penuh ke English, makna teknis dipertahankan): apps/api + apps/web + contracts + core + e2e + scripts + relay-client (367+ pasangan)
+- [x] Pass 4 (strip mekanis token tag sisa, komentar saja): ~765 baris; uji coba pertama merusak sintaks (regex makan koma string) → restore + replay pass aman; tsc api+web hijau, api 49 + core 400 test hijau
+- [x] URL portal fix masuk README/.env.example/DEPLOY.md/compose comments: https://yuika.notu.dev + wss://yuika-relay.notu.dev (domain studio user tetap placeholder example)
+- [x] README: tabel "Which compose file to use"
+

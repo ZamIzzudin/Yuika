@@ -1,4 +1,4 @@
-// P0-QA-1, E2E smoke: skenario demo §2 (pilih Conductor → tugas riset →
+// E2E smoke: skenario demo §2 (pilih Conductor → tugas riset →
 // delegasi Scholar → selesai → replay tahan-refresh). Provider = mock lokal
 // (e2e/mock-provider.mjs), deterministik, tanpa biaya, tanpa API key nyata.
 import { expect, test } from "@playwright/test";
@@ -33,7 +33,7 @@ test("demo §2: Conductor → riset → delegasi Scholar → selesai → replay"
   page.on("pageerror", (e) => logs.push(`[pageerror] ${String(e).slice(0, 300)}`));
   await page.goto("/");
   const sessionReady = page.waitForResponse((r) => r.url().endsWith("/api/sessions") && r.request().method() === "POST");
-  // Batch 16: freespace dihapus, sesi WAJIB di dalam project. Buat project
+ // freespace dihapus, sesi WAJIB di dalam project. Buat project
   // dari kartu HOME (modal), assign Maestro di TeamSetup, mulai sesi.
   await page.getByRole("button", { name: "New project" }).click();
   await page.getByPlaceholder("Project Name").fill(`Smoke Flow ${Date.now()}`);

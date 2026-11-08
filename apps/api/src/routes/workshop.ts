@@ -1,4 +1,4 @@
-// @yuika/api, Batch 13 (P2-WKS): workshop persisten per project.
+// @yuika/api, (P2-WKS): workshop persisten per project.
 // GET  /api/projects/:id/workshop        → WorkshopInfo
 // POST /api/projects/:id/workshop/start|sleep|recover|reset|destroy
 // POST /api/projects/:id/workshop/exec   → jalankan perintah (by user, UI panel)

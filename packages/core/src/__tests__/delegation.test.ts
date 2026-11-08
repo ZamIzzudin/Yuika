@@ -1,4 +1,4 @@
-// W4-A1/A2 + W3 (TASKS.md): delegation, child persona, events ke parent,
+// W4-A1/A2 + W3 : delegation, child persona, events ke parent,
 // approval anak diteruskan ke parent stream (blocker skenario demo §2 langkah 6).
 import { describe, expect, it, beforeEach } from "vitest";
 import fs from "node:fs";
@@ -183,7 +183,7 @@ describe("delegation runner", () => {
     store.close();
   });
 
-  it("P1-DEL-1: cap per plan, delegation.max_concurrent pendelegasi lebih ketat dari budget", async () => {
+  it(": cap per plan, delegation.max_concurrent pendelegasi lebih ketat dari budget", async () => {
     const deps = { ...makeDeps(new FakeProvider([])), maxChildren: () => 5 };
     // parent = yui-planner (delegation.yaml: max_concurrent: 2, consult 2 arah
     // paralel tetap jalan) walau budget cap 5: anak ke-3 ditolak.
@@ -207,7 +207,7 @@ describe("delegation runner", () => {
     await Promise.allSettled([...hp, ...hs].map((h) => h.summary)); // cleanup: activeChildren kembali 0
   });
 
-  it("P1-CRED-3: cap delegasi paralel dinamis (maxChildren), spawn di atas cap ditolak", async () => {
+  it(": cap delegasi paralel dinamis (maxChildren), spawn di atas cap ditolak", async () => {
     const slow = new FakeProvider([]); // tak beres dalam test, anak 1 tetap "aktif"
     const deps = { ...makeDeps(slow), maxChildren: () => 1 };
     const h1 = runChildPersona(deps, { sessionId: parentSession, turnId: "t5" }, "yui-scribe", "ringkas", null, makeEmit());
