@@ -17,7 +17,15 @@ import {
   Sparkle,
   X,
 } from "@phosphor-icons/react";
-import { Button, Card, Chip, ConfirmDialog, Field, TextArea, TextInput } from "./ui";
+import {
+  Button,
+  Card,
+  Chip,
+  ConfirmDialog,
+  Field,
+  TextArea,
+  TextInput,
+} from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 
 interface DraftRow {
@@ -192,8 +200,7 @@ export function SkillsTab() {
           <code className="font-mono">skill_view</code>, but they&apos;re only{" "}
           <b className="text-secondary">
             introduced into the prompt of NEW sessions
-          </b>{" "}
-          (the running session&apos;s prompt is frozen by design).
+          </b>
         </span>
       </p>
 
@@ -282,7 +289,9 @@ export function SkillsTab() {
                   <Field label="Skill name">
                     <TextInput
                       value={edit.name}
-                      onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+                      onChange={(e) =>
+                        setEdit({ ...edit, name: e.target.value })
+                      }
                       placeholder="Skill name"
                     />
                   </Field>
@@ -298,7 +307,9 @@ export function SkillsTab() {
                   <Field label="Body (markdown)">
                     <TextArea
                       value={edit.body}
-                      onChange={(e) => setEdit({ ...edit, body: e.target.value })}
+                      onChange={(e) =>
+                        setEdit({ ...edit, body: e.target.value })
+                      }
                       rows={10}
                       spellCheck={false}
                       className="font-mono"
@@ -330,13 +341,13 @@ export function SkillsTab() {
             No active skills yet. Accept a draft to start the library.
           </Card>
         ) : (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2.5 pb-8">
             {skills.map((s) => (
               <Card key={s.name} className="flex flex-col gap-2 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <b className="min-w-0 truncate text-body font-semibold text-primary">
-                      {s.name}
+                    <b className="min-w-0 truncate text-body font-semibold text-primary capitalize">
+                      {s.name.replaceAll("-", " ")}
                     </b>
                     {s.status && (
                       <Chip tone={STATUS_TONE[s.status] ?? "muted"}>
@@ -353,8 +364,7 @@ export function SkillsTab() {
                         <Eye size={12} aria-hidden /> {s.usage.views}
                       </span>
                       <span className="flex items-center gap-1">
-                        <PencilSimple size={12} aria-hidden />{" "}
-                        {s.usage.patches}
+                        <PencilSimple size={12} aria-hidden /> {s.usage.patches}
                       </span>
                       <span className="flex items-center gap-1">
                         <Flag size={12} aria-hidden /> {s.usage.used}
@@ -392,7 +402,9 @@ export function SkillsTab() {
                       <span className="flex items-center gap-1.5 text-success">
                         <Check size={12} weight="bold" aria-hidden />
                         Passed the blind eval
-                        {s.eval.reason ? `, ${s.eval.reason.slice(0, 120)}` : ""}
+                        {s.eval.reason
+                          ? `, ${s.eval.reason.slice(0, 120)}`
+                          : ""}
                       </span>
                     ) : s.eval?.verdict === "fail" ? (
                       <span className="flex items-center gap-1.5 text-danger">

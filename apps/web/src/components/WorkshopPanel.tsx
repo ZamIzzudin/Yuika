@@ -7,6 +7,7 @@ import type { WorkshopInfo, WorkshopLogItem } from "@yuika/contracts";
 import { apiUrl, authFetch } from "@/lib/api";
 import { Button, Card, Chip, ConfirmDialog, TextArea } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
+import { Barricade } from "@phosphor-icons/react";
 
 function fmtDur(ms: number): string {
   if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
@@ -125,10 +126,7 @@ export function WorkshopPanel({
   const st = info?.state ?? "absent";
 
   return (
-    <div
-      className="flex flex-col gap-4"
-      aria-label="Workshop panel"
-    >
+    <div className="flex flex-col gap-4" aria-label="Workshop panel">
       <Card className="flex flex-col gap-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -141,6 +139,7 @@ export function WorkshopPanel({
           <div className="flex flex-wrap gap-2">
             {st === "absent" || st === "stopped" || st === "error" ? (
               <Button
+                variant="primary"
                 disabled={busy}
                 onClick={() =>
                   void call(
@@ -233,7 +232,7 @@ export function WorkshopPanel({
 
       <Card className="flex flex-col gap-2 p-4">
         <b className="text-body font-semibold text-primary">Run a command</b>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <input
             className="min-w-0 flex-1 rounded-md2 border border-line bg-raised px-3 py-2 text-body text-secondary placeholder:text-dim focus:border-accent focus:outline-none"
             placeholder="node -v  ·  npm ls  ·  ls /home/node"
@@ -243,6 +242,7 @@ export function WorkshopPanel({
             aria-label="Workshop command"
           />
           <Button
+            variant="primary"
             disabled={busy || st === "absent"}
             onClick={() => void runCmd()}
           >
@@ -259,10 +259,13 @@ export function WorkshopPanel({
         )}
       </Card>
 
-      <Card className="flex flex-col gap-2 p-4">
-        <b className="text-body font-semibold text-primary">Log</b>
+      <Card className="flex flex-col gap-2 p-4 space-y-3">
+        <b className="text-body font-semibold text-primary inline-block">Log</b>
         {log.length === 0 && (
-          <p className="text-caption text-dim">nothing yet</p>
+          <div className="w-full flex flex-col items-center py-5">
+            <Barricade className="text-dim" size={48} />
+            <span className="text-lg text-dim">No Logs.</span>
+          </div>
         )}
         <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
           {log.map((l, i) => (

@@ -206,13 +206,16 @@ export function McpPanel() {
   );
   const booting = servers.length === 0 && catalog.length === 0;
   const q = query.trim().toLowerCase();
-  const shown = catalog.filter(
-    (c) =>
-      !q ||
-      c.name.toLowerCase().includes(q) ||
-      c.description.toLowerCase().includes(q) ||
-      c.category.includes(q),
-  );
+  const shown = catalog
+    .filter(
+      (c) =>
+        !q ||
+        c.name.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.category.includes(q),
+    )
+    // D39: server yang sudah ter-install selalu di urutan paling awal.
+    .sort((a, b) => Number(declared.has(b.id)) - Number(declared.has(a.id)));
 
   const rowBtn = "h-7 shrink-0 whitespace-nowrap px-2.5 text-caption";
 
@@ -238,75 +241,76 @@ export function McpPanel() {
               No MCP servers declared, install one from the catalog below.
             </p>
           )}
-          <ul className="flex flex-col gap-1.5">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {servers.map((s) => (
               <li
                 key={s.name}
-                className={`flex items-center gap-2.5 rounded-lg2 border px-3 py-2 ${s.trusted ? "border-accent/30 bg-accent-soft/30" : "border-line bg-surface"}`}
+                className={`flex flex-col gap-2 rounded-lg2 border px-3 py-2.5 ${s.trusted ? "border-accent/30 bg-accent-soft/30" : "border-line bg-surface"}`}
               >
-                <Dot
-                  tone={
-                    s.connected
-                      ? "ok"
-                      : s.state === "parked"
-                        ? "danger"
-                        : s.trusted
-                          ? "accent"
-                          : "muted"
-                  }
-                  pulse={
-                    !s.connected && (s.state === "reconnecting" || s.trusted)
-                  }
-                />
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <b className="text-body font-semibold text-primary">
+                <div className="flex items-center gap-2">
+                  <Dot
+                    tone={
+                      s.connected
+                        ? "ok"
+                        : s.state === "parked"
+                          ? "danger"
+                          : s.trusted
+                            ? "accent"
+                            : "muted"
+                    }
+                    pulse={
+                      !s.connected &&
+                      (s.state === "reconnecting" || s.trusted)
+                    }
+                  />
+                  <b className="min-w-0 flex-1 truncate text-body font-semibold text-primary">
                     {s.name}
                   </b>
-                  <small className="text-caption text-muted">
-                    {s.state === "reconnecting"
-                      ? `reconnecting… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}s)` : ""}`
-                      : s.state === "parked"
-                        ? "parked, 5× failed"
-                        : s.connected
-                          ? `${s.toolCount} tools`
-                          : s.trusted
-                            ? "connecting…"
-                            : s.declared
-                              ? "untrusted"
-                              : "not installed"}
-                  </small>
-                  {s.lastError && s.state !== "connected" && (
-                    <small className="flex items-center gap-1 text-caption leading-4 text-danger">
-                      <Warning size={11} aria-hidden className="shrink-0" />{" "}
-                      {s.lastError.slice(0, 64)}
-                    </small>
+                  {(s.state === "parked" || s.state === "reconnecting") && (
+                    <Button
+                      size="sm"
+                      className={rowBtn}
+                      disabled={busy === s.name}
+                      onClick={() => void retry(s.name)}
+                      title="Try reconnecting now"
+                    >
+                      <ArrowClockwise size={12} aria-hidden />
+                    </Button>
                   )}
-                </span>
-                {(s.state === "parked" || s.state === "reconnecting") && (
                   <Button
                     size="sm"
                     className={rowBtn}
-                    disabled={busy === s.name}
-                    onClick={() => void retry(s.name)}
-                    title="Try reconnecting now"
+                    variant={s.trusted ? "secondary" : "primary"}
+                    onClick={() => void toggle(s)}
+                    disabled={busy === s.name || (s.trusted && !s.declared)}
+                    title={
+                      s.trusted
+                        ? "Disconnect & revoke trust (fail-closed)"
+                        : "Trust this server in the workspace"
+                    }
                   >
-                    <ArrowClockwise size={12} aria-hidden />
+                    {busy === s.name ? "…" : s.trusted ? "Untrust" : "Trust"}
                   </Button>
+                </div>
+                <small className="text-caption text-muted">
+                  {s.state === "reconnecting"
+                    ? `reconnecting… ${s.nextRetryAt ? `(${Math.max(0, Math.round((s.nextRetryAt - Date.now()) / 1000))}s)` : ""}`
+                    : s.state === "parked"
+                      ? "parked, 5× failed"
+                      : s.connected
+                        ? `${s.toolCount} tools`
+                        : s.trusted
+                          ? "connecting…"
+                          : s.declared
+                            ? "untrusted"
+                            : "not installed"}
+                </small>
+                {s.lastError && s.state !== "connected" && (
+                  <small className="flex items-start gap-1 text-caption leading-4 text-danger">
+                    <Warning size={11} aria-hidden className="mt-0.5 shrink-0" />{" "}
+                    {s.lastError.slice(0, 64)}
+                  </small>
                 )}
-                <Button
-                  size="sm"
-                  className={rowBtn}
-                  variant={s.trusted ? "secondary" : "primary"}
-                  onClick={() => void toggle(s)}
-                  disabled={busy === s.name || (s.trusted && !s.declared)}
-                  title={
-                    s.trusted
-                      ? "Disconnect & revoke trust (fail-closed)"
-                      : "Trust this server in the workspace"
-                  }
-                >
-                  {busy === s.name ? "…" : s.trusted ? "Untrust" : "Trust"}
-                </Button>
               </li>
             ))}
           </ul>
@@ -410,72 +414,86 @@ export function McpPanel() {
             {booting ? (
               <SkeletonRows rows={5} />
             ) : (
-              <ul className="flex flex-col gap-1.5">
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {shown.map((c) => {
                   const isInstalled = declared.has(c.id);
                   const risk = RISK_LABEL[c.risk] ?? RISK_LABEL.rendah!;
                   return (
                     <li
                       key={c.id}
-                      className={`flex flex-wrap items-center gap-2.5 rounded-lg2 border px-3 py-2 ${isInstalled ? "border-accent/30 bg-accent-soft/20" : "border-line bg-surface"}`}
+                      className={`flex flex-col gap-2 rounded-lg2 border px-3 py-2.5 ${isInstalled ? "border-accent/30 bg-accent-soft/20" : "border-line bg-surface"}`}
                     >
-                      <span className="flex min-w-[200px] flex-1 flex-col gap-0.5">
-                        <b className="flex flex-wrap items-center gap-1.5 text-body font-semibold text-primary">
-                          {c.name} <Chip tone={risk.tone}>{risk.label}</Chip>
-                          {c.runtime === "python" && (
-                            <span
-                              title={
-                                c.setupNote ??
-                                "This server is Python-based (uvx)"
-                              }
-                            >
-                              <Chip tone="muted">Python/uvx</Chip>
-                            </span>
-                          )}
-                        </b>
-                        <small className="text-caption leading-5 text-muted">
-                          {c.description}
-                        </small>
-                        {c.runtime === "python" && c.setupNote && (
-                          <small className="flex items-center gap-1 text-caption leading-4 text-warn">
-                            <Warning
-                              size={11}
-                              aria-hidden
-                              className="shrink-0"
-                            />{" "}
-                            {c.setupNote}
-                          </small>
+                      <b className="flex flex-wrap items-center gap-1.5 text-body font-semibold text-primary">
+                        {c.name} <Chip tone={risk.tone}>{risk.label}</Chip>
+                        {c.runtime === "python" && (
+                          <span
+                            title={
+                              c.setupNote ??
+                              "This server is Python-based (uvx)"
+                            }
+                          >
+                            <Chip tone="muted">Python/uvx</Chip>
+                          </span>
                         )}
-                      </span>
-                      {isInstalled ? (
-                        <Button
-                          size="sm"
-                          className={rowBtn}
-                          onClick={() => setConfirmUn(c)}
-                          disabled={busy === c.id}
-                          title="Remove from mcp.json (disconnects)"
-                        >
-                          {busy === c.id ? "…" : "Remove"}
-                        </Button>
-                      ) : c.runtime === "python" && uvx === null ? (
-                        <Button
-                          size="sm"
-                          className={rowBtn}
-                          disabled
-                          title={
-                            c.setupNote ??
-                            "Requires uv (Python), click Install uv above"
-                          }
-                        >
-                          Needs uv
-                        </Button>
-                      ) : openForm === c.id ? (
-                        <div className="flex w-full flex-wrap items-center gap-2 border-t border-line pt-2">
+                      </b>
+                      <small className="text-caption leading-5 text-muted">
+                        {c.description}
+                      </small>
+                      {c.runtime === "python" && c.setupNote && (
+                        <small className="flex items-start gap-1 text-caption leading-4 text-warn">
+                          <Warning size={11} aria-hidden className="mt-0.5 shrink-0" />{" "}
+                          {c.setupNote}
+                        </small>
+                      )}
+                      <div className="mt-auto flex items-center justify-end">
+                        {isInstalled ? (
+                          <Button
+                            size="sm"
+                            className={rowBtn}
+                            onClick={() => setConfirmUn(c)}
+                            disabled={busy === c.id}
+                            title="Remove from mcp.json (disconnects)"
+                          >
+                            {busy === c.id ? "…" : "Remove"}
+                          </Button>
+                        ) : c.runtime === "python" && uvx === null ? (
+                          <Button
+                            size="sm"
+                            className={rowBtn}
+                            disabled
+                            title={
+                              c.setupNote ??
+                              "Requires uv (Python), click Install uv above"
+                            }
+                          >
+                            Needs uv
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className={rowBtn}
+                            onClick={() => {
+                              setOpenForm(c.id);
+                              setEnvVals({});
+                            }}
+                            disabled={busy === c.id}
+                            title={
+                              c.envKeys.length > 0
+                                ? "Requires API key"
+                                : "Install now"
+                            }
+                          >
+                            {c.envKeys.length > 0 ? "Set up…" : "Install"}
+                          </Button>
+                        )}
+                      </div>
+                      {openForm === c.id && (
+                        <div className="flex flex-col gap-2 border-t border-line pt-2">
                           {c.envKeys.map((k) => (
                             <TextInput
                               key={k.key}
                               type="password"
-                              className="h-7 w-44"
+                              className="h-7 w-full"
                               placeholder={`${k.label}${k.required ? " *" : ""}`}
                               value={envVals[k.key] ?? ""}
                               onChange={(e) =>
@@ -486,40 +504,25 @@ export function McpPanel() {
                               }
                             />
                           ))}
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => void install(c)}
-                            disabled={
-                              busy === c.id ||
-                              c.envKeys.some(
-                                (k) => k.required && !envVals[k.key]?.trim(),
-                              )
-                            }
-                          >
-                            Install
-                          </Button>
-                          <Button size="sm" onClick={() => setOpenForm(null)}>
-                            Cancel
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={() => void install(c)}
+                              disabled={
+                                busy === c.id ||
+                                c.envKeys.some(
+                                  (k) => k.required && !envVals[k.key]?.trim(),
+                                )
+                              }
+                            >
+                              Install
+                            </Button>
+                            <Button size="sm" onClick={() => setOpenForm(null)}>
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          className={rowBtn}
-                          onClick={() => {
-                            setOpenForm(c.id);
-                            setEnvVals({});
-                          }}
-                          disabled={busy === c.id}
-                          title={
-                            c.envKeys.length > 0
-                              ? "Requires API key"
-                              : "Install now"
-                          }
-                        >
-                          {c.envKeys.length > 0 ? "Set up…" : "Install"}
-                        </Button>
                       )}
                     </li>
                   );

@@ -19,14 +19,11 @@ import {
   CircleHalf,
   CircleNotch,
   Copy,
-  FolderSimple,
   Paperclip,
   PencilSimple,
-  TreeStructure,
-  UserCircle,
+  Wrench,
   X,
 } from "@phosphor-icons/react";
-import { PersonaFace } from "./PersonaPicker";
 import { TeamTree, fmtDur } from "./TeamTree";
 import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
@@ -42,7 +39,6 @@ import {
   Chip,
   ConfirmDialog,
   Field,
-  Select,
   TextArea,
   TextInput,
   Modal,
@@ -145,12 +141,9 @@ function BrowserPolicySection({ projectId }: { projectId: string }) {
   );
 
   return (
-    <section
-      aria-label="Browser policy"
-      className="flex flex-col gap-3"
-    >
+    <section aria-label="Browser policy" className="flex flex-col gap-3">
       <header>
-        <b className="text-body font-semibold text-primary">Browser policy</b>
+        <b className="text-body font-semibold text-primary">Browser Policy</b>
         <p className="mt-1 text-caption leading-5 text-dim">
           Controls what the agent&apos;s web tools (web_fetch / research) may
           open for this project. Live screen browsing is not affected, this
@@ -184,8 +177,8 @@ function BrowserPolicySection({ projectId }: { projectId: string }) {
         </p>
       )}
       {policy && !policy.allowAll && (
-        <div className="rounded-lg2 border border-line bg-surface px-3 py-2.5">
-          <b className="text-caption font-semibold uppercase tracking-wide text-dim">
+        <div className="rounded-lg2 border border-line bg-surface px-3 py-2.5 space-y-3">
+          <b className="text-caption font-semibold uppercase tracking-wide text-dim inline-block">
             Allowlist
           </b>
           {policy.allow.length === 0 ? (
@@ -199,7 +192,7 @@ function BrowserPolicySection({ projectId }: { projectId: string }) {
               {policy.allow.map((d) => (
                 <li
                   key={d}
-                  className="rounded-pill border border-line bg-inset px-2 py-0.5 font-mono text-caption text-secondary"
+                  className="rounded-pill border border-line bg-inset px-3 py-1 font-mono text-caption text-secondary"
                 >
                   {d}
                 </li>
@@ -386,10 +379,10 @@ function ProjectEditCard({
 
   const cell = (label: string, value: React.ReactNode) => (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <small className="text-[10px] font-semibold tracking-wider text-dim uppercase">
+      <small className="text-[12px] tracking-wider text-dim uppercase">
         {label}
       </small>
-      <span className="min-w-0 truncate text-caption text-secondary">
+      <span className="min-w-0 truncate text-caption text-secondary capitalize">
         {value}
       </span>
     </div>
@@ -400,19 +393,12 @@ function ProjectEditCard({
       <header className="flex flex-col gap-1">
         <b className="text-body font-semibold text-primary">Project</b>
         <p className="text-caption text-dim">
-          The identity of this workspace, one compact card. Edit the name or
-          description with the pencil button.
+          The identity of this workspace, one compact card.
         </p>
       </header>
 
       <Card className="p-4">
         <div className="flex items-start gap-3">
-          <span
-            aria-hidden
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg2 border border-line bg-surface"
-          >
-            <FolderSimple size={16} className="text-accent" />
-          </span>
           <span className="min-w-0 flex-1">
             <b className="text-title font-semibold break-words text-primary">
               {project.name}
@@ -436,7 +422,7 @@ function ProjectEditCard({
 
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-3 sm:grid-cols-3">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <small className="text-[10px] font-semibold tracking-wider text-dim uppercase">
+            <small className="text-[12px] font-semibold tracking-wider text-dim uppercase">
               Project ID
             </small>
             <button
@@ -461,7 +447,7 @@ function ProjectEditCard({
           {cell("Kind", project.kind)}
           {cell(
             "Workspace",
-            <code className="font-mono">{project.rootPath}</code>,
+            <code className="font-mono lowercase">{project.rootPath}</code>,
           )}
           {cell(
             "Created",
@@ -870,7 +856,6 @@ export function ProjectTabs({
                     </span>
                   }
                 />
-
               </section>
             )}
             {loaded && cfgMenu === "memory" && (
@@ -888,9 +873,9 @@ export function ProjectTabs({
                 {[
                   {
                     scope: "user" as const,
-                    title: "About You",
+                    title: "User Preferences",
                     file: "USER.md",
-                    Icon: UserCircle,
+                    Icon: Wrench,
                     hint: "Cross-project: your style, language, and constraints.",
                     value: userMd,
                     base: userMdBase,
@@ -898,7 +883,7 @@ export function ProjectTabs({
                   },
                   {
                     scope: "project" as const,
-                    title: "This Project",
+                    title: "Project Context",
                     file: "MEMORY.md",
                     Icon: Brain,
                     hint: `Decisions and context that apply to ${project.name}.`,
@@ -913,9 +898,9 @@ export function ProjectTabs({
                       <header className="flex flex-wrap items-center gap-2.5">
                         <span
                           aria-hidden
-                          className="flex size-7 shrink-0 items-center justify-center rounded-md2 border border-line bg-surface"
+                          className="flex size-7 shrink-0 items-center mx-3 justify-center"
                         >
-                          <d.Icon size={14} className="text-accent" />
+                          <d.Icon size={28} className="text-accent" />
                         </span>
                         <span className="flex min-w-0 flex-col">
                           <b className="text-body font-semibold text-primary">

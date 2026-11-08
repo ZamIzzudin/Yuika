@@ -184,14 +184,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                 <Skeleton lines={5} />
               ) : (
                 <>
-                  <p className="text-caption text-dim">
-                    Key{" "}
-                    <code className="font-mono text-secondary">
-                      {cfg.hasApiKey ? cfg.keyPreview : "none"}
-                    </code>{" "}
-                    · model{" "}
-                    <code className="font-mono text-secondary">{cfg.model}</code>
-                  </p>
                   <Field label="Provider kind">
                     <Select
                       value={kind}
@@ -241,7 +233,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                         spellCheck={false}
                       />
                     </Field>
-                    <Field label="Fallback model" hint="when the primary fails">
+                    <Field label="Fallback model (Opsional)">
                       <TextInput
                         value={fallback}
                         onChange={(e) => setFallback(e.target.value)}
@@ -602,9 +594,7 @@ function UsageDashboard() {
   if (data === null) return <Skeleton lines={4} />;
 
   const maxPersona = Math.max(
-    ...data.summary.byPersona.map(
-      (p) => p.promptTokens + p.outputTokens,
-    ),
+    ...data.summary.byPersona.map((p) => p.promptTokens + p.outputTokens),
     1,
   );
 
@@ -655,7 +645,9 @@ function UsageDashboard() {
             <Stat
               label="Est. cost"
               value={anyPriced ? fmtCost(totalCost) : "—"}
-              sub={anyPriced ? "from your price book" : "set model prices below"}
+              sub={
+                anyPriced ? "from your price book" : "set model prices below"
+              }
             />
           </div>
 
@@ -1013,8 +1005,8 @@ function AccountPanel() {
       <header className="flex flex-col gap-1">
         <b className="text-body font-semibold text-primary">Account</b>
         <p className="text-caption leading-5 text-dim">
-          Your Yuika Portal session. Signing in links this device to your
-          portal account, the first sign-in on a server closes open mode.
+          Your Yuika Portal session. Signing in links this device to your portal
+          account, the first sign-in on a server closes open mode.
         </p>
       </header>
       {user ? (
