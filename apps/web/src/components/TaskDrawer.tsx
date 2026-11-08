@@ -1,6 +1,6 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   DeleteProjectResult,
   PersonaInfo,
@@ -545,6 +545,7 @@ export function ProjectTabs({
   /** D33: sheet "Log Task" slide kanan→kiri saat buka, mundur saat tutup.
    *  treeOpen = mounted; sheetVis = posisi (translate-x). */
   const [sheetVis, setSheetVis] = useState(false);
+  const sheetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Jam live untuk durasi "sudah berjalan Xm" (tab Pohon & Tim)
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -641,13 +642,15 @@ export function ProjectTabs({
 
   /** D33: buka sheet — mount dulu, frame berikutnya geser masuk (transisi jalan). */
   const openSheet = useCallback(() => {
+    // batal sisa timer close sebelumnya (race buka-tutup cepat).
+    if (sheetTimer.current) clearTimeout(sheetTimer.current);
     setTreeOpen(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setSheetVis(true)));
   }, []);
   /** D33: tutup sheet — mundur dulu, unmount setelah animasi selesai. */
   const closeSheet = useCallback(() => {
     setSheetVis(false);
-    setTimeout(() => setTreeOpen(false), 280);
+    sheetTimer.current = setTimeout(() => setTreeOpen(false), 280);
   }, []);
   // Escape menutup sheet.
   useEffect(() => {
@@ -1019,7 +1022,7 @@ export function ProjectTabs({
           <div>
             <header className="mb-5 flex items-center justify-between">
               <span className="text-sm text-dim">Task</span>
-              <Button size="sm" onClick={() => setTreeOpen(true)}>
+              <Button size="sm" onClick={openSheet}>
                 Log Task
               </Button>
             </header>
