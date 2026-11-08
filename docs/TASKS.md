@@ -857,3 +857,10 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] MCP instalasi user persist: tulis ke workspace/mcp.user.json (volume) bukan mcp.json (layer image); config efektif = base ∪ overlay, tombstone utk uninstall server base; token github selamat lintas redeploy.
 - [x] UI: overlay modal digelapkan (bg-black/70 + blur tipis; drawer 60%) supaya konten di belakang tak bertabrakan.
 
+
+### D64 — Pairing fase B lanjutan: B6+B7 (SELESAI)
+- [x] B6: portal Devices page disederhanakan — UI issue-token/QR dihapus, satu daftar device auto-link + activity + unlink (endpoint pairing tetap sbg escape hatch testing).
+- [x] B7 portal: OAuth client yuika-mobile (redirect custom scheme yuika://auth/callback, exact-match; web client tetap kebijakan D51b), token endpoint menurunkan deviceToken kind per client (mobile → kind mobile), endpoint discovery GET /api/relay-info (env PORTAL_RELAY_URL). Test oauth 30/30.
+- [x] B7 mobile: login portal (PKCE via WebBrowser) → kunci device dibuat lokal @noble/curves (byte-format PKCS8/SPKI identik @yuika/crypto, interop diverifikasi dua arah) → claim device kind mobile (kunci stabil = idempotent; slot 1, 409 = minta unlink di portal) → SecureStore → relay: auth challenge Ed25519 + list_hosts live. UI dark teme Yuika (login → daftar host → sign out). Repo Yuika-Mobile pushed.
+- [ ] B8 (next): remote control — join host + kanal data E2E (seal X25519) + UI remote; uji live dengan dev build (Expo Go tidak me-round-trip custom scheme).
+
