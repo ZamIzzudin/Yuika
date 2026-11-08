@@ -1,0 +1,7 @@
+# Line endings: shell scripts MUST stay LF (they run on Linux VPS via
+# docs/DEPLOY.md; CRLF checkout on Windows breaks them).
+*.sh text eol=lf
+*.mjs text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+Caddyfile* text eol=lf

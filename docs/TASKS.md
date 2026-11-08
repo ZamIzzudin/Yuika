@@ -770,3 +770,10 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Hardening: YUI_AUTH_REQUIRED=1 (gerbang tertutup sejak boot; me/authRequired ikut flag), CORS YUI_CORS_ORIGIN, healthcheck /api/auth/me, FIX LEAK auth.db/vault.key/*.db ter-bake ke image (.dockerignore)
 - [x] Verifikasi: build image api+web+portal+relay OK, smoke api (401 gate, 0 user baked), compose config x3 OK, api auth tests 6/6
 
+
+### D51 — Versi & mekanisme update self-host (SELESAI sesi D51)
+- [x] GET /api/meta (exempt gerbang): version dari package.json root + latest dari GitHub Releases (server-side, cache 1 jam, tahan offline; YUI_UPDATE_CHECK=0 untuk off)
+- [x] Settings footer AboutFooter: versi + link update bila release lebih baru
+- [x] scripts/update.sh: release-tag-first (--main opsional), rebuild, tunggu healthcheck, panduan rollback; .gitattributes jaga LF script/Dockerfile/compose
+- [x] Version bump 0.1.0 → 0.8.0 (selaras PLAN v0.8); DEPLOY.md section Updates ditulis ulang
+

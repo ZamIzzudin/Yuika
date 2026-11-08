@@ -46,10 +46,12 @@ describe("auth gate portal-only (me/logout + tenant scope)", () => {
       const no = await app.inject({ method: "GET", url: "/api/personas" });
       expect(no.statusCode).toBe(401);
       expect(no.json()).toEqual({ error: "authentication required" });
-      // jalur sign-in portal tetap terbuka (user pertama lahir dari SSO)
+      // jalur sign-in portal tetap terbuka (user pertama lahir dari SSO).
+      // authRequired true sejak boot: UI gate tampil sebelum user pertama
+      // (perilaku D50 — route /api/auth/me ikut flag).
       const me = await app.inject({ method: "GET", url: "/api/auth/me" });
       expect(me.statusCode).toBe(200);
-      expect(me.json()).toMatchObject({ user: null, authRequired: false });
+      expect(me.json()).toMatchObject({ user: null, authRequired: true });
     } finally {
       delete process.env.YUI_AUTH_REQUIRED;
     }

@@ -286,7 +286,49 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           {section === "account" && <AccountPanel />}
         </div>
       </div>
+      <AboutFooter />
     </Modal>
+  );
+}
+
+/** D51: baris versi + indikator update (GET /api/meta, exempt gerbang).
+ * Info rilis diumumkan via portal news; mekanisme update self-host:
+ * scripts/update.sh (lihat docs/DEPLOY.md Updates). */
+function AboutFooter() {
+  const [meta, setMeta] = useState<{ version: string; latest: string | null; updateAvailable: boolean; releaseUrl: string | null } | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const r = await authFetch(apiUrl("/api/meta"));
+        if (r.ok && alive) setMeta(await r.json());
+      } catch {
+        /* offline: versi lokal saja */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (!meta) return null;
+  return (
+    <footer className="flex items-center justify-center gap-1.5 border-t border-line pt-3 text-caption text-dim">
+      <span>Yuika v{meta.version}</span>
+      {meta.updateAvailable && meta.releaseUrl ? (
+        <a
+          href={meta.releaseUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-accent hover:underline"
+        >
+          Update available: {meta.latest}
+        </a>
+      ) : meta.latest ? (
+        <span aria-hidden>· up to date</span>
+      ) : null}
+    </footer>
   );
 }
 

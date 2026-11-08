@@ -29,6 +29,7 @@ import { registerScreenRoutes } from "./routes/screen.js";
 import { getRuntime } from "./runtime.js";
 import { registerAuthRoutes, bearerToken } from "./routes/auth.js";
 import { registerAuthSsoRoutes } from "./routes/auth-sso.js"; // CP-3 SSO portal
+import { registerMetaRoutes } from "./routes/meta.js"; // D51: versi + update check
 import { authUserCount, validateToken } from "./auth/store.js";
 
 export function buildApp(rt?: YuiRuntime): FastifyInstance {
@@ -70,7 +71,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   // pertama; sign-in portal tetap jalan (route /api/auth/* dikecualikan).
   app.addHook("preHandler", async (req, reply) => {
     const url = req.raw.url ?? "";
-    if (url.startsWith("/api/auth")) return;
+    if (url.startsWith("/api/auth") || url.startsWith("/api/meta")) return;
     if (authUserCount() === 0 && process.env.YUI_AUTH_REQUIRED !== "1") return;
     const token = bearerToken(req.headers.authorization, (req.query as Record<string, unknown>)?.auth_token);
     const user = token ? validateToken(token) : null;
@@ -80,6 +81,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
 
   registerAuthRoutes(app);
   registerAuthSsoRoutes(app); // CP-3: sign-in via portal (start+complete)
+  registerMetaRoutes(app); // D51: /api/meta (versi + indikator update)
   registerSessionRoutes(app, getRt);
   registerDelegationRoutes(app, getRt);
   registerApprovalRoutes(app, getRt);

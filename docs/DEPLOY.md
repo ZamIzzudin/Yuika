@@ -146,10 +146,31 @@ before the first user signs in.
 
 **Update to a new version:**
 
+Releases are git tags (`v*`). Announcements go out through the portal news
+page and the studio itself shows an update indicator in Settings once a
+newer release exists. To apply an update, run the bundled updater:
+
 ```bash
-cd /opt/Yuika && git pull
+cd /opt/Yuika && ./scripts/update.sh
+```
+
+It fetches the newest release tag, rebuilds the containers, and waits for
+the API healthcheck. Expect a few minutes of build time and a few seconds
+of downtime while containers restart; the yui-data volume is never touched.
+Rollback is the same flow pointed at an older tag:
+
+```bash
+cd /opt/Yuika
+git checkout v0.8.0                 # any previous release
 docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+`./scripts/update.sh --main` tracks the main branch instead of release tags;
+use it only if you accept less tested code. Note: local modifications to the
+checkout are discarded on every update; configuration belongs in `.env`.
+
+Check what you run at any time: `curl -s https://studio.yourdomain.example/api/meta`
+returns the running version and (when a release exists) the latest.
 
 **Logs:**
 
