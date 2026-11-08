@@ -762,3 +762,11 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 
 
 
+
+### D50 — Mini launch: deploy VPS (SELESAI sesi D50)
+- [x] Portal (operator, Dokploy): Dockerfile web+relay, compose dokploy, docs/DEPLOY-DOKPLOY.md (di repo yuika-portal)
+- [x] Studio (self-host manual user lain): docker-compose.prod.yml studio-only (caddy+web+api, api tak dipublish, same-origin /api), deploy/Caddyfile, docs/DEPLOY.md (spek min, DNS, langkah, backup, troubleshooting)
+- [x] Varian privat satu-VPS: deploy/docker-compose.with-portal.yml + Caddyfile.with-portal
+- [x] Hardening: YUI_AUTH_REQUIRED=1 (gerbang tertutup sejak boot; me/authRequired ikut flag), CORS YUI_CORS_ORIGIN, healthcheck /api/auth/me, FIX LEAK auth.db/vault.key/*.db ter-bake ke image (.dockerignore)
+- [x] Verifikasi: build image api+web+portal+relay OK, smoke api (401 gate, 0 user baked), compose config x3 OK, api auth tests 6/6
+

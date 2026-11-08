@@ -23,10 +23,11 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    ".next-e2e/types/**/*.ts",
     ".next-pi/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-e2e/types/**/*.ts"
+    ".next-dbg/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

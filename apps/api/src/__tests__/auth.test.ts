@@ -39,6 +39,22 @@ describe("auth gate portal-only (me/logout + tenant scope)", () => {
     expect((me.json() as { portalUrl: string }).portalUrl).toMatch(/^https?:\/\//);
   });
 
+  it("D50 YUI_AUTH_REQUIRED=1: instance publik tertutup sejak boot (belum ada user pun non-auth 401; route auth tetap hidup)", async () => {
+    process.env.YUI_AUTH_REQUIRED = "1";
+    try {
+      expect(authUserCount()).toBe(0);
+      const no = await app.inject({ method: "GET", url: "/api/personas" });
+      expect(no.statusCode).toBe(401);
+      expect(no.json()).toEqual({ error: "authentication required" });
+      // jalur sign-in portal tetap terbuka (user pertama lahir dari SSO)
+      const me = await app.inject({ method: "GET", url: "/api/auth/me" });
+      expect(me.statusCode).toBe(200);
+      expect(me.json()).toMatchObject({ user: null, authRequired: false });
+    } finally {
+      delete process.env.YUI_AUTH_REQUIRED;
+    }
+  });
+
   it("portal-only: register & login lokal → 404 (konsep dihapus)", async () => {
     const reg = await app.inject({
       method: "POST", url: "/api/auth/register",

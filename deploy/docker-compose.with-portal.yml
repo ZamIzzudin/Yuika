@@ -1,0 +1,128 @@
+# OPTIONAL: fully private stack, studio + portal + relay on ONE VPS (D50).
+#
+# Default deployment (docker-compose.prod.yml) points the studio at the
+# centrally operated Yuika Portal. Use this variant instead when you want
+# everything under your own control on a single machine (airgapped setups,
+# product-internal pilots). Requires the portal repo checked out next to
+# this repo (override with PORTAL_REPO_DIR).
+#
+#   cp .env.example .env && nano .env          # STUDIO_DOMAIN + PORTAL_DOMAIN
+#   docker compose -f deploy/docker-compose.with-portal.yml up -d --build
+#
+# Routes (deploy/Caddyfile.with-portal):
+#   https://STUDIO_DOMAIN  → web + /api/* → api
+#   https://PORTAL_DOMAIN  → portal-web, /ws/* → relay (WebSocket)
+#
+# Accounts are created on YOUR portal; the two domains share one data volume.
+
+name: yuika
+
+x-portal-context: &portal-context ${PORTAL_REPO_DIR:-../yuika-portal}
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      STUDIO_DOMAIN: ${STUDIO_DOMAIN:?set STUDIO_DOMAIN in .env}
+      PORTAL_DOMAIN: ${PORTAL_DOMAIN:?set PORTAL_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile.with-portal:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      portal-web:
+        condition: service_started
+    networks:
+      - edge
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: api
+    image: yuika/api:latest
+    restart: unless-stopped
+    env_file:
+      - path: ../../.env
+        required: false
+    environment:
+      YUI_API_HOST: 0.0.0.0
+      YUI_API_PORT: "3211"
+      YUI_DB_PATH: /data/yui.db
+      YUI_WORKSPACE_DIR: /data/workspace
+      YUI_AUTH_DB: /data/auth.db
+      YUI_LOG_PRETTY: "0"
+      YUI_AUTH_REQUIRED: "1"
+      YUI_PORTAL_URL: ${YUI_PORTAL_URL:?set YUI_PORTAL_URL in .env}
+      YUI_RELAY_URL: ${YUI_RELAY_URL:?set YUI_RELAY_URL in .env}
+    volumes:
+      - yui-data:/data
+    networks:
+      - edge
+
+  web:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: web
+      args:
+        NEXT_PUBLIC_API_BASE: ""
+    image: yuika/web:latest
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - edge
+
+  portal-web:
+    build:
+      context: *portal-context
+      dockerfile: Dockerfile
+      target: web
+    image: yuika/portal-web:latest
+    restart: unless-stopped
+    environment:
+      PORTAL_DB: /data/portal.db
+      # Whitelist the studio SSO callback on top of localhost defaults.
+      YUIKA_WEB_REDIRECT_URIS: https://${STUDIO_DOMAIN}/auth/callback
+    volumes:
+      - yui-data:/data
+    networks:
+      - edge
+
+  relay:
+    build:
+      context: *portal-context
+      dockerfile: Dockerfile
+      target: relay
+    image: yuika/relay:latest
+    restart: unless-stopped
+    environment:
+      RELAY_HOST: 0.0.0.0
+      RELAY_PORT: "3101"
+      PORTAL_DB: /data/portal.db
+    volumes:
+      - yui-data:/data
+    networks:
+      - edge
+
+volumes:
+  yui-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  edge: {}

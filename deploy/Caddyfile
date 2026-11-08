@@ -1,0 +1,21 @@
+# Yuika Studio edge (D50). One public name, one Caddy, automatic HTTPS.
+# The domain comes from environment (docker-compose.prod.yml):
+#   STUDIO_DOMAIN  e.g. studio.example.com
+# The DNS record must point at this server BEFORE `up` (Let's Encrypt
+# validates the name; failure blocks only this site's certificate).
+
+{$STUDIO_DOMAIN} {
+	encode zstd gzip
+
+	# Studio API (Fastify): SSE streams (/api/sessions/:id/stream) need
+	# unbuffered pass-through; flush_interval -1 forwards bytes as they arrive.
+	handle /api/* {
+		reverse_proxy api:3211 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

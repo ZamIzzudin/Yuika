@@ -28,6 +28,17 @@ const nextConfig = {
   // Desktop (D48): export statis untuk shell Tauri — UI web murni client,
   // dibundel sebagai frontendDist apps/desktop. Paralel pola standalone.
   ...(process.env.NEXT_EXPORT === "1" ? { output: "export" } : {}),
+  // D50 (mini launch): sembunyikan halaman internal /dev/* (playground rive,
+  // remote debug) pada build production server (Docker). Flag dipasang di
+  // Dockerfile build stage; mode dev & static export tidak terpengaruh
+  // (redirects tidak didukung output:"export").
+  ...(process.env.YUI_HIDE_DEV_PAGES === "1" && process.env.NEXT_EXPORT !== "1"
+    ? {
+        async redirects() {
+          return [{ source: "/dev/:path*", destination: "/", permanent: false }];
+        },
+      }
+    : {}),
   // distDir bisa dipisah (NEXT_DIST_DIR=.next-pi) agar verifikasi/CI paralel
   // TIDAK menghapus cache dev server yang sedang berjalan (kejadian 2026-11:
   // rm -rf .next saat server hidup -> _document.js ENOENT, semua route 500).

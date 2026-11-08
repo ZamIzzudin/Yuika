@@ -33,7 +33,15 @@ import { authUserCount, validateToken } from "./auth/store.js";
 
 export function buildApp(rt?: YuiRuntime): FastifyInstance {
   const app = Fastify({ logger: false, bodyLimit: 12 * 1024 * 1024 });
-  void app.register(cors, { origin: true }); // local app: reflect origin (web:3000 ↔ api:3211)
+  // D50: default tetap reflect-origin (web:3000 ↔ api:3211 di mesin lokal).
+  // Deploy publik split-origin boleh mempersempit via YUI_CORS_ORIGIN
+  // (daftar origin dipisah koma, mis. https://studio.example.com). Saat web
+  // dan api berada di belakang satu reverse proxy (same-origin), CORS tidak
+  // dievaluasi browser sama sekali.
+  const corsOrigin: string[] | true = process.env.YUI_CORS_ORIGIN
+    ? process.env.YUI_CORS_ORIGIN.split(",").map((s) => s.trim()).filter(Boolean)
+    : true;
+  void app.register(cors, { origin: corsOrigin });
 
   // Upload raw (pdf/xlsx/…): parser catch-all buffer, JSON tetap via parser
   // bawaan; tipe tanpa parser terdaftar jatuh ke sini sebagai Buffer.
@@ -57,10 +65,13 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   // (API terbuka, backward-compatible self-hosted). Setelah user pertama:
   // semua route non-/api/auth/* wajib Bearer token (header, atau ?auth_token=
   // untuk EventSource SSE yang tak bisa set header).
+  // D50: YUI_AUTH_REQUIRED=1 (default compose prod) menutup mode terbuka
+  // sejak boot: instance publik tidak pernah "open window" menunggu user
+  // pertama; sign-in portal tetap jalan (route /api/auth/* dikecualikan).
   app.addHook("preHandler", async (req, reply) => {
     const url = req.raw.url ?? "";
     if (url.startsWith("/api/auth")) return;
-    if (authUserCount() === 0) return;
+    if (authUserCount() === 0 && process.env.YUI_AUTH_REQUIRED !== "1") return;
     const token = bearerToken(req.headers.authorization, (req.query as Record<string, unknown>)?.auth_token);
     const user = token ? validateToken(token) : null;
     if (!user) return reply.code(401).send({ error: "authentication required" });

@@ -1,0 +1,34 @@
+# Private full-stack edge (D50, used by deploy/docker-compose.with-portal.yml).
+# Two public names, one Caddy, automatic HTTPS. Domains come from environment:
+#   STUDIO_DOMAIN  e.g. studio.example.com
+#   PORTAL_DOMAIN  e.g. account.example.com
+# Both DNS records must point at this server BEFORE `up`.
+
+{$STUDIO_DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:3211 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+{$PORTAL_DOMAIN} {
+	encode zstd gzip
+
+	# Linked-device relay WebSocket: wss://PORTAL_DOMAIN/ws → relay:3101
+	# (prefix stripped; the relay speaks plain ws at root).
+	handle /ws/* {
+		uri strip_prefix /ws
+		reverse_proxy relay:3101
+	}
+
+	handle {
+		reverse_proxy portal-web:3100
+	}
+}

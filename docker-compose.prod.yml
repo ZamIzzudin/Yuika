@@ -1,0 +1,103 @@
+# Yuika Studio production stack (D50, manual VPS deploy: docs/DEPLOY.md).
+#
+# Self-hosting for everyone: plain Docker on any Linux VPS, no Dokploy or
+# other PaaS required. Two containers + one Caddy edge with automatic HTTPS:
+#
+#   https://STUDIO_DOMAIN  → web (Next)  + /api/* → api (Fastify, SSE-safe)
+#
+# Accounts live on the Yuika Portal (central, owner-operated; see the portal
+# repo for its own deployment). Point the studio at it with:
+#   YUI_PORTAL_URL  e.g. https://account.yuika.example
+#   YUI_RELAY_URL   e.g. wss://relay.yuika.example   (linked devices)
+# Want to run your own private portal on the same box instead? See
+# deploy/docker-compose.with-portal.yml.
+#
+#   cp .env.example .env && nano .env
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml logs -f caddy   # watch cert
+#
+# Data durability: everything user-owned (studio sqlite + workspace + vault +
+# auth.db) lives in the yui-data volume; image upgrades never touch it.
+# Backup recipe in docs/DEPLOY.md.
+
+name: yuika
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      STUDIO_DOMAIN: ${STUDIO_DOMAIN:?set STUDIO_DOMAIN in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - edge
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    image: yuika/api:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      YUI_API_HOST: 0.0.0.0 # listen inside the compose network only
+      YUI_API_PORT: "3211"
+      YUI_DB_PATH: /data/yui.db
+      YUI_WORKSPACE_DIR: /data/workspace
+      YUI_AUTH_DB: /data/auth.db
+      YUI_LOG_PRETTY: "0"
+      # No "open window" on a public instance: every route requires a token
+      # from the very first boot. First sign-in still works (auth routes are
+      # exempt). Override with "0" only for private/LAN deployments.
+      YUI_AUTH_REQUIRED: "1"
+      # Public URLs of the CENTRAL portal (as the browser and this server
+      # see them). Server-to-server oauth token exchange uses the same URL.
+      YUI_PORTAL_URL: ${YUI_PORTAL_URL:?set YUI_PORTAL_URL in .env}
+      YUI_RELAY_URL: ${YUI_RELAY_URL:?set YUI_RELAY_URL in .env}
+    volumes:
+      - yui-data:/data
+    networks:
+      - edge
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+      args:
+        # Empty = same-origin: browser calls https://STUDIO_DOMAIN/api/*
+        # which Caddy routes to the api service. No CORS involved.
+        NEXT_PUBLIC_API_BASE: ""
+    image: yuika/web:latest
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - edge
+
+volumes:
+  yui-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  edge: {}

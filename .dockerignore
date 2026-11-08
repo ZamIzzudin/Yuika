@@ -19,3 +19,22 @@ docs
 tmp-*.mjs
 .tmp-*
 smoke-policy.tmp.*
+# D50: dev/test artifacts stay out of production images
+e2e
+test-results
+playwright-report
+playwright.config.ts
+docker-compose*.yml
+deploy
+apps/desktop
+README.md
+PLAN-*.md
+# D50: JANGAN pernah bake database lokal (auth.db dev = privacy leak)
+*.db
+*.db-shm
+*.db-wal
+data
+workspace
+.env*
+vault.key
+*.key

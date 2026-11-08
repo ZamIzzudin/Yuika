@@ -25,6 +25,13 @@ export function registerAuthRoutes(app: FastifyInstance): void {
   app.get("/api/auth/me", async (req) => {
     const token = bearerToken(req.headers.authorization, (req.query as Record<string, unknown>)?.auth_token);
     const user = token ? validateToken(token) : null;
-    return AuthStatus.parse({ user, authRequired: authUserCount() > 0, portalUrl: portalBase() });
+    return AuthStatus.parse({
+      user,
+      // D50: YUI_AUTH_REQUIRED=1 (default compose prod) menutup mode terbuka
+      // sejak boot — UI gate harus tahu itu LEWAT field ini (tanpa menunggu
+      // user pertama).
+      authRequired: authUserCount() > 0 || process.env.YUI_AUTH_REQUIRED === "1",
+      portalUrl: portalBase(),
+    });
   });
 }

@@ -124,6 +124,15 @@ Core guarantees are pinned by tests: contract invariants, delegation
 isolation, approval persistence, sandbox integration (opt-in with
 `YUI_SANDBOX_IT=1`), and a deterministic smoke demo against a mock provider.
 
+## Deployment
+
+Self-host the studio on any Linux VPS with plain Docker: one compose
+project (Caddy edge with automatic HTTPS, web, api) and one DNS record.
+Accounts live on a centrally operated Yuika Portal, so sign-in works the
+same on every instance. Full manual guide, minimum specs, and DNS steps:
+[docs/DEPLOY.md](docs/DEPLOY.md). A fully private single-box variant
+(portal included) ships as `deploy/docker-compose.with-portal.yml`.
+
 ## License
 
 UNLICENSED, proprietary, all rights reserved. See [LICENSE](LICENSE).
