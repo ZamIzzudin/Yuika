@@ -7,7 +7,6 @@
 // + collision bermassa dipertahankan. Render imperatif per-frame, ala
 // TeamSetupView.
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PersonaInfo } from "@yuika/contracts";
 import { OrinPortrait } from "./OrinPortrait";
 
 const S = 44; // ukuran maskot (D45: balik ke 44 setelah 2x terbukti terlalu besar)
@@ -36,7 +35,16 @@ type Body = {
   };
 };
 
-export function HomeSpace({ personas }: { personas: PersonaInfo[] }) {
+export function HomeSpace({
+  personas,
+  fit = "parent",
+}: {
+  /** Minimal {id,name}; PersonaInfo lengkap juga oke (structural). */
+  personas: { id: string; name: string }[];
+  /** "parent" = fit ke rect parent (area main Home, D45); "viewport" =
+   *  full satu layar (D46: background gerbang login). Default "parent". */
+  fit?: "parent" | "viewport";
+}) {
   const zoneRef = useRef<HTMLDivElement>(null);
   const pointer = useRef({ x: 0, y: 0 });
   const bodies = useRef(new Map<string, Body>());
@@ -44,26 +52,28 @@ export function HomeSpace({ personas }: { personas: PersonaInfo[] }) {
 
   // Kotak fixed mengikuti rect parent (root main HomeView): sidebar toggle,
   // resize, dsb. — ResizeObserver menjaga agar box selalu pas area main.
+  // (Hanya fit="parent"; fit="viewport" pakai inset-0 murni.)
   useEffect(() => {
+    if (fit !== "parent") return;
     const el = zoneRef.current;
     const parent = el?.parentElement;
     if (!el || !parent) return;
-    const fit = () => {
+    const fitBox = () => {
       const r = parent.getBoundingClientRect();
       el.style.left = `${r.left}px`;
       el.style.top = `${r.top}px`;
       el.style.width = `${r.width}px`;
       el.style.height = `${r.height}px`;
     };
-    fit();
-    const ro = new ResizeObserver(fit);
+    fitBox();
+    const ro = new ResizeObserver(fitBox);
     ro.observe(parent);
-    window.addEventListener("resize", fit);
+    window.addEventListener("resize", fitBox);
     return () => {
       ro.disconnect();
-      window.removeEventListener("resize", fit);
+      window.removeEventListener("resize", fitBox);
     };
-  }, []);
+  }, [fit]);
 
   // Sinkron daftar maskot dengan prop (mount/hapus body, spawn scatter).
   useEffect(() => {
@@ -301,11 +311,15 @@ export function HomeSpace({ personas }: { personas: PersonaInfo[] }) {
 
   return (
     // Kotak fixed di-fit ke rect parent (area main) oleh effect di atas;
-    // pointer-events hanya pada tombol maskot.
+    // pointer-events hanya pada tombol maskot. fit="viewport" → inset-0.
     <div
       ref={zoneRef}
       role="presentation"
-      className="pointer-events-none fixed z-0 overflow-hidden"
+      className={
+        fit === "viewport"
+          ? "pointer-events-none fixed inset-0 z-0 overflow-hidden"
+          : "pointer-events-none fixed z-0 overflow-hidden"
+      }
     >
       {mounted.map((pid) => {
         const p = personas.find((x) => x.id === pid);

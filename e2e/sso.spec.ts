@@ -80,6 +80,12 @@ test("SSO, Settings→Account sign-in → authorize (auto-accept) → callback �
   await dlg3.getByTitle("Sign out").click();
   const gate = page.getByLabel("Sign in to Yuika");
   await expect(gate).toBeVisible({ timeout: 15_000 });
+  // D46: gerbang login punya playground zero-g full-screen — maskot statis
+  // (mode gerbang 401 utk fetch roster) melayang & bisa dilempar.
+  const gateMascots = page.locator("[data-mascot]");
+  await expect(gateMascots.first()).toBeVisible({ timeout: 5_000 });
+  console.log("gate mascots:", await gateMascots.count());
+  await page.screenshot({ path: "e2e/.tmp/space-gate.png" });
   await expect(
     gate.getByRole("button", { name: "Sign in with Yuika Portal" }),
   ).toBeVisible();

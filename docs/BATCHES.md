@@ -394,6 +394,7 @@ sudah disiapkan di portal (D23). **Jangan dikerjakan tanpa instruksi user.**
 - **D43 — Training history grid**: 3 kartu per baris; status Done/Failed = Chip sm tanpa ikon.
 - **D44 — Home space playground**: latar Home = maskot zero-g melayang (drift + wrap + tumble), drag/throw & collision dipertahankan, lompat dihapus; bintang + nebula.
 - **D45 — Home space tuning**: tanpa latar antariksa (biasa), area main-only (ResizeObserver fit rect root), kartu New project solid bg-surface, maskot balik 44px.
+- **D46 — Login gate space playground**: AuthGate pakai HomeSpace fit="viewport" full-screen, roster statis (gate = 401), maskot di depan oval & di belakang kartu.
 - Est = perkiraan; ubah hanya via kesepakatan sinkron (aturan TASKS.md).
 - **DOCS · ROADMAP-NEXT AMANDEMEN PLATFORM (2026-11, disetujui user)**: sisip #7 Desktop Tauri (P2-DTL-1+3, ~4d, pasca-Workshop, boleh swap maju bila test relay mendesak) + Mobile Expo naik jadi #12 (P2-MOB-1..5 + push, ~13d, dep portal live + SCR-7). Catatan: relay multi-platform bisa diuji HARI INI via halaman dev /dev/remote (kontrak sama dengan platform native nanti).
 - **DOCS · ROADMAP-NEXT + REKONSILIASI (2026-11)**: dokumen baru `docs/ROADMAP-NEXT.md` = antrian prioritas tunggal sisa pekerjaan (#1 reconciliation … #12 pra-publik) + keputusan desain VLT-4 fill_login v0. Rekonsiliasi: P2-FLOW-2..7 TASKS dicoret sesuai realitas (engine/gate/event/board/steering teruji e2e; FLOW-1 [~] yaml deklaratif tidak diadopsi, chat-driven), P2-SCR-1..4 di PLAN-WORKSHOP ditandai ✅ Batch 14a.

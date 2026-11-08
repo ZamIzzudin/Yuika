@@ -9,6 +9,7 @@ import { Globe, Key, SignIn } from "@phosphor-icons/react";
 import type { AuthStatusT } from "@yuika/contracts";
 import { apiUrl, authFetch, clearAuthToken } from "@/lib/api";
 import { OrinPortrait } from "./OrinPortrait";
+import { HomeSpace } from "./HomeSpace";
 
 /** Baris sign in/out portal, di FOOTER SIDEBAR (selalu terlihat di semua
  *  state workspace/studio; bukan fixed overlay: versi fixed menutupi
@@ -128,7 +129,6 @@ export function AuthPill({ compact = false }: { compact?: boolean }) {
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatusT | null>(null);
   const [busy, setBusy] = useState(false);
-
   useEffect(() => {
     let alive = true;
     void (async () => {
@@ -203,6 +203,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         <div className="absolute top-[44%] left-1/2 h-[320px] w-[54vw] max-w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
       </div>
 
+      {/* PLAYGROUND zero-g full satu layar (D46): maskot melayang bisa
+        dilempar DI DEPAN oval, DI BELAKANG kartu sign-in. List statis —
+        mode gerbang = API minta Bearer token (401), tak bisa fetch roster. */}
+      <HomeSpace fit="viewport" personas={GATE_PERSONAS} />
+
       <section
         aria-label="Sign in to Yuika"
         className="relative z-10 flex w-full max-w-[360px] flex-col gap-4 rounded-lg2 border border-line bg-surface p-6 shadow-[0_30px_80px_-40px_rgb(0_0_0/.6)]"
@@ -239,3 +244,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     </main>
   );
 }
+
+/** Roster default untuk playground gerbang (dekorasi; id+nama display). */
+const GATE_PERSONAS = [
+  { id: "yui-conductor", name: "Maestro Yui" },
+  { id: "yui-planner", name: "Rommel Yui" },
+  { id: "yui-analyst", name: "Nighty Yui" },
+  { id: "yui-scholar", name: "Pierre Yui" },
+  { id: "yui-scribe", name: "Poe Yui" },
+  { id: "yui-coder", name: "Hiro Yui" },
+  { id: "yui-designer", name: "Picasso Yui" },
+  { id: "yui-operator", name: "Neo Yui" },
+  { id: "yui-sherlock", name: "Watson Yui" },
+];
