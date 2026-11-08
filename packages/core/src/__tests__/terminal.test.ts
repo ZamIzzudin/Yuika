@@ -57,6 +57,36 @@ describe("command log persist (Batch 13b)", () => {
 });
 
 describe("TerminalManager", () => {
+  it("killSessionsUnder (D31 delete-project): sesi di bawah root dimatikan, sesi lain utuh", async () => {
+    const dirA = fs.mkdtempSync(path.join(os.tmpdir(), "yui-term-a-"));
+    const dirB = fs.mkdtempSync(path.join(os.tmpdir(), "yui-term-b-"));
+    const nested = path.join(dirA, "sub");
+    fs.mkdirSync(nested, { recursive: true });
+    try {
+      const a = await tm.ensureSession(dirA);
+      const a2 = await tm.ensureSession(nested); // workspace NESTED di bawah root A
+      const b = await tm.ensureSession(dirB);
+      expect(tm.getSession(a.id)).toBeDefined();
+      expect(tm.getSession(a2.id)).toBeDefined();
+
+      const killed = await tm.killSessionsUnder(dirA);
+      expect(killed).toBe(2);
+      expect(tm.getSession(a.id)).toBeUndefined();
+      expect(tm.getSession(a2.id)).toBeUndefined();
+      // sesi project lain tetap hidup
+      expect(tm.getSession(b.id)).toBeDefined();
+      expect(await tm.killSession(b.id)).toBe(true);
+    } finally {
+      // Windows: cmd yang baru di-kill masih memegang cwd sesaat → rm lenient
+      // (retry kecil), jangan gagalkan test karena cleanup EPERM.
+      for (const d of [dirA, dirB]) {
+        for (let i = 0; i < 5; i++) {
+          try { fs.rmSync(d, { recursive: true, force: true }); break; } catch { await new Promise((r) => setTimeout(r, 200)); }
+        }
+      }
+    }
+  });
+
   it("ensureSession: satu sesi per workspace (idempotent), backend local", async () => {
     const a = await tm.ensureSession(dir);
     const b = await tm.ensureSession(dir);

@@ -381,6 +381,9 @@ export const DeleteProjectResult = z.object({
     workspaceDir: z.string(),
     /** Batch 13e: workshop (container+volume+row) ikut dihapus. */
     workshop: z.boolean(),
+    /** D31 (fix user): sesi terminal project dimatikan — container sandbox
+     *  `yui-ses-*` ikut ter-kill saat project dihapus. */
+    terminalSessions: z.number().int(),
   }),
   keptUsage: z.literal(true),
   keptSkills: z.literal(true),

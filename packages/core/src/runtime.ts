@@ -904,12 +904,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         turnAborts.delete(sid);
         loopCache.delete(sid);
       }
+      // 1.5 D31 (fix user): matikan sesi terminal project ini SEBELUM dir
+      //     di-rm — tanpa ini container sandbox `yui-ses-*` tetap hidup di
+      //     host setelah project dihapus (dan di Windows sesi local yang
+      //     memegang cwd membuat rmSync gagal EPERM).
+      const root = path.join(paths.workspacePath, project.rootPath);
+      const killedTerminals = await terminal.killSessionsUnder(root);
       // 2. Baris DB: sesi + events/messages/approvals → audit MCP milik sesi itu.
       const delSessions = store.deleteProjectSessions(id);
       const auditRows = mcpAudit.deleteForSessions(sessions);
       // 3. Revisi file project (prefix = root project) lalu seluruh dir workspace-
       //    project (file, uploads/, reports/, MEMORY.md project, roster, runs dungeon).
-      const root = path.join(paths.workspacePath, project.rootPath);
       const revisions = fileRevisions.deleteRevisionsUnder(root + path.sep);
       fs.rmSync(root, { recursive: true, force: true });
       // 4. Terakhir: baris project itu sendiri (tasks + project_events + projects).
@@ -929,6 +934,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
           auditRows,
           workspaceDir: root,
           workshop: hadWorkshop,
+          terminalSessions: killedTerminals,
         },
         keptUsage: true,
         keptSkills: true,

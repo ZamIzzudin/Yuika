@@ -43,7 +43,7 @@ test("T1-T3 — terminal shared user & agent + approval perintah berisiko", asyn
 
   await page.getByRole("tab", { name: "Terminal" }).click();
   await expect(page.getByTestId("terminal-holder")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("● ready")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("● live")).toBeVisible({ timeout: 30_000 });
 
   // sesi tunggal per project (dibuat tab) — ambil id utk polling buffer
   const sess = (await (await request.get(`${API}/api/terminal/sessions`)).json()) as {

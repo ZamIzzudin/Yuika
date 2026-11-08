@@ -60,6 +60,7 @@ export {
   listSessions as listTerminalSessions,
   getSession as getTerminalSession,
   killSession as killTerminalSession,
+  killSessionsUnder as killTerminalSessionsUnder,
   logCommand as logTerminalCommand,
   listCommandLog as listTerminalCommandLog,
   type CommandLogEntry,

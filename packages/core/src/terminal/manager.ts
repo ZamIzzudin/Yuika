@@ -293,6 +293,30 @@ export async function closeAll(): Promise<void> {
   for (const id of [...sessions.keys()]) await killSession(id);
 }
 
+/** D31 (fix user "delete project → container tak ikut terhapus"): matikan
+ * SEMUA sesi terminal yang workspace-nya berada di bawah `rootPath`.
+ * Dipanggil runtime.deleteProject SEBELUM dir workspace di-rm — tanpa ini
+ * container sandbox `yui-ses-*` (backend docker) tetap hidup di host setelah
+ * project dihapus, dan di Windows sesi local yang memegang cwd membuat
+ * rmSync gagal EPERM. Return jumlah sesi yang dimatikan. */
+export async function killSessionsUnder(rootPath: string): Promise<number> {
+  const root = path.resolve(rootPath);
+  const under = (p: string) => {
+    const r = path.resolve(p);
+    return r === root || r.startsWith(root + path.sep);
+  };
+  let killed = 0;
+  for (const id of [...sessions.keys()]) {
+    const s = sessions.get(id);
+    if (!s) continue;
+    if (under(s.info.workspacePath)) {
+      await killSession(id);
+      killed++;
+    }
+  }
+  return killed;
+}
+
 /** Eksekusi agent: tulis `command + \n` ke sesi workspace, kumpulkan output
  * BARU sampai senyap `quietMs` atau `timeoutMs`. Return tail ter-redact.
  * Karena sesi SHARED, output yang sama juga tampil di tab Terminal user. */

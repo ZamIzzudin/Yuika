@@ -3,6 +3,7 @@
 // Sesi SHARED dengan agent (tool `terminal`): output agent muncul live di
 // sini, dan ketikan user mengalir ke stdin proses yang sama.
 import { useCallback, useEffect, useRef, useState } from "react";
+import type React from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
@@ -10,15 +11,17 @@ import { apiUrl, authTokenQuery, authFetch } from "@/lib/api";
 
 export interface TerminalTabProps {
   project: { id: string; name: string };
+  /** D31: slot pojok kanan baris status — switcher Shell/Commands milik
+   *  TerminalFullTab duduk sebaris dengan pill status. */
+  toolbar?: React.ReactNode;
 }
 
-type Status = "connecting" | "ready" | "exited" | "error";
+type Status = "connecting" | "live" | "exited" | "error";
 
-export default function TerminalTab({ project }: TerminalTabProps) {
+export default function TerminalTab({ project, toolbar }: TerminalTabProps) {
   const holderRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const [status, setStatus] = useState<Status>("connecting");
-  const [backend, setBackend] = useState<string>("");
   const [note, setNote] = useState<string | null>(null);
 
   const writeLine = useCallback((text: string) => {
@@ -90,10 +93,9 @@ export default function TerminalTab({ project }: TerminalTabProps) {
         });
       });
 
-      setStatus("ready");
-      setBackend(info.backend);
+      setStatus("live");
       writeLine(
-        `— Yuika terminal · project: ${project.name} · backend: ${info.backend}${info.backend === "local" ? " (host, tanpa isolasi)" : " (sandbox)"} —`,
+        `@Yuika-Terminal > Project: "${project.name}" | Run in: ${info.backend === "Local" ? "(Local Host)" : "(Docker Sandbox)"}`,
       );
 
       es = new EventSource(
@@ -130,13 +132,13 @@ export default function TerminalTab({ project }: TerminalTabProps) {
   }, [project.id, project.name, writeLine]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2.5 p-4">
-      <div className="flex items-center gap-2 text-xs text-dim">
+    <div className="flex h-full min-h-0 flex-col gap-2.5 py-4">
+      <div className="flex items-center gap-2 text-sm text-dim">
         <span
           aria-label="terminal status"
           className={
-            status === "ready"
-              ? "text-success"
+            status === "live"
+              ? "text-accent border border-accent bg-accent/10 pr-3 pl-2 py-1 rounded-full capitalize"
               : status === "error"
                 ? "text-danger"
                 : "text-warning"
@@ -144,9 +146,9 @@ export default function TerminalTab({ project }: TerminalTabProps) {
         >
           ● {status}
         </span>
-        {backend && <span>Run in : {backend}</span>}
-        {status === "exited" && <span>— restart dari tombol project</span>}
+        {status === "exited" && <span>Failed to connect</span>}
         {note && <span className="text-danger">{note}</span>}
+        {toolbar}
       </div>
       <div
         ref={holderRef}

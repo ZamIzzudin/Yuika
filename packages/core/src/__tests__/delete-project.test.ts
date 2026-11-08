@@ -104,6 +104,9 @@ describe("hapus project + artefak (P1-PRJ-8)", () => {
         revisions: nRev,
         auditRows,
         workshop: false, // replika tanpa workshop manager (runtime asli: destroy)
+        // D31: runtime asli memanggil terminal.killSessionsUnder(root) —
+        // replika store-level: 0 sesi terminal (tanpa manager).
+        terminalSessions: 0,
         workspaceDir: rootA,
       },
       keptUsage: true,

@@ -64,42 +64,40 @@ function CommandsView({ projectId }: { projectId: string }) {
     );
 
   return (
-    <div className="h-full overflow-y-auto p-3">
-      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+    <div className="min-h-0 flex-1 overflow-y-auto rounded-lg2 border border-line bg-inset p-2">
+      <ul className="m-0 flex list-none flex-col gap-1 p-0">
         {cmds.map((c) => (
-          <li
-            key={c.id}
-            className="rounded-md2 border border-line bg-raised"
-          >
-            <details>
-              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 px-2.5 py-1.5 select-none [&::-webkit-details-marker]:hidden">
-                <code className="font-mono text-xs text-primary">
-                  $ {c.command} {c.args.join(" ")}
-                </code>
+          <li key={c.id}>
+            <details className="rounded-md2 hover:bg-hover">
+              <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-md2 px-2 py-1.5 select-none [&::-webkit-details-marker]:hidden">
+                <small className="flex-none font-mono text-[11px] text-dim">
+                  {new Date(c.ts).toLocaleTimeString("en-US", { hour12: false })}
+                </small>
                 <span
-                  className={`rounded-pill px-1.5 text-[10px] font-semibold ${
+                  className={`flex-none rounded-pill border px-1.5 py-px text-[10px] font-semibold ${
                     c.exitCode === 0
-                      ? "bg-success-soft text-success"
+                      ? "border-success/30 bg-success-soft text-success"
                       : c.exitCode === null
-                        ? "bg-warning-soft text-warning"
-                        : "bg-danger-soft text-danger"
+                        ? "border-warning/30 bg-warning-soft text-warning"
+                        : "border-danger/30 bg-danger-soft text-danger"
                   }`}
                 >
                   {c.exitCode === null ? "n/a" : `exit ${c.exitCode}`}
                 </span>
+                <code
+                  className="min-w-0 flex-1 truncate font-mono text-caption text-secondary"
+                  title={`$ ${c.command} ${c.args.join(" ")}`}
+                >
+                  $ {c.command} {c.args.join(" ")}
+                </code>
                 {c.note && (
-                  <span className="text-[10px] uppercase tracking-wide text-dim">
+                  <small className="flex-none text-[10px] uppercase tracking-wide text-dim">
                     {c.note}
-                  </span>
+                  </small>
                 )}
-                <small className="ml-auto font-mono text-[10px] text-dim">
-                  {new Date(c.ts).toLocaleTimeString("en-US", {
-                    hour12: false,
-                  })}
-                </small>
               </summary>
               {(c.stdout || c.stderr) && (
-                <pre className="max-h-48 overflow-auto border-t border-line px-2.5 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-secondary">
+                <pre className="max-h-48 overflow-auto border-t border-line px-2 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-secondary">
                   {c.stdout}
                   {c.stderr && (
                     <span className="text-danger">{c.stderr}</span>
@@ -110,6 +108,36 @@ function CommandsView({ projectId }: { projectId: string }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** D31: switcher Shell/Commands — dipasang di POJOK KANAN baris status
+ *  (sebaris dengan pill "● live"), bukan header terpisah di atas. */
+function ViewSwitcher({
+  view,
+  onPick,
+}: {
+  view: PanelView;
+  onPick: (v: PanelView) => void;
+}) {
+  return (
+    <div className="ml-auto flex shrink-0 items-center gap-1" role="group" aria-label="Terminal view">
+      {(["shell", "commands"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={view === v}
+          onClick={() => onPick(v)}
+          className={`cursor-pointer rounded-md2 px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
+            view === v
+              ? "bg-hover text-primary"
+              : "text-dim hover:bg-hover hover:text-secondary"
+          }`}
+        >
+          {v}
+        </button>
+      ))}
     </div>
   );
 }
@@ -141,30 +169,17 @@ export function TerminalFullTab({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex flex-none items-center gap-1 px-1 pt-1 pb-2">
-        {(["shell", "commands"] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            aria-pressed={view === v}
-            onClick={() => pick(v)}
-            className={`cursor-pointer rounded-md2 px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
-              view === v
-                ? "bg-hover text-primary"
-                : "text-dim hover:text-secondary"
-            }`}
-          >
-            {v}
-          </button>
-        ))}
-      </header>
-      <div className="min-h-0 flex-1 overflow-hidden">
-        {view === "shell" ? (
-          <TerminalTabLazy project={project} />
-        ) : (
+      {view === "shell" ? (
+        <TerminalTabLazy project={project} toolbar={<ViewSwitcher view={view} onPick={pick} />} />
+      ) : (
+        <div className="flex h-full min-h-0 flex-col gap-2.5 py-4">
+          <div className="flex items-center gap-2 text-sm text-dim">
+            <span>Command log</span>
+            <ViewSwitcher view={view} onPick={pick} />
+          </div>
           <CommandsView projectId={project.id} />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
