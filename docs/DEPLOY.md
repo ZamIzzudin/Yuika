@@ -20,6 +20,10 @@ you receive two URLs from the portal operator:
 Want everything private on one box, portal included? The optional variant
 `deploy/docker-compose.with-portal.yml` bundles the portal and relay too.
 
+Already running Dokploy (or any Traefik edge) on the same VPS? Skip the Caddy
+of this guide and use `docker-compose.traefik.yml` instead: see
+[Sharing the VPS with Dokploy](#sharing-the-vps-with-dokploy) below.
+
 ## Server requirements
 
 | Item       | Minimum                  | Comfortable           |
@@ -142,6 +146,47 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 Expected: `401`. The production compose sets `YUI_AUTH_REQUIRED=1`, so the
 API requires a token from the very first boot; there is no open window even
 before the first user signs in.
+
+## Sharing the VPS with Dokploy
+
+When Dokploy already owns ports 80/443 on the server (its Traefik edge),
+the studio must NOT bind them. Use the proxy-less variant instead of the
+standalone one:
+
+```bash
+cd /opt/Yuika
+cp .env.example .env && nano .env          # same variables as step 4
+docker compose -f docker-compose.traefik.yml up -d --build
+```
+
+Differences from the standalone stack:
+
+- No Caddy. The web and api containers join Dokploy's `dokploy-network`
+  (external, must exist - it does once Dokploy is installed) and carry
+  Traefik labels. Dokploy's edge picks them up automatically and issues the
+  certificate through its `letsencrypt` resolver. Nothing to click in the
+  Dokploy UI.
+- Routing at the edge: everything under `/api/*` goes to the api container
+  (router `studio-api`, priority 100), the rest to the web container
+  (router `studio-web`, priority 10). Same-origin, SSE-safe.
+- No additional ports to open. Only the DNS record for `STUDIO_DOMAIN`
+  pointing at the VPS is needed.
+
+Verify Dokploy's network name before starting (`dokploy-network` is the
+default):
+
+```bash
+docker network ls | grep dokploy
+```
+
+Updates use the same updater with the compose file switched:
+
+```bash
+YUI_COMPOSE_FILE=docker-compose.traefik.yml ./scripts/update.sh
+```
+
+Everything else (backup volume, reset, logs) works the same; just replace
+`-f docker-compose.prod.yml` with `-f docker-compose.traefik.yml`.
 
 ## Day 2 operations
 

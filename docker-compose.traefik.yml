@@ -1,0 +1,101 @@
+# Yuika Studio behind an existing reverse proxy (D52, shared VPS with
+# Dokploy): docs/DEPLOY.md "Sharing the VPS with Dokploy".
+#
+# Use this variant when something else already owns ports 80/443 on the VPS
+# (Dokploy's Traefik in this case) instead of docker-compose.prod.yml, which
+# brings its own Caddy edge. No Caddy here: the web and api containers join
+# Dokploy's `dokploy-network` and carry Traefik labels, so Dokploy's edge
+# picks them up automatically (docker provider, exposedByDefault=false) and
+# issues the certificate via its `letsencrypt` resolver.
+#
+#   https://STUDIO_DOMAIN           → web  (router studio-web,  priority 10)
+#   https://STUDIO_DOMAIN/api/*     → api  (router studio-api,  priority 100)
+#
+# Requires: Dokploy installed (its network and edge exist), DNS A record for
+# STUDIO_DOMAIN pointing at the VPS, and the same .env as the prod variant.
+#
+#   cp .env.example .env && nano .env
+#   docker compose -f docker-compose.traefik.yml up -d --build
+#
+# Update flow is unchanged: ./scripts/update.sh (YUI_COMPOSE_FILE to switch
+# the compose file, see the script header).
+
+name: yuika
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    image: yuika/api:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      YUI_API_HOST: 0.0.0.0 # reachable via dokploy-network, never published
+      YUI_API_PORT: "3211"
+      YUI_DB_PATH: /data/yui.db
+      YUI_WORKSPACE_DIR: /data/workspace
+      YUI_AUTH_DB: /data/auth.db
+      YUI_LOG_PRETTY: "0"
+      # Public instance: every route requires a token from the very first
+      # boot; first sign-in still works (auth routes are exempt).
+      YUI_AUTH_REQUIRED: "1"
+      # Central portal (public URLs as browser and this server see them).
+      YUI_PORTAL_URL: ${YUI_PORTAL_URL:?set YUI_PORTAL_URL in .env}
+      YUI_RELAY_URL: ${YUI_RELAY_URL:?set YUI_RELAY_URL in .env}
+    volumes:
+      - yui-data:/data
+    networks:
+      - edge
+      - dokploy
+    labels:
+      traefik.enable: "true"
+      # /api/* (and only that) goes to the api container; higher priority
+      # than the web router so the SPA never swallows API paths.
+      traefik.http.routers.studio-api.rule: Host(`${STUDIO_DOMAIN:?set STUDIO_DOMAIN in .env}`) && PathPrefix(`/api/`)
+      traefik.http.routers.studio-api.priority: "100"
+      traefik.http.routers.studio-api.entrypoints: websecure
+      traefik.http.routers.studio-api.tls.certresolver: letsencrypt
+      traefik.http.services.studio-api.loadbalancer.server.port: "3211"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+      args:
+        # Same-origin: the browser calls https://STUDIO_DOMAIN/api/* and
+        # Traefik routes it to the api service. No CORS involved.
+        NEXT_PUBLIC_API_BASE: ""
+    image: yuika/web:latest
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - edge
+      - dokploy
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.studio-web.rule: Host(`${STUDIO_DOMAIN:?set STUDIO_DOMAIN in .env}`)
+      traefik.http.routers.studio-web.priority: "10"
+      traefik.http.routers.studio-web.entrypoints: websecure
+      traefik.http.routers.studio-web.tls.certresolver: letsencrypt
+      traefik.http.services.studio-web.loadbalancer.server.port: "3000"
+
+volumes:
+  yui-data:
+
+networks:
+  edge: {}
+  # Dokploy's shared edge network. `external: true` assumes Dokploy is
+  # already installed; `name` matches the network its Traefik watches.
+  dokploy:
+    external: true
+    name: dokploy-network

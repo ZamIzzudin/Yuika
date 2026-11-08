@@ -777,3 +777,7 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] scripts/update.sh: release-tag-first (--main opsional), rebuild, tunggu healthcheck, panduan rollback; .gitattributes jaga LF script/Dockerfile/compose
 - [x] Version bump 0.1.0 → 0.8.0 (selaras PLAN v0.8); DEPLOY.md section Updates ditulis ulang
 
+
+### D52 — Varian deploy shared-VPS dengan Dokploy (SELESAI)
+- [x] docker-compose.traefik.yml: tanpa caddy, tanpa host port; web+api join jaringan eksternal dokploy-network + label Traefik (router studio-web prio 10 / studio-api prio 100 /api/*, websecure + letsencrypt). DEPLOY.md section baru Sharing the VPS with Dokploy; update.sh via YUI_COMPOSE_FILE.
+
