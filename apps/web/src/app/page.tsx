@@ -724,6 +724,27 @@ export default function Home() {
     return () => window.removeEventListener("yui:roster-changed", h);
   }, [activeProjectId, loadRoster]);
 
+  // Klien kedua (remote desktop / tab browser lain) mengubah data di host →
+  // begitu window aktif lagi, tarik ulang daftar project, sesi project aktif,
+  // dan roster. Sesi yang sedang terbuka sudah di-cover resync SSE (fokus).
+  useEffect(() => {
+    const refresh = () => {
+      void loadProjects();
+      if (!activeProjectId) return;
+      void loadProjectSessions(activeProjectId);
+      void loadRoster(activeProjectId);
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [activeProjectId, loadProjects, loadProjectSessions, loadRoster]);
+
  /** Ganti scope project → : sesi ada → buka terbaru; BELUM ada sesi
    *  → layar Team Assembly (playground), TIDAK lagi auto-buka Conductor. */
   async function pickProject(id: string | null) {

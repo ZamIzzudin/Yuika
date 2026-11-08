@@ -239,8 +239,37 @@
       const tauri = window.__TAURI__;
       if (!tauri) document.body.classList.add("plain");
 
+      // Auto-resume: shell menyimpan setup terakhir (mode host/remote).
+      // Buka app lagi → langsung lanjut, bukan ulang onboarding.
+      // ?reset=1 (tombol "Switch mode" di dalam app) menahan resume dan
+      // menghapus setup tersimpan → user kembali ke pilihan penuh.
+      let resuming = false;
+      const params = new URLSearchParams(location.search);
+      if (tauri && params.has("reset")) {
+        tauri.core.invoke("clear_last_setup").catch(() => {});
+      } else if (tauri) {
+        tauri.core
+          .invoke("get_last_setup")
+          .then((setup) => {
+            if (!setup || resuming) return;
+            if (setup.mode === "host") {
+              resuming = true;
+              setStatus("Resuming the local engine…", true);
+              tauri.core.invoke("pick_host").catch((e) => setErr(String(e)));
+            } else if (setup.mode === "remote" && setup.url) {
+              resuming = true;
+              setStatus("Reconnecting…", true);
+              tauri.core
+                .invoke("pick_remote", { url: setup.url })
+                .catch((e) => setErr(String(e)));
+            }
+          })
+          .catch(() => {});
+      }
+
       document.getElementById("btnHost").addEventListener("click", () => {
         if (!tauri) return;
+        resuming = true;
         setStatus("Starting the local engine…", true);
         tauri.core.invoke("pick_host").catch((e) => setErr(String(e)));
       });
@@ -257,6 +286,7 @@
         if (!tauri) return;
         const url = document.getElementById("hostUrl").value.trim();
         if (!url) return;
+        resuming = true;
         setStatus("Connecting…", true);
         tauri.core.invoke("pick_remote", { url }).catch((e) => setErr(String(e)));
       });

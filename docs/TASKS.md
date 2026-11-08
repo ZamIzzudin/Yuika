@@ -800,3 +800,10 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Yuika-Desktop: workflow_dispatch input studio_ref (tag/branch) + release_tag opsional; windows-2022 runner, sibling clone ZamIzzudin/Yuika@ref (STUDIO_TOKEN utk repo private, fallback anonim saat publik), rust-cache, artifact NSIS + draft release via softprops.
 - [x] build-desktop-web.mjs self-sufficient: npm ci otomatis bila studio node_modules belum ada (CI & kontributor baru); package-lock.json desktop repo dibuat.
 
+
+### D56 — Logo, live-refresh multi-klien, persistensi mode desktop (SELESAI)
+- [x] Logo sidebar 404 di live: .dockerignore mengecualikan apps/web/public/android-chrome-*.png dari image → baris dihapus; redeploy studio memperbaiki web & desktop-remote sekaligus.
+- [x] Data tidak ter-update antar klien: page.tsx refresh (focus + visibilitychange) → loadProjects + sesi project aktif + roster; sesi aktif sudah ter-cover resync SSE.
+- [x] Desktop reset ke onboarding tiap launch: pick_host/pick_remote kini persist setup.json (app_config_dir); welcome.html auto-resume; ?reset=1 (Switch mode) menghapus setup. Perlu build installer baru.
+- [x] Ikon installer/app pakai maskot Yuika: tauri icon dari android-chrome-512 → icon.ico + set png (repo desktop, commit terpisah).
+

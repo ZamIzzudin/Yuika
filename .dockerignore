@@ -13,7 +13,6 @@ apps/web/.next
 apps/web/.next-*
 apps/web/.next-pi
 apps/api/dist
-apps/web/public/android-chrome-*.png
 docs
 *.log
 tmp-*.mjs

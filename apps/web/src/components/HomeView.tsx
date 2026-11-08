@@ -204,12 +204,6 @@ export function HomeView({
               <Skeleton lines={3} />
             </Card>
           )}
-          {booted && cards.length === 0 && (
-            <p className="col-span-full px-2 py-6 text-center text-body text-dim">
-              No projects yet.
-            </p>
-          )}
-
           {cards.map((p) => (
             <button
               key={p.id}
