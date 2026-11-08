@@ -44,3 +44,6 @@ apps/desktop/src-tauri/gen/schemas/
 
 # D48: static export desktop (build artifact)
 apps/web/out/
+tmp-*.mjs
+tmp-*.cjs
+smoke-policy.tmp.*
