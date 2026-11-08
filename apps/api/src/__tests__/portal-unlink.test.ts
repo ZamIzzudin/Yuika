@@ -1,11 +1,12 @@
 // unlink device dari portal: relay putus semua conn device itu dgn
-// bye 4001 (UNKNOWN_DEVICE) → sisi Yuika harus bereaksi permanen:
-//   - HOST device  : worker berhenti, row host_device dihapus, status note
-//                    "unlinked" (UI menampilkan "pairing ulang", bukan error
-//                    jaringan generik).
-//   - WEB device   : presence berhenti, row web_device dihapus, SEMUA sesi
-//                    web milik portal account itu dicabut (login berikutnya
-// auto-link ulang via deviceToken, ).
+// bye 4001 (UNKNOWN_DEVICE) → sisi Yuika bereaksi permanen:
+//   - HOST device pairing manual: worker berhenti, row host_device dihapus,
+//     status note "unlinked" (UI menampilkan "pairing ulang", bukan error
+//     jaringan generik).
+//   - DEVICE WEB (SSO, kini = host service penuh): worker berhenti, row
+//     web_device dihapus, SEMUA sesi web milik portal account itu dicabut
+//     (login berikutnya auto-link ulang via deviceToken).
+//   - Guard: 4001 pada auth PERTAMA (relay tak mengenal device) ≠ unlink.
 // Pakai SpecRelay (packages/relay-client/src/testing.ts) + hook unlink().
 import fs from "node:fs";
 import os from "node:os";
@@ -23,7 +24,6 @@ const { getHostDevice, getWebDevice, saveHostDevice, saveWebDevice, _resetPortal
   "../portal/store.js"
 );
 const { getPortalHost } = await import("../portal/service.js");
-const { getWebPresence } = await import("../portal/web-presence.js");
 const { createSession, findOrCreatePortalUser, validateToken, _resetAuthForTests } = await import("../auth/store.js");
 
 const ACC = "acc_unlink_00000001";
@@ -69,7 +69,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await getWebPresence().stop();
   await getPortalHost().stop();
   await relay.close();
   _resetAuthForTests();
@@ -96,8 +95,8 @@ describe("host device unlinked (bye 4001)", () => {
   });
 });
 
-describe("web device unlinked (bye 4001)", () => {
-  it("presence berhenti, row web_device terhapus, sesi web dicabut", async () => {
+describe("web device (SSO) unlinked (bye 4001)", () => {
+  it("host service berhenti, row web_device terhapus, sesi web dicabut", async () => {
  // sesi web milik portal account (ibarat hasil SSO )
     const user = findOrCreatePortalUser(ACC, "unlink@yuika.test");
     const token = createSession(user.id);
@@ -105,19 +104,19 @@ describe("web device unlinked (bye 4001)", () => {
 
     const rec = { ...record(webKeys, "web"), relayUrl: relay.url() };
     saveWebDevice(rec);
-    await getWebPresence().start(rec);
-    await waitUntil(() => getWebPresence().status().state === "authed");
+    await getPortalHost().start(fakeRt, rec);
+    await waitUntil(() => getPortalHost().running);
 
     relay.unlink(webKeys.deviceId); // → bye 4001 → unlink permanen
     await waitUntil(() => getWebDevice() === null);
-    await waitUntil(() => !getWebPresence().running);
+    await waitUntil(() => !getPortalHost().running);
  // sesi dicabut: token tidak valid lagi (harus login ulang → auto-link )
     expect(validateToken(token)).toBeNull();
   });
 });
 
 describe("guard: 4001 on the FIRST auth is not an unlink", () => {
-  it("relay tak mengenal device → presence stop diam: row & sesi UTUH", async () => {
+  it("relay tak mengenal device → host stop diam: row & sesi UTUH", async () => {
     // device #2: ada row + sesi, tapi TIDAK terdaftar di registry relay
     const user = findOrCreatePortalUser(ACC, "unlink@yuika.test");
     const token = createSession(user.id);
@@ -125,8 +124,8 @@ describe("guard: 4001 on the FIRST auth is not an unlink", () => {
     const rec2 = { ...record(k2, "web"), relayUrl: relay.url() };
     saveWebDevice(rec2);
 
-    await getWebPresence().start(rec2); // connect() → auth → bye 4001 (unknown)
-    await waitUntil(() => !getWebPresence().running);
+    await getPortalHost().start(fakeRt, rec2).catch(() => undefined); // connect() → auth → bye 4001 (unknown)
+    await waitUntil(() => !getPortalHost().running);
     // bukan unlink: row tetap, sesi tetap valid
     expect(getWebDevice()?.deviceId).toBe(k2.deviceId);
     expect(validateToken(token)?.id).toBe(user.id);

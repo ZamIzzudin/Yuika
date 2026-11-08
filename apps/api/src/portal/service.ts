@@ -19,9 +19,10 @@ import {
 } from "@yuika/relay-client";
 import { ByeCode } from "@yuika/relay-client";
 import { nodeSocket } from "@yuika/relay-client/node";
-import { clearHostDevice } from "./store.js";
+import { clearHostDevice, clearWebDevice } from "./store.js";
 import { getScreenState, listScreens, subscribeScreen } from "./screen-bridge.js";
 import type { HostDeviceRecord } from "./store.js";
+import { signOutPortalAccount } from "../auth/store.js";
 
 const RING_CAP = 500; // event terakhir per sesi, resume delta subscribe{sinceSeq}
 const SNAPSHOT_MSGS = 50;
@@ -117,20 +118,38 @@ export class PortalHostService {
   private introSent = new Set<string>();
   /** Timestamp of the last bye 4001 (drives the status note). */
   private unlinkedAt = 0;
+  /** Guard: bye 4001 = unlink HANYA bila koneksi pernah authed (device
+   *  dikenal lalu dihapus). 4001 pada auth PERTAMA = relay tak pernah
+   *  mengenal device (relay lain / db kosong): berhenti diam, jangan
+   *  mencabut apa pun; retry berikutnya saat boot/login. */
+  private everAuthed = false;
 
   get running(): boolean {
     return !!this.host;
   }
 
   /** bye 4001 (UNKNOWN_DEVICE) = the device was unlinked from the portal:
-   *  permanent. Stop the loop, drop the host_device row (pair again),
-   *  and show "unlinked" instead of a generic network error. */
+   *  permanent. Record SSO (kind web) → drop row + revoke every web session
+   *  of that account (portal-side access was revoked). Record pairing manual
+   *  (kind desktop/mobile) → drop row host saja; status note "unlinked". */
   private onHostBye(code: number, error: string): void {
     if (code !== ByeCode.UNKNOWN_DEVICE) return;
-    console.warn(`[portal-host] device di-unlink dari portal (bye 4001: ${error}), berhenti, pairing ulang diperlukan`);
+    const accountId = this.record?.accountId;
+    const isWeb = this.record?.kind === "web";
+    if (!this.everAuthed) {
+      console.warn(`[portal-host] relay tidak mengenal device (bye 4001: ${error}), berhenti tanpa mencabut apa pun`);
+      void this.stop();
+      return;
+    }
+    console.warn(`[portal-host] device di-unlink dari portal (bye 4001: ${error}), berhenti`);
     this.unlinkedAt = Date.now();
     void this.stop();
-    clearHostDevice();
+    if (isWeb) {
+      clearWebDevice();
+      if (accountId) signOutPortalAccount(accountId);
+    } else {
+      clearHostDevice();
+    }
   }
 
   /** Mulai worker (idempotent). Pair route memanggil ini setelah save. */
@@ -139,6 +158,7 @@ export class PortalHostService {
     await this.stop();
     this.rt = rt;
     this.record = record;
+    this.everAuthed = false;
     const client = new RelayClient(
       {
         url: record.relayUrl,
@@ -153,7 +173,10 @@ export class PortalHostService {
         backoff: { minMs: 500, maxMs: 16_000 },
         log: (...a) => console.log("[portal-host]", ...a),
       },
-      { onBye: (code, error) => this.onHostBye(code, error) },
+      {
+        onAuthOk: () => { this.everAuthed = true; },
+        onBye: (code, error) => this.onHostBye(code, error),
+      },
     );
     const host = new RelayHost({
       client,

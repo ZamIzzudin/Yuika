@@ -839,3 +839,11 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Compose: service chromium (chromedp/headless-shell, --no-sandbox, --disable-dev-shm-usage) jaringan internal saja, tanpa port publik/Traefik; api env YUI_SCREEN_CDP_URL; .env.example + DEPLOY.md diupdate (catatan keamanan CDP).
 - [x] Test baru (16 total screen): resolver, context per key, dispose saat stop satu key, recovery sidecar restart — via fake CDP ws server + http /json/version. Core 401 passed, tsc clean.
 
+
+### D62 — Pairing fase B: host service otomatis via SSO + slot multi-host (SELESAI)
+- [x] Device web (SSO auto-link) kini menjalankan HOST SERVICE penuh (bukan presence-only): setiap instance (studio deployment / desktop host) remote-controllable via relay sejak login; list_hosts mobile akan melihat semuanya. WebPresenceService dihapus (satu koneksi relay per instance, tidak ada duplikat).
+- [x] Boot: host = hostDevice (pairing manual lama) ?? webDevice (SSO). auth-sso complete: start host service bila tidak ada host manual. Instance dengan host manual lama tidak tersentuh (kompatibel).
+- [x] Unlink unified di PortalHostService: bye 4001 + guard everAuthed (4001 di auth pertama = relay tak kenal device, stop diam tanpa mencabut). Kind web → clearWebDevice + signOutPortalAccount (sesi dicabut); kind desktop/mobile → clearHostDevice + note unlinked. Test portal-unlink dirework ke jalur host.
+- [x] Portal: MAX_WEB_DEVICES 3 → 5 (satu akun: studio + beberapa desktop host); test claim multi-slot diupdate.
+- [x] Fix sidecar chromium live: entrypoint chromedp/headless-shell menjalankan browser di 127.0.0.1:9223 + socat 0.0.0.0:9222 → flag remote-debugging di command bertabrakan dengan socat (bind in-use). Command kini hanya flag perilaku browser.
+

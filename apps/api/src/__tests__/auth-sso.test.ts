@@ -24,7 +24,7 @@ let portalUrl = "";
 const { buildApp } = await import("../app.js");
 const { _resetAuthForTests } = await import("../auth/store.js");
 const { getWebDevice, _resetPortalStoreForTests } = await import("../portal/store.js");
-const { getWebPresence } = await import("../portal/web-presence.js");
+const { getPortalHost } = await import("../portal/service.js");
 
 type App = Awaited<ReturnType<typeof buildApp>>;
 let app: App;
@@ -109,7 +109,7 @@ afterAll(async () => {
   delete process.env.YUI_PORTAL_URL;
   delete process.env.YUI_PORTAL_DEVICE_DB;
   await app.close();
-  await getWebPresence().stop(); // matikan retry loop presence (relay dev tak jalan)
+  await getPortalHost().stop(); // matikan retry loop host (relay dev tak jalan)
   server.close();
   _resetAuthForTests();
   _resetPortalStoreForTests();

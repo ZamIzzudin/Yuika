@@ -79,7 +79,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   });
 
   registerAuthRoutes(app);
-  registerAuthSsoRoutes(app); // portal sign-in (start + complete)
+  registerAuthSsoRoutes(app, getRt); // portal sign-in (start + complete)
   registerMetaRoutes(app); // /api/meta (version + update indicator)
   registerSessionRoutes(app, getRt);
   registerDelegationRoutes(app, getRt);

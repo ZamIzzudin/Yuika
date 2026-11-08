@@ -18,11 +18,10 @@ import {
   PortalSsoStartRequest,
 } from "@yuika/contracts";
 import { createSession, findOrCreatePortalUser, ownedByOtherPortalAccount, PortalLinkConflictError } from "../auth/store.js";
-import { getWebDevice, saveWebDevice } from "../portal/store.js";
-import { getWebPresence } from "../portal/web-presence.js";
+import { getHostDevice, getWebDevice, saveWebDevice } from "../portal/store.js";
+import { defaultRelayUrl, getPortalHost } from "../portal/service.js";
 import { claimAtPortal } from "./portal.js";
 import { generateDeviceKeys } from "@yuika/crypto";
-import { defaultRelayUrl } from "../portal/service.js";
 
 const ATTEMPT_TTL_MS = 5 * 60 * 1000;
 const CLIENT_ID = "yuika-web";
@@ -51,7 +50,10 @@ function sweep(): void {
   for (const [k, v] of attempts) if (v.expiresAt < now) attempts.delete(k);
 }
 
-export function registerAuthSsoRoutes(app: FastifyInstance): void {
+export function registerAuthSsoRoutes(
+  app: FastifyInstance,
+  getRt: () => import("@yuika/core").YuiRuntime,
+): void {
   app.post("/api/auth/portal/start", async (req, reply) => {
     const body = PortalSsoStartRequest.parse(req.body);
     sweep();
@@ -155,11 +157,17 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
             relayUrl: defaultRelayUrl(),
             linkedAt: Date.now(),
           });
-          // Online presence (the device shows online on the portal Devices
-          // page; bye 4001 on unlink drops the row and revokes sessions).
-          void getWebPresence()
-            .start(getWebDevice()!)
-            .catch(() => undefined);
+          // Device SSO = HOST penuh: relay host service langsung jalan
+          // (remote-control via relay; list_hosts mobile melihat instance
+          // ini). Gagal connect → backoff SDK; login tetap sukses. Instance
+          // dengan host pairing manual lama: host itu tetap dipakai.
+          if (!getHostDevice()) {
+            try {
+              void getPortalHost().start(getRt(), getWebDevice()!).catch(() => undefined);
+            } catch {
+              // runtime belum siap (mis. test) → host jalan di boot berikutnya
+            }
+          }
           req.log.info({ deviceId }, sameAccount ? "[sso] web device re-linked (idempotent)" : "[sso] web device auto-linked");
         } catch (e) {
           req.log.warn({ err: e instanceof Error ? e.message : String(e) }, "[sso] web device auto-link gagal, login tetap lanjut");

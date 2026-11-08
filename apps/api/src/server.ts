@@ -5,7 +5,6 @@ import { getRuntime } from "./runtime.js";
 import { moduleLogger } from "@yuika/core";
 import { getHostDevice, getWebDevice } from "./portal/store.js";
 import { getPortalHost } from "./portal/service.js";
-import { getWebPresence } from "./portal/web-presence.js";
 
 const log = moduleLogger("api");
 const port = Number(process.env.YUI_API_PORT ?? 3211);
@@ -36,22 +35,15 @@ app
     try {
       getRuntime();
       log.info("runtime siap");
- // host portal auto-online saat API start (kalau sudah pernah
-      // pair), host harus tetap bisa diremot walau tak ada tab web terbuka.
-      const linked = getHostDevice();
-      if (linked) {
+ // host portal auto-online saat API start: instance pernah pair (manual)
+      // ATAU pernah SSO (device web = host penuh) → remote-controllable
+      // walau tak ada tab web terbuka.
+      const host = getHostDevice() ?? getWebDevice();
+      if (host) {
         getPortalHost()
-          .start(getRuntime(), linked)
-          .then(() => log.info({ deviceId: linked.deviceId }, "portal host online"))
+          .start(getRuntime(), host)
+          .then(() => log.info({ deviceId: host.deviceId }, "portal host online"))
           .catch((e: unknown) => log.warn({ err: e }, "portal host gagal connect (relay down?), akan terus retry"));
-      }
-      // Web presence (the SSO auto-linked device) comes online at boot too.
-      const web = getWebDevice();
-      if (web) {
-        getWebPresence()
-          .start(web)
-          .then(() => log.info({ deviceId: web.deviceId }, "web presence online"))
-          .catch((e: unknown) => log.warn({ err: e }, "web presence gagal connect, retry berikutnya saat login/boot"));
       }
     } catch (e) {
       log.error({ err: e }, "runtime gagal init, env belum lengkap? (lihat .env.example)");

@@ -14,7 +14,6 @@ import { generateDeviceKeys } from "@yuika/crypto";
 import { z } from "zod";
 import { getPortalHost, defaultPortalUrl, defaultRelayUrl } from "../portal/service.js";
 import { clearHostDevice, getHostDevice, getWebDevice, saveHostDevice } from "../portal/store.js";
-import { getWebPresence } from "../portal/web-presence.js";
 
 const PairRequest = z.object({
   token: z.string().min(20),
@@ -77,11 +76,16 @@ export function registerPortalRoutes(app: FastifyInstance, getRt: () => import("
   app.get("/api/portal/status", async () => {
     const svc = getPortalHost();
     const st = svc.status();
-    // Web device (SSO auto-link) with portal presence, separate from the host.
+    // Device web (SSO auto-link) kini menjalankan host service yang sama
+    // (satu koneksi relay); "online" = host berjalan dengan record itu.
     const web = getWebDevice();
-    const pres = getWebPresence().status();
     const webDevice = web
-      ? { deviceId: web.deviceId, name: web.name, linkedAt: web.linkedAt, online: pres.deviceId === web.deviceId && pres.state === "authed" }
+      ? {
+          deviceId: web.deviceId,
+          name: web.name,
+          linkedAt: web.linkedAt,
+          online: svc.running && st.deviceId === web.deviceId && st.relayState === "authed",
+        }
       : null;
     if (!st.linked) {
       const rec = getHostDevice();
