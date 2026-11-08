@@ -89,7 +89,7 @@ export function Modal({
 /* ── Field & kontrol form ─────────────────────────────────────────────── */
 
 const CONTROL =
-  "w-full rounded-md2 border border-line bg-control px-2.5 py-1.5 text-body text-primary placeholder:text-dim " +
+  "w-full rounded-md2 border border-line bg-control px-3 py-1.5 text-body text-primary placeholder:text-dim " +
   "transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] " +
   "hover:border-line-strong focus:border-accent focus:outline-none";
 
@@ -115,7 +115,7 @@ export function Field({
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   const { className = "", ...rest } = props;
-  return <input className={`${CONTROL} h-8 ${className}`} {...rest} />;
+  return <input className={`${CONTROL} ${className}`} {...rest} />;
 }
 
 export function TextArea(
@@ -129,7 +129,7 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   const { className = "", ...rest } = props;
   return (
     <select
-      className={`${CONTROL} h-8 cursor-pointer ${className}`}
+      className={`${CONTROL} cursor-pointer ${className}`}
       {...rest}
     />
   );

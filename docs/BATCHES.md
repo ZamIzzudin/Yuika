@@ -388,6 +388,7 @@ sudah disiapkan di portal (D23). **Jangan dikerjakan tanpa instruksi user.**
 - **D37 — Studio missions + Account**: Missions & Training history minimalis-informatif; logout hidup hanya di Settings → Account (nav bawah kiri).
 - **D38 — Settings rapi + Usage dashboard**: anotasi P0/P1 dibuang; Usage = Stat tiles (Today/Total/Burn-rate + KPI) + bar chart token per persona + tabel model & atribusi biaya.
 - **D39 — MCP compact**: servers & catalog grid 3-per-baris; kartu vertikal; installed-first di katalog.
+- **D40 — Dropdown seirama + input lega**: ui/dropdown.tsx (details+autoclose, close saat pilih); fix useMenuAutoClose stale-ref (klik-luar tak menutup); MCP grid 2/baris; CONTROL px-3 tanpa h-8.
 - Est = perkiraan; ubah hanya via kesepakatan sinkron (aturan TASKS.md).
 - **DOCS · ROADMAP-NEXT AMANDEMEN PLATFORM (2026-11, disetujui user)**: sisip #7 Desktop Tauri (P2-DTL-1+3, ~4d, pasca-Workshop, boleh swap maju bila test relay mendesak) + Mobile Expo naik jadi #12 (P2-MOB-1..5 + push, ~13d, dep portal live + SCR-7). Catatan: relay multi-platform bisa diuji HARI INI via halaman dev /dev/remote (kontrak sama dengan platform native nanti).
 - **DOCS · ROADMAP-NEXT + REKONSILIASI (2026-11)**: dokumen baru `docs/ROADMAP-NEXT.md` = antrian prioritas tunggal sisa pekerjaan (#1 reconciliation … #12 pra-publik) + keputusan desain VLT-4 fill_login v0. Rekonsiliasi: P2-FLOW-2..7 TASKS dicoret sesuai realitas (engine/gate/event/board/steering teruji e2e; FLOW-1 [~] yaml deklaratif tidak diadopsi, chat-driven), P2-SCR-1..4 di PLAN-WORKSHOP ditandai ✅ Batch 14a.

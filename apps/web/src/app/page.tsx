@@ -13,14 +13,12 @@ import {
   Gear,
   Plus,
   SidebarSimple,
+  SmileyBlank,
   Steps,
-  Sword,
-  Users,
 } from "@phosphor-icons/react";
 import { PersonaStudioView } from "@/components/PersonaStudioView";
 import { AuthGate } from "@/components/AuthGate";
 import { setShapeOverrides } from "@/components/orinShapes";
-import { TracePanel } from "@/components/TracePanel";
 import { LogsTab } from "@/components/LogsTab";
 import { PersonaPortrait } from "@/components/PersonaPortrait";
 import { useMenuAutoClose } from "@/components/ui/menu";
@@ -1095,7 +1093,7 @@ export default function Home() {
                   aria-current={studioOpen ? "page" : undefined}
                   onClick={() => setStudioOpen((v) => !v)}
                 >
-                  <Users size={20} aria-hidden /> Persona
+                  <SmileyBlank size={20} aria-hidden /> Persona
                 </button>
                 <div className="px-2.5 pb-1">
                   <RemoteBadge />
@@ -1139,7 +1137,7 @@ export default function Home() {
                       : "text-dim hover:bg-hover hover:text-primary"
                   }`}
                 >
-                  <Users size={20} aria-hidden />
+                  <SmileyBlank size={20} aria-hidden />
                 </button>
                 <RemoteBadge compact />
                 <button

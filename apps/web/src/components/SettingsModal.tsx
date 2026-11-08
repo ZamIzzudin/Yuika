@@ -18,7 +18,7 @@ import { McpPanel } from "./McpPanel";
 import { PortalSettings } from "./PortalSettings";
 import { Skeleton } from "./Skeleton";
 import { toastErr, toastOk } from "./ui/toast";
-import { Button, Card, Field, Modal, Select, TextInput } from "./ui";
+import { Button, Card, Dropdown, Field, Modal, TextInput } from "./ui";
 
 type Section = "provider" | "mcp" | "usage" | "portal" | "account";
 
@@ -185,16 +185,18 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               ) : (
                 <>
                   <Field label="Provider kind">
-                    <Select
+                    <Dropdown
                       value={kind}
-                      onChange={(e) => setKind(e.target.value as typeof kind)}
-                    >
-                      <option value="openai-compat">
-                        OpenAI-compatible (GLM / OpenRouter / …)
-                      </option>
-                      <option value="anthropic">Anthropic (Claude)</option>
-                      <option value="gemini">Google Gemini</option>
-                    </Select>
+                      onChange={(v) => setKind(v)}
+                      options={[
+                        {
+                          value: "openai-compat",
+                          label: "OpenAI-compatible (GLM / OpenRouter / …)",
+                        },
+                        { value: "anthropic", label: "Anthropic (Claude)" },
+                        { value: "gemini", label: "Google Gemini" },
+                      ]}
+                    />
                   </Field>
                   <Field label="Base URL">
                     <TextInput
@@ -443,13 +445,14 @@ function BudgetDashboard() {
         {numField("maxTurnsPerMinute", "Turns / minute", "—")}
         {numField("maxDelegationConcurrency", "Parallel delegations", "3")}
         <Field label="When the limit is reached">
-          <Select
+          <Dropdown
             value={st.config.mode}
-            onChange={(e) => save({ mode: e.target.value as "warn" | "block" })}
-          >
-            <option value="warn">Warn only</option>
-            <option value="block">Block turns</option>
-          </Select>
+            onChange={(v) => save({ mode: v })}
+            options={[
+              { value: "warn", label: "Warn only" },
+              { value: "block", label: "Block turns" },
+            ]}
+          />
         </Field>
       </div>
     </div>
@@ -892,7 +895,7 @@ function PriceBookEditor({
                       inputMode="decimal"
                       value={r.i}
                       placeholder="—"
-                      className="h-6 w-24"
+                      className="w-24"
                       onChange={(e) =>
                         setDraft((d) => ({
                           ...d,
@@ -907,7 +910,7 @@ function PriceBookEditor({
                       inputMode="decimal"
                       value={r.o}
                       placeholder="—"
-                      className="h-6 w-24"
+                      className="w-24"
                       onChange={(e) =>
                         setDraft((d) => ({
                           ...d,
@@ -918,11 +921,10 @@ function PriceBookEditor({
                     />
                   </td>
                   <td className="py-1">
-                    <Select
+                    <Dropdown
                       value={r.c}
-                      className="h-6 w-20"
-                      onChange={(e) => {
-                        const c = e.target.value as "USD" | "IDR";
+                      menuClassName="w-20"
+                      onChange={(c) => {
                         setDraft((d) => ({ ...d, [m]: { ...r, c } }));
                         void onSave(m, {
                           inputPerMillion: Number(r.i) || 0,
@@ -930,10 +932,11 @@ function PriceBookEditor({
                           currency: c,
                         });
                       }}
-                    >
-                      <option value="USD">USD</option>
-                      <option value="IDR">IDR</option>
-                    </Select>
+                      options={[
+                        { value: "USD", label: "USD" },
+                        { value: "IDR", label: "IDR" },
+                      ]}
+                    />
                   </td>
                 </tr>
               );

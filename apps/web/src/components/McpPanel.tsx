@@ -241,7 +241,7 @@ export function McpPanel() {
               No MCP servers declared, install one from the catalog below.
             </p>
           )}
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {servers.map((s) => (
               <li
                 key={s.name}
@@ -259,8 +259,7 @@ export function McpPanel() {
                             : "muted"
                     }
                     pulse={
-                      !s.connected &&
-                      (s.state === "reconnecting" || s.trusted)
+                      !s.connected && (s.state === "reconnecting" || s.trusted)
                     }
                   />
                   <b className="min-w-0 flex-1 truncate text-body font-semibold text-primary">
@@ -307,7 +306,11 @@ export function McpPanel() {
                 </small>
                 {s.lastError && s.state !== "connected" && (
                   <small className="flex items-start gap-1 text-caption leading-4 text-danger">
-                    <Warning size={11} aria-hidden className="mt-0.5 shrink-0" />{" "}
+                    <Warning
+                      size={11}
+                      aria-hidden
+                      className="mt-0.5 shrink-0"
+                    />{" "}
                     {s.lastError.slice(0, 64)}
                   </small>
                 )}
@@ -414,7 +417,7 @@ export function McpPanel() {
             {booting ? (
               <SkeletonRows rows={5} />
             ) : (
-              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {shown.map((c) => {
                   const isInstalled = declared.has(c.id);
                   const risk = RISK_LABEL[c.risk] ?? RISK_LABEL.rendah!;
@@ -423,25 +426,34 @@ export function McpPanel() {
                       key={c.id}
                       className={`flex flex-col gap-2 rounded-lg2 border px-3 py-2.5 ${isInstalled ? "border-accent/30 bg-accent-soft/20" : "border-line bg-surface"}`}
                     >
-                      <b className="flex flex-wrap items-center gap-1.5 text-body font-semibold text-primary">
-                        {c.name} <Chip tone={risk.tone}>{risk.label}</Chip>
-                        {c.runtime === "python" && (
-                          <span
-                            title={
-                              c.setupNote ??
-                              "This server is Python-based (uvx)"
-                            }
-                          >
-                            <Chip tone="muted">Python/uvx</Chip>
-                          </span>
-                        )}
-                      </b>
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 text-body font-semibold text-primary">
+                        <div className="flex flex-col">
+                          <span>{c.name}</span>
+                          {c.runtime === "python" && (
+                            <span
+                              title={
+                                c.setupNote ??
+                                "This server is Python-based (uvx)"
+                              }
+                              className="text-dim text-xs"
+                            >
+                              (Python/uvx)
+                            </span>
+                          )}
+                        </div>
+                        <Chip tone={risk.tone}>{risk.label}</Chip>
+                      </div>
+
                       <small className="text-caption leading-5 text-muted">
                         {c.description}
                       </small>
                       {c.runtime === "python" && c.setupNote && (
                         <small className="flex items-start gap-1 text-caption leading-4 text-warn">
-                          <Warning size={11} aria-hidden className="mt-0.5 shrink-0" />{" "}
+                          <Warning
+                            size={11}
+                            aria-hidden
+                            className="mt-0.5 shrink-0"
+                          />{" "}
                           {c.setupNote}
                         </small>
                       )}
@@ -493,7 +505,7 @@ export function McpPanel() {
                             <TextInput
                               key={k.key}
                               type="password"
-                              className="h-7 w-full"
+                              className="w-full"
                               placeholder={`${k.label}${k.required ? " *" : ""}`}
                               value={envVals[k.key] ?? ""}
                               onChange={(e) =>

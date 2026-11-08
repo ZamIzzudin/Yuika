@@ -9,13 +9,16 @@ export function useMenuAutoClose<T extends HTMLDetailsElement>() {
   const ref = useRef<T>(null);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    // D40: baca ref.current LIVE tiap event — details bisa mount LAMBAT
+    // (mis. Sessions menu setelah project termuat); menangkap el sekali
+    // di mount membuat listener mati & klik-luar tak menutup.
     const onPointerDown = (e: PointerEvent) => {
-      if (el.open && !el.contains(e.target as Node)) el.open = false;
+      const el = ref.current;
+      if (el?.open && !el.contains(e.target as Node)) el.open = false;
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && el.open) el.open = false;
+      const el = ref.current;
+      if (e.key === "Escape" && el?.open) el.open = false;
     };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKey);
