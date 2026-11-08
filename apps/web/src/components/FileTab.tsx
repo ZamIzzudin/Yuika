@@ -6,16 +6,28 @@ import { apiUrl, authFetch } from "@/lib/api";
 // revisi & diff tetap utk file asli; run report workflow disintesis
 // markdown lokal. Semua request memakai authFetch (FIX bug user:
 // "authentication required" saat buka file — fetch polos tanpa token).
-// DS-1: ui/* + Tailwind + Phosphor.
-import { useCallback, useEffect, useRef, useState } from "react";
+// D29: tree profesional-minimalis (indent guides + ikon per tipe file),
+// preview kode = CodeBlock Shiki (highlight + nomor baris + copy), markdown
+// = varian "doc" (heading skenal dokumen, fenced code ikut di-highlight).
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FileNode } from "@yuika/contracts";
 import type { Icon } from "@phosphor-icons/react";
 import {
   ArrowsClockwise,
+  BracketsCurly,
   CaretDown,
   CaretRight,
   File,
+  FileCss,
   FileDoc,
+  FileHtml,
+  FileImage,
+  FileJs,
+  FileMd,
+  FilePy,
+  FileSql,
+  FileTs,
+  FolderOpen,
   FolderSimple,
   UploadSimple,
 } from "@phosphor-icons/react";
@@ -24,6 +36,7 @@ import { Button, Select } from "./ui";
 import { toastErr, toastOk } from "./ui/toast";
 import { diffLines, diffStat } from "@yuika/core/project/diff";
 import { Markdown } from "./Markdown";
+import { CodeBlock, langOf } from "./CodeBlock";
 
 interface Content {
   content: string;
@@ -88,7 +101,46 @@ function fmtSize(n: number): string {
 }
 
 const DirIcon: Icon = FolderSimple;
-const FileIcon: Icon = FileDoc;
+const DirOpenIcon: Icon = FolderOpen;
+
+/** Ikon + warna muted per tipe file — identitas visual tanpa ramai. */
+function fileIconOf(name: string): { Icon: Icon; cls: string } {
+  const ext = name.toLowerCase().split(".").pop() ?? "";
+  if (ext === "ts" || ext === "tsx" || ext === "mts" || ext === "cts")
+    return { Icon: FileTs, cls: "text-[#3178c6]" };
+  if (ext === "js" || ext === "jsx" || ext === "mjs" || ext === "cjs")
+    return { Icon: FileJs, cls: "text-[#b08300]" };
+  if (ext === "json" || ext === "jsonc") return { Icon: BracketsCurly, cls: "text-[#8a6d1a]" };
+  if (ext === "md" || ext === "markdown" || ext === "mdx")
+    return { Icon: FileMd, cls: "text-[#7c5cff]" };
+  if (ext === "py" || ext === "pyi") return { Icon: FilePy, cls: "text-[#3f7ba6]" };
+  if (ext === "css" || ext === "scss" || ext === "less")
+    return { Icon: FileCss, cls: "text-[#6f42c1]" };
+  if (ext === "html" || ext === "htm" || ext === "vue" || ext === "svelte")
+    return { Icon: FileHtml, cls: "text-[#c2542f]" };
+  if (ext === "sql") return { Icon: FileSql, cls: "text-[#a87100]" };
+  if (ext === "svg" || ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "gif" || ext === "webp")
+    return { Icon: FileImage, cls: "text-[#0f8a8a]" };
+  return { Icon: FileDoc, cls: "text-dim" };
+}
+
+/** Urutkan stabil: folder dulu, lalu file — alfabetis case-insensitive. */
+function sortNodes(nodes: FileNode[]): FileNode[] {
+  return [...nodes].sort((a, b) => {
+    if (a.dir !== b.dir) return a.dir ? -1 : 1;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  });
+}
+
+/** Total file (rekursif) — badge jumlah di header Files. */
+function countFiles(nodes: FileNode[]): number {
+  let n = 0;
+  for (const x of nodes) {
+    if (x.dir) n += countFiles(x.children ?? []);
+    else n++;
+  }
+  return n;
+}
 
 /** Run → laporan markdown (ringkasan fase + step + gate) — dari DocsTab lama. */
 function runToMarkdown(run: RunRow): string {
@@ -139,58 +191,63 @@ function TreeRow({
 }) {
   const [open, setOpen] = useState(depth < 2);
   const isDir = node.dir;
+  const selected = selPath === node.relPath;
+  const kids = isDir ? sortNodes(node.children ?? []) : [];
   return (
     <>
       <button
-        aria-selected={selPath === node.relPath ? true : undefined}
-        className={`flex w-full cursor-pointer items-center gap-1.5 rounded-md2 px-1.5 py-1 text-left text-[13px] leading-5 transition-colors ${
-          selPath === node.relPath
-            ? "bg-hover font-semibold text-primary"
+        aria-selected={selected ? true : undefined}
+        className={`group flex w-full cursor-pointer items-center gap-1.5 rounded-md2 py-[3px] pr-1.5 text-left text-[13px] leading-5 transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-fast)] ${
+          selected
+            ? "bg-accent-soft font-medium text-primary"
             : "text-secondary hover:bg-hover hover:text-primary"
         }`}
-        style={{ paddingLeft: 6 + depth * 14 }}
+        style={{ paddingLeft: 4 + depth * 14 }}
         onClick={() => (isDir ? setOpen(!open) : onPick(node))}
       >
-        <span className="w-3.5 shrink-0 self-center">
-          {isDir ? (
-            open ? (
-              <CaretDown size={11} aria-hidden className="text-dim" />
+        <span className="flex w-3.5 shrink-0 justify-center self-center">
+          {isDir &&
+            (open ? (
+              <CaretDown size={11} aria-hidden className="text-dim transition-colors group-hover:text-secondary" />
             ) : (
-              <CaretRight size={11} aria-hidden className="text-dim" />
-            )
-          ) : null}
+              <CaretRight size={11} aria-hidden className="text-dim transition-colors group-hover:text-secondary" />
+            ))}
         </span>
         {isDir ? (
-          <DirIcon
-            size={13}
-            aria-hidden
-            className="shrink-0 self-center text-dim"
-          />
-        ) : (
-          <FileIcon
-            size={13}
-            aria-hidden
-            className="shrink-0 self-center text-dim"
-          />
-        )}
+          open ? (
+            <DirOpenIcon size={14} aria-hidden className="shrink-0 self-center text-accent/80" />
+          ) : (
+            <DirIcon size={14} aria-hidden className="shrink-0 self-center text-accent/80" />
+          )
+        ) : (() => {
+          const { Icon: FIcon, cls } = fileIconOf(node.name);
+          return <FIcon size={14} aria-hidden className={`shrink-0 self-center ${cls}`} />;
+        })()}
         <span className="truncate">{node.name}</span>
         {!isDir && (
-          <small className="ml-auto shrink-0 text-[11px] text-dim">
+          <small className="ml-auto shrink-0 font-mono text-[10.5px] text-dim opacity-0 transition-opacity group-hover:opacity-100">
             {fmtSize(node.size)}
           </small>
         )}
       </button>
-      {isDir &&
-        open &&
-        node.children?.map((c) => (
-          <TreeRow
-            key={c.relPath}
-            node={c}
-            depth={depth + 1}
-            selPath={selPath}
-            onPick={onPick}
-          />
-        ))}
+      {/* indent guide — garis vertikal tipis menandai kedalaman (editor-like) */}
+      {isDir && open && (
+        <div
+          className="ml-[11px] border-l border-line/60 pl-0.5"
+          role="group"
+          aria-label={`${node.name} contents`}
+        >
+          {kids.map((c) => (
+            <TreeRow
+              key={c.relPath}
+              node={c}
+              depth={depth + 1}
+              selPath={selPath}
+              onPick={onPick}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -395,37 +452,52 @@ export function FileTab({ projectId }: { projectId: string }) {
   const pane =
     "overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full";
 
+  const fileCount = useMemo(
+    () => (tree ? countFiles(tree) : 0),
+    [tree],
+  );
+
   return (
     <section aria-label="Project files" className="flex flex-col gap-2.5">
-      <div className="flex justify-end gap-2">
-        <label title="Upload a document (pdf/xlsx/csv/…) → uploads/ folder, read by the agent via doc_read">
-          <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line-strong px-3 py-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-hover hover:text-primary">
-            <UploadSimple size={13} aria-hidden /> Upload
-          </span>
-          <input
-            type="file"
-            hidden
-            accept=".pdf,.xlsx,.xls,.csv,.md,.txt,.json,.html,.htm,.xml,.yaml,.yml"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void upload(f);
-              e.target.value = "";
-            }}
-          />
-        </label>
-        <Button
-          size="md"
-          onClick={() => void loadTree()}
-          title="Reload file list"
-        >
-          <ArrowsClockwise size={12} aria-hidden />
-        </Button>
+      <div className="flex items-center justify-between gap-2">
+        <p className="hidden px-1 text-caption text-dim sm:block">
+          Artefacts of this project — files written by you and the team.
+        </p>
+        <div className="flex gap-2">
+          <label title="Upload a document (pdf/xlsx/csv/…) → uploads/ folder, read by the agent via doc_read">
+            <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line-strong px-3 py-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-hover hover:text-primary">
+              <UploadSimple size={13} aria-hidden /> Upload
+            </span>
+            <input
+              type="file"
+              hidden
+              accept=".pdf,.xlsx,.xls,.csv,.md,.txt,.json,.html,.htm,.xml,.yaml,.yml"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void upload(f);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <Button
+            size="md"
+            onClick={() => void loadTree()}
+            title="Reload file list"
+          >
+            <ArrowsClockwise size={12} aria-hidden />
+          </Button>
+        </div>
       </div>
       <div className="grid min-h-80 grid-cols-[minmax(210px,290px)_minmax(0,1fr)] gap-3 h-[85dvh]">
         <div className={pane} role="tree">
           {/* Run reports — diserap dari tab Docs (P2-STU-7 merge, 2026-11-08) */}
-          <h3 className="px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-dim">
+          <h3 className="flex items-center gap-1.5 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-dim">
             Run reports
+            {runs !== null && runs.length > 0 && (
+              <span className="rounded-pill bg-hover px-1.5 text-[10px] font-medium text-muted" aria-hidden>
+                {runs.length}
+              </span>
+            )}
           </h3>
           {runs === null ? null : runs.length === 0 ? (
             <p className="px-1.5 pb-1.5 text-caption text-muted">
@@ -458,25 +530,38 @@ export function FileTab({ projectId }: { projectId: string }) {
           {tree === null ? (
             <SkeletonRows rows={5} />
           ) : tree.length === 0 ? (
-            <p className="text-caption text-dim">Project belum punya file.</p>
+            <p className="px-1.5 text-caption text-dim">
+              No files yet — the team writes artefacts here.
+            </p>
           ) : (
-            tree.map((n) => (
-              <TreeRow
-                key={n.relPath}
-                node={n}
-                depth={0}
-                selPath={selPath}
-                onPick={pick}
-              />
-            ))
+            <>
+              <h3 className="mt-0.5 mb-1 flex items-center gap-1.5 px-1.5 text-[11px] font-semibold uppercase tracking-wide text-dim">
+                Files
+                <span
+                  className="rounded-pill bg-hover px-1.5 text-[10px] font-medium text-muted"
+                  aria-hidden
+                >
+                  {fileCount}
+                </span>
+              </h3>
+              {sortNodes(tree).map((n) => (
+                <TreeRow
+                  key={n.relPath}
+                  node={n}
+                  depth={0}
+                  selPath={selPath}
+                  onPick={pick}
+                />
+              ))}
+            </>
           )}
         </div>
         <div className={pane}>
           {loadingContent && <SkeletonRows rows={4} />}
           {!loadingContent && sel?.kind === "file" && content?.truncated && (
             <p className="text-caption text-dim">
-              File terlalu besar untuk dibaca ({fmtSize(content.size)} &gt; 256
-              KB) — buka di file explorer.
+              File too large to preview ({fmtSize(content.size)} &gt; 256 KB) —
+              open it in the file explorer.
             </p>
           )}
           {!loadingContent &&
@@ -485,8 +570,8 @@ export function FileTab({ projectId }: { projectId: string }) {
             !content.truncated &&
             !isText && (
               <p className="text-caption text-dim">
-                Bukan file teks ({fmtSize(content.size)}) — preview teks tidak
-                tersedia.
+                Binary file ({fmtSize(content.size)}) — text preview is not
+                available.
               </p>
             )}
           {!loadingContent &&
@@ -545,11 +630,11 @@ export function FileTab({ projectId }: { projectId: string }) {
                   )}
                 </header>
                 {diff ? (
-                  <div aria-label="Diff vs revisi">
+                  <div aria-label="Diff vs revision">
                     <p className="mb-1.5 text-caption text-secondary">
                       vs r{diffRev}:{" "}
                       <b className="text-success">+{diff.added}</b>{" "}
-                      <b className="text-danger">−{diff.removed}</b> baris
+                      <b className="text-danger">−{diff.removed}</b> lines
                     </p>
                     <pre className="overflow-x-auto font-mono text-[12.5px] leading-5">
                       {diff.ops.map((o, i) => (
@@ -569,20 +654,36 @@ export function FileTab({ projectId }: { projectId: string }) {
                     </pre>
                   </div>
                 ) : isMd && view === "rendered" ? (
-                  <div className="max-w-none px-1">
-                    <Markdown text={content.content} />
+                  <div className="mx-auto max-w-[760px] px-3 py-1">
+                    <Markdown
+                      text={content.content}
+                      variant="doc"
+                      renderCode={(code, lang) => (
+                        <CodeBlock code={code} lang={langOf(lang) ?? "markdown"} />
+                      )}
+                    />
                   </div>
                 ) : (
-                  <pre className="overflow-x-auto font-mono text-[12.5px] leading-5 text-secondary">
-                    {content.content}
-                  </pre>
+                  <CodeBlock
+                    code={content.content}
+                    lang={langOf(selPath)}
+                    filename={selPath ?? undefined}
+                    lineNumbers
+                    className="mx-1"
+                  />
                 )}
               </>
             )}
           {!sel && (
-            <div className="flex items-center justify-center h-full flex-col gap-3">
-              <File className="text-dim" size={48} />
-              <p className="text-lg text-dim">No File.</p>
+            <div className="flex h-full flex-col items-center justify-center gap-3">
+              <File size={40} aria-hidden className="text-line-strong" />
+              <p className="text-body text-dim">
+                Select a file to preview it here.
+              </p>
+              <p className="max-w-[300px] text-center text-caption text-dim/70">
+                Markdown renders rich; code files get editor-style syntax
+                highlighting.
+              </p>
             </div>
           )}
         </div>

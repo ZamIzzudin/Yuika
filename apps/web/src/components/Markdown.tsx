@@ -60,7 +60,7 @@ function inline(text: string, keyPrefix = ""): Inline[] {
   return out;
 }
 
-// ── Tabel GFM ────────────────────────────────────────────────────────────────
+// ── Tabel GFM ──────────────────────────────────────────────────────────────────
 
 /** Baris delimiter `| :--- | ---: |` — WAJIB mengandung `|` (hindari salah tangkap
  *  hr `---` / underline setext setelah paragraf ber-pipe). */
@@ -115,7 +115,20 @@ function TaskBox({ done }: { done: boolean }) {
   );
 }
 
-export function Markdown({ text }: { text: string }) {
+export function Markdown({
+  text,
+  variant = "chat",
+  renderCode,
+}: {
+  text: string;
+  /** "chat" (default, kompak) atau "doc" (Files tab: heading besar + spasi
+   *  lega — pengalaman baca dokumen). */
+  variant?: "chat" | "doc";
+  /** D29 (Files): jika ada, fenced code digambar komponen eksternal
+   *  (CodeBlock dgn syntax highlight + header). Chat tetap <pre> polos. */
+  renderCode?: (code: string, lang: string) => React.ReactNode;
+}) {
+  const doc = variant === "doc";
   const lines = text.split(/\r?\n/);
   const blocks: React.ReactNode[] = [];
   let para: string[] = [];
@@ -129,7 +142,7 @@ export function Markdown({ text }: { text: string }) {
   const flushPara = () => {
     if (para.length) {
       blocks.push(
-        <p key={key()} className="whitespace-pre-wrap">
+        <p key={key()} className={`whitespace-pre-wrap ${doc ? "leading-relaxed" : ""}`}>
           {inline(para.join("\n"), key())}
         </p>,
       );
@@ -139,11 +152,12 @@ export function Markdown({ text }: { text: string }) {
   const flushList = () => {
     if (list) {
       const L = list;
+      const itemCls = doc ? "my-1 leading-relaxed" : "my-0.5";
       blocks.push(
         L.ordered ? (
           <ol key={key()} className="ml-5 list-decimal">
             {L.items.map((it, j) => (
-              <li key={j} className={`my-0.5 ${it.task === 2 ? "text-dim" : ""}`}>
+              <li key={j} className={`${itemCls} ${it.task === 2 ? "text-dim" : ""}`}>
                 {it.task !== 0 && <TaskBox done={it.task === 2} />}
                 {inline(it.t, `${j}`)}
               </li>
@@ -152,7 +166,7 @@ export function Markdown({ text }: { text: string }) {
         ) : (
           <ul key={key()} className="ml-5 list-disc">
             {L.items.map((it, j) => (
-              <li key={j} className={`my-0.5 ${it.task === 2 ? "text-dim" : ""}`}>
+              <li key={j} className={`${itemCls} ${it.task === 2 ? "text-dim" : ""}`}>
                 {it.task !== 0 && <TaskBox done={it.task === 2} />}
                 {inline(it.t, `${j}`)}
               </li>
@@ -166,7 +180,12 @@ export function Markdown({ text }: { text: string }) {
   const flushQuote = () => {
     if (quote.length) {
       blocks.push(
-        <blockquote key={key()} className="border-l-2 border-line pl-3 text-dim">
+        <blockquote
+          key={key()}
+          className={doc
+            ? "rounded-r-md2 border-l-2 border-accent/60 bg-accent-soft/40 py-1.5 pr-3 pl-3.5 leading-relaxed text-muted"
+            : "border-l-2 border-line pl-3 text-dim"}
+        >
           {inline(quote.join("\n"), key())}
         </blockquote>,
       );
@@ -187,9 +206,13 @@ export function Markdown({ text }: { text: string }) {
     if (code) {
       if (fence) {
         blocks.push(
-          <pre key={key()} data-lang={code.lang || undefined} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
-            <code>{code.lines.join("\n")}</code>
-          </pre>,
+          renderCode ? (
+            <div key={key()}>{renderCode(code.lines.join("\n"), code.lang)}</div>
+          ) : (
+            <pre key={key()} data-lang={code.lang || undefined} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
+              <code>{code.lines.join("\n")}</code>
+            </pre>
+          ),
         );
         code = null;
       } else code.lines.push(raw);
@@ -249,12 +272,28 @@ export function Markdown({ text }: { text: string }) {
     const h = /^(#{1,4})\s+(.*)$/.exec(line);
     if (h) {
       flushAll();
-      const Tag = (["h4", "h4", "h5", "h6"] as const)[h[1]!.length - 1]!;
-      blocks.push(
-        <Tag key={key()} className={`font-semibold text-primary ${Tag === "h4" ? "text-[1.05em]" : ""}`}>
-          {inline(h[2]!, key())}
-        </Tag>,
-      );
+      const lvl = h[1]!.length;
+      if (doc) {
+        // varian dokumen: skala heading nyata (h1 judul, h2 seksi bergaris)
+        const cls = [
+          "mt-7 mb-3 text-[1.75rem] leading-tight font-semibold tracking-tight first:mt-0", // h1
+          "mt-7 mb-2.5 border-b border-line pb-1.5 text-[1.3rem] font-semibold tracking-tight", // h2
+          "mt-5 mb-1.5 text-[1.1rem] font-semibold", // h3
+          "mt-4 mb-1 text-[1rem] font-semibold text-secondary", // h4
+        ][lvl - 1]!;
+        blocks.push(
+          <h2 key={key()} className={`text-primary ${cls}`}>
+            {inline(h[2]!, key())}
+          </h2>,
+        );
+      } else {
+        const Tag = (["h4", "h4", "h5", "h6"] as const)[lvl - 1]!;
+        blocks.push(
+          <Tag key={key()} className={`font-semibold text-primary ${Tag === "h4" ? "text-[1.05em]" : ""}`}>
+            {inline(h[2]!, key())}
+          </Tag>,
+        );
+      }
       continue;
     }
     const q = /^>\s?(.*)$/.exec(line);
@@ -293,11 +332,15 @@ export function Markdown({ text }: { text: string }) {
   if (code) {
     // fence tak tertutup saat streaming — tampilkan apa adanya
     blocks.push(
-      <pre key={key()} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
-        <code>{code.lines.join("\n")}</code>
-      </pre>,
+      renderCode ? (
+        <div key={key()}>{renderCode(code.lines.join("\n"), code.lang)}</div>
+      ) : (
+        <pre key={key()} className="overflow-x-auto rounded-lg2 bg-inset px-2.5 py-2 font-mono text-[12.5px] leading-5">
+          <code>{code.lines.join("\n")}</code>
+        </pre>
+      ),
     );
   }
   flushAll();
-  return <div className="flex flex-col gap-2">{blocks}</div>;
+  return <div className={`flex flex-col gap-2 ${doc ? "gap-3" : ""}`}>{blocks}</div>;
 }
