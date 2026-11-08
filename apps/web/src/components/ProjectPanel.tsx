@@ -85,7 +85,7 @@ export function ProjectPanel({
             } ${p.status === "archived" ? "opacity-60" : ""}`}
           >
             <button
-              className={`flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-md2 px-2.5 py-2 text-left ${
+              className={`flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md2 px-2.5 py-1.5 text-left ${
                 p.id === activeId
                   ? "text-primary"
                   : "text-secondary hover:text-primary"
@@ -97,8 +97,8 @@ export function ProjectPanel({
                 aria-hidden
               />
               <span className="flex min-w-0 flex-col">
-                <b className="truncate text-body font-semibold">{p.name}</b>
-                <small className="truncate text-caption text-dim">
+                <b className="truncate text-caption font-semibold">{p.name}</b>
+                <small className="truncate text-[11px] text-dim">
                   {p.status === "archived"
                     ? "archived"
                     : p.description || "project"}
