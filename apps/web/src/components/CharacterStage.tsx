@@ -515,12 +515,12 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     (overrides[id] as OrinShapeKey | undefined) ?? PERSONA_SHAPE[id] ?? "orb";
 
   const cardCls =
-    "z-[2] flex flex-col gap-3 rounded-[18px] border border-line bg-surface/75 p-5 shadow-[0_18px_50px_-24px_rgb(0_0_0/.55)] backdrop-blur-[14px] max-[999px]:h-auto min-[1000px]:absolute min-[1000px]:top-[40%] min-[1000px]:h-[min(520px,calc(100%-240px))] min-[1000px]:w-[300px] xl:w-[320px] min-[1000px]:-translate-y-1/2";
+    "z-[2] flex flex-col gap-2.5 rounded-[18px] border border-line bg-surface/75 p-4 shadow-[0_18px_50px_-24px_rgb(0_0_0/.55)] backdrop-blur-[14px] max-[999px]:h-auto min-[1000px]:absolute min-[1000px]:top-[40%] min-[1000px]:h-[min(440px,calc(100%-260px))] min-[1000px]:w-[272px] xl:w-[288px] min-[1000px]:-translate-y-1/2";
 
   return (
     <div
       ref={boxRef}
-      className="relative isolate h-[88dvh] min-h-[560px] w-full overflow-hidden max-[999px]:flex max-[999px]:flex-col max-[999px]:gap-4 max-[999px]:h-auto max-[999px]:min-h-0 max-[999px]:overflow-visible max-[999px]:pb-4"
+      className="relative isolate h-[88dvh] min-h-[540px] w-full overflow-hidden max-[999px]:flex max-[999px]:flex-col max-[999px]:gap-4 max-[999px]:h-auto max-[999px]:min-h-0 max-[999px]:overflow-visible max-[999px]:pb-4"
       style={{ "--c": accent } as React.CSSProperties}
     >
       {/* latar: OVAL BERLAPIS, konsep sama dengan orbit workspace
@@ -529,25 +529,25 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0 max-[999px]:hidden"
       >
-        <div className="absolute top-[44%] left-1/2 h-[560px] w-[min(640px,58vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
-        <div className="absolute top-[44%] left-1/2 h-[390px] w-[min(460px,42vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
-        <div className="absolute top-[44%] left-1/2 h-[270px] w-[min(320px,32vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
+        <div className="absolute top-[44%] left-1/2 h-[460px] w-[min(520px,54vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-dashed border-line/70" />
+        <div className="absolute top-[44%] left-1/2 h-[320px] w-[min(380px,38vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/80" />
+        <div className="absolute top-[44%] left-1/2 h-[220px] w-[min(260px,28vw)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] border border-line/90" />
       </div>
 
       {/* ===== HERO, maskot di tengah panggung ===== */}
-      <div className="absolute left-1/2 top-[44%] z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[26px] max-[999px]:static max-[999px]:mt-2 max-[999px]:translate-x-0 max-[999px]:translate-y-0">
+      <div className="absolute left-1/2 top-[44%] z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[18px] max-[999px]:static max-[999px]:mt-2 max-[999px]:translate-x-0 max-[999px]:translate-y-0">
         <div key={persona.id} className="pop-yui flex flex-col items-center">
           <button
             type="button"
             aria-label={`Greet ${persona.name}`}
             onClick={() => setGreeted(true)}
-            className="group size-[200px] cursor-pointer rounded-full transition-transform duration-300 ease-[var(--ease-out-yui)] hover:-translate-y-1 hover:scale-[1.03] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--c)]"
+            className="group size-[168px] cursor-pointer rounded-full transition-transform duration-300 ease-[var(--ease-out-yui)] hover:-translate-y-1 hover:scale-[1.03] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[var(--c)]"
           >
-            <OrinPortrait state={emote} personaId={persona.id} size={200} />
+            <OrinPortrait state={emote} personaId={persona.id} size={168} />
           </button>
         </div>
         <div
-          className="flex flex-wrap justify-center gap-1.5 max-w-[20dvw]"
+          className="flex flex-wrap justify-center gap-1.5 max-w-[24dvw]"
           role="group"
           aria-label="Emotes"
         >
@@ -557,7 +557,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
               type="button"
               aria-pressed={emote === e.state}
               onClick={() => setEmote(e.state)}
-              className={`cursor-pointer rounded-[9px] border px-3.5 py-1.5 text-[12px] font-medium transition-colors duration-200 ${
+              className={`cursor-pointer rounded-[9px] border px-3 py-1 text-[11px] font-medium transition-colors duration-200 ${
                 emote === e.state
                   ? "border-[var(--c)] text-[var(--c)]"
                   : "border-line text-muted hover:border-line-strong hover:text-primary"
@@ -580,18 +580,18 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         aria-label="Previous persona"
         onClick={() => go(-1)}
         disabled={personas.length < 2}
-        className="absolute top-[44%] z-[3] hidden size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1000px]:flex min-[1000px]:left-[calc(50%-172px)] xl:left-[calc(50%-190px)]"
+        className="absolute top-[44%] z-[3] hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1000px]:flex min-[1000px]:left-[calc(50%-146px)] xl:left-[calc(50%-160px)]"
       >
-        <CaretLeft size={22} aria-hidden />
+        <CaretLeft size={18} aria-hidden />
       </button>
       <button
         type="button"
         aria-label="Next persona"
         onClick={() => go(1)}
         disabled={personas.length < 2}
-        className="absolute top-[44%] z-[3] hidden size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1000px]:flex min-[1000px]:left-[calc(50%+128px)] xl:left-[calc(50%+146px)]"
+        className="absolute top-[44%] z-[3] hidden size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-line bg-surface/80 text-muted backdrop-blur-md transition-all duration-200 hover:border-[var(--c)] hover:text-primary active:scale-90 disabled:pointer-events-none disabled:opacity-25 min-[1000px]:flex min-[1000px]:left-[calc(50%+104px)] xl:left-[calc(50%+118px)]"
       >
-        <CaretRight size={22} aria-hidden />
+        <CaretRight size={18} aria-hidden />
       </button>
 
       {/* ===== CARD KIRI, identitas ===== */}
@@ -614,7 +614,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </button>
         <div className="flex flex-wrap gap-1.5 items-center justify-center mb-3">
           <span
-            className="rounded-pill border px-2.5 py-0.5 text-[12px] font-semibold"
+            className="rounded-pill border px-2 py-0.5 text-[11px] font-semibold"
             style={{
               borderColor: accent,
               color: accent,
@@ -623,17 +623,17 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           >
             {tags[0]}
           </span>
-          <span className="rounded-pill border border-line px-2.5 py-0.5 text-[12px] font-semibold text-muted">
+          <span className="rounded-pill border border-line px-2 py-0.5 text-[11px] font-semibold text-muted">
             {tags[1]}
           </span>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-primary text-center mb-3">
+        <h2 className="text-lg font-bold tracking-tight text-primary text-center mb-2">
           {persona.name}
         </h2>
-        <p className="text-[13px] leading-5 text-muted text-center">
+        <p className="text-[12px] leading-4 text-muted text-center">
           {persona.description || persona.expertise}
         </p>
-        <div className="grid grid-cols-3 gap-1.5 my-3">
+        <div className="grid grid-cols-3 gap-1.5 my-2">
           {[
             { label: "Sessions", v: g?.sessions ?? 0 },
             { label: "Turns", v: g?.turns ?? 0 },
@@ -644,7 +644,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
               className="flex flex-col items-center gap-0.5 rounded-[12px] py-2"
               style={{ backgroundColor: `${accent}1a` }}
             >
-              <b className="text-base font-semibold tabular-nums text-primary">
+              <b className="text-sm font-semibold tabular-nums text-primary">
                 {r.v}
               </b>
               <small className="text-dim">{r.label}</small>
@@ -653,7 +653,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
         </div>
         {/* Bentuk: satu-satunya bagian card yang scroll (identitas tetap terlihat). */}
         <div className="flex min-h-0 flex-1 flex-col gap-1.5">
-          <b className="text-[13px] font-semibold text-secondary mb-3">Shape</b>
+          <b className="text-[12px] font-semibold text-secondary mb-2">Shape</b>
           <div className="grid min-h-0 flex-1 grid-cols-4 content-start gap-1.5 overflow-y-auto pr-0.5">
             {SHAPE_ORDER.map((k) => {
               const s = SHAPES[k];
@@ -676,8 +676,8 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
                   style={on ? { backgroundColor: `${accent}1a` } : undefined}
                 >
                   <svg
-                    width={30}
-                    height={30}
+                    width={26}
+                    height={26}
                     viewBox="-165 -165 330 330"
                     aria-hidden
                     focusable="false"
@@ -718,7 +718,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           <RadarChart base={base} bonus={bonus} accent={accent} />
         </div>
         <div className="mt-1 flex min-h-0 flex-1 flex-col gap-3">
-          <b className="shrink-0 text-sm font-semibold text-secondary">
+          <b className="shrink-0 text-[13px] font-semibold text-secondary">
             Skills ({bp?.effective.length ?? 0})
           </b>
           <div className="grid min-h-0 flex-1 grid-cols-5 content-start gap-2 overflow-y-auto pr-0.5">
@@ -744,7 +744,7 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
                   }`}
                   style={on ? { backgroundColor: `${accent}1a` } : undefined}
                 >
-                  <Glyph size={17} aria-hidden />
+                  <Glyph size={15} aria-hidden />
                 </button>
               );
             })}

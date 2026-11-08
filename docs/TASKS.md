@@ -807,3 +807,7 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Desktop reset ke onboarding tiap launch: pick_host/pick_remote kini persist setup.json (app_config_dir); welcome.html auto-resume; ?reset=1 (Switch mode) menghapus setup. Perlu build installer baru.
 - [x] Ikon installer/app pakai maskot Yuika: tauri icon dari android-chrome-512 → icon.ico + set png (repo desktop, commit terpisah).
 
+
+### D57 — Density Tab Persona di zoom 100% (SELESAI)
+- [x] User selalu browsing 90% zoom; di 100% stage persona terlalu padat/overlap. CharacterStage dikecilkan ~15%: maskot 200→168, cincin orbit 560/390/270→460/320/220, card kaca 300/320→272/288 (p-5→p-4, gap-3→2.5, tinggi max 520→440), chevron 44→40px makin dekat pusat, tipografi card turun 1 tingkat (h2 2xl→lg, body 13→12, tag 12→11), pill emote 12→11.
+
