@@ -1,6 +1,7 @@
 "use client";
 // CodeBlock (D29): preview file kode & fenced-code markdown dengan syntax
-// highlighting editor-grade via Shiki (github-light-default, inline styles).
+// highlighting editor-grade via Shiki (github-dark-default — token pastel
+// lembut di atas latar gelap #101010, inline styles).
 // Prinsip: LAZY — highlighter di-import dinamis sekali (singleton); selagi
 // belum siap/berhasil → fallback <pre> polos (tidak pernah blank atau error).
 // Gutter nomor baris + header (chip bahasa + copy). Aman: shiki meng-escape
@@ -52,7 +53,9 @@ export function langOf(filename: string | null | undefined): string | null {
   return map[ext] ?? null;
 }
 
-type Hl = { codeToHtml: (code: string, o: { lang: string; theme: string }) => string };
+type Hl = {
+  codeToHtml: (code: string, o: { lang: string; theme: string }) => string;
+};
 
 /** Singleton highlighter — dibuat sekali per halaman, dipakai semua CodeBlock. */
 let hlPromise: Promise<Hl | null> | null = null;
@@ -62,9 +65,29 @@ function getHl(langs: string[]): Promise<Hl | null> {
       try {
         const s = await import("shiki");
         const hl = await s.createHighlighter({
-          themes: ["github-light-default"],
+          themes: ["github-dark-default"],
           // gabungkan bahasa yang diminta pemanggil pertama + set inti
-          langs: Array.from(new Set(["typescript", "tsx", "javascript", "jsx", "json", "yaml", "markdown", "html", "css", "python", "bash", "sql", "xml", "toml", "ini", "diff", ...langs])),
+          langs: Array.from(
+            new Set([
+              "typescript",
+              "tsx",
+              "javascript",
+              "jsx",
+              "json",
+              "yaml",
+              "markdown",
+              "html",
+              "css",
+              "python",
+              "bash",
+              "sql",
+              "xml",
+              "toml",
+              "ini",
+              "diff",
+              ...langs,
+            ]),
+          ),
         });
         return hl as unknown as Hl;
       } catch {
@@ -102,7 +125,7 @@ export function CodeBlock({
     void getHl([lang]).then((hl) => {
       if (!alive || !hl) return;
       try {
-        setHtml(hl.codeToHtml(code, { lang, theme: "github-light-default" }));
+        setHtml(hl.codeToHtml(code, { lang, theme: "github-dark-default" }));
       } catch {
         /* grammar tak terdaftar → plain */
       }
@@ -112,9 +135,12 @@ export function CodeBlock({
     };
   }, [code, lang]);
 
-  useEffect(() => () => {
-    if (copyT.current) clearTimeout(copyT.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (copyT.current) clearTimeout(copyT.current);
+    },
+    [],
+  );
 
   const lineCount = useMemo(() => code.split("\n").length, [code]);
 
@@ -136,16 +162,11 @@ export function CodeBlock({
     >
       <header className="flex items-center gap-2 border-b border-line/70 px-2.5 py-1.5">
         <span
-          className="rounded-pill bg-hover px-2 py-px font-mono text-[10.5px] font-medium tracking-wide text-secondary uppercase"
+          className="rounded-pill bg-hover px-2 py-px font-mono text-[10.5px] font-medium tracking-wide text-secondary capitalize"
           aria-hidden
         >
           {lang ?? "text"}
         </span>
-        {filename && (
-          <b className="min-w-0 flex-1 truncate font-mono text-[11.5px] font-medium text-muted">
-            {filename}
-          </b>
-        )}
         <button
           type="button"
           onClick={() => void copy()}

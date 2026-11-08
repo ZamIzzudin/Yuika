@@ -11,7 +11,7 @@ import { apiUrl, authFetch } from "@/lib/api";
 const TerminalTabLazy = dynamic(() => import("./TerminalTab"), {
   ssr: false,
   loading: () => (
-    <div className="p-3 text-caption text-slate-400">Loading terminal…</div>
+    <div className="p-4 text-caption text-dim">Loading terminal…</div>
   ),
 });
 
@@ -57,50 +57,52 @@ function CommandsView({ projectId }: { projectId: string }) {
 
   if (cmds.length === 0)
     return (
-      <div className="flex h-full items-center justify-center p-4 text-center text-caption text-slate-400">
+      <div className="flex h-full items-center justify-center p-4 text-center text-caption text-dim">
         No agent commands yet — every run_command (node / npm / npx) shows up
         here live while a workflow or delegation works.
       </div>
     );
 
   return (
-    <div className="h-full overflow-y-auto p-2">
+    <div className="h-full overflow-y-auto p-3">
       <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
         {cmds.map((c) => (
           <li
             key={c.id}
-            className="rounded-md border border-slate-800 bg-slate-900/60"
+            className="rounded-md2 border border-line bg-raised"
           >
             <details>
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 px-2.5 py-1.5 select-none [&::-webkit-details-marker]:hidden">
-                <code className="font-mono text-xs text-slate-200">
+                <code className="font-mono text-xs text-primary">
                   $ {c.command} {c.args.join(" ")}
                 </code>
                 <span
                   className={`rounded-pill px-1.5 text-[10px] font-semibold ${
                     c.exitCode === 0
-                      ? "bg-emerald-500/15 text-emerald-400"
+                      ? "bg-success-soft text-success"
                       : c.exitCode === null
-                        ? "bg-amber-500/15 text-amber-400"
-                        : "bg-rose-500/15 text-rose-400"
+                        ? "bg-warning-soft text-warning"
+                        : "bg-danger-soft text-danger"
                   }`}
                 >
                   {c.exitCode === null ? "n/a" : `exit ${c.exitCode}`}
                 </span>
                 {c.note && (
-                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <span className="text-[10px] uppercase tracking-wide text-dim">
                     {c.note}
                   </span>
                 )}
-                <small className="ml-auto font-mono text-[10px] text-slate-500">
-                  {new Date(c.ts).toLocaleTimeString("en-US", { hour12: false })}
+                <small className="ml-auto font-mono text-[10px] text-dim">
+                  {new Date(c.ts).toLocaleTimeString("en-US", {
+                    hour12: false,
+                  })}
                 </small>
               </summary>
               {(c.stdout || c.stderr) && (
-                <pre className="max-h-48 overflow-auto border-t border-slate-800 px-2.5 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-slate-300">
+                <pre className="max-h-48 overflow-auto border-t border-line px-2.5 py-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-secondary">
                   {c.stdout}
                   {c.stderr && (
-                    <span className="text-rose-400">{c.stderr}</span>
+                    <span className="text-danger">{c.stderr}</span>
                   )}
                 </pre>
               )}
@@ -112,10 +114,16 @@ function CommandsView({ projectId }: { projectId: string }) {
   );
 }
 
-export function TerminalFullTab({ project }: { project: { id: string; name: string } }) {
+export function TerminalFullTab({
+  project,
+}: {
+  project: { id: string; name: string };
+}) {
   const [view, setView] = useState<PanelView>(() => {
     try {
-      return window.localStorage.getItem("yui.termView") === "commands" ? "commands" : "shell";
+      return window.localStorage.getItem("yui.termView") === "commands"
+        ? "commands"
+        : "shell";
     } catch {
       return "shell";
     }
@@ -132,28 +140,23 @@ export function TerminalFullTab({ project }: { project: { id: string; name: stri
   const pick = useCallback((v: PanelView) => setView(v), []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#0d1117]">
-      <header className="flex flex-none items-center gap-1 border-b border-slate-800 px-2 py-1">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <header className="flex flex-none items-center gap-1 px-1 pt-1 pb-2">
         {(["shell", "commands"] as const).map((v) => (
           <button
             key={v}
             type="button"
             aria-pressed={view === v}
             onClick={() => pick(v)}
-            className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
+            className={`cursor-pointer rounded-md2 px-2.5 py-1 text-xs font-medium capitalize transition-colors ${
               view === v
-                ? "bg-slate-800 text-slate-100"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-hover text-primary"
+                : "text-dim hover:text-secondary"
             }`}
           >
             {v}
           </button>
         ))}
-        <small className="ml-2 hidden font-mono text-[10px] text-slate-500 sm:inline">
-          {view === "shell"
-            ? "shared with the agent (tool terminal)"
-            : "run_command log"}
-        </small>
       </header>
       <div className="min-h-0 flex-1 overflow-hidden">
         {view === "shell" ? (

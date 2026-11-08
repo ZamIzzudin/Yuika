@@ -55,7 +55,15 @@ export default function TerminalTab({ project }: TerminalTabProps) {
         cursorBlink: true,
         convertEol: true,
         scrollback: 5_000,
-        theme: { background: "#0b0f14" },
+        // D30: selaras design system — bg persis --yui-bg-inset (#101010,
+        // sama dengan pane Files), foreground sekunder, kursor & seleksi aksen.
+        theme: {
+          background: "#101010",
+          foreground: "#dcdcdc",
+          cursor: "#42a0ff",
+          cursorAccent: "#101010",
+          selectionBackground: "rgba(0,124,247,0.30)",
+        },
       });
       termRef.current = term;
       const fit = new FitAddon();
@@ -65,7 +73,8 @@ export default function TerminalTab({ project }: TerminalTabProps) {
         fit.fit();
         const onResize = () => fit.fit();
         window.addEventListener("resize", onResize);
-        (term as unknown as { __offResize?: () => void }).__offResize = () => window.removeEventListener("resize", onResize);
+        (term as unknown as { __offResize?: () => void }).__offResize = () =>
+          window.removeEventListener("resize", onResize);
       }
 
       // lokal-echo: tanpa PTY, backend tidak memantulkan ketikan (v1 pipe).
@@ -83,9 +92,15 @@ export default function TerminalTab({ project }: TerminalTabProps) {
 
       setStatus("ready");
       setBackend(info.backend);
-      writeLine(`— Yuika terminal · project: ${project.name} · backend: ${info.backend}${info.backend === "local" ? " (host, tanpa isolasi)" : " (sandbox)"} —`);
+      writeLine(
+        `— Yuika terminal · project: ${project.name} · backend: ${info.backend}${info.backend === "local" ? " (host, tanpa isolasi)" : " (sandbox)"} —`,
+      );
 
-      es = new EventSource(apiUrl(`/api/terminal/sessions/${info.id}/stream?1=1${authTokenQuery()}`));
+      es = new EventSource(
+        apiUrl(
+          `/api/terminal/sessions/${info.id}/stream?1=1${authTokenQuery()}`,
+        ),
+      );
       es.addEventListener("replay", (ev) => {
         term?.write((ev as MessageEvent).data);
       });
@@ -115,24 +130,28 @@ export default function TerminalTab({ project }: TerminalTabProps) {
   }, [project.id, project.name, writeLine]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 p-3">
-      <div className="flex items-center gap-2 text-xs text-slate-400">
+    <div className="flex h-full min-h-0 flex-col gap-2.5 p-4">
+      <div className="flex items-center gap-2 text-xs text-dim">
         <span
           aria-label="terminal status"
           className={
-            status === "ready" ? "text-emerald-400" : status === "error" ? "text-rose-400" : "text-amber-400"
+            status === "ready"
+              ? "text-success"
+              : status === "error"
+                ? "text-danger"
+                : "text-warning"
           }
         >
           ● {status}
         </span>
-        {backend && <span>backend: {backend}</span>}
+        {backend && <span>Run in : {backend}</span>}
         {status === "exited" && <span>— restart dari tombol project</span>}
-        {note && <span className="text-rose-400">{note}</span>}
+        {note && <span className="text-danger">{note}</span>}
       </div>
       <div
         ref={holderRef}
         data-testid="terminal-holder"
-        className="min-h-0 flex-1 overflow-hidden rounded-lg border border-slate-800 bg-[#0b0f14] p-2"
+        className="min-h-0 flex-1 overflow-hidden rounded-lg2 border border-line bg-inset p-3"
       />
     </div>
   );

@@ -63,7 +63,10 @@ interface PhaseState {
 interface RunRow {
   id: string;
   status: string;
-  workflow: { name?: string; phases?: Array<{ id: string; label?: string; gate?: boolean }> };
+  workflow: {
+    name?: string;
+    phases?: Array<{ id: string; label?: string; gate?: boolean }>;
+  };
   phaseStates: PhaseState[];
   createdAt: number;
   updatedAt: number;
@@ -110,16 +113,25 @@ function fileIconOf(name: string): { Icon: Icon; cls: string } {
     return { Icon: FileTs, cls: "text-[#3178c6]" };
   if (ext === "js" || ext === "jsx" || ext === "mjs" || ext === "cjs")
     return { Icon: FileJs, cls: "text-[#b08300]" };
-  if (ext === "json" || ext === "jsonc") return { Icon: BracketsCurly, cls: "text-[#8a6d1a]" };
+  if (ext === "json" || ext === "jsonc")
+    return { Icon: BracketsCurly, cls: "text-[#8a6d1a]" };
   if (ext === "md" || ext === "markdown" || ext === "mdx")
     return { Icon: FileMd, cls: "text-[#7c5cff]" };
-  if (ext === "py" || ext === "pyi") return { Icon: FilePy, cls: "text-[#3f7ba6]" };
+  if (ext === "py" || ext === "pyi")
+    return { Icon: FilePy, cls: "text-[#3f7ba6]" };
   if (ext === "css" || ext === "scss" || ext === "less")
     return { Icon: FileCss, cls: "text-[#6f42c1]" };
   if (ext === "html" || ext === "htm" || ext === "vue" || ext === "svelte")
     return { Icon: FileHtml, cls: "text-[#c2542f]" };
   if (ext === "sql") return { Icon: FileSql, cls: "text-[#a87100]" };
-  if (ext === "svg" || ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "gif" || ext === "webp")
+  if (
+    ext === "svg" ||
+    ext === "png" ||
+    ext === "jpg" ||
+    ext === "jpeg" ||
+    ext === "gif" ||
+    ext === "webp"
+  )
     return { Icon: FileImage, cls: "text-[#0f8a8a]" };
   return { Icon: FileDoc, cls: "text-dim" };
 }
@@ -144,7 +156,8 @@ function countFiles(nodes: FileNode[]): number {
 
 /** Run → laporan markdown (ringkasan fase + step + gate) — dari DocsTab lama. */
 function runToMarkdown(run: RunRow): string {
-  const label = (pid: string) => run.workflow.phases?.find((p) => p.id === pid)?.label ?? pid;
+  const label = (pid: string) =>
+    run.workflow.phases?.find((p) => p.id === pid)?.label ?? pid;
   const lines: string[] = [];
   lines.push(`# Run report — ${run.workflow.name ?? "workflow"}`, "");
   lines.push(
@@ -152,7 +165,12 @@ function runToMarkdown(run: RunRow): string {
     "",
   );
   for (const ph of run.phaseStates) {
-    const gate = ph.gatePassed === undefined ? "" : ph.gatePassed ? " · gate approved" : "";
+    const gate =
+      ph.gatePassed === undefined
+        ? ""
+        : ph.gatePassed
+          ? " · gate approved"
+          : "";
     lines.push(`## ${label(ph.phaseId)} — ${ph.status}${gate}`, "");
     if (!ph.steps.length) {
       lines.push("_No steps recorded._", "");
@@ -208,21 +226,45 @@ function TreeRow({
         <span className="flex w-3.5 shrink-0 justify-center self-center">
           {isDir &&
             (open ? (
-              <CaretDown size={11} aria-hidden className="text-dim transition-colors group-hover:text-secondary" />
+              <CaretDown
+                size={11}
+                aria-hidden
+                className="text-dim transition-colors group-hover:text-secondary"
+              />
             ) : (
-              <CaretRight size={11} aria-hidden className="text-dim transition-colors group-hover:text-secondary" />
+              <CaretRight
+                size={11}
+                aria-hidden
+                className="text-dim transition-colors group-hover:text-secondary"
+              />
             ))}
         </span>
         {isDir ? (
           open ? (
-            <DirOpenIcon size={14} aria-hidden className="shrink-0 self-center text-accent/80" />
+            <DirOpenIcon
+              size={14}
+              aria-hidden
+              className="shrink-0 self-center text-accent/80"
+            />
           ) : (
-            <DirIcon size={14} aria-hidden className="shrink-0 self-center text-accent/80" />
+            <DirIcon
+              size={14}
+              aria-hidden
+              className="shrink-0 self-center text-accent/80"
+            />
           )
-        ) : (() => {
-          const { Icon: FIcon, cls } = fileIconOf(node.name);
-          return <FIcon size={14} aria-hidden className={`shrink-0 self-center ${cls}`} />;
-        })()}
+        ) : (
+          (() => {
+            const { Icon: FIcon, cls } = fileIconOf(node.name);
+            return (
+              <FIcon
+                size={14}
+                aria-hidden
+                className={`shrink-0 self-center ${cls}`}
+              />
+            );
+          })()
+        )}
         <span className="truncate">{node.name}</span>
         {!isDir && (
           <small className="ml-auto shrink-0 font-mono text-[10.5px] text-dim opacity-0 transition-opacity group-hover:opacity-100">
@@ -280,11 +322,7 @@ export function FileTab({ projectId }: { projectId: string }) {
           (((await t.json()) as { error?: string }).error ??
             "failed to load files") + "",
         );
-      if (rs.ok)
-        setRuns(
-          ((await rs.json()) as { runs?: RunRow[] }).runs
-            ?? [],
-        );
+      if (rs.ok) setRuns(((await rs.json()) as { runs?: RunRow[] }).runs ?? []);
     } catch {
       toastErr("could not reach the server");
     }
@@ -395,7 +433,11 @@ export function FileTab({ projectId }: { projectId: string }) {
         toastErr("failed to load run report");
         return;
       }
-      setContent({ content: runToMarkdown(body.run), size: 0, truncated: false });
+      setContent({
+        content: runToMarkdown(body.run),
+        size: 0,
+        truncated: false,
+      });
     } finally {
       setLoadingContent(false);
     }
@@ -450,19 +492,13 @@ export function FileTab({ projectId }: { projectId: string }) {
   }
 
   const pane =
-    "overflow-y-auto rounded-lg2 border border-line bg-inset p-2 h-full";
+    "overflow-y-auto rounded-lg2 border border-line bg-inset p-5 h-full";
 
-  const fileCount = useMemo(
-    () => (tree ? countFiles(tree) : 0),
-    [tree],
-  );
+  const fileCount = useMemo(() => (tree ? countFiles(tree) : 0), [tree]);
 
   return (
     <section aria-label="Project files" className="flex flex-col gap-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <p className="hidden px-1 text-caption text-dim sm:block">
-          Artefacts of this project — files written by you and the team.
-        </p>
+      <div className="flex items-center justify-end gap-2">
         <div className="flex gap-2">
           <label title="Upload a document (pdf/xlsx/csv/…) → uploads/ folder, read by the agent via doc_read">
             <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-md2 border border-line-strong px-3 py-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-hover hover:text-primary">
@@ -494,20 +530,25 @@ export function FileTab({ projectId }: { projectId: string }) {
           <h3 className="flex items-center gap-1.5 px-1.5 pb-1 pt-0.5 text-[11px] font-semibold uppercase tracking-wide text-dim">
             Run reports
             {runs !== null && runs.length > 0 && (
-              <span className="rounded-pill bg-hover px-1.5 text-[10px] font-medium text-muted" aria-hidden>
+              <span
+                className="rounded-pill bg-hover px-1.5 text-[10px] font-medium text-muted"
+                aria-hidden
+              >
                 {runs.length}
               </span>
             )}
           </h3>
           {runs === null ? null : runs.length === 0 ? (
-            <p className="px-1.5 pb-1.5 text-caption text-muted">
+            <p className="px-1.5 pb-5 pt-3 text-caption text-muted">
               No workflow runs yet.
             </p>
           ) : (
             runs.map((r) => (
               <button
                 key={r.id}
-                aria-selected={sel?.kind === "run" && sel.id === r.id ? true : undefined}
+                aria-selected={
+                  sel?.kind === "run" && sel.id === r.id ? true : undefined
+                }
                 className={`flex w-full cursor-pointer items-center gap-2 rounded-md2 px-1.5 py-1 text-left text-[13px] leading-5 transition-colors ${
                   sel?.kind === "run" && sel.id === r.id
                     ? "bg-hover font-semibold text-primary"
@@ -526,7 +567,7 @@ export function FileTab({ projectId }: { projectId: string }) {
               </button>
             ))
           )}
-          <div className="my-1.5 border-t border-line" aria-hidden />
+          <div className="my-1.5 border-t border-line pt-5" aria-hidden />
           {tree === null ? (
             <SkeletonRows rows={5} />
           ) : tree.length === 0 ? (
@@ -580,7 +621,7 @@ export function FileTab({ projectId }: { projectId: string }) {
             !content.truncated &&
             (isText || isMd) && (
               <>
-                <header className="mb-2 flex items-center gap-2 border-b border-line pb-2">
+                <header className="flex items-center gap-2 border-b border-line pb-3 mb-5">
                   <b className="min-w-0 flex-1 truncate font-mono text-caption font-semibold text-primary">
                     {selLabel}
                   </b>
@@ -659,7 +700,10 @@ export function FileTab({ projectId }: { projectId: string }) {
                       text={content.content}
                       variant="doc"
                       renderCode={(code, lang) => (
-                        <CodeBlock code={code} lang={langOf(lang) ?? "markdown"} />
+                        <CodeBlock
+                          code={code}
+                          lang={langOf(lang) ?? "markdown"}
+                        />
                       )}
                     />
                   </div>
