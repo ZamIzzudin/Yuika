@@ -1,7 +1,7 @@
 // @yuika/crypto, backend WebCrypto (browser, async).
 // Identik byte-format dengan backend node (@yuika/crypto), diverifikasi
 // golden vectors (suite vectors.test.ts menjalankan backend INI terhadap
-// vectors yang sama). Dipakai /dev/remote & mobile-web.
+// vectors yang sama). Dipakai klien remote web/mobile (WebCrypto).
 //
 // Syarat: WebCrypto dengan Ed25519 + X25519 (Chromium ≥137, Node ≥18 webcrypto).
 const subtle = globalThis.crypto.subtle;

@@ -122,6 +122,24 @@ export class PortalLinkConflictError extends Error {
 }
 
 /**
+ * Owner-lock (single-owner studio): begitu ada account portal ter-link
+ * (user pertama), account portal LAIN ditolak login. Dipakai SSO complete
+ * supaya desktop remote yang menunjuk studio milik orang lain gagal
+ * dengan pesan jelas, bukan diam-diam membuat user kedua.
+ */
+export function ownedByOtherPortalAccount(portalAccountId: string): boolean {
+  const d = open();
+  const anyLinked = d
+    .prepare("SELECT 1 FROM users WHERE portal_account_id IS NOT NULL LIMIT 1")
+    .get() as unknown;
+  if (!anyLinked) return false;
+  const known = d
+    .prepare("SELECT 1 FROM users WHERE portal_account_id = ? LIMIT 1")
+    .get(portalAccountId) as unknown;
+  return !known;
+}
+
+/**
  * Portal login: identity = portalAccountId. Another portal account using
  * the same email is rejected (anti takeover; portal emails are unique).
  * Exception: legacy pre-portal users (NULL portal_account_id) with the

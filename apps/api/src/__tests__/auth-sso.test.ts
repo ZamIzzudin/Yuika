@@ -186,7 +186,7 @@ describe("portal SSO", () => {
   it("auto-link: portal tanpa deviceToken → tanpa claim (backward compat)", async () => {
     const n = claims.length;
     const st = await start();
-    const code = issueCode(new URL(st.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_nodev", "nodev@yuika.test", false);
+    const code = issueCode(new URL(st.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_sso_1", "nodev@yuika.test", false);
     const r = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code, state: st.state } });
     expect(r.statusCode).toBe(200);
     expect(claims).toHaveLength(n);
@@ -195,7 +195,7 @@ describe("portal SSO", () => {
   it("auto-link: claim gagal → login TETAP sukses", async () => {
     failClaims = true;
     const st = await start();
-    const code = issueCode(new URL(st.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_fail", "fail@yuika.test");
+    const code = issueCode(new URL(st.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_sso_1", "fail@yuika.test");
     const r = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code, state: st.state } });
     expect(r.statusCode).toBe(200); // login jalan, device bisa di-link nanti
     failClaims = false;
@@ -224,26 +224,27 @@ describe("portal SSO", () => {
     expect((r.json() as { error: string }).error).toContain("mismatch");
   });
 
-  it("mapping: SSO kedua (account sama) → user ID sama; email sama dari account BEDA → TIDAK mengambil alih", async () => {
-    // SSO pertama utk acc_link_1 → user baru
+  it("mapping: SSO kedua (account sama) → user ID sama; account BEDA → 403 owner-lock", async () => {
+    // SSO pertama utk acc_sso_1 → user sudah ada dari happy path
     const st1 = await start();
-    const c1 = issueCode(new URL(st1.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_link_1", "linked@yuika.test");
+    const c1 = issueCode(new URL(st1.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_sso_1", "linked@yuika.test");
     const r1 = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: c1, state: st1.state } });
     const id1 = (r1.json() as { user: { id: string } }).user.id;
 
     // SSO lagi account sama → tetap user itu (bukan duplikat)
     const st2 = await start();
-    const c2 = issueCode(new URL(st2.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_link_1", "linked@yuika.test");
+    const c2 = issueCode(new URL(st2.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_sso_1", "linked@yuika.test");
     const r2 = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: c2, state: st2.state } });
     expect((r2.json() as { user: { id: string } }).user.id).toBe(id1);
 
-    // Account portal BEDA dgn email SAMA → 409 (anti takeover: email sudah
-    // milik akun portal lain, identitas = portalAccountId).
+    // Account portal BEDA (email sama) → 403 owner-lock: studio bersifat
+    // single-owner, account lain tak boleh login ke instance ini
+    // (termasuk desktop remote yang menunjuk studio milik orang lain).
     const st3 = await start();
     const c3 = issueCode(new URL(st3.authorizeUrl).searchParams.get("code_challenge") ?? "", REDIRECT, "acc_link_2", "linked@yuika.test");
     const r3 = await app.inject({ method: "POST", url: "/api/auth/portal/complete", payload: { code: c3, state: st3.state } });
-    expect(r3.statusCode).toBe(409);
-    expect((r3.json() as { error: string }).error).toContain("another portal account");
+    expect(r3.statusCode).toBe(403);
+    expect((r3.json() as { error: string }).error).toContain("different portal account");
   });
 
   it("portal-only: register & login lokal → 404 (konsep dihapus)", async () => {

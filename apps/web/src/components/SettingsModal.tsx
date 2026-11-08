@@ -14,12 +14,11 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { McpPanel } from "./McpPanel";
-import { PortalSettings } from "./PortalSettings";
 import { Skeleton } from "./Skeleton";
 import { toastErr, toastOk } from "./ui/toast";
 import { Button, Card, Dropdown, Field, Modal, TextInput } from "./ui";
 
-type Section = "provider" | "mcp" | "usage" | "portal" | "account";
+type Section = "provider" | "mcp" | "usage" | "account";
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   {
@@ -29,7 +28,6 @@ const SECTIONS: { id: Section; label: string; hint: string }[] = [
   },
   { id: "mcp", label: "MCP & Tools", hint: "catalog, trust, audit" },
   { id: "usage", label: "Usage", hint: "spend, limits, tokens" },
-  { id: "portal", label: "Portal", hint: "link devices, remote control" },
 ];
 
 /** Tile statistik kecil untuk dashboard Usage. */
@@ -281,7 +279,6 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               <UsageDashboard />
             </section>
           )}
-          {section === "portal" && <PortalSettings />}
           {section === "account" && <AccountPanel />}
         </div>
       </div>

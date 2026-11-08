@@ -5,9 +5,10 @@
 // - GET  /api/portal/status : status link + relay + daftar remote (badge UI).
 // - DELETE /api/portal/unlink: berhenti + hapus kredensial LOKAL (device masih
 //   terdaftar di portal, unlink di sana via halaman Devices).
-// - POST /api/remote-dev/claim: PROXY claim untuk halaman /dev/remote,
-//   kunci dibuat di BROWSER (remote = device sendiri); API hanya meneruskan
-//   public keys (menghindari CORS portal; portal tetap tak melihat private).
+//
+// Pairing manual (token/QR) dihapus (D59): device web auto-link via SSO
+// (lihat auth-sso.ts), remote-control murni pindah ke mobile; /dev/remote
+// dan proxy claim-nya sudah dihapus.
 import type { FastifyInstance } from "fastify";
 import { generateDeviceKeys } from "@yuika/crypto";
 import { z } from "zod";
@@ -21,15 +22,6 @@ const PairRequest = z.object({
   kind: z.enum(["desktop", "mobile", "web"]).optional(),
   portalUrl: z.string().url().optional(),
   relayUrl: z.string().optional(),
-});
-
-const RemoteDevClaim = z.object({
-  portalUrl: z.string().url(),
-  token: z.string().min(20),
-  kind: z.enum(["desktop", "mobile", "web"]),
-  name: z.string().max(64).optional(),
-  signPub: z.string(),
-  dhPub: z.string(),
 });
 
 interface ClaimResponse { deviceId: string; accountId: string }
@@ -104,17 +96,5 @@ export function registerPortalRoutes(app: FastifyInstance, getRt: () => import("
     await getPortalHost().stop();
     clearHostDevice();
     return { ok: true };
-  });
-
-  app.post("/api/remote-dev/claim", async (req, reply) => {
-    const body = RemoteDevClaim.parse(req.body);
-    const { deviceId, accountId } = await claimAtPortal(body.portalUrl, {
-      token: body.token,
-      kind: body.kind,
-      name: body.name ?? "Dev remote",
-      signPub: body.signPub,
-      dhPub: body.dhPub,
-    });
-    return { deviceId, accountId };
   });
 }

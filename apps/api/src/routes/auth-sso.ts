@@ -17,7 +17,7 @@ import {
   PortalSsoCompleteRequest,
   PortalSsoStartRequest,
 } from "@yuika/contracts";
-import { createSession, findOrCreatePortalUser, PortalLinkConflictError } from "../auth/store.js";
+import { createSession, findOrCreatePortalUser, ownedByOtherPortalAccount, PortalLinkConflictError } from "../auth/store.js";
 import { getWebDevice, saveWebDevice } from "../portal/store.js";
 import { getWebPresence } from "../portal/web-presence.js";
 import { claimAtPortal } from "./portal.js";
@@ -113,6 +113,14 @@ export function registerAuthSsoRoutes(app: FastifyInstance): void {
     }
 
     try {
+      // Owner-lock: studio bersifat single-owner. Instance yang sudah
+      // dimiliki account portal lain (mis. desktop remote menunjuk studio
+      // orang lain) menolak login sejak awal dengan pesan yang jelas.
+      if (ownedByOtherPortalAccount(exchanged.accountId)) {
+        return reply.code(403).send({
+          error: "This studio is linked to a different portal account",
+        });
+      }
       const user = findOrCreatePortalUser(exchanged.accountId, exchanged.email);
       // Browser auto-link: the portal includes a one-time deviceToken in
       // the exchange; claim it with a STABLE key (stored locally) so the

@@ -818,3 +818,11 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] PortalSettings: langkah pairing memperjelas Desktop token = host yang DIKENDALIKAN; Web token = remote controller di /dev/remote.
 - [ ] TAHAP BERIKUT (antrian): promosikan Remote console keluar /dev (mis. /remote) agar tidak ikut disembunyikan YUI_HIDE_DEV_PAGES di build Docker prod; portal Devices page beri tombol buka console.
 
+
+### D59 — Konsep pairing final: auto-link SSO + owner-lock, remote console dihapus (SELESAI)
+- [x] Keputusan desain: pairing = auto-link SSO saja (web host sudah otomatis; desktop host sama karena jalur login identik); token/QR manual tidak dipakai lagi; remote-control murni = mobile (mendatang); remote desktop = webview host.
+- [x] /dev/remote (Remote console) + e2e remote.spec.ts + proxy /api/remote-dev/claim dihapus; seksi Portal di SettingsModal dihapus (PortalSettings.tsx dihapus); route /api/portal/pair & unlink tetap ada (API, untuk keperluan lain/testing).
+- [x] Owner-lock: SSO complete menolak (403) account portal berbeda begitu instance punya user portal → desktop remote yang menunjuk studio milik orang lain ditolak. store.ownedByOtherPortalAccount + test diubah (akun sama antar test karena db shared).
+- [x] Verifikasi unlink live: portal Devices → relay sweep bye 4001 → sesi studio dicabut (butuh redeploy image studio agar aktif).
+- [ ] Antrian: host relay service auto-start saat SSO + slot multi-host di portal (kind desktop 1-slot belum cukup untuk web host + desktop host bersamaan) + portal Devices page sederhanakan (token issuing dihapus) + mobile login → daftar host → interaksi relay.
+
