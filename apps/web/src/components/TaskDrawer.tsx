@@ -1061,7 +1061,7 @@ export function ProjectTabs({
           role="dialog"
           aria-modal="true"
           aria-label="Log Task"
-          className={`fixed inset-0 z-50 flex justify-end bg-black/40 transition-opacity ease-[var(--ease-out-yui)] duration-[240ms] ${
+          className={`fixed inset-0 z-50 flex justify-end bg-black/60 transition-opacity ease-[var(--ease-out-yui)] duration-[240ms] ${
             sheetVis ? "opacity-100" : "opacity-0"
           }`}
           onClick={closeSheet}

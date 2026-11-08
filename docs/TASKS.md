@@ -847,3 +847,13 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Portal: MAX_WEB_DEVICES 3 → 5 (satu akun: studio + beberapa desktop host); test claim multi-slot diupdate.
 - [x] Fix sidecar chromium live: entrypoint chromedp/headless-shell menjalankan browser di 127.0.0.1:9223 + socat 0.0.0.0:9222 → flag remote-debugging di command bertabrakan dengan socat (bind in-use). Command kini hanya flag perilaku browser.
 
+
+### D63 — Hardening deployment & UX (SELESAI)
+- [x] Narasi agent antar tool kini paragraf terpisah: delta teks segmen baru dibuka dgn "
+
+" (loop.ts), streaming & replay SSE sama-sama kena; bubble jadi paragraf-per-langkah.
+- [x] CDP resolver: Chrome 66+ menolak Host non-IP (HTTP 500, DNS rebinding protection) — hostname (chromium:9222) di-resolve ke IP dulu utk probe; webSocketDebuggerUrl balasan berisi IP tsb.
+- [x] MCP git: boot meng-init workspace sbg repo (idempoten) — mcp-server-git menuntut path repository valid, /data/workspace tadinya cuma folder.
+- [x] MCP instalasi user persist: tulis ke workspace/mcp.user.json (volume) bukan mcp.json (layer image); config efektif = base ∪ overlay, tombstone utk uninstall server base; token github selamat lintas redeploy.
+- [x] UI: overlay modal digelapkan (bg-black/70 + blur tipis; drawer 60%) supaya konten di belakang tak bertabrakan.
+
