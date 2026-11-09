@@ -156,7 +156,14 @@ standalone one. Two ways to run it:
 - **From the Dokploy UI (no SSH):** create a Docker Compose project, connect
   this repository, set the compose path to `docker-compose.traefik.yml`,
   paste the variables from step 4 into the project environment, deploy.
-  Updates: click Redeploy (re-pulls the default branch).
+  Updates: click Redeploy (re-pulls the source branch, default `main`).
+
+  Note for Dokploy deployments: there is no `/opt/Yuika` checkout on the
+  host, so `scripts/update.sh` and the SSH-based **Update now** runner
+  (D71) do not apply here. Updating IS the Dokploy redeploy. In-app data
+  reset (D70) works regardless. If you want the button too, point the
+  Dokploy project at a specific tag and keep a separate manual checkout,
+  or ask for the Dokploy-API update provider.
 - **From the CLI:**
 
 ```bash
