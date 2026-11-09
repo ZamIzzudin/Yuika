@@ -20,6 +20,7 @@
 >
 > Pasangan `PLAN.md` (mengapa) dan `DEMO-WEEK-1.md` (eksekusi minggu demo).
 > **Dokumen ini = sumber kebenaran progres tim.** Update tiap sinkron pagi (15 menit).
+> Papan fitur aktif + progres %: `docs/FEATURES.md` (menggantikan ROADMAP-NEXT).
 >
 > **Cara pakai:**
 >

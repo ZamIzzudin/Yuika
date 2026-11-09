@@ -1,5 +1,10 @@
 # ROADMAP-NEXT, Urutan Prioritas Sisa Pekerjaan
 
+> **STATUS: SUPERSEDED 2026-11** — papan aktif sekarang `docs/FEATURES.md`
+> (berorientasi fitur + progres %). Dokumen ini dibekukan sebagai arsip
+> keputusan; jangan tambah item baru di sini. Item #1..#7 selesai saat
+> pembekuan; #8..#14 dilanjutkan lewat FEATURES.md (F1..F5).
+
 > Dibuat 2026-11 setelah rencana menyeluruh bersama user. Dokumen ini = **urutan
 > eksekusi tunggal** untuk sisa pekerjaan; TASKS.md tetap sumber definisi task
 > per-item (jangan dobel), BATCHES.md tetap log riwayat. Setiap item selesai →
