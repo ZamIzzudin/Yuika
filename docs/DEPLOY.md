@@ -232,32 +232,30 @@ the studio ssh into the VPS host itself and run `./scripts/update.sh`
 there — the same manual flow above, minus the terminal. The page reloads
 itself when the new version is live.
 
-Setup (once, on the VPS):
+Setup is automatic: the first `./scripts/update.sh` run configures the
+runner by itself (idempotent, safe to re-run). It generates a dedicated
+key pair at `<checkout>/update_key`, appends the public key to
+`~/.ssh/authorized_keys`, and appends these variables to `.env` before
+the containers restart — so the button works right after that update:
 
-1. Generate a dedicated key pair next to the checkout (no passphrase —
-   BatchMode ssh cannot prompt):
+```bash
+YUI_UPDATE_SSH_TARGET=$(id -un)@host.docker.internal
+YUI_UPDATE_SSH_PORT=22
+YUI_UPDATE_DIR=/opt/Yuika
+YUI_UPDATE_SSH_KEY_FILE=/opt/Yuika/update_key
+```
 
-   ```bash
-   ssh-keygen -t ed25519 -f /opt/Yuika/update_key -N ""
-   cat /opt/Yuika/update_key.pub >> ~/.ssh/authorized_keys
-   ```
+`host.docker.internal` resolves to the VPS host itself from inside the
+api container (`extra_hosts: host-gateway` in the compose files) — no
+need to hardcode a gateway IP that may change between deployments. The
+key is dedicated so you can revoke it independently of human logins:
+delete its line from `~/.ssh/authorized_keys`.
 
-   The key can only do what its user can do; it is dedicated so you can
-   revoke it independently of human logins.
-
-2. Point the studio at the host. From inside a container the VPS host is
-   reachable via the docker bridge gateway (usually `172.17.0.1`) or its
-   public IP. Add to `/opt/Yuika/.env`:
-
-   ```bash
-   YUI_UPDATE_SSH_TARGET=root@172.17.0.1
-   YUI_UPDATE_SSH_PORT=22
-   YUI_UPDATE_DIR=/opt/Yuika
-   YUI_UPDATE_SSH_KEY_FILE=/opt/Yuika/update_key
-   ```
-
-3. Recreate the api service so the new env and the read-only key mount
-   land: `docker compose -f docker-compose.prod.yml up -d api`.
+Manual setup (only if you skipped the bootstrap, e.g. non-standard sshd
+port or user): create the key with `ssh-keygen -t ed25519 -f
+/opt/Yuika/update_key -N ""`, add the `.pub` to `authorized_keys`, add
+the four variables above to `.env`, then `docker compose -f
+docker-compose.prod.yml up -d api`.
 
 Without `YUI_UPDATE_SSH_TARGET` the button never appears and the endpoint
 answers 400 — the runner is opt-in per deployment. The same variables work

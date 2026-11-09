@@ -38,6 +38,8 @@ services:
       target: api
     image: yuika/api:latest
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # update runner D71 → host VPS
     env_file:
       - path: .env
         required: false

@@ -51,6 +51,11 @@ services:
       target: api
     image: yuika/api:latest
     restart: unless-stopped
+    # host-gateway: container api bisa ssh ke host VPS sendiri lewat nama
+    # stabil host.docker.internal (dipakai update runner D71; subnet compose
+    # bisa berubah antar deploy, nama ini tidak).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - path: .env
         required: false

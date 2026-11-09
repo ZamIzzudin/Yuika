@@ -47,3 +47,7 @@ apps/web/out/
 tmp-*.mjs
 tmp-*.cjs
 smoke-policy.tmp.*
+
+# D71 update runner key (auto-generated on the VPS by update.sh)
+update_key
+update_key.pub
