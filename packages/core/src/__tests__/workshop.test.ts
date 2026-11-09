@@ -63,6 +63,10 @@ function managerWith(host: ReturnType<typeof fakeHost>): WorkshopManager & { res
 
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-ws-"));
+  // Fidelity produksi: workspace API dibuat 0755 (umask 022), mkdtemp 0700.
+  // Suite docker jalan sebagai uid berbeda dari pemilik dir; mode 0755 =
+  // kondisi yang sama dengan workspace nyata di VPS/desktop.
+  fs.chmodSync(dir, 0o755);
   store = new WorkshopStore(path.join(dir, "ws.db"));
   events.length = 0;
 });

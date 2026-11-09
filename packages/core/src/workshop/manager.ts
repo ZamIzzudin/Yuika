@@ -117,6 +117,14 @@ export class DockerWorkshopHost implements WorkshopHost {
         "--cpus", input.cpus,
         "--pids-limit", String(input.pidsLimit),
         "--cap-drop", "ALL",
+        // DAC_OVERRIDE + FOWNER: bind workspace dimiliki uid proses host
+        // (root di VPS, uid user di desktop Linux, uid runner di CI) — root
+        // container TANPA cap ini tidak bisa menulis file yang bukan
+        // miliknya (mkdtemp 0700 runner langsung EACCES). Keduanya hanya
+        // berlaku di dalam mount namespace container; isolasi utama tetap:
+        // SYS_ADMIN/NET_ADMIN dll tetap drop, network none, pids limit.
+        "--cap-add", "DAC_OVERRIDE",
+        "--cap-add", "FOWNER", // npm/tar set mtime file yang bukan miliknya
         "--security-opt", "no-new-privileges",
         // ROOT, bukan uid 1000: bind workspace (/home/node/project) dimiliki
         // uid pemilik proses host (root di deploy, uid user di runner CI) —

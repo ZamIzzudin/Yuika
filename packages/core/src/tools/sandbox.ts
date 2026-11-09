@@ -3,7 +3,7 @@
 //   - network default-deny (`--network none`, egress diblokir total)
 //   - resource cap (memory / cpus / pids-limit)
 //   - rootfs read-only; hanya /workspace (mount rw) + tmpfs /tmp yang bisa ditulis
-//   - cap-drop ALL + no-new-privileges
+//   - cap-drop ALL (kecuali DAC_OVERRIDE/FOWNER utk tulis workspace) + no-new-privileges
 //   - timeout → `docker kill` (container dijamin mati, bukan cuma CLI-nya)
 // Workspace proyek di-mount → hasil file yang ditulis agent TERLIHAT di host.
 //
@@ -113,8 +113,12 @@ export function sandboxArgv(
     "--memory", o.memory,
     "--cpus", o.cpus,
     "--pids-limit", String(o.pidsLimit),
-    // least privilege
+    // least privilege — DAC_OVERRIDE/FOWNER tetap: workspace bind dimiliki
+    // uid proses host (bukan 0 di desktop Linux / runner CI) dan npm/tar
+    // perlu set mtime file non-milik; cap lain (SYS_ADMIN dll) tetap drop.
     "--cap-drop", "ALL",
+    "--cap-add", "DAC_OVERRIDE",
+    "--cap-add", "FOWNER",
     "--security-opt", "no-new-privileges",
     // rootfs read-only, hanya workspace & tmpfs yang bisa ditulis
     "--read-only",
