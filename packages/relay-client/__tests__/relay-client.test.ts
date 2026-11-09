@@ -98,7 +98,7 @@ describe("watchdog half-open (zombie socket)", () => {
         kill: () => {
           dead = true;
           try {
-            inner.terminate();
+            inner.terminate?.();
           } catch {
             /* sudah mati */
           }
