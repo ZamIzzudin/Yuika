@@ -881,13 +881,13 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] apps/web/public/welcome.html full rewrite per brief: kolom centered 840px, token warna (#121212/#181818/#2563eb/#7db0ff), h1 28px, dua kartu flex:1 desc bottom-aligned + CTA (solid "Start local engine" vs outline "Enter host URL"), footer divider + info icon, dialog via scrim (urlScrim/envScrim, Escape/backdrop/data-close), last-used highlight subtle border rgba(125,176,255,.35), no auto-resume, plain fallback non-Tauri.
 - [x] Verifikasi JS + screenshot Playwright (plain/shell/env-dialog/narrow). Tweak user lanjutan: hapus note redundan (9275b58).
 
-### D69 — Codemagic CI/CD integration: MCP + skill + docs (SELESAI)
+### D69 — Codemagic CI/CD integration: MCP + skill + docs (SELESAI; user-verified: MCP terpasang & aman dipakai)
 - [x] mcp-servers/codemagic/index.mjs — REST client x-auth-token (auth merge default SDK env): cm_apps, cm_app, cm_start_build (workflowId = NAMA workflow di codemagic.yaml), cm_builds (status via list; GET /builds/:id TIDAK ADA), cm_wait_build (poll 20s), cm_cancel_build, cm_artifact_url (public URL sementara). Smoke: tools/list 7, 401 dummy token, pesan token jelas.
 - [x] Keputusan: HANYA catalog entry (build/tinggi, form CM_API_TOKEN) — TIDAK di base mcp.json (server butuh token, auto-register = entri mati); uninstall tombstone otomatis dibersihkan installFromCatalog saat re-install.
 - [x] packages/skills/codemagic-builds/SKILL.md (loop operasional persona) + docs/CODEMAGIC.md (referensi agent-executable: konsep, endpoint + contoh, checklist project baru, playbook kegagalan; diverifikasi vs docs resmi + probe live route).
 - [x] Yuika-Mobile: codemagic.yaml (android-release: linux, node22/java17, versionCode=CM_BUILD_NUMBER, prebuild+assembleRelease signed keys/, artifact APK; trigger push main).
 
-### D70 — Host data reset (SELESAI; konsep docs/PLAN-RESET-DATA.md)
+### D70 — Host data reset (SELESAI; user-verified; konsep docs/PLAN-RESET-DATA.md)
 - [x] packages/core/src/reset.ts — dua scope (work = semua data kerja; factory = + yuika.env; desktop shell ikut hapus setup.json → welcome lagi). Boot-time finisher: engine quiesce (relay bye + dispose) → tulis reset.pending → exit(87) → supervisor restart → createYuiRuntime jalankan executePendingWipe SEBELUM store dibuka (aman Windows: semua handle mati). Artefak: db±wal/shm, vault.db±wal/shm, vault.key, budget.json, model-prices.json, .yuika/ (profil browser), workspace/; api.log & update flag SELALU selamat. reset.log = satu-satunya survivor log.
 - [x] API POST /api/settings/reset {scope, confirm:"RESET"} → 400 salah phrase, 409 pending, 202 → deferred quiesce+exit (deps injectable untuk test). UI Settings section "Reset": radio work/factory + copy survivor + input type-to-confirm → state resetting → poll /api/meta → reload otomatis.
 - [x] Desktop lib.rs: ApiProcess simpan PID; monitor thread own Child — exit 87 → baca reset.pending (factory → remove setup.json) → respawn engine → webview reload (factory: welcome.html?reset=1); exit lain → kembali ke welcome. kill_api via PID (taskkill /T /F, kill -9).

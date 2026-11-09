@@ -76,7 +76,7 @@ Selesai (6):
 - [x] First-run env wizard (D67) + welcome redesign (D68).
 - [x] Packaged engine (esbuild, node.exe + sqlite ABI dinamis, D65).
 - [x] Host data reset: respawn engine exit-87 + factory welcome ulang
-      (D70, terpasang di lib.rs).
+      (D70, terpasang di lib.rs; teruji user).
 - [x] CI NSIS installer hijau (pin studio_ref).
 - [x] Remote watch (SCR-7, screen 1fps via relay) + ikon brand set (D66).
 
