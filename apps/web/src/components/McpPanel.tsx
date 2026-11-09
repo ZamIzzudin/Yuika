@@ -317,36 +317,6 @@ export function McpPanel() {
               </li>
             ))}
           </ul>
-          {audit.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <SectionTitle>Audit</SectionTitle>
-              <ul className="flex flex-col gap-0.5">
-                {audit.map((a) => (
-                  <li
-                    key={a.id}
-                    className={`flex items-center gap-1.5 text-caption ${a.ok ? "text-muted" : "text-danger"}`}
-                  >
-                    {a.ok ? (
-                      <Check
-                        size={11}
-                        weight="bold"
-                        aria-hidden
-                        className="text-success"
-                      />
-                    ) : (
-                      <X size={11} weight="bold" aria-hidden />
-                    )}
-                    <code className="font-mono">{a.tool}</code>
-                    {a.error ? (
-                      <span className="truncate text-dim">
-                        , {a.error.slice(0, 46)}
-                      </span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           <div className="flex flex-col gap-2.5 border-t border-line pt-3">
             <SectionTitle>
@@ -441,7 +411,9 @@ export function McpPanel() {
                             </span>
                           )}
                         </div>
-                        <Chip size="sm" tone={risk.tone}>{risk.label}</Chip>
+                        <Chip size="sm" tone={risk.tone}>
+                          {risk.label}
+                        </Chip>
                       </div>
 
                       <small className="text-caption leading-5 text-muted">
