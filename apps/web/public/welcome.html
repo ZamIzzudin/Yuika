@@ -92,6 +92,19 @@
         font: inherit;
         color: inherit;
       }
+      /* Kartu terakhir dipakai: hanya highlight (tidak pernah auto-jalan). */
+      .card.last { border-color: var(--accent); }
+      .card.last::after {
+        content: "Last used";
+        align-self: flex-start;
+        margin-top: 2px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+      }
       .card:hover {
         border-color: var(--accent);
         transform: translateY(-2px);
@@ -185,7 +198,7 @@
       <p class="sub">Your agentic persona studio. How do you want to run it?</p>
 
       <div class="cards">
-        <button class="card" id="btnHost" type="button">
+        <button class="card" id="cardHost" type="button">
           <span class="ic" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
               <rect x="1.5" y="2.5" width="13" height="9" rx="1.5" />
@@ -196,7 +209,7 @@
           <span>Run the full studio locally: engine, projects, and workspace on this machine.</span>
           <span class="go">Start local engine →</span>
         </button>
-        <button class="card" id="btnRemote" type="button">
+        <button class="card" id="cardRemote" type="button">
           <span class="ic" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
               <circle cx="8" cy="8" r="6.5" />
@@ -245,11 +258,11 @@
       const tauri = window.__TAURI__;
       if (!tauri) document.body.classList.add("plain");
 
-      // Auto-resume: shell menyimpan setup terakhir (mode host/remote).
-      // Buka app lagi → langsung lanjut, bukan ulang onboarding.
-      // ?reset=1 (tombol "Switch mode" di dalam app) menahan resume dan
-      // menghapus setup tersimpan → user kembali ke pilihan penuh.
-      let resuming = false;
+      // TIDAK ADA auto-resume: halaman pilihan SELALU tampil. Setup terakhir
+      // hanya dipakai utk highlight + prefill — pilihan tetap milik user
+      // setiap launch (tidak ada lagi masuk-masuk diam-diam tanpa login).
+      // ?reset=1 (tombol "Switch mode" di login gate / dalam app) menghapus
+      // setup tersimpan → highlight hilang, pilihan bersih.
       const params = new URLSearchParams(location.search);
       if (tauri && params.has("reset")) {
         tauri.core.invoke("clear_last_setup").catch(() => {});
@@ -257,31 +270,28 @@
         tauri.core
           .invoke("get_last_setup")
           .then((setup) => {
-            if (!setup || resuming) return;
+            if (!setup || !setup.mode) return;
             if (setup.mode === "host") {
-              resuming = true;
-              setStatus("Resuming the local engine…", true);
-              tauri.core.invoke("pick_host").catch((e) => setErr(String(e)));
+              document.getElementById("cardHost")?.classList.add("last");
+              setStatus("Last time on this device: host mode. Tap a card to continue.");
             } else if (setup.mode === "remote" && setup.url) {
-              resuming = true;
-              setStatus("Reconnecting…", true);
-              tauri.core
-                .invoke("pick_remote", { url: setup.url })
-                .catch((e) => setErr(String(e)));
+              document.getElementById("cardRemote")?.classList.add("last");
+              const input = document.getElementById("hostUrl");
+              if (input) input.value = setup.url;
+              setStatus("Last time on this device: a remote host. Tap a card to continue.");
             }
           })
           .catch(() => {});
       }
 
-      document.getElementById("btnHost").addEventListener("click", () => {
+      document.getElementById("cardHost").addEventListener("click", () => {
         if (!tauri) return;
-        resuming = true;
         setStatus("Starting the local engine…", true);
         tauri.core.invoke("pick_host").catch((e) => setErr(String(e)));
       });
 
       const box = document.getElementById("remoteBox");
-      document.getElementById("btnRemote").addEventListener("click", () => {
+      document.getElementById("cardRemote").addEventListener("click", () => {
         if (!tauri) return;
         box.classList.add("open");
         document.getElementById("hostUrl").focus();
@@ -292,7 +302,6 @@
         if (!tauri) return;
         const url = document.getElementById("hostUrl").value.trim();
         if (!url) return;
-        resuming = true;
         setStatus("Connecting…", true);
         tauri.core.invoke("pick_remote", { url }).catch((e) => setErr(String(e)));
       });
