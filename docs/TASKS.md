@@ -897,3 +897,10 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] POST /api/settings/update-run (env-gated YUI_UPDATE_SSH_TARGET; tanpa env = 400 dengan pesan arah DEPLOY.md): spawn ssh detached (BatchMode, key /run/yuika-update-key ro, port opsional) → host `cd $YUI_UPDATE_DIR && nohup ./scripts/update.sh`; flag data dir update-in-progress.
 - [x] GET /api/meta + canRunUpdate + updateRunning (flag cleared otomatis saat versi = terbaru). AboutFooter Settings: tombol "Update now → vX.Y.Z" saat tersedia & configured; saat berjalan: poll meta 4s → reload otomatis begitu versi baru aktif.
 - [x] Compose ×3 varian + .env.example: YUI_UPDATE_SSH_TARGET/_PORT/_DIR/_KEY_FILE (mount /dev/null default); DEPLOY.md section setup key (ssh-keygen, authorized_keys, host-gateway).
+
+### D72 — Remote Mobile v1.2 "Mission Control" (SELESAI; menunggu build APK + deploy studio oleh user)
+- [x] Contracts v1.2 aditif (remote.ts) + docs/portal/CONTRACTS-REMOTE.md amandemen A.1-A.3. Lihat Batch FIX terbaru di BATCHES.md untuk rincian.
+- [x] Host dispatch mission-control (apps/api/src/portal/service.ts): projects/tasks/files/team/activity/sessions, personas, session.create (roster merge host), settings penuh (modes/budget/provider/routes/usage/MCP), reset.run (D70 reuse), terminal shared (watch per remote, detach-only), list_screens. 22 test hijau (portal.test.ts).
+- [x] Mobile rewrite project-oriented: bottom tab Projects/Screens/Settings → project 7 tab (Chat/Tasks/Files/Team/Activity/Terminal/Browser); markdown bubble + filter role tool; skeleton; auto-scroll near-bottom; maskot 9 persona (react-native-svg); display name resmi; request() RPC rid; stale-fix refresh on message.done; Settings penuh tanpa sign-out host; reset ketik RESET. tsc bersih.
+- [x] docs/TEST-REMOTE-MOBILE.md — 19 test case manual (MC-1..MC-19) + tabel 15 catatan → fitur.
+- [ ] Verifikasi user: deploy studio v1.2 → build APK baru → jalankan TEST-REMOTE-MOBILE.md.

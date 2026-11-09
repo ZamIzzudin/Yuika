@@ -272,3 +272,62 @@ per sesi yang dijaga host worker.
 - Menambah nilai enum `act`/`ev` atau field optional = **v1 compatible**
   (penerima lama mengabaikan/`error` unknown act dengan `error code:"unknown_action"`).
 - Mengubah shape nilai lama / menghapus = proto v2 (lihat SPEC-PROTOCOL §12).
+
+---
+
+# Amandemen v1.2 — Mission Control (project-oriented remote)
+
+> Aditif murni (aturan §6): semua `act`/`ev` baru, tak ada yang berubah dari
+> v1/v1.1. Tujuan: remote mobile menjadi mission control berorientasi PROJECT
+> (bukan daftar sesi datar): monitor misi, file, tim, aktivitas, terminal,
+> live browser, dan settings host — semuanya lewat kanal E2E yang sama.
+
+## A.1 Action baru
+
+| Act | Payload inti | Balasan | Catatan |
+| --- | --- | --- | --- |
+| `list_projects` | — | `projects.list` | semua project + `taskStats` + delegasi berjalan + sesi ringkas |
+| `project.detail` | `projectId` | `project.detail` / `error unknown_project` | |
+| `project.tasks` | `projectId` | `project.tasks` | task tree (getTaskTree) |
+| `project.files` | `projectId` | `project.files` | tree file workspace |
+| `project.file.read` | `projectId, relPath` | `project.file` | konten dipotong 64 KB (`truncated` true bila lebih) |
+| `project.team` | `projectId` | `project.team` | roster + delegation jobs |
+| `project.activity` | `projectId, limit?` | `project.activity` | entri termuda dulu (dibalik host) |
+| `project.sessions` | `projectId` | `project.sessions` | sesi ringkas project (judul dari pesan pertama) |
+| `personas.list` | — | `personas.list` | id + display name + override model |
+| `session.create` | `personaId, projectId?, message?` | `session.snapshot{rid}` | roster di-merge otomatis host bila persona belum ter-assign; `message` opsional = turn pertama |
+| `settings.get` | — | `settings.state` | approvalMode + budget + provider + modelRoutes + resetPending |
+| `settings.usage` | — | `settings.usage` | summary + matrix (60 baris) |
+| `settings.mcp` | — | `settings.mcp` | status server MCP |
+| `settings.update` | `approvalMode?, budget?` | `settings.state` | budget = UpdateBudgetRequest (partial) |
+| `provider.update` | `kind?, baseUrl?, apiKey?, model?, fallbackModel?, auxModel?` | `settings.state` | swap panas; key tak pernah dikirim balik (`keyPreview` saja) |
+| `model.route.update` | `personaId, model? ("" = hapus), fallback?` | `settings.state` | |
+| `mcp.retry` | `name` | `settings.mcp` | |
+| `mcp.trust` | `server, trusted, denyTools?` | `settings.mcp` | |
+| `reset.run` | `scope "work"\|"factory", confirm "RESET"` | `reset.acked` | ack DULU, lalu host exit (engine restart; D70/D71) |
+| `terminal.list` | — | `terminal.list` | sesi terminal shared host |
+| `terminal.open` | `projectId?` | `terminal.state{rid}` + stream `terminal.output` | workspace = project bila ada; replay dibatasi 16 KB ekor |
+| `terminal.input` | `id, data` | — | tulis PTY |
+| `terminal.close` | `id` | — | LEPAS langganan remote saja; terminal tetap hidup di host (shared) |
+| `list_screens` | — | `screens.list` | semua screen manager host |
+| `send_prompt` (+`projectId?`) | v1 | v1 | bila sessionId tak dikenal + personaId → sesi baru menempel project |
+
+## A.2 Event baru
+
+`projects.list`, `project.detail`, `project.tasks`, `project.files`,
+`project.file`, `project.team`, `project.activity`, `project.sessions`,
+`personas.list`, `settings.state` (rid opsional), `settings.usage`,
+`settings.mcp`, `reset.acked`, `terminal.list`, `terminal.state` (ber-`replay`,
+rid kosong = update pasca-exit), `terminal.output`, `screens.list`.
+
+## A.3 Implementasi
+
+- Host: `apps/api/src/portal/service.ts` (dispatch v1.2; reply selalu ber-rid
+  sama, kegagalan → `error` ber-rid). Terminal watch = satu per remote
+  (buka baru melepas lama); cleanup saat remote putus/stop.
+- Remote mobile: `yuika-mobile/src/relay.ts` menambah `request()` RPC ringan
+  (rid → promise; timeout 12 dtk; error ber-rid = reject).
+- Kontrak zod: `packages/contracts/src/remote.ts` (amandemen aditif; import
+  tipe dari modul saudara langsung, bukan barrel — hindari circular).
+- Tes regresi: `apps/api/src/__tests__/portal.test.ts` (22 kasus: dispatch
+  v1.2 penuh + terminal mock + SpecRelay nyata).

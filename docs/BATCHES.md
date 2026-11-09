@@ -345,6 +345,47 @@ sudah disiapkan di portal (D23). **Jangan dikerjakan tanpa instruksi user.**
 
 ---
 
+## Batch FIX · Remote Mobile v1.2 "Mission Control" (overhaul dari 15 catatan uji)
+
+Sumber: sesi uji remote mobile user (15 catatan). Arah berubah: remote bukan
+daftar sesi datar, tapi **mission control project-oriented**.
+
+1. **Contracts v1.2 (aditif murni)** — `packages/contracts/src/remote.ts`:
+   action `list_projects / project.detail|tasks|files|file.read|team|activity|
+   sessions / personas.list / session.create / settings.get|usage|mcp|update /
+   provider.update / model.route.update / mcp.retry / mcp.trust / reset.run /
+   terminal.list|open|input|close / list_screens` + `send_prompt.projectId?`;
+   event `projects.list / project.* / personas.list / settings.state|usage|mcp /
+   reset.acked / terminal.list|state|output / screens.list`. Import dari modul
+   saudara langsung (bukan barrel) — circular-import merusak ekspor.
+2. **Host dispatch** — `apps/api/src/portal/service.ts`: semua case baru
+   (reply ber-rid; error → ev error). Terminal = satu watch per remote,
+   shared dengan web (close remote = unsubscribe saja, PTY tetap hidup);
+   replay ekor 16 KB; file preview 64 KB. `reset.run` → ack dulu → host exit
+   (reuse D70). `settings.state` = approvalMode+budget+provider+modelRoutes+
+   resetPending. Cleanup watch saat remote putus/stop.
+3. **Mobile rewrite** — `yuika-mobile`: `src/theme.ts` (palet studio),
+   `src/personas.ts` (9 display name + warna + bentuk), `components/Mascot.tsx`
+   (react-native-svg geometri Orin-lite), `components/Markdown.tsx` (tanpa dep
+   baru: heading/list/code/bold/link/quote), `components/Skeleton.tsx` (pulse),
+   `src/ui.tsx` (Card/Chip/Btn/Field/Sheet), `relay.ts` +`request()` RPC rid
+   (timeout 12 dtk, cleanup saat close), `remote/RemoteProvider.tsx` (koneksi
+   tunggal + stack nav + approvals overlay + bottom tab Projects/Screens/
+   Settings), layar: ProjectsScreen (kartu misi + stats), ProjectScreen (7 tab
+   Chat/Tasks/Files/Team/Activity/Terminal/Browser), SessionChat (markdown,
+   role tool disembunyikan, auto-scroll near-bottom, Stop, header maskot),
+   ScreenView (watch_screen ~1fps), ScreensScreen, FileViewer, SettingsScreen
+   (modes/budget/provider/routes/usage/MCP/reset ketik RESET; TANPA sign-out
+   host). Fix #4 stale: refresh sesi on `message.done` + pull-to-refresh +
+   on-focus. Fix #3: skeleton semua fetch.
+4. **Tes** — portal.test.ts 22 kasus hijau (dispatch v1.2 penuh, terminal
+   mock via vi.mock @yuika/core, SpecRelay nyata); contracts 34 hijau;
+   relay-client 15 hijau; `tsc` mobile bersih. Panduan manual:
+   `docs/TEST-REMOTE-MOBILE.md` (19 test case MC-1..MC-19).
+5. Catatan #13 (persona training di mobile) SENGAJA di-skip sesuai kesepakatan.
+
+---
+
 ## Catatan lintas batch
 
 - **Sinkron dengan sesi portal**: sebelum Batch 1 gerbang (PRT-6) dan Batch 8,

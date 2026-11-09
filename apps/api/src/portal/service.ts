@@ -11,7 +11,13 @@
 //   ping_host → pong_host
 // YuiEvent → RemoteEvent (proyeksi + seq per sesi + ring buffer resume).
 import type { YuiRuntime } from "@yuika/core";
-import type { RemoteAction, RemoteEvent, YuiEvent } from "@yuika/contracts";
+import {
+  ensureTerminalSession,
+  listTerminalSessions,
+  subscribeTerminal,
+  writeTerminalInput,
+} from "@yuika/core";
+import { UpdateBudgetRequest, type RemoteAction, type RemoteEvent, type YuiEvent } from "@yuika/contracts";
 import {
   RelayClient,
   RelayHost,
@@ -21,6 +27,7 @@ import { ByeCode } from "@yuika/relay-client";
 import { nodeSocket } from "@yuika/relay-client/node";
 import { clearHostDevice, clearWebDevice } from "./store.js";
 import { getScreenState, listScreens, subscribeScreen } from "./screen-bridge.js";
+import { makeHostResetter, resetAlreadyPending } from "../reset-run.js";
 import type { HostDeviceRecord } from "./store.js";
 import { signOutPortalAccount } from "../auth/store.js";
 
@@ -42,6 +49,45 @@ interface ScreenWatch {
   sent: string;
   timer: NodeJS.Timeout;
   unsubscribe: () => void;
+}
+
+/** v1.2: satu remote melanggan satu sesi terminal SHARED (close remote ≠
+ *  kill terminal — sesi terminal milik host, dipakai web/agent juga). */
+interface TerminalWatch {
+  id: string;
+  unsubscribe: () => void;
+}
+
+const TERMINAL_REPLAY_MAX = 16_000;
+const FILE_PREVIEW_MAX = 64_000;
+
+interface TaskStats { todo: number; doing: number; done: number; review: number }
+
+function taskStatsOf(rt: YuiRuntime, projectId: string): TaskStats {
+  const s: TaskStats = { todo: 0, doing: 0, done: 0, review: 0 };
+  for (const t of rt.listProjectTasks(projectId)) {
+    if (t.status === "doing") s.doing++;
+    else if (t.status === "review") s.review++;
+    else if (t.status === "done") s.done++;
+    else s.todo++;
+  }
+  return s;
+}
+
+function projectSessionsLite(
+  rt: YuiRuntime,
+  projectId: string,
+): Array<{ sessionId: string; personaId: string; title: string; updatedAt: number }> {
+  const titles = new Map(rt.listRecentSessions(80).map((s) => [s.sessionId, s]));
+  return rt.store
+    .listProjectSessions(projectId)
+    .map((s) => ({
+      sessionId: s.id,
+      personaId: s.personaId,
+      title: titles.get(s.id)?.title ?? "(no message)",
+      updatedAt: s.lastEventAt || s.createdAt,
+    }))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export interface PortalStatus {
@@ -113,6 +159,8 @@ export class PortalHostService {
   private remoteSubs = new Map<string, Set<string>>(); // remoteDeviceId → sessionIds
   /** SCR-7: remoteDeviceId → screen watch aktif (1 per remote, v0). */
   private screenWatches = new Map<string, ScreenWatch>();
+  /** v1.2: remoteDeviceId → terminal watch aktif (1 per remote). */
+  private terminalWatches = new Map<string, TerminalWatch>();
   private known = new Set<string>(); // session id yang pernah divalidasi/dibuat
   private unsubAll: (() => void) | null = null;
   private introSent = new Set<string>();
@@ -192,6 +240,9 @@ export class PortalHostService {
         for (const id of [...this.screenWatches.keys()]) {
           if (!remotes.has(id)) this.stopWatch(id);
         }
+        for (const id of [...this.terminalWatches.keys()]) {
+          if (!remotes.has(id)) this.stopTerminalWatch(id);
+        }
         // remote BARU menempel → kirim host.state (CONTRACTS §3: intro roster)
         for (const id of remotes.keys()) {
           if (!this.introSent.has(id)) {
@@ -223,6 +274,7 @@ export class PortalHostService {
     this.unsubAll = null;
     this.remoteSubs.clear();
     for (const id of [...this.screenWatches.keys()]) this.stopWatch(id);
+    for (const id of [...this.terminalWatches.keys()]) this.stopTerminalWatch(id);
     this.client?.close();
     this.client = null;
     this.host = null;
@@ -299,7 +351,7 @@ export class PortalHostService {
           const personaId = action.personaId;
           if (!personaId) return void err("unknown_session", "session tidak dikenal dan personaId tidak diisi", action.rid);
           try {
-            sid = rt.createSession(personaId).sessionId;
+            sid = rt.createSession(personaId, action.projectId ?? null).sessionId;
             this.known.add(sid);
           } catch (e) {
             return void err("bad_persona", e instanceof Error ? e.message : String(e), action.rid);
@@ -347,6 +399,170 @@ export class PortalHostService {
       }
       case "watch_screen":
         return void this.startWatch(from, action.key, action.rid);
+      // ── v1.2: mission-control project-oriented (mobile remote) ────────
+      case "list_projects": {
+        const projects = rt.listProjects().map((p) => ({
+          project: p,
+          taskStats: taskStatsOf(rt, p.id),
+          activeDelegations: rt.delegationJobs(p.id).filter((j) => j.status === "running").length,
+          sessions: projectSessionsLite(rt, p.id),
+        }));
+        return void reply({ proto: 1, ev: "projects.list", rid: action.rid, projects });
+      }
+      case "project.detail": {
+        const p = rt.getProject(action.projectId);
+        if (!p) return void err("unknown_project", `project tidak ditemukan: ${action.projectId}`, action.rid);
+        return void reply({
+          proto: 1, ev: "project.detail", rid: action.rid, project: p,
+          taskStats: taskStatsOf(rt, p.id),
+          activeDelegations: rt.delegationJobs(p.id).filter((j) => j.status === "running").length,
+        });
+      }
+      case "project.tasks":
+        return void reply({ proto: 1, ev: "project.tasks", rid: action.rid, projectId: action.projectId, tree: rt.getTaskTree(action.projectId) });
+      case "project.files":
+        return void reply({ proto: 1, ev: "project.files", rid: action.rid, projectId: action.projectId, tree: rt.listProjectFiles(action.projectId) });
+      case "project.file.read": {
+        const r = rt.readProjectFile(action.projectId, action.relPath);
+        return void reply({
+          proto: 1, ev: "project.file", rid: action.rid, projectId: action.projectId, relPath: action.relPath,
+          content: r.content.slice(0, FILE_PREVIEW_MAX),
+          truncated: r.truncated || r.content.length > FILE_PREVIEW_MAX,
+        });
+      }
+      case "project.team":
+        return void reply({
+          proto: 1, ev: "project.team", rid: action.rid, projectId: action.projectId,
+          roster: rt.getProjectRoster(action.projectId), delegations: rt.delegationJobs(action.projectId),
+        });
+      case "project.activity":
+        return void reply({
+          proto: 1, ev: "project.activity", rid: action.rid, projectId: action.projectId,
+          entries: rt.getProjectActivity(action.projectId, action.limit ?? 60).slice().reverse(),
+        });
+      case "project.sessions":
+        return void reply({
+          proto: 1, ev: "project.sessions", rid: action.rid, projectId: action.projectId,
+          sessions: projectSessionsLite(rt, action.projectId),
+        });
+      case "personas.list": {
+        const routes = rt.getModelRoutes();
+        return void reply({
+          proto: 1, ev: "personas.list", rid: action.rid,
+          personas: routes.personas.map((p) => ({ id: p.id, name: p.name, model: routes.overrides[p.id]?.model ?? null })),
+        });
+      }
+      case "session.create": {
+        let sid: string;
+        try {
+          sid = rt.createSession(action.personaId, action.projectId ?? null).sessionId;
+        } catch (e) {
+          return void err("bad_persona", e instanceof Error ? e.message : String(e), action.rid);
+        }
+        this.known.add(sid);
+        this.track(from.deviceId, sid);
+        await this.sendSnapshot(from.deviceId, sid, action.rid);
+        if (action.message) {
+          void rt.runTurn(sid, action.message).catch((e: unknown) =>
+            rt.emitSessionError(sid, e instanceof Error ? e.message : String(e)));
+        }
+        return;
+      }
+      case "settings.get":
+        return void reply(this.settingsState(rt, action.rid));
+      case "settings.usage":
+        return void reply({
+          proto: 1, ev: "settings.usage", rid: action.rid,
+          summary: rt.getUsageSummary({}), matrix: rt.getUsageMatrix({}).slice(0, 60),
+        });
+      case "settings.mcp":
+        return void reply({ proto: 1, ev: "settings.mcp", rid: action.rid, servers: rt.mcpServerStatuses() });
+      case "settings.update": {
+        if (action.approvalMode) rt.setApprovalMode(action.approvalMode);
+        if (action.budget) {
+          const parsed = UpdateBudgetRequest.safeParse(action.budget);
+          if (!parsed.success) return void err("bad_budget", "payload budget tidak valid", action.rid);
+          rt.updateBudget(parsed.data);
+        }
+        return void reply(this.settingsState(rt, action.rid));
+      }
+      case "provider.update": {
+        try {
+          rt.updateProviderSettings({
+            ...(action.kind ? { kind: action.kind } : {}),
+            ...(action.baseUrl ? { baseUrl: action.baseUrl } : {}),
+            ...(action.apiKey ? { apiKey: action.apiKey } : {}),
+            ...(action.model ? { model: action.model } : {}),
+            ...(action.fallbackModel !== undefined ? { fallbackModel: action.fallbackModel } : {}),
+            ...(action.auxModel !== undefined ? { auxModel: action.auxModel } : {}),
+          });
+        } catch (e) {
+          return void err("provider_update_failed", e instanceof Error ? e.message : String(e), action.rid);
+        }
+        return void reply(this.settingsState(rt, action.rid));
+      }
+      case "model.route.update": {
+        rt.updateModelRoute(action.personaId, { model: action.model, fallback: action.fallback });
+        return void reply(this.settingsState(rt, action.rid));
+      }
+      case "mcp.retry": {
+        await rt.mcpRetryConnect(action.name);
+        return void reply({ proto: 1, ev: "settings.mcp", rid: action.rid, servers: rt.mcpServerStatuses() });
+      }
+      case "mcp.trust": {
+        await rt.setMcpTrust({ server: action.server, trusted: action.trusted, denyTools: action.denyTools ?? [] });
+        return void reply({ proto: 1, ev: "settings.mcp", rid: action.rid, servers: rt.mcpServerStatuses() });
+      }
+      case "reset.run": {
+        // ack DULU (relay bye normal terjadi saat resetter memanggil stop()).
+        await reply({ proto: 1, ev: "reset.acked", rid: action.rid, scope: action.scope });
+        const scope = action.scope;
+        const rtRef = rt;
+        setTimeout(() => {
+          void makeHostResetter(() => rtRef)(scope).catch(() => process.exit(87));
+        }, 250);
+        return;
+      }
+      case "terminal.list":
+        return void reply({ proto: 1, ev: "terminal.list", rid: action.rid, sessions: listTerminalSessions() });
+      case "terminal.open": {
+        const workspacePath = action.projectId
+          ? rt.projectWorkspacePath(action.projectId)
+          : rt.paths.workspacePath;
+        const info = await ensureTerminalSession(workspacePath);
+        const sub = subscribeTerminal(info.id, (chunk) => {
+          void this.host?.sendEvent(from.deviceId, { proto: 1, ev: "terminal.output", id: info.id, data: chunk }).catch(() => undefined);
+        }, () => {
+          void this.host?.sendEvent(from.deviceId, {
+            proto: 1, ev: "terminal.state", rid: "", id: info.id,
+            info: { id: info.id, backend: info.backend, workspacePath: info.workspacePath, createdAt: info.createdAt, lastActivity: Date.now(), exited: true },
+            replay: "",
+          }).catch(() => undefined);
+        });
+        this.startTerminalWatch(from.deviceId, info.id, sub?.unsubscribe ?? (() => undefined));
+        const replay = (sub?.replay ?? "").slice(-TERMINAL_REPLAY_MAX);
+        return void reply({
+          proto: 1, ev: "terminal.state", rid: action.rid, id: info.id,
+          info: { ...info, lastActivity: Date.now() },
+          replay,
+        });
+      }
+      case "terminal.input": {
+        writeTerminalInput(action.id, action.data);
+        return;
+      }
+      case "terminal.close": {
+        const w = this.terminalWatches.get(from.deviceId);
+        if (w && w.id === action.id) this.stopTerminalWatch(from.deviceId);
+        return;
+      }
+      case "list_screens": {
+        const screens = listScreens().map((s) => ({
+          key: s.key, personaId: s.personaId, url: s.url, title: s.title,
+          status: s.status, viewers: s.viewers, watchers: s.watchers,
+        }));
+        return void reply({ proto: 1, ev: "screens.list", rid: action.rid, screens });
+      }
       case "unwatch_screen": {
         // key dari watch aktif (contract unwatch tak bawa key, v0 satu watch per remote)
         const key = this.screenWatches.get(from.deviceId)?.key ?? null;
@@ -430,6 +646,39 @@ export class PortalHostService {
     clearInterval(w.timer);
     w.unsubscribe();
     this.screenWatches.delete(remoteId);
+  }
+
+  // ── v1.2: terminal + settings helpers ──────────────────────────────
+
+  private startTerminalWatch(remoteId: string, id: string, unsubscribe: () => void): void {
+    this.stopTerminalWatch(remoteId); // satu watch per remote (ganti = lepas lama)
+    this.terminalWatches.set(remoteId, { id, unsubscribe });
+  }
+
+  private stopTerminalWatch(remoteId: string): void {
+    const w = this.terminalWatches.get(remoteId);
+    if (!w) return;
+    w.unsubscribe();
+    this.terminalWatches.delete(remoteId);
+  }
+
+  private settingsState(rt: YuiRuntime, rid: string): Extract<RemoteEvent, { ev: "settings.state" }> {
+    const routes = rt.getModelRoutes();
+    return {
+      proto: 1, ev: "settings.state", rid,
+      approvalMode: rt.approvalMode(),
+      budget: rt.getBudgetStatus(),
+      provider: rt.getProviderSettings(),
+      modelRoutes: {
+        defaultModel: routes.defaultModel,
+        defaultFallback: routes.defaultFallback,
+        overrides: Object.fromEntries(
+          Object.entries(routes.overrides).map(([k, v]) => [k, { model: v.model ?? "", fallback: v.fallback ?? "" }]),
+        ),
+        personas: routes.personas,
+      },
+      resetPending: resetAlreadyPending(),
+    };
   }
 
   private track(remoteDeviceId: string, sessionId: string): void {

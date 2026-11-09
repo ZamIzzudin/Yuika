@@ -15,6 +15,34 @@ import { PortalHostService } from "../portal/service.js";
 import type { HostDeviceRecord } from "../portal/store.js";
 import { _resetPortalStoreForTests, getHostDevice, saveHostDevice } from "../portal/store.js";
 
+// ── v1.2: terminal manager dipalsukan (jangan spawn shell di CI) ──────
+const term = vi.hoisted(() => ({
+  input: [] as string[],
+  subs: new Map<string, (chunk: string) => void>(),
+  replay: "welcome!\n$ ",
+}));
+vi.mock("@yuika/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@yuika/core")>();
+  return {
+    ...actual,
+    ensureTerminalSession: async (workspacePath: string) => ({
+      id: "term_test", workspacePath, backend: "local" as const,
+      createdAt: 1, lastActivity: 1, exited: false,
+    }),
+    listTerminalSessions: () => [
+      { id: "term_test", backend: "local" as const, workspacePath: "/w", createdAt: 1, lastActivity: 1, exited: false },
+    ],
+    subscribeTerminal: (id: string, onData: (chunk: string) => void) => {
+      term.subs.set(id, onData);
+      return { replay: term.replay, unsubscribe: () => { term.subs.delete(id); } };
+    },
+    writeTerminalInput: (id: string, data: string) => {
+      term.input.push(data);
+      term.subs.get(id)?.(`out:${data}`);
+    },
+  };
+});
+
 // ── SCR-7: fake screen-bridge (frame sintetis, tanpa browser) ────────────
 const scr = vi.hoisted(() => {
   const states = new Map<string, Record<string, unknown>>();
@@ -44,13 +72,15 @@ vi.mock("../portal/screen-bridge.js", () => ({
 }));
 
 const ACC = "acc_test00000000009";
+const modes = { approval: "ask" as "ask" | "auto" };
+const providerCalls: Array<Record<string, string | null>> = [];
 
 /** Runtime palsu: bus sederhana + pesan tersimpan + turn yang memancar delta. */
 function fakeRuntime() {
   const listeners = new Map<string, Array<(e: YuiEvent) => void>>();
   const allListeners: Array<(e: YuiEvent) => void> = [];
   const messages = new Map<string, Array<{ role: string; content: string }>>();
-  const sessions = new Map<string, { personaId: string }>();
+  const sessions = new Map<string, { personaId: string; projectId?: string | null }>();
   let eventSeq = 0;
   const emit = (sessionId: string, draft: Omit<YuiEvent, "id" | "ts" | "sessionId">) => {
     const e = { ...(draft as object), id: ++eventSeq, ts: Date.now(), sessionId } as YuiEvent;
@@ -59,15 +89,75 @@ function fakeRuntime() {
   };
   return {
     emit,
-    createSession: (personaId: string) => {
+    createSession: (personaId: string, projectId?: string | null) => {
       const id = `s_${Math.random().toString(36).slice(2, 10)}`;
-      sessions.set(id, { personaId });
-      return { sessionId: id, persona: { id: personaId }, projectId: null };
+      sessions.set(id, { personaId, projectId: projectId ?? null });
+      return { sessionId: id, persona: { id: personaId }, projectId: projectId ?? null };
     },
     listRecentSessions: (limit = 20) =>
       [...sessions.entries()].slice(0, limit).map(([sessionId, s]) => ({
         sessionId, title: "t", personaId: s.personaId, updatedAt: 1,
       })),
+    store: {
+      getMessages: (sessionId: string) => (messages.get(sessionId) ?? []).map((m) => ({
+        role: m.role as "user" | "assistant" | "tool", content: m.content,
+      })),
+      listProjectSessions: (projectId: string) =>
+        [...sessions.entries()].filter(([, s]) => (s as { projectId?: string | null }).projectId === projectId)
+          .map(([id, s]) => ({ id, personaId: s.personaId, createdAt: 1, lastEventAt: 2, lastEventId: 1 })),
+    },
+    // ── v1.2 mission-control ────────────────────────────────────────────
+    listProjects: () => [{
+      id: "p_demo", name: "Demo", description: "d", status: "active",
+      rootPath: "projects/p_demo", kind: "project", createdAt: 1, updatedAt: 2,
+    }],
+    getProject: (id: string) => (id === "p_demo" ? {
+      id: "p_demo", name: "Demo", description: "d", status: "active",
+      rootPath: "projects/p_demo", kind: "project", createdAt: 1, updatedAt: 2,
+    } : undefined),
+    listProjectTasks: () => [{ status: "todo" }, { status: "done" }, { status: "doing" }],
+    getTaskTree: () => [{
+      id: "t1", parent: null, title: "Rencana", status: "todo", assignee: null,
+      refs: [], artefak: [], description: null, acceptance: [], dependsOn: [], estimate: null, phase: null, children: [],
+    }],
+    listProjectFiles: () => [{
+      name: "src", relPath: "src", dir: true, size: 0,
+      children: [{ name: "main.ts", relPath: "src/main.ts", dir: false, size: 12 }],
+    }],
+    readProjectFile: (_id: string, rel: string) => ({ content: `body:${rel}`, size: 9, truncated: false }),
+    getProjectRoster: () => [{ personaId: "yui-coder", role: "Coder", phases: [], mcp: [] }],
+    delegationJobs: () => [{
+      id: 1, parentSessionId: "s_p", parentTurnId: "t", childSessionId: "s_c",
+      personaId: "yui-coder", goal: "g", status: "running", summary: null, error: null, createdAt: 1, updatedAt: 1,
+    }],
+    getProjectActivity: () => [{ at: 1, sessionId: "s_c", personaId: "yui-coder", kind: "tool", label: "run_command(npm test)" }],
+    getModelRoutes: () => ({
+      defaultModel: "m1", defaultFallback: "", overrides: { "yui-coder": { model: "m2" } },
+      personas: [{ id: "yui-coder", name: "Hiro Yui" }, { id: "yui-scholar", name: "Pierre Yui" }],
+    }),
+    updateModelRoute: () => undefined,
+    approvalMode: () => modes.approval,
+    setApprovalMode: (m: "ask" | "auto") => { modes.approval = m; },
+    getBudgetStatus: () => ({
+      config: {}, spentToday: 0, spentTotal: 0, burnRatePerHour: 0, activeHolds: 0,
+      coverage: "none", currency: null, dailyLimitHit: false, totalLimitHit: false,
+    }),
+    updateBudget: () => ({ config: {}, spentToday: 0, spentTotal: 0 }),
+    getProviderSettings: () => ({
+      kind: "openai-compat", baseUrl: "https://api", model: "m1", fallbackModel: "",
+      auxModel: "", hasApiKey: true, keyPreview: "…abcd",
+    }),
+    updateProviderSettings: (input: Record<string, string | null>) => { providerCalls.push(input); },
+    mcpServerStatuses: () => [{
+      name: "codemagic", declared: true, trusted: true, denyTools: [], connected: true,
+      toolCount: 7, tools: [], state: "connected", lastError: null, nextRetryAt: null,
+    }],
+    mcpRetryConnect: async () => undefined,
+    setMcpTrust: async () => undefined,
+    getUsageSummary: () => ({ calls: 3, promptTokens: 100, outputTokens: 50, byPersona: [], byModel: [], windowStart: 1 }),
+    getUsageMatrix: () => [{ personaId: "yui-coder", model: "m1", calls: 1, promptTokens: 10, outputTokens: 5, cost: 0.001, currency: "USD" }],
+    projectWorkspacePath: (id: string) => `/w/${id}`,
+    paths: { workspacePath: "/w", dbPath: "/w/demo.db" },
     runTurn: async (sessionId: string, text: string) => {
       messages.get(sessionId)?.push({ role: "user", content: text });
       emit(sessionId, { type: "message.delta", turnId: "t1", delta: `echo:${text}` } as YuiEvent);
@@ -80,11 +170,6 @@ function fakeRuntime() {
       arr.push(l);
       listeners.set(sessionId, arr);
       return () => listeners.set(sessionId, (listeners.get(sessionId) ?? []).filter((x) => x !== l));
-    },
-    store: {
-      getMessages: (sessionId: string) => (messages.get(sessionId) ?? []).map((m) => ({
-        role: m.role as "user" | "assistant" | "tool", content: m.content,
-      })),
     },
     steerDelegation: () => false,
     cancelTurn: () => true,
@@ -206,6 +291,120 @@ describe("portal host worker", () => {
     expect(events.find((e) => e.ev === "approval.request")).toMatchObject({
       approvalId: "ap_1", title: "run_command", risk: "high",
     });
+  });
+});
+
+describe("portal host worker, v1.2 mission-control", () => {
+  it("list_projects → projects.list (taskStats + sesi per project)", async () => {
+    await remote.sendAction({ proto: 1, act: "list_projects", rid: "r-projects" });
+    await waitUntil(() => events.some((e) => e.ev === "projects.list"));
+    const ev = events.find((e) => e.ev === "projects.list") as unknown as {
+      projects: Array<{ project: { id: string }; taskStats: Record<string, number>; activeDelegations: number }>;
+    };
+    expect(ev.projects).toHaveLength(1);
+    expect(ev.projects[0]!.project.id).toBe("p_demo");
+    expect(ev.projects[0]!.taskStats).toMatchObject({ todo: 1, done: 1, doing: 1 });
+    expect(ev.projects[0]!.activeDelegations).toBe(1);
+  });
+
+  it("project.tasks/files/team/activity → reply ber-rid", async () => {
+    for (const [act, ev, rid] of [
+      ["project.tasks", "project.tasks", "r-tasks"],
+      ["project.files", "project.files", "r-files"],
+      ["project.team", "project.team", "r-team"],
+      ["project.activity", "project.activity", "r-act"],
+    ] as const) {
+      await remote.sendAction({ proto: 1, act, rid, projectId: "p_demo" } as never);
+      await waitUntil(() => events.some((e) => e.ev === ev && (e as { rid?: string }).rid === rid));
+    }
+    const files = events.find((e) => e.ev === "project.files") as unknown as { tree: Array<{ name: string }> };
+    expect(files.tree[0]!.name).toBe("src");
+    const team = events.find((e) => e.ev === "project.team") as unknown as {
+      roster: Array<{ personaId: string }>; delegations: Array<{ status: string }>;
+    };
+    expect(team.roster[0]!.personaId).toBe("yui-coder");
+    expect(team.delegations[0]!.status).toBe("running");
+    const activity = events.find((e) => e.ev === "project.activity") as unknown as { entries: Array<{ label: string }> };
+    expect(activity.entries[0]!.label).toContain("run_command");
+  });
+
+  it("project.file.read → konten file", async () => {
+    await remote.sendAction({ proto: 1, act: "project.file.read", rid: "r-file", projectId: "p_demo", relPath: "src/main.ts" });
+    await waitUntil(() => events.some((e) => e.ev === "project.file"));
+    expect(events.find((e) => e.ev === "project.file")).toMatchObject({ content: "body:src/main.ts", truncated: false });
+  });
+
+  it("project.detail tak dikenal → error unknown_project (rid)", async () => {
+    await remote.sendAction({ proto: 1, act: "project.detail", rid: "r-404", projectId: "p_nope" });
+    await waitUntil(() => events.some((e) => e.ev === "error" && e.code === "unknown_project"));
+  });
+
+  it("personas.list → display name + model override", async () => {
+    await remote.sendAction({ proto: 1, act: "personas.list", rid: "r-personas" });
+    await waitUntil(() => events.some((e) => e.ev === "personas.list"));
+    const ev = events.find((e) => e.ev === "personas.list") as unknown as { personas: Array<{ id: string; name: string; model: string | null }> };
+    expect(ev.personas.find((p) => p.id === "yui-scholar")).toMatchObject({ name: "Pierre Yui", model: null });
+    expect(ev.personas.find((p) => p.id === "yui-coder")?.model).toBe("m2");
+  });
+
+  it("session.create {projectId} → snapshot{rid} + sesi menempel project", async () => {
+    await remote.sendAction({ proto: 1, act: "session.create", rid: "r-create", personaId: "yui-scholar", projectId: "p_demo" });
+    await waitUntil(() => events.some((e) => e.ev === "session.snapshot" && (e as { rid?: string }).rid === "r-create"));
+    const snap = events.find((e) => e.ev === "session.snapshot" && (e as { rid?: string }).rid === "r-create") as unknown as { sessionId: string };
+    await remote.sendAction({ proto: 1, act: "project.sessions", rid: "r-ps", projectId: "p_demo" });
+    await waitUntil(() => events.some((e) => e.ev === "project.sessions"));
+    const ps = events.find((e) => e.ev === "project.sessions") as unknown as { sessions: Array<{ sessionId: string }> };
+    expect(ps.sessions.some((s) => s.sessionId === snap.sessionId)).toBe(true);
+  });
+
+  it("settings.get → settings.state; update approvalMode → auto terlihat", async () => {
+    await remote.sendAction({ proto: 1, act: "settings.get", rid: "r-st" });
+    await waitUntil(() => events.some((e) => e.ev === "settings.state"));
+    expect(events.find((e) => e.ev === "settings.state")).toMatchObject({ approvalMode: "ask", resetPending: false });
+    await remote.sendAction({ proto: 1, act: "settings.update", rid: "r-st2", approvalMode: "auto" });
+    await waitUntil(() => events.some((e) => e.ev === "settings.state" && (e as { rid?: string }).rid === "r-st2"));
+    expect(events.find((e) => e.ev === "settings.state" && (e as { rid?: string }).rid === "r-st2")).toMatchObject({ approvalMode: "auto" });
+  });
+
+  it("settings.usage + settings.mcp", async () => {
+    await remote.sendAction({ proto: 1, act: "settings.usage", rid: "r-use" });
+    await waitUntil(() => events.some((e) => e.ev === "settings.usage"));
+    expect(events.find((e) => e.ev === "settings.usage")).toMatchObject({ rid: "r-use" });
+    const usage = events.find((e) => e.ev === "settings.usage") as unknown as { summary: { calls: number } };
+    expect(usage.summary.calls).toBe(3);
+    await remote.sendAction({ proto: 1, act: "settings.mcp", rid: "r-mcp" });
+    await waitUntil(() => events.some((e) => e.ev === "settings.mcp"));
+    const mcp = events.find((e) => e.ev === "settings.mcp") as unknown as { servers: Array<{ name: string; state: string }> };
+    expect(mcp.servers[0]).toMatchObject({ name: "codemagic", state: "connected" });
+  });
+
+  it("provider.update {model} → swap dipanggil + settings.state ack", async () => {
+    await remote.sendAction({ proto: 1, act: "provider.update", rid: "r-prov", model: "m9" });
+    await waitUntil(() => events.some((e) => e.ev === "settings.state" && (e as { rid?: string }).rid === "r-prov"));
+    expect(providerCalls.at(-1)).toMatchObject({ model: "m9" });
+  });
+
+  it("terminal.open → state{rid}+replay; input → output; close → lepas", async () => {
+    await remote.sendAction({ proto: 1, act: "terminal.open", rid: "r-term", projectId: "p_demo" });
+    await waitUntil(() => events.some((e) => e.ev === "terminal.state" && (e as { rid?: string }).rid === "r-term"));
+    const ts = events.find((e) => e.ev === "terminal.state" && (e as { rid?: string }).rid === "r-term") as unknown as { id: string; replay: string };
+    expect(ts.id).toBe("term_test");
+    expect(ts.replay).toContain("welcome!");
+    await remote.sendAction({ proto: 1, act: "terminal.input", id: "term_test", data: "ls\n" });
+    await waitUntil(() => events.some((e) => e.ev === "terminal.output"));
+    expect(events.find((e) => e.ev === "terminal.output")).toMatchObject({ id: "term_test", data: "out:ls\n" });
+    await remote.sendAction({ proto: 1, act: "terminal.close", rid: "r-tc", id: "term_test" });
+    await new Promise((r) => setTimeout(r, 200));
+    expect(term.subs.size).toBe(0);
+  });
+
+  it("list_screens → screens.list", async () => {
+    scr.states.set("p_scr7/yui-coder", scr.stateOf("p_scr7/yui-coder"));
+    await remote.sendAction({ proto: 1, act: "list_screens", rid: "r-scr" });
+    await waitUntil(() => events.some((e) => e.ev === "screens.list"));
+    const ev = events.find((e) => e.ev === "screens.list") as unknown as { screens: Array<{ key: string }> };
+    expect(ev.screens.map((s) => s.key)).toContain("p_scr7/yui-coder");
+    scr.states.delete("p_scr7/yui-coder");
   });
 });
 
