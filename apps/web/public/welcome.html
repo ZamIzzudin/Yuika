@@ -141,6 +141,16 @@
       .remote.open { display: block; }
       .remote label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
       .row { display: flex; gap: 8px; }
+      .env .field { margin-top: 12px; }
+      .env .field:first-child { margin-top: 0; }
+      .env input {
+        width: 100%; box-sizing: border-box;
+        background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+        color: var(--fg); padding: 10px 12px; font: inherit;
+      }
+      .env .note { color: var(--dim); font-size: 11.5px; line-height: 1.55; margin-top: 10px; }
+      .env .ghost { background: transparent; border-color: var(--line); color: var(--muted); }
+      .env .ghost:hover { border-color: var(--accent); color: var(--fg); }
       input {
         flex: 1;
         background: var(--inset);
@@ -236,6 +246,35 @@
         </div>
       </form>
 
+      <form class="remote env" id="envBox" autocomplete="off">
+        <label id="envTitle" for="envBase">Set up the local engine</label>
+        <div class="field">
+          <label for="envBase">Provider base URL (OpenAI-compatible)</label>
+          <input id="envBase" type="url" placeholder="https://api.openai.com/v1" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label for="envKey">API key</label>
+          <input id="envKey" type="password" placeholder="sk-…" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label for="envModel">Model</label>
+          <input id="envModel" type="text" placeholder="gpt-5.2 / claude-… / gemini-…" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label for="envKind">Provider kind (optional — leave blank for auto)</label>
+          <input id="envKind" type="text" placeholder="openai-compat / anthropic / gemini" spellcheck="false" />
+        </div>
+        <p class="note">
+          Saved locally to your app data (yuika.env) and used every time the
+          local engine starts. A masked key means one is already saved — leave
+          the field blank to keep it.
+        </p>
+        <div class="row" style="margin-top: 14px;">
+          <button class="primary" id="envSave" type="submit">Save &amp; start</button>
+          <button class="primary ghost" id="envCancel" type="button">Cancel</button>
+        </div>
+      </form>
+
       <p class="status" id="status" role="status"></p>
       <p class="fallback">
         You opened this page in a browser. Launch the Yuika desktop app to pick a mode, or
@@ -284,10 +323,71 @@
           .catch(() => {});
       }
 
-      document.getElementById("cardHost").addEventListener("click", () => {
+      document.getElementById("cardHost").addEventListener("click", async () => {
         if (!tauri) return;
+        setStatus("");
+        try {
+          const st = await tauri.core.invoke("env_status");
+          if (st && st.complete) {
+            startHost();
+          } else {
+            openEnvWizard(st, true);
+          }
+        } catch {
+          startHost(); // env_status tak tersedia → jangan halangi host (perilaku lama)
+        }
+      });
+
+      function startHost() {
         setStatus("Starting the local engine…", true);
         tauri.core.invoke("pick_host").catch((e) => setErr(String(e)));
+      }
+
+      // First-run wizard (D67): engine butuh YUI_OPENAI_BASE_URL /
+      // YUI_OPENAI_API_KEY / YUI_MODEL sebelum host mode bisa jalan.
+      const envBox = document.getElementById("envBox");
+      let envStartAfter = false;
+      function openEnvWizard(st, startAfter) {
+        envStartAfter = !!startAfter;
+        envBox.dataset.hasKey = st && st.hasApiKey ? "1" : "0";
+        document.getElementById("envBase").value = (st && st.baseUrl) || "";
+        document.getElementById("envModel").value = (st && st.model) || "";
+        document.getElementById("envKind").value = (st && st.providerKind) || "";
+        const key = document.getElementById("envKey");
+        key.value = "";
+        key.placeholder = st && st.hasApiKey ? (st.apiKeyMasked || "••••••") + " — leave blank to keep" : "sk-…";
+        document.getElementById("envSave").textContent = envStartAfter ? "Save & start" : "Save";
+        document.getElementById("envTitle").textContent =
+          st && st.exists ? "Local engine configuration" : "Set up the local engine";
+        envBox.classList.add("open");
+        document.getElementById("envBase").focus();
+      }
+      envBox.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const base = document.getElementById("envBase").value.trim();
+        const key = document.getElementById("envKey").value.trim();
+        const model = document.getElementById("envModel").value.trim();
+        const kind = document.getElementById("envKind").value.trim();
+        const hasKey = envBox.dataset.hasKey === "1";
+        if (!base) return setErr("Provider base URL is required.");
+        if (!key && !hasKey) return setErr("API key is required.");
+        if (!model) return setErr("Model is required.");
+        const entries = { YUI_OPENAI_BASE_URL: base, YUI_MODEL: model };
+        if (key) entries.YUI_OPENAI_API_KEY = key;
+        if (kind) entries.YUI_PROVIDER_KIND = kind;
+        setStatus("Saving engine configuration…", true);
+        try {
+          await tauri.core.invoke("write_env", { entries });
+          envBox.classList.remove("open");
+          if (envStartAfter) startHost();
+          else setStatus("Engine configuration saved. It applies the next time the local engine starts.");
+        } catch (e) {
+          setErr(String(e));
+        }
+      });
+      document.getElementById("envCancel").addEventListener("click", () => {
+        envBox.classList.remove("open");
+        setStatus("");
       });
 
       const box = document.getElementById("remoteBox");
