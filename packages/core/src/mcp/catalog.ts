@@ -23,6 +23,26 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
     docsUrl: "https://tailscale.com/kb/1242/tailscale-serve",
   },
   {
+    id: "codemagic",
+    name: "Codemagic CI/CD",
+    description:
+      "Build & distribusi mobile (APK/IPA) via Codemagic: mulai build workflow, tunggu selesai, ambil URL unduh artifact. Lihat docs/CODEMAGIC.md.",
+    category: "build",
+    risk: "tinggi",
+    command: "node",
+    args: [`${ws}/../mcp-servers/codemagic/index.mjs`],
+    envKeys: [
+      {
+        key: "CM_API_TOKEN",
+        label: "Codemagic API token (Account settings > API token)",
+        required: true,
+      },
+    ],
+    setupNote:
+      "Buat akun codemagic.io (Sign in with GitHub), tambahkan repo sebagai application sekali di UI, lalu tempel API token di sini.",
+    docsUrl: "https://docs.codemagic.io/rest-api/",
+  },
+  {
     id: "filesystem",
     name: "Filesystem",
     description: "Baca/tulis/pindah file dalam folder yang diizinkan (scoped ke workspace).",

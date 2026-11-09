@@ -167,7 +167,7 @@ on a Linux instance — it is cheaper than macOS minutes.
   ```json
   "codemagic": {
     "command": "node",
-    "args": ["{workspace}/mcp-servers/codemagic/index.mjs"]
+    "args": ["{workspace}/../mcp-servers/codemagic/index.mjs"]
   }
   ```
 - **Skill**: `packages/skills/codemagic-builds/SKILL.md` — when and how a

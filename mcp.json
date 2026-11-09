@@ -53,7 +53,7 @@
     "codemagic": {
       "command": "node",
       "args": [
-        "{workspace}/mcp-servers/codemagic/index.mjs"
+        "{workspace}/../mcp-servers/codemagic/index.mjs"
       ]
     }
   }
