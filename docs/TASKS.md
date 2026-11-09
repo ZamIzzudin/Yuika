@@ -870,3 +870,21 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Pitfall: strip prefix verbatim `\\?\` dari resource_dir (node EISDIR 'C:' sbg entry); versi node bundle dinamis dari ABI prebuilt better-sqlite3 terpasang (dev=137/node24, CI=127/node22); health timeout menampilkan ekor api.log (boot_failure_reason).
 - [ ] Menyusul: first-run UX tanpa file env (runtime lazy-config / settings UI sebelum runtime siap) — kandidat task studio berikutnya; auto-update (updater plugin) tetap open.
 
+
+### D67 — First-run env wizard desktop (SELESAI; repo Yuika-Desktop 8613d18)
+- [x] commands Tauri `env_status` (parse yuika.env → complete/baseUrl/model/providerKind/hasApiKey/apiKeyMasked char-safe) + `write_env` (merge KEY=VALUE preserve komentar) + helper env_file.
+- [x] welcome.html host flow: cek env_status dulu — complete → startHost langsung; incomplete → modal wizard 4 field (Base URL, API key, Model, Provider kind optional) → write_env → startHost. Required trio: YUI_OPENAI_BASE_URL / YUI_OPENAI_API_KEY / YUI_MODEL (+ optional YUI_PROVIDER_KIND, dari runtime.ts).
+- [x] Tanpa yuika.env engine gagal boot — wizard menutup jalur error itu di first-run.
+
+### D68 — Welcome redesign (SELESAI; supersede visual D47/D56 shell)
+- [x] apps/web/public/welcome.html full rewrite per brief: kolom centered 840px, token warna (#121212/#181818/#2563eb/#7db0ff), h1 28px, dua kartu flex:1 desc bottom-aligned + CTA (solid "Start local engine" vs outline "Enter host URL"), footer divider + info icon, dialog via scrim (urlScrim/envScrim, Escape/backdrop/data-close), last-used highlight subtle border rgba(125,176,255,.35), no auto-resume, plain fallback non-Tauri.
+- [x] Verifikasi JS + screenshot Playwright (plain/shell/env-dialog/narrow). Tweak user lanjutan: hapus note redundan (9275b58).
+
+### D69 — Codemagic CI/CD integration: MCP + skill + docs (SELESAI)
+- [x] mcp-servers/codemagic/index.mjs — REST client x-auth-token (auth merge default SDK env): cm_apps, cm_app, cm_start_build (workflowId = NAMA workflow di codemagic.yaml), cm_builds (status via list; GET /builds/:id TIDAK ADA), cm_wait_build (poll 20s), cm_cancel_build, cm_artifact_url (public URL sementara). Smoke: tools/list 7, 401 dummy token, pesan token jelas.
+- [x] Keputusan: HANYA catalog entry (build/tinggi, form CM_API_TOKEN) — TIDAK di base mcp.json (server butuh token, auto-register = entri mati); uninstall tombstone otomatis dibersihkan installFromCatalog saat re-install.
+- [x] packages/skills/codemagic-builds/SKILL.md (loop operasional persona) + docs/CODEMAGIC.md (referensi agent-executable: konsep, endpoint + contoh, checklist project baru, playbook kegagalan; diverifikasi vs docs resmi + probe live route).
+- [x] Yuika-Mobile: codemagic.yaml (android-release: linux, node22/java17, versionCode=CM_BUILD_NUMBER, prebuild+assembleRelease signed keys/, artifact APK; trigger push main).
+
+### D70 — Host data reset (KONSEP; docs/PLAN-RESET-DATA.md)
+- [ ] Konsep disetujui: dua scope (work = semua data kecuali config; factory = + yuika.env & setup.json → welcome first-run lagi). Prosedur: quiesce (delegasi/workflow/screen/relay/MCP) → close SQLite → delete per scope → reset.log → process.exit(87) → supervisor restart. API POST /api/settings/reset {scope, confirm:"RESET"}; UI Settings Danger Zone type-to-confirm; backup = kandidat v1; detail + open questions di dokumen.
