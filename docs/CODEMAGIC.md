@@ -161,15 +161,13 @@ on a Linux instance — it is cheaper than macOS minutes.
 
 - **MCP server**: `mcp-servers/codemagic/index.mjs` (this repo). Tools:
   `cm_apps`, `cm_app`, `cm_start_build`, `cm_builds`, `cm_wait_build`,
-  `cm_cancel_build`, `cm_artifact_url`. Requires `CM_API_TOKEN` in the
-  engine environment (e.g. `yuika.env` → engine env → MCP child env).
-  Register in `mcp.json`:
-  ```json
-  "codemagic": {
-    "command": "node",
-    "args": ["{workspace}/../mcp-servers/codemagic/index.mjs"]
-  }
-  ```
+  `cm_cancel_build`, `cm_artifact_url`.
+- **Not in base `mcp.json` on purpose.** The server is useless without a
+  token, so it ships only as a **catalog entry** ("Codemagic CI/CD",
+  category `build`): install it from the MCP panel and paste the token in
+  the `CM_API_TOKEN` form field. The overlay (`mcp.user.json`) carries the
+  token; uninstalling and reinstalling works (tombstone is cleared on
+  install).
 - **Skill**: `packages/skills/codemagic-builds/SKILL.md` — when and how a
   persona should trigger builds, wait, and deliver artifact URLs.
 - **Test the server by hand** (before wiring into an agent):

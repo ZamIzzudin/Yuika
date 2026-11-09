@@ -49,12 +49,6 @@
         "-y",
         "@upstash/context7-mcp"
       ]
-    },
-    "codemagic": {
-      "command": "node",
-      "args": [
-        "{workspace}/../mcp-servers/codemagic/index.mjs"
-      ]
     }
   }
 }
