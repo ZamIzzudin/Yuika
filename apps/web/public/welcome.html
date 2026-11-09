@@ -293,7 +293,14 @@
         status.classList.add("err");
         status.textContent = msg;
       };
-      window.__hostError = (msg) => setErr(msg);
+      window.__hostError = (msg) => {
+        setErr(String(msg));
+        // Env belum lengkap = pengguna butuh wizard, bukan log mentah.
+        // Buka otomatis dengan prefill; pesan error tetap terlihat di atas.
+        if (/env belum lengkap|ENGINE_ENV_INCOMPLETE/i.test(String(msg)) && tauri) {
+          tauri.core.invoke("env_status").then((st) => openEnvWizard(st, true)).catch(() => {});
+        }
+      };
 
       const tauri = window.__TAURI__;
       if (!tauri) document.body.classList.add("plain");
@@ -327,8 +334,12 @@
 
       // TIDAK ADA auto-resume: halaman pilihan SELALU tampil. Setup terakhir
       // hanya dipakai utk highlight + prefill — pilihan tetap milik user
-      // setiap launch. ?reset=1 (login gate / dalam app) menghapus setup.
+      // setiap launch. ?reset=1 (login gate / dalam app) menghapus setup;
+      // ?crashed=1 hanya menampilkan status (engine mati sendiri, bukan reset).
       const params = new URLSearchParams(location.search);
+      if (params.has("crashed")) {
+        setStatus("The local engine stopped. Choose a card to start it again.");
+      }
       if (tauri && params.has("reset")) {
         tauri.core.invoke("clear_last_setup").catch(() => {});
       } else if (tauri) {
@@ -349,7 +360,14 @@
 
       function startHost() {
         setStatus("Starting the local engine…", true);
-        tauri.core.invoke("pick_host").catch((e) => setErr(String(e)));
+        tauri.core.invoke("pick_host").catch((e) => {
+          // Gerbang natif pick_host: env kurang → wizard, bukan error mentah.
+          if (/ENGINE_ENV_INCOMPLETE/.test(String(e))) {
+            tauri.core.invoke("env_status").then((st) => openEnvWizard(st, true)).catch(() => {});
+            return;
+          }
+          setErr(String(e));
+        });
       }
 
       document.getElementById("cardHost").addEventListener("click", async () => {
