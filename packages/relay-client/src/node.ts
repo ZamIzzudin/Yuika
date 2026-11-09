@@ -12,10 +12,27 @@ export const nodeCrypto: CryptoAdapter = {
   open: async (to, from, box) => nodeOpen(to, from, box).toString("utf8"),
 };
 
-/** Bungkus `ws` jadi WsLike (handler property; semua frame wire = teks). */
+/** Bungkus `ws` jadi WsLike: handler property + ping/pong/terminate
+ * (keepalive watchdog host Node butuh ketiganya; browser tidak punya). */
 export function nodeSocket(url: string): WsLike {
   const ws = new WS(url);
-  return ws as unknown as WsLike; // frame teks JSON → data string otomatis
+  const like: WsLike = {
+    send: (d) => ws.send(d),
+    close: (code?, reason?) => ws.close(code, reason),
+    ping: () => ws.ping(),
+    terminate: () => ws.terminate(),
+    onopen: null,
+    onmessage: null,
+    onclose: null,
+    onerror: null,
+    onpong: null,
+  };
+  ws.on("open", () => like.onopen?.());
+  ws.on("message", (d) => like.onmessage?.({ data: d.toString() }));
+  ws.on("close", (code, reason) => like.onclose?.({ code, reason: reason?.toString() }));
+  ws.on("error", (err) => like.onerror?.(err));
+  ws.on("pong", () => like.onpong?.());
+  return like;
 }
 
 export function createNodeRelayClient(opts: Omit<RelayClientOpts, "crypto" | "socketFactory">): RelayClient {

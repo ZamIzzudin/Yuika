@@ -64,6 +64,91 @@ async function waitFor<T>(fn: () => T | undefined, ms = 4_000): Promise<T> {
   }
 }
 
+describe("watchdog half-open (zombie socket)", () => {
+  it("relay diam tanpa close → putus paksa + reconnect + auth ulang", async () => {
+    const dev = generateDeviceKeys();
+    const r = createSpecRelay({
+      devices: [{ deviceId: dev.deviceId, accountId: ACC_A, kind: "web", name: "Zombie test", signPub: dev.signPub, dhPub: dev.dhPub }],
+      stickyMs: 1_000,
+    });
+    await new Promise((res) => setTimeout(res, 250));
+
+    // Simulasi half-open: setelah cut, event socket asli tidak pernah
+    // diteruskan (proxy hangus — FIN tidak pernah sampai) dan perintah
+    // klien jadi noop; watchdog harus mendeteksi keheningan itu. Flag mati
+    // PER-SOCKET — socket reconnect berikutnya hidup normal.
+    const inners: Array<{ kill: () => void; close: () => void }> = [];
+    let sockets = 0;
+    const factory = (u: string) => {
+      sockets++;
+      let dead = false;
+      const inner = nodeSocket(u);
+      const like = {
+        send: (d: string) => !dead && inner.send(d),
+        close: (c?: number, reason?: string) => !dead && inner.close(c, reason),
+        ping: () => !dead && inner.ping?.(),
+        terminate: () => !dead && inner.terminate?.(),
+        onopen: null as (() => void) | null,
+        onmessage: null as ((ev: { data: unknown }) => void) | null,
+        onclose: null as ((ev: { code?: number; reason?: string }) => void) | null,
+        onerror: null as ((err: unknown) => void) | null,
+        onpong: null as (() => void) | null,
+      };
+      inners.push({
+        kill: () => {
+          dead = true;
+          try {
+            inner.terminate();
+          } catch {
+            /* sudah mati */
+          }
+        },
+        close: () => inner.close(1000, "cleanup"),
+      });
+      inner.onopen = () => !dead && like.onopen?.();
+      inner.onmessage = (ev) => !dead && like.onmessage?.(ev);
+      inner.onclose = (ev) => !dead && like.onclose?.(ev);
+      inner.onerror = (e) => !dead && like.onerror?.(e);
+      inner.onpong = () => !dead && like.onpong?.();
+      return like;
+    };
+
+    let authOk = 0;
+    const c = new RelayClient(
+      {
+        url: r.url(),
+        deviceId: dev.deviceId,
+        signPriv: dev.signPriv,
+        crypto: {
+          signChallenge: async (p, d, n) => (await import("@yuika/crypto")).signChallenge(p, d, n),
+          seal: async (f, t, pt) => (await import("@yuika/crypto")).seal(f, t, pt),
+          open: async (t, f, b) => (await import("@yuika/crypto")).open(t, f, b).toString("utf8"),
+        },
+        socketFactory: factory,
+        backoff: { minMs: 50, maxMs: 200 },
+        keepaliveSec: 1, // mati setelah 3 dtk hening
+      },
+      { onAuthOk: () => { authOk++; } },
+    );
+    await c.connect();
+    expect(authOk).toBe(1);
+    expect(c.connected).toBe(true);
+
+    // cut: blokir event + RST socket asli (sisi server melihat koneksi mati
+    // seperti keepalive relay di produksi; klien TIDAK melihat apa pun).
+    for (const s of inners) s.kill();
+    await new Promise((res) => setTimeout(res, 4_500));
+
+    expect(authOk).toBeGreaterThanOrEqual(2); // reconnect + auth ulang
+    expect(sockets).toBeGreaterThanOrEqual(2);
+    expect(c.connected).toBe(true);
+
+    c.close();
+    for (const s of inners) s.close();
+    await r.close();
+  }, 15_000);
+});
+
 describe("SPEC §11.1, handshake", () => {
   it("auth valid → auth_ok accountId", async () => {
     const c = makeClient(r1);

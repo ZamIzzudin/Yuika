@@ -22,10 +22,17 @@ export interface CryptoAdapter {
 export interface WsLike {
   send(data: string): void;
   close(code?: number, reason?: string): void;
+  /** Node `ws`: pengiriman ping control-frame. Browser tidak punya —
+   * watchdog keepalive hanya aktif untuk socket yang mendukungnya. */
+  ping?(): void;
+  /** Node `ws`: putus TCP seketika (zombie tidak merespon close()). */
+  terminate?(): void;
   onopen: (() => void) | null;
   onmessage: ((ev: { data: unknown }) => void) | null;
   onclose: ((ev: { code?: number; reason?: string }) => void) | null;
   onerror: ((err: unknown) => void) | null;
+  /** dipanggil adapter saat pong control-frame diterima (Node). */
+  onpong?: (() => void) | null;
 }
 
 export type RelayState = "idle" | "connecting" | "authed" | "closed";
@@ -38,6 +45,11 @@ export interface RelayClientOpts {
   socketFactory: (url: string) => WsLike;
   /** backoff reconnect (default 250ms→16s; test bisa memperkecil). */
   backoff?: { minMs?: number; maxMs?: number };
+  /** Keepalive watchdog: ping tiap N detik; socket dianggap zombie bila
+   * TIDAK ada frame/ping/pong apa pun selama 3×N detik → reconnect paksa.
+   * Default 25 (aman terhadap ping server tiap 30 dtk). 0 = nonaktif.
+   * Hanya berlaku untuk socket dengan ping() (Node); browser skip. */
+  keepaliveSec?: number;
   /** debug log (default off). */
   log?: (...args: unknown[]) => void;
 }
@@ -75,6 +87,9 @@ export class RelayClient {
   private readonly minMs: number;
   private readonly maxMs: number;
   private readonly log: (...args: unknown[]) => void;
+  /** Watchdog anti half-open (zombie): terakhir kali ada frame hidup. */
+  private lastFrameAt = 0;
+  private watchdog: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     readonly opts: RelayClientOpts,
@@ -126,6 +141,8 @@ export class RelayClient {
       this.log("ws open", { isReconnect });
     };
     ws.onmessage = (ev) => {
+      if (this.ws !== ws) return; // socket lama (sudah diganti watchdog)
+      this.markAlive();
       if (typeof ev.data !== "string") return;
       let msg: ServerMsg;
       try {
@@ -136,8 +153,13 @@ export class RelayClient {
       }
       void this.handle(msg);
     };
+    ws.onpong = () => {
+      if (this.ws !== ws) return;
+      this.markAlive();
+    };
     ws.onerror = (e) => this.log("ws error", e);
     ws.onclose = (ev) => {
+      if (this.ws !== ws) return; // zombie yang sudah diputus watchdog
       const wasAuthed = this.state === "authed";
       this.ws = null;
       this.setState("closed");
@@ -145,6 +167,38 @@ export class RelayClient {
       // bye fatal permanen → tidak reconnect (penanganan di handle() bye).
       this.scheduleReconnect(wasAuthed);
     };
+    this.startWatchdog();
+  }
+
+  private markAlive(): void {
+    this.lastFrameAt = Date.now();
+  }
+
+  /** Half-open detection: relay ping tiap ~30 dtk → pong menjaga
+   * lastFrameAt. Path putus diam-diam (redeploy proxy, NAT hangus) tidak
+   * pernah mengirim close ke kita — klien socket Node bisa PING sendiri:
+   * bila 3 interval tanpa jawaban apa pun, putus paksa + reconnect. */
+  private startWatchdog(): void {
+    if (this.watchdog) return;
+    const sec = this.opts.keepaliveSec ?? 25;
+    if (!sec || typeof this.ws?.ping !== "function") return;
+    this.markAlive();
+    this.watchdog = setInterval(() => {
+      if (this.state !== "authed" || this.stopped) return;
+      this.ws?.ping?.();
+      if (Date.now() - this.lastFrameAt < sec * 3 * 1000) return;
+      this.log("watchdog: relay diam (half-open?), putus paksa + reconnect");
+      const old = this.ws;
+      this.ws = null;
+      this.setState("closed");
+      try {
+        old?.close(4008, "watchdog dead link");
+      } catch {
+        /* zombie bisa juga menolak close */
+      }
+      old?.terminate?.();
+      this.scheduleReconnect(true);
+    }, sec * 1000);
   }
 
   private scheduleReconnect(wasAuthed: boolean): void {
@@ -234,6 +288,8 @@ export class RelayClient {
   /** Tutup disengaja, tanpa reconnect. */
   close(): void {
     this.stopped = true;
+    if (this.watchdog) clearInterval(this.watchdog);
+    this.watchdog = null;
     this.ws?.close(1000, "client close");
     this.ws = null;
     this.setState("closed");
