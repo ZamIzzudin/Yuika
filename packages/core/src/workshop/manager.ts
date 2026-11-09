@@ -118,10 +118,14 @@ export class DockerWorkshopHost implements WorkshopHost {
         "--pids-limit", String(input.pidsLimit),
         "--cap-drop", "ALL",
         "--security-opt", "no-new-privileges",
-        "--user", "1000:1000",
-        // /home/node = home uid 1000 di image node, volume baru mewarisi
-        // kepemilikan (mount di path baru yang tak ada di image = owned root
-        // → user 1000 tak bisa menulis). Cache hangat (~/.npm) hidup di sini.
+        // ROOT, bukan uid 1000: bind workspace (/home/node/project) dimiliki
+        // uid pemilik proses host (root di deploy, uid user di runner CI) —
+        // uid tetap 1000 akan EACCES menulis file project (bug ketemu CI
+        // runner uid 1001). Threat model sama dengan sandbox run-command:
+        // root TANPA capability + no-new-privileges + network none (lihat
+        // sandbox.ts) — eskalasi keluar container tetap tertutup.
+        // Konsekuensi positif: volume cache /home/node (warisan image uid
+        // 1000) juga bisa ditulis tanpa ritual chown.
         "-v", `${input.volume}:/home/node`,
         // Nested bind: FILES PROJECT = workspace host (rw), satu dunia
         // dengan tab Files / write_file / run_command sandbox (/workspace).

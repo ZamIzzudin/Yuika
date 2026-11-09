@@ -76,8 +76,11 @@ export function dockerAvailable(probe = false): Promise<boolean> {
 }
 
 /** Mount path lintas-OS: Docker Desktop menerima `D:\a\b` tapi bentuk
- *  forward-slash `D:/a/b` lebih aman lewat execFile (tanpa shell quoting). */
+ *  forward-slash `D:/a/b` lebih aman lewat execFile (tanpa shell quoting).
+ *  Path absolut gaya Windows (drive letter) valid di OS mana pun — jangan
+ *  di-resolve (di Linux resolve menganggapnya RELATIF dan merusaknya). */
 function mountPath(ws: string): string {
+  if (/^[A-Za-z]:[\\/]/.test(ws)) return ws.replace(/\\/g, "/");
   return path.resolve(ws).replace(/\\/g, "/");
 }
 

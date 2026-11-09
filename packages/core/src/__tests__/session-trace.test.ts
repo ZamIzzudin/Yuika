@@ -1,6 +1,6 @@
 // trace view, event store + ledger digabung jadi timeline per turn.
 // Catatan: store menstempel ts/id sendiri → test memakai ts dari appendEvent.
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -18,12 +18,20 @@ beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "yui-trace-"));
   store = new SessionStore(path.join(dir, "t.db"));
   ledger = new UsageLedger(path.join(dir, "t.db"));
+  // Jam deterministik: di mesin cepat (CI) seluruh event bisa jatuh di ms
+  // yang sama → window join turn jadi ambigu. Fake clock memberi tiap
+  // langkah ts berbeda yang pasti.
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-11-09T00:00:00Z"));
 });
 afterEach(() => {
+  vi.useRealTimers();
   store.close();
   ledger.close();
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* Windows lock */ }
 });
+
+const tick = (ms: number) => vi.advanceTimersByTime(ms);
 
 const push = (draft: EventDraft) => store.appendEvent(sid, draft);
 
@@ -52,8 +60,11 @@ describe("buildTrace", () => {
   it("turn kedua error, panggilan model turn pertama TIDAK ikut", () => {
     const t0 = push({ type: "turn.started", turnId: "t1" } as EventDraft);
     ledger.record({ sessionId: sid, projectId: null, personaId: "p", model: "m", promptTokens: 10, outputTokens: 5, latencyMs: 100, at: t0.ts });
+    tick(40);
     push({ type: "persona.state", personaId: "p", state: "done" } as EventDraft);
+    tick(40);
     push({ type: "turn.started", turnId: "t2" } as EventDraft);
+    tick(40);
     push({ type: "session.error", message: "oops", recoverable: true } as EventDraft);
 
     const tr = buildTrace(store, ledger, sid);
