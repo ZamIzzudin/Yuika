@@ -886,5 +886,13 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] packages/skills/codemagic-builds/SKILL.md (loop operasional persona) + docs/CODEMAGIC.md (referensi agent-executable: konsep, endpoint + contoh, checklist project baru, playbook kegagalan; diverifikasi vs docs resmi + probe live route).
 - [x] Yuika-Mobile: codemagic.yaml (android-release: linux, node22/java17, versionCode=CM_BUILD_NUMBER, prebuild+assembleRelease signed keys/, artifact APK; trigger push main).
 
-### D70 — Host data reset (KONSEP; docs/PLAN-RESET-DATA.md)
-- [ ] Konsep disetujui: dua scope (work = semua data kecuali config; factory = + yuika.env & setup.json → welcome first-run lagi). Prosedur: quiesce (delegasi/workflow/screen/relay/MCP) → close SQLite → delete per scope → reset.log → process.exit(87) → supervisor restart. API POST /api/settings/reset {scope, confirm:"RESET"}; UI Settings Danger Zone type-to-confirm; backup = kandidat v1; detail + open questions di dokumen.
+### D70 — Host data reset (SELESAI; konsep docs/PLAN-RESET-DATA.md)
+- [x] packages/core/src/reset.ts — dua scope (work = semua data kerja; factory = + yuika.env; desktop shell ikut hapus setup.json → welcome lagi). Boot-time finisher: engine quiesce (relay bye + dispose) → tulis reset.pending → exit(87) → supervisor restart → createYuiRuntime jalankan executePendingWipe SEBELUM store dibuka (aman Windows: semua handle mati). Artefak: db±wal/shm, vault.db±wal/shm, vault.key, budget.json, model-prices.json, .yuika/ (profil browser), workspace/; api.log & update flag SELALU selamat. reset.log = satu-satunya survivor log.
+- [x] API POST /api/settings/reset {scope, confirm:"RESET"} → 400 salah phrase, 409 pending, 202 → deferred quiesce+exit (deps injectable untuk test). UI Settings section "Reset": radio work/factory + copy survivor + input type-to-confirm → state resetting → poll /api/meta → reload otomatis.
+- [x] Desktop lib.rs: ApiProcess simpan PID; monitor thread own Child — exit 87 → baca reset.pending (factory → remove setup.json) → respawn engine → webview reload (factory: welcome.html?reset=1); exit lain → kembali ke welcome. kill_api via PID (taskkill /T /F, kill -9).
+- [x] Test: core reset.test.ts (artefak per scope, wipe tmp-dir, marker korup → work, idempoten, api.log/yuika.env selamat sesuai scope) + api.test.ts kontrak reset (400/409/202 stub) — 23 hijau; cargo check bersih.
+
+### D71 — Update satu-klik dari studio (SELESAI)
+- [x] POST /api/settings/update-run (env-gated YUI_UPDATE_SSH_TARGET; tanpa env = 400 dengan pesan arah DEPLOY.md): spawn ssh detached (BatchMode, key /run/yuika-update-key ro, port opsional) → host `cd $YUI_UPDATE_DIR && nohup ./scripts/update.sh`; flag data dir update-in-progress.
+- [x] GET /api/meta + canRunUpdate + updateRunning (flag cleared otomatis saat versi = terbaru). AboutFooter Settings: tombol "Update now → vX.Y.Z" saat tersedia & configured; saat berjalan: poll meta 4s → reload otomatis begitu versi baru aktif.
+- [x] Compose ×3 varian + .env.example: YUI_UPDATE_SSH_TARGET/_PORT/_DIR/_KEY_FILE (mount /dev/null default); DEPLOY.md section setup key (ssh-keygen, authorized_keys, host-gateway).

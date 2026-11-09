@@ -1,4 +1,6 @@
-# PLAN: Host Data Reset (D70, concept)
+# PLAN: Host Data Reset (D70)
+
+> Status: **IMPLEMENTED in v0.8.2** - see "As shipped" at the end.
 
 > Goal: one explicit action wipes host state (setup, projects, memory,
 > vault, usage, connections) so the host boots fresh, exactly like the
@@ -102,12 +104,28 @@ initialize-once. Restart is the cheap correct path.
 - Fake-relay: reset while hosting → client sees `host_offline`, not a
   4001 logged-out storm.
 
-## 7. Open questions (to settle at implementation)
+## 7. Open questions (resolved in implementation)
 
-1. Default for `yuika.env` on factory reset: delete (truly fresh) is the
-   spec above; is that what users want, or keep-key-by-default?
-2. Should `reset.log` include which scope ran, or is that a privacy leak
-   for a "clean" reset?
-3. Deployment Docker: confirm `restart: unless-stopped` on the api
-   service in all compose files (prod + with-portal + traefik) before
-   shipping.
+1. `yuika.env` on factory reset: **deleted** (truly fresh, spec as-is).
+2. `reset.log` includes scope + timestamps + deleted list: useful for
+   support, not a privacy leak (paths only, no content).
+3. All three compose variants already run `restart: unless-stopped` —
+   verified; exit 87 is enough for deployments too.
+
+## 8. As shipped (v0.8.2)
+
+- `packages/core/src/reset.ts`: scope artifact lists, boot-time
+  `executePendingWipe` (runs before any store opens), `reset.log`
+  survivor, `writeResetPending` marker. **api.log is never deleted**
+  (the desktop parent holds its handle; the log is app-level, not
+  user data). The `update-in-progress` flag also survives.
+- Engine exit path: relay bye + `rt.dispose()` → marker → `exit(87)`.
+  Linux tries an immediate best-effort unlink; Windows relies on the
+  boot finisher (all handles dead after restart).
+- Desktop `lib.rs`: `ApiProcess` stores the PID; a monitor thread owns
+  the `Child`, respawns on exit code 87 (factory scope also removes
+  `setup.json`), reloads the webview to `welcome.html?reset=1` (factory)
+  or `./` (work). Non-reset exits route back to the welcome picker.
+- API `POST /api/settings/reset` ({scope, confirm:"RESET"}); 400/409/202
+  contract covered by tests with an injected executor. UI: Settings →
+  Reset section with type-to-confirm and auto-reload polling.

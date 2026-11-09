@@ -31,8 +31,9 @@ import { registerAuthRoutes, bearerToken } from "./routes/auth.js";
 import { registerAuthSsoRoutes } from "./routes/auth-sso.js"; // portal SSO
 import { registerMetaRoutes } from "./routes/meta.js"; // version + update check
 import { authUserCount, validateToken } from "./auth/store.js";
+import type { SettingsDeps } from "./routes/settings.js";
 
-export function buildApp(rt?: YuiRuntime): FastifyInstance {
+export function buildApp(rt?: YuiRuntime, opts?: { settingsDeps?: SettingsDeps }): FastifyInstance {
   const app = Fastify({ logger: false, bodyLimit: 12 * 1024 * 1024 });
   // Default reflects the request origin (dev: web :3000 -> api :3211).
   // Split-origin deployments can pin allowed origins with YUI_CORS_ORIGIN
@@ -90,7 +91,7 @@ export function buildApp(rt?: YuiRuntime): FastifyInstance {
   registerMcpRoutes(app, getRt);
   registerMemoryRoutes(app, getRt);
   registerPersonaRoutes(app, getRt);
-  registerSettingsRoutes(app, getRt);
+  registerSettingsRoutes(app, getRt, opts?.settingsDeps);
   registerSkillRoutes(app, getRt);
   registerUsageRoutes(app, getRt);
   registerTerminalRoutes(app, getRt); // : tab Terminal

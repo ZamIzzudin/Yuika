@@ -187,3 +187,53 @@ describe("apps/api REST contract", () => {
     expect(r.headers["content-type"]).toContain("text/event-stream");
   });
 });
+
+// ── D70/D71: reset host data + update runner (deps stub, tanpa exit nyata) ──
+describe("settings: reset + update runner", () => {
+  let pending = false;
+  const resets: string[] = [];
+  let updatesStarted = 0;
+  const resetApp = buildApp(fake, {
+    settingsDeps: {
+      isResetPending: () => pending,
+      runReset: async (scope) => {
+        resets.push(scope);
+        pending = true; // executor nyata menulis marker sebelum exit
+      },
+      updateRunnerConfigured: () => true,
+      startUpdate: () => {
+        updatesStarted += 1;
+        return { ok: true };
+      },
+    },
+  });
+
+  it("reset: validasi scope + confirm phrase", async () => {
+    const badScope = await resetApp.inject({ method: "POST", url: "/api/settings/reset", payload: { scope: "all", confirm: "RESET" } });
+    expect(badScope.statusCode).toBe(400);
+    const badConfirm = await resetApp.inject({ method: "POST", url: "/api/settings/reset", payload: { scope: "work", confirm: "yes" } });
+    expect(badConfirm.statusCode).toBe(400);
+    expect(badConfirm.json()).toMatchObject({ error: "type RESET to confirm" });
+  });
+
+  it("reset: 202 + executor dipanggil async; double-flight = 409", async () => {
+    const ok = await resetApp.inject({ method: "POST", url: "/api/settings/reset", payload: { scope: "factory", confirm: "RESET" } });
+    expect(ok.statusCode).toBe(202);
+    expect(ok.json()).toMatchObject({ ok: true, scope: "factory" });
+    await new Promise((r) => setTimeout(r, 400));
+    expect(resets).toEqual(["factory"]);
+    const again = await resetApp.inject({ method: "POST", url: "/api/settings/reset", payload: { scope: "work", confirm: "RESET" } });
+    expect(again.statusCode).toBe(409);
+  });
+
+  it("update-run: 202 saat configured; 400 tanpa konfigurasi", async () => {
+    const ok = await resetApp.inject({ method: "POST", url: "/api/settings/update-run" });
+    expect(ok.statusCode).toBe(202);
+    expect(updatesStarted).toBe(1);
+
+    const off = buildApp(fake, { settingsDeps: { updateRunnerConfigured: () => false } });
+    const r = await off.inject({ method: "POST", url: "/api/settings/update-run" });
+    expect(r.statusCode).toBe(400);
+    expect(r.json().error).toContain("not configured");
+  });
+});

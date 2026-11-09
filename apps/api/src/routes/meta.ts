@@ -7,6 +7,7 @@
 // This route is exempt from the auth gate (version info is public and
 // useful before login when debugging upgrades).
 import fs from "node:fs";
+import path from "node:path";
 import type { FastifyInstance } from "fastify";
 
 interface MetaState {
@@ -82,13 +83,35 @@ async function refreshLatest(): Promise<MetaState> {
 export function registerMetaRoutes(app: FastifyInstance): void {
   app.get("/api/meta", async (_req, reply) => {
     const state = await refreshLatest();
+    const updateAvailable = state.latest ? isNewer(state.latest, version) : false;
+    // D71: status update satu-klik. Flag file ditulis route update-run;
+    // dibereskan otomatis begitu versi berjalan sudah = terbaru.
+    const flag = updateFlagFile();
+    let updateRunning = false;
+    if (flag && fs.existsSync(flag)) {
+      if (!updateAvailable) {
+        try { fs.rmSync(flag, { force: true }); } catch { /* best-effort */ }
+      } else {
+        updateRunning = true;
+      }
+    }
     return reply.send({
       version,
       latest: state.latest,
-      updateAvailable: state.latest ? isNewer(state.latest, version) : false,
+      updateAvailable,
       releaseUrl: state.releaseUrl,
+      canRunUpdate: !!process.env.YUI_UPDATE_SSH_TARGET,
+      updateRunning,
     });
   });
+}
+
+/** File flag update (data dir). update.sh mengganti container; file ini
+ * persist di volume dan meta membersihkannya saat versi tercapai. */
+function updateFlagFile(): string {
+  const db = process.env.YUI_DB_PATH;
+  const dir = db ? path.dirname(db) : process.cwd();
+  return path.join(dir, "update-in-progress");
 }
 
 /** Test-only: reset cache antar suite. */

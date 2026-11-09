@@ -89,5 +89,16 @@ export {
   type ScreenState, type ScreenFrame, type Snapshot,
 } from "./screen/manager.js";
 export { parseDevToolsUrl, CdpError } from "./screen/cdp.js";
+export {
+  RESET_EXIT_CODE,
+  RESET_SCOPES,
+  executePendingWipe,
+  writeResetPending,
+  resetArtifactPaths,
+  pendingResetFile,
+  resetLogFile,
+  type ResetScope,
+  type WipeResult,
+} from "./reset.js";
 export { registerScreenTools } from "./tools/screen-tools.js";
 export { registerQaTools } from "./tools/qa-tools.js";

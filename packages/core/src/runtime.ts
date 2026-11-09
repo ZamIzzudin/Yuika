@@ -7,6 +7,7 @@ import path from "node:path";
 import { PersonaInfo, type DeleteProjectResult, type McpServerStatus, type PersonaGrowth, type PersonaShapeOverride, type RosterEntry as RosterEntryIn, type TaskItem, type UpdateBudgetRequest, type UsageFilter, type YuiEvent } from "@yuika/contracts";
 import { createSessionStore, type ISessionStore } from "./session/store.js";
 import { moduleLogger } from "./logger.js";
+import { executePendingWipe } from "./reset.js";
 import { makeEmitter } from "./session/emit.js";
 import { EventBus } from "./bus.js";
 import { OpenAICompatProvider } from "./provider/openai-compat.js";
@@ -93,6 +94,15 @@ function safeList<T>(fn: () => T[]): T[] {
 
 export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   const paths = { ...resolvePaths(), ...cfg.paths } as YuiPaths;
+  // D70: selesaikan reset tertunda SEBELUM store mana pun membuka file —
+  // proses baru saja direstart supervisor (exit 87), semua handle bebas.
+  const pendingWipe = executePendingWipe(paths);
+  if (pendingWipe) {
+    moduleLogger("runtime").info(
+      { scope: pendingWipe.scope, deleted: pendingWipe.deleted.length, failures: pendingWipe.failures.length },
+      "reset: pending wipe executed, booting fresh",
+    );
+  }
   fs.mkdirSync(paths.workspacePath, { recursive: true });
   // Dir bersama untuk MCP filesystem (katalog: "{workspace}/reports").
   // Dir per-project dibuat saat project lahir, tapi level-atas ini tidak

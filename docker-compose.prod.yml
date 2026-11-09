@@ -69,8 +69,18 @@ services:
       # see them). Server-to-server oauth token exchange uses the same URL.
       YUI_PORTAL_URL: ${YUI_PORTAL_URL:?set YUI_PORTAL_URL in .env}
       YUI_RELAY_URL: ${YUI_RELAY_URL:?set YUI_RELAY_URL in .env}
+      # One-click self-update (D71): ssh to the VPS host and run
+      # scripts/update.sh there. Empty YUI_UPDATE_SSH_TARGET = button hidden.
+      # Setup: docs/DEPLOY.md "One-click update from the studio".
+      YUI_UPDATE_SSH_TARGET: ${YUI_UPDATE_SSH_TARGET:-}
+      YUI_UPDATE_SSH_PORT: ${YUI_UPDATE_SSH_PORT:-}
+      YUI_UPDATE_DIR: ${YUI_UPDATE_DIR:-/opt/Yuika}
+      YUI_UPDATE_SSH_KEY: /run/yuika-update-key
     volumes:
       - yui-data:/data
+      # Deploy key for the updater (read-only). Mount is skipped when the
+      # var is unset: compose maps /dev/null, keeping ssh unusable but safe.
+      - ${YUI_UPDATE_SSH_KEY_FILE:-/dev/null}:/run/yuika-update-key:ro
     networks:
       - edge
 

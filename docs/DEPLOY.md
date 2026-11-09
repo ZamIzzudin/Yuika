@@ -224,6 +224,45 @@ checkout are discarded on every update; configuration belongs in `.env`.
 Check what you run at any time: `curl -s https://studio.yourdomain.example/api/meta`
 returns the running version and (when a release exists) the latest.
 
+### One-click update from the studio (D71)
+
+With the update runner configured, the Settings footer shows an
+**Update now** button whenever a newer release exists. Clicking it makes
+the studio ssh into the VPS host itself and run `./scripts/update.sh`
+there — the same manual flow above, minus the terminal. The page reloads
+itself when the new version is live.
+
+Setup (once, on the VPS):
+
+1. Generate a dedicated key pair next to the checkout (no passphrase —
+   BatchMode ssh cannot prompt):
+
+   ```bash
+   ssh-keygen -t ed25519 -f /opt/Yuika/update_key -N ""
+   cat /opt/Yuika/update_key.pub >> ~/.ssh/authorized_keys
+   ```
+
+   The key can only do what its user can do; it is dedicated so you can
+   revoke it independently of human logins.
+
+2. Point the studio at the host. From inside a container the VPS host is
+   reachable via the docker bridge gateway (usually `172.17.0.1`) or its
+   public IP. Add to `/opt/Yuika/.env`:
+
+   ```bash
+   YUI_UPDATE_SSH_TARGET=root@172.17.0.1
+   YUI_UPDATE_SSH_PORT=22
+   YUI_UPDATE_DIR=/opt/Yuika
+   YUI_UPDATE_SSH_KEY_FILE=/opt/Yuika/update_key
+   ```
+
+3. Recreate the api service so the new env and the read-only key mount
+   land: `docker compose -f docker-compose.prod.yml up -d api`.
+
+Without `YUI_UPDATE_SSH_TARGET` the button never appears and the endpoint
+answers 400 — the runner is opt-in per deployment. The same variables work
+in the traefik and with-portal compose variants.
+
 **Logs:**
 
 ```bash

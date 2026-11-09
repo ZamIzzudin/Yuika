@@ -64,8 +64,14 @@ services:
       YUI_AUTH_REQUIRED: "1"
       YUI_PORTAL_URL: ${YUI_PORTAL_URL:?set YUI_PORTAL_URL in .env}
       YUI_RELAY_URL: ${YUI_RELAY_URL:?set YUI_RELAY_URL in .env}
+      # One-click self-update (D71): ssh to the VPS host, run update.sh.
+      YUI_UPDATE_SSH_TARGET: ${YUI_UPDATE_SSH_TARGET:-}
+      YUI_UPDATE_SSH_PORT: ${YUI_UPDATE_SSH_PORT:-}
+      YUI_UPDATE_DIR: ${YUI_UPDATE_DIR:-/opt/Yuika}
+      YUI_UPDATE_SSH_KEY: /run/yuika-update-key
     volumes:
       - yui-data:/data
+      - ${YUI_UPDATE_SSH_KEY_FILE:-/dev/null}:/run/yuika-update-key:ro
     networks:
       - edge
 

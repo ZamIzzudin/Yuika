@@ -18,7 +18,7 @@ import { Skeleton } from "./Skeleton";
 import { toastErr, toastOk } from "./ui/toast";
 import { Button, Card, Dropdown, Field, Modal, TextInput } from "./ui";
 
-type Section = "provider" | "mcp" | "usage" | "account";
+type Section = "provider" | "mcp" | "usage" | "account" | "danger";
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   {
@@ -28,6 +28,7 @@ const SECTIONS: { id: Section; label: string; hint: string }[] = [
   },
   { id: "mcp", label: "MCP & Tools", hint: "catalog, trust, audit" },
   { id: "usage", label: "Usage", hint: "spend, limits, tokens" },
+  { id: "danger", label: "Reset", hint: "wipe host data" },
 ];
 
 /** Tile statistik kecil untuk dashboard Usage. */
@@ -280,6 +281,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             </section>
           )}
           {section === "account" && <AccountPanel />}
+          {section === "danger" && <ResetPanel />}
         </div>
       </div>
       <AboutFooter />
@@ -289,9 +291,18 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
 /** Version line + update indicator (GET /api/meta, gate-exempt).
  * Release news arrives via the portal; self-host updates run
- * scripts/update.sh (see docs/DEPLOY.md, Updates). */
+ * scripts/update.sh (see docs/DEPLOY.md, Updates). With YUI_UPDATE_SSH_*
+ * configured, "Update now" runs it over SSH without opening a terminal. */
 function AboutFooter() {
-  const [meta, setMeta] = useState<{ version: string; latest: string | null; updateAvailable: boolean; releaseUrl: string | null } | null>(null);
+  const [meta, setMeta] = useState<{
+    version: string;
+    latest: string | null;
+    updateAvailable: boolean;
+    releaseUrl: string | null;
+    canRunUpdate?: boolean;
+    updateRunning?: boolean;
+  } | null>(null);
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -308,11 +319,46 @@ function AboutFooter() {
     };
   }, []);
 
+  // Update berjalan: poll meta sampai versi baru aktif (atau updater mati).
+  const updating = started || !!meta?.updateRunning;
+  useEffect(() => {
+    if (!updating) return;
+    const t = setInterval(() => {
+      void (async () => {
+        try {
+          const r = await authFetch(apiUrl("/api/meta"));
+          if (!r.ok) return;
+          const m = (await r.json()) as { version: string; updateRunning?: boolean };
+          setMeta((prev) => (prev ? { ...prev, ...m } : prev));
+          if (!m.updateRunning) window.location.reload();
+        } catch {
+          /* updater mengganti container: sambungan mati sebentar = normal */
+        }
+      })();
+    }, 4000);
+    return () => clearInterval(t);
+  }, [updating]);
+
   if (!meta) return null;
   return (
     <footer className="flex items-center justify-center gap-1.5 border-t border-line pt-3 text-caption text-dim">
       <span>Yuika v{meta.version}</span>
-      {meta.updateAvailable && meta.releaseUrl ? (
+      {updating ? (
+        <span className="text-accent">Updating — the app restarts itself…</span>
+      ) : meta.updateAvailable && meta.canRunUpdate ? (
+        <button
+          type="button"
+          className="rounded bg-accent px-2 py-0.5 text-caption text-white hover:opacity-90"
+          onClick={() => {
+            setStarted(true);
+            void authFetch(apiUrl("/api/settings/update-run"), { method: "POST" }).catch(
+              () => undefined,
+            );
+          }}
+        >
+          Update now → {meta.latest}
+        </button>
+      ) : meta.updateAvailable && meta.releaseUrl ? (
         <a
           href={meta.releaseUrl}
           target="_blank"
@@ -325,6 +371,106 @@ function AboutFooter() {
         <span aria-hidden>· up to date</span>
       ) : null}
     </footer>
+  );
+}
+
+/** D70: Danger zone — wipe host data. Two scopes, type-to-confirm. The API
+ * replies 202 then restarts the engine; losing the connection is expected,
+ * we poll /api/meta until it answers again and reload into the fresh host. */
+function ResetPanel() {
+  const [scope, setScope] = useState<"work" | "factory">("work");
+  const [confirmText, setConfirmText] = useState("");
+  const [phase, setPhase] = useState<"idle" | "resetting">("idle");
+
+  useEffect(() => {
+    if (phase !== "resetting") return;
+    const t = setInterval(() => {
+      void (async () => {
+        try {
+          const r = await authFetch(apiUrl("/api/meta"));
+          if (r.ok) window.location.reload();
+        } catch {
+          /* engine sedang restart: tetap polling */
+        }
+      })();
+    }, 2000);
+    return () => clearInterval(t);
+  }, [phase]);
+
+  if (phase === "resetting")
+    return (
+      <section aria-label="Reset in progress" className="flex flex-col items-center gap-3 py-10 text-center">
+        <span className="h-3 w-3 animate-pulse rounded-full bg-danger" aria-hidden />
+        <p className="text-sm">Resetting the host…</p>
+        <p className="max-w-sm text-caption text-dim">
+          The engine is wiping data and restarting. This page reloads by
+          itself when it is back.
+        </p>
+      </section>
+    );
+
+  return (
+    <section aria-label="Danger zone" className="flex flex-col gap-4">
+      <div>
+        <h3 className="text-sm font-semibold">Danger zone</h3>
+        <p className="mt-1 text-caption text-dim">
+          Wipes this host back to a clean state. There is no backup and no
+          undo. Devices may stay listed on the portal until you unlink them
+          there.
+        </p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setScope("work")}
+          className={`rounded-lg border p-3 text-left ${
+            scope === "work" ? "border-accent bg-accent/5" : "border-line"
+          }`}
+        >
+          <span className="block text-sm font-medium">Reset work data</span>
+          <span className="block text-caption text-dim">
+            Deletes every project, session, memory, vault record, workflow,
+            usage ledger, browser profiles and MCP installs. Provider config
+            and sign-in setup are kept.
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setScope("factory")}
+          className={`rounded-lg border p-3 text-left ${
+            scope === "factory" ? "border-danger bg-danger/5" : "border-line"
+          }`}
+        >
+          <span className="block text-sm font-medium">Factory reset</span>
+          <span className="block text-caption text-dim">
+            Everything above plus the provider config. On desktop, the
+            welcome setup runs again like the very first launch.
+          </span>
+        </button>
+      </div>
+      <input
+        value={confirmText}
+        onChange={(e) => setConfirmText(e.target.value)}
+        placeholder="Type RESET to confirm"
+        className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-danger"
+        aria-label="Type RESET to confirm"
+      />
+      <button
+        type="button"
+        disabled={confirmText !== "RESET"}
+        className="rounded-md bg-danger px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+        onClick={() => {
+          setPhase("resetting");
+          void authFetch(apiUrl("/api/settings/reset"), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ scope, confirm: "RESET" }),
+          }).catch(() => undefined);
+        }}
+      >
+        Reset data
+      </button>
+    </section>
   );
 }
 
