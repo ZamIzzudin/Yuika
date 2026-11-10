@@ -38,12 +38,12 @@ jalan paralel karena butuh infra Penpot self-host yang dipasang dulu).
 
 ---
 
-## F1 · Mobile remote (Yuika-Mobile) — 60%
+## F1 · Mobile remote (Yuika-Mobile) — 85%
 
 HP sebagai remote pertama: kendalikan host lewat portal relay, approve dari
-mana saja. Basis hitung: 6/10 milestone.
+mana saja. Basis hitung: 9/11 milestone (D76 menambah picker/missions/push).
 
-Selesai (6):
+Selesai (9):
 - [x] Interop crypto relay (Ed25519/X25519 noble, seal/open dua arah).
 - [x] Shell + login portal (OAuth client `yuika-mobile`, redirect
       `yuika://auth/callback`; fix param `client` + splash 9eadb0a).
@@ -52,17 +52,24 @@ Selesai (6):
 - [x] Remote control UI + bukti e2e fake-relay 13/13.
 - [x] Pipeline build APK: GitHub Actions hijau + codemagic.yaml
       (android-release, versionCode = run number).
+- [x] **P2-MOB-4** Persona picker + portrait (D73/D76: sheet new-chat
+      `personas.list`, portrait rig Mascot shapes Orin v8 + model label).
+- [x] **P2-MOB-5** Mission Control mini (D76): tab Missions lintas project
+      (Running now / Recently finished), live `delegation.update` via relay;
+      cron host-side menyusul bersama cron v1 (backlog PLAN fase 2).
+- [x] Multi-host pick via hosts screen (D59/v1.2; D76: tap push membuka
+      host terkait langsung).
 
-Sisa (4):
-- [ ] **P2-MOB-3** Push notification (FCM/APNs) + tap dari lock screen
-      langsung approve (< 10 detik, gerbang G-BETA).
-- [ ] **P2-MOB-4** Persona picker + portrait (rig SVG OrinPortrait).
-- [ ] **P2-MOB-5** Mission Control mini: monitor delegasi + cron,
-      termasuk UI `delegation.update` via relay.
-- [ ] Multi-host slots di mobile (pilih host dari `list_hosts`, D59
-      lanjutan) + distribusi Play internal track ke tester (G-BETA).
+Sisa (2):
+- [~] **P2-MOB-3** Push notification (FCM) — pipeline LENGKAP D76: portal
+      `POST /api/devices/push-token` + `POST /api/push/notify` (FCM HTTP v1,
+      tanpa deps baru, env-gated), host kirim notify saat approval.request
+      + replay approval pending saat remote join, mobile register token +
+      tap deep-link ke host. Menunggu: project Firebase (google-services.json
+      mobile + service account portal) + bukti e2e < 10 dtk device nyata.
+- [ ] Distribusi Play internal track ke tester (G-BETA; butuh akun Play).
 
-100% ketika: empat sisa di atas terimplementasi dan lulus pengujian
+100% ketika: dua sisa di atas terimplementasi dan lulus pengujian
 (device nyata + suite mobile hijau).
 
 ## F2 · Desktop app (Yuika-Desktop) — 75%

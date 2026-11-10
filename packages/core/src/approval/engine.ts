@@ -57,13 +57,32 @@ export function resolvePendingApproval(requestId: string, approved: boolean, rem
   return engine.resolve(requestId, approved, remember);
 }
 
+export interface PendingApprovalInfo {
+  requestId: string;
+  tool: string;
+  reason: string;
+  sessionId: string;
+}
+
+/** D76: daftar approval PENDING lintas sesi (untuk replay ke remote yang
+ *  baru connect — push notification tap flow; mobile yang terlambat join
+ *  tetap melihat approval hidup, bukan hanya broadcast live). */
+export function listPendingApprovals(): PendingApprovalInfo[] {
+  const out: PendingApprovalInfo[] = [];
+  for (const [requestId, engine] of pendingEngines) {
+    const info = engine.pendingInfo(requestId);
+    if (info) out.push({ requestId, tool: info.tool, reason: info.reason, sessionId: engine.sessionId() });
+  }
+  return out;
+}
+
 export interface ApprovalPersistOptions {
   sessionId: string;
   store: ISessionStore;
 }
 
 export class ApprovalEngine {
-  private pending = new Map<string, { tool: string; resolve: (approved: boolean) => void; clearTimeout: () => void }>();
+  private pending = new Map<string, { tool: string; reason: string; resolve: (approved: boolean) => void; clearTimeout: () => void }>();
   /** Tool yang di-approve + "ingat", skip approval sesi ini (mengurangi round-trip user).
  * Persist di approval_memory → bertahan restart server . */
   private remembered = new Set<string>();
@@ -97,10 +116,22 @@ export class ApprovalEngine {
       timer?.unref?.(); // jangan tahan proses hidup hanya karena timer approval
       this.pending.set(requestId, {
         tool,
+        reason,
         resolve,
         clearTimeout: () => timer && clearTimeout(timer),
       });
     });
+  }
+
+  /** D76: info pending (untuk listPendingApprovals global). */
+  pendingInfo(requestId: string): { tool: string; reason: string } | null {
+    const e = this.pending.get(requestId);
+    return e ? { tool: e.tool, reason: e.reason } : null;
+  }
+
+  /** D76: sesi pemilik engine ini (persist.sessionId; null tanpa persist). */
+  sessionId(): string {
+    return this.persist?.sessionId ?? "";
   }
 
  /** lewat deadline → tolak (fail-closed) + tandai expired di DB + event

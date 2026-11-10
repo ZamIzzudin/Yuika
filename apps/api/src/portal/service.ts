@@ -30,6 +30,8 @@ import { getScreenState, listScreens, subscribeScreen } from "./screen-bridge.js
 import { makeHostResetter, resetAlreadyPending } from "../reset-run.js";
 import type { HostDeviceRecord } from "./store.js";
 import { signOutPortalAccount } from "../auth/store.js";
+import { listPendingApprovals } from "@yuika/core";
+import { pushApprovalAtPortal } from "./push.js";
 
 const RING_CAP = 500; // event terakhir per sesi, resume delta subscribe{sinceSeq}
 const SNAPSHOT_MSGS = 50;
@@ -315,6 +317,15 @@ export class PortalHostService {
       // delta/done → hanya remote yang subscribe sesi ini; approval/delegation
       // → semua remote (keputusan user-level, mission-control style).
       void this.broadcast(ev, sessionId).catch(() => undefined);
+      // D76 push (MOB-3): approval baru → best-effort notifikasi portal
+      // (FCM ke device lain akun; tap → buka app → approve < 10 dtk).
+      if (ev.ev === "approval.request" && this.record) {
+        void pushApprovalAtPortal(this.record, {
+          title: `Approval: ${ev.title}`,
+          body: ev.summary.slice(0, 200),
+          data: { hostId: this.record.deviceId, kind: "approval", approvalId: ev.approvalId },
+        });
+      }
     }
   }
 
