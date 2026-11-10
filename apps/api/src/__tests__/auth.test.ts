@@ -11,11 +11,15 @@ import type { YuiRuntime } from "@yuika/core";
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "yui-auth-"));
 process.env.YUI_AUTH_DB = path.join(TMP, "auth.db");
+// logout kini best-effort self-unlink device portal — pastikan store device
+// kosong (file tmp) agar tidak menyentuh db dev / jaringan.
+process.env.YUI_PORTAL_DEVICE_DB = path.join(TMP, "portal-device.db");
 
 const { buildApp } = await import("../app.js");
 const { _resetAuthForTests, authUserCount, createSession, findOrCreatePortalUser } = await import(
   "../auth/store.js"
 );
+const { _resetPortalStoreForTests } = await import("../portal/store.js");
 
 const fake = { listPersonas: () => [] } as unknown as YuiRuntime;
 let app: FastifyInstance;
@@ -26,6 +30,9 @@ beforeAll(() => {
 
 afterAll(() => {
   _resetAuthForTests();
+  // logout membuka portal-device store (self-unlink) — tutup db-nya dulu
+  // supaya rmSync TMP tidak EPERM (WAL file masih terkunci di Windows).
+  _resetPortalStoreForTests();
   fs.rmSync(TMP, { recursive: true, force: true });
 });
 

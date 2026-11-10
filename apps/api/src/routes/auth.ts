@@ -5,6 +5,9 @@
 import type { FastifyInstance } from "fastify";
 import { AuthStatus } from "@yuika/contracts";
 import { authUserCount, deleteSession, validateToken } from "../auth/store.js";
+import { getPortalHost } from "../portal/service.js";
+import { getHostDevice, getWebDevice } from "../portal/store.js";
+import { unlinkSelfAtPortal } from "../portal/self-unlink.js";
 import { portalBase } from "./auth-sso.js";
 
 /** Bearer token dari header Authorization (atau ?auth_token= utk SSE). */
@@ -18,6 +21,17 @@ export function registerAuthRoutes(app: FastifyInstance): void {
   app.post("/api/auth/logout", async (req, reply) => {
     const token = bearerToken(req.headers.authorization, (req.query as Record<string, unknown>)?.auth_token);
     if (token) deleteSession(token);
+    // Sign-out = keluar dari portal juga (symmetry dengan unlink portal→
+    // bye 4001): stop presence relay + best-effort self-unlink device rows
+    // (web SSO + host pairing manual). Gagal portal → tetap sign-out lokal;
+    // kunci DIPERTAHANKAN agar login berikutnya re-claim deviceId stabil.
+    const web = getWebDevice();
+    const host = getHostDevice();
+    await Promise.allSettled([
+      web ? unlinkSelfAtPortal(web) : Promise.resolve(false),
+      host ? unlinkSelfAtPortal(host) : Promise.resolve(false),
+    ]);
+    await getPortalHost().stop().catch(() => undefined);
     return reply.send({ ok: true });
   });
 

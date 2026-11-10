@@ -916,3 +916,10 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] SettingsScreen: landing menu card 4 row (icon+title+desc+chev-r) → sub-screen back chevron + konten lama terdistribusi (Budget+Usage / Provider+Routes / MCP / Modes+Danger) + FabNav 4 item active per sub.
 - [x] SessionChat send → paper plane 38x38; empty state "No Messages Yet". ProjectsScreen: stat row Doing/Review/Todo/Done + "Last update X ago" + header "N Projects with N Tasks" + ProjectSkeleton. FileViewer/ScreenView/ScreensScreen/Markdown → Txt + toast.
 - [x] tsc bersih; catatan: hosts kind mobile pakai icon monitor (sprite tak ada smartphone; host kind langka).
+
+### D74 — Sign-out symmetry: device melepas dirinya di portal (SELESAI; menunggu redeploy + APK)
+- [x] Bug user: sign-out di studio / sign-out di mobile TIDAK otomatis unlink device di portal (arah portal→device saja yang ada: sweep bye 4001). Akibat: device tetap terdaftar di halaman Devices; slot mobile 1-per-akun tetap terisi → device mobile lain ditolak 409 sampai unlink manual.
+- [x] Portal (yuika-portal) endpoint baru `POST /api/devices/unlink-self {deviceId, nonce≥16, sig}` — otorisasi signature Ed25519(deviceId|nonce) vs sign_pub tersimpan (identik auth relay §3), tanpa cookie akun; idempotent + event audit `unlinked` + rate limit claim; test 6 hijau.
+- [x] Studio `apps/api/src/portal/self-unlink.ts` (best-effort 5s, kunci DIPERTAHANKAN utk re-claim idempotent): dipanggil `POST /api/auth/logout` (web SSO + host pairing manual, lalu stop host service) dan `DELETE /api/portal/unlink` (host device sebelum clear row).
+- [x] Test `portal-unlink.test.ts` suite baru: logout → unlink-self valid utk KEDUA device + service stop + rows tetap; auth.test.ts isolasi portal-device db tmp (fix EPERM rmSync WAL).
+- [x] Mobile `unlinkSelf()` (src/portal.ts, nonce b64 + sig, timeout 6s via AbortController) dipanggil di App.signOut sebelum clearSession (best-effort; portal down tidak menggantung).

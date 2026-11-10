@@ -14,6 +14,7 @@ import { generateDeviceKeys } from "@yuika/crypto";
 import { z } from "zod";
 import { getPortalHost, defaultPortalUrl, defaultRelayUrl } from "../portal/service.js";
 import { clearHostDevice, getHostDevice, getWebDevice, saveHostDevice } from "../portal/store.js";
+import { unlinkSelfAtPortal } from "../portal/self-unlink.js";
 
 const PairRequest = z.object({
   token: z.string().min(20),
@@ -97,6 +98,11 @@ export function registerPortalRoutes(app: FastifyInstance, getRt: () => import("
   });
 
   app.delete("/api/portal/unlink", async () => {
+    // Explicit unlink dari studio: device juga dihapus dari portal (symmetry
+    // dengan unlink di halaman portal Devices) — best-effort, kunci lokal
+    // tetap dibersihkan di bawah.
+    const rec = getHostDevice();
+    if (rec) await unlinkSelfAtPortal(rec);
     await getPortalHost().stop();
     clearHostDevice();
     return { ok: true };
