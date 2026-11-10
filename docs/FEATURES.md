@@ -22,15 +22,15 @@
 
 | Fitur | Progres | Sisa inti |
 | --- | --- | --- |
-| F1 Mobile remote (Yuika-Mobile) | 60% | push approve, persona picker, Mission Control, distribusi |
+| F1 Mobile remote (Yuika-Mobile) | 85% | push e2e device + Firebase, Play internal track |
 | F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
 | F3 Design-to-code (Penpot) | 15% | infra self-host, connector, tab embed, pipeline, golden path |
-| F4 Persona training & QA | 65% | misi nyata lulus, blind test persona, scribe dokumen v1 |
+| F4 Persona training & QA | 75% | misi nyata lulus, blind test run penguji, scribe dokumen v1 |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
-F1 [######----] 60%   F2 [#######---] 75%   F3 [##--------] 15%
-F4 [######----] 65%   F5 [##--------] 20%
+F1 [########·-] 85%   F2 [#######···] 75%   F3 [##········] 15%
+F4 [#######···] 75%   F5 [##········] 20%
 ```
 
 Urutan eksekusi yang disarankan: **F1 → F2 → F4 → F3 → F5** (F3 boleh
