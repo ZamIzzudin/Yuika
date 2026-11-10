@@ -38,6 +38,10 @@ describe("persona roster  ()", () => {
     const operator = personas.find((p) => p.manifest.id === "yui-operator")!;
     expect(operator.manifest.tools).toContain("run_command");
     expect(operator.manifest.tools).toContain("mcp__*");
+    // D75: operator bisa mendelegasikan review/analisa (cap 2, bukan maestro)
+    expect(operator.manifest.tools).toContain("delegate_task");
+    expect(operator.manifest.delegation.max_concurrent).toBe(2);
+    expect(operator.manifest.delegation.can_spawn).toContain("yui-coder");
   });
 
   it("WKS-4: coder + operator punya run_in_workshop (container persist); persona lain TIDAK", () => {

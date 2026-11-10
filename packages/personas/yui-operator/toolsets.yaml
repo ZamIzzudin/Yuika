@@ -7,6 +7,7 @@ tools:
   - list_files
   - run_command
   - run_in_workshop # P2-WKS-4: container persist (home hangat lintas sleep/wake)
+  - delegate_task # D75: operator boleh mendelegasikan review/analisa (mis. coder membaca kode hasil clone) — cap 2, bukan maestro
   - terminal
   - "mcp__*"
   - todo_list

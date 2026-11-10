@@ -1,2 +1,8 @@
-can_spawn: []
+# D75: operator (Neo Yui) kini bisa mendelegasikan — kebutuhan nyata:
+# clone repo lalu minta coder membaca kode. BUKAN maestro: cap 2 paralel
+# (conductor 3), dan ini untuk review/analisa/pengerjaan spesifik, bukan
+# orkestrasi proyek penuh (itu tetap ranah Conductor).
+# Final cap juga di-min() dengan cap budget workspace (Settings → Metering).
+max_concurrent: 2
+can_spawn: [yui-coder, yui-analyst, yui-scholar, yui-sherlock, yui-scribe]
 spawnable_by: [user, yui-conductor]
