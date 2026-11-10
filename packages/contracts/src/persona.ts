@@ -100,3 +100,18 @@ export const SetPersonaShapeRequest = z.object({
   shape: OrinShapeKey,
 });
 export type SetPersonaShapeRequest = z.infer<typeof SetPersonaShapeRequest>;
+
+// ── P1-PER-5: blind test persona (anti "hanya kosmetik") ──────────────────
+
+/** POST /api/personas/blindtest — mulai run: 2-6 persona × satu prompt uji. */
+export const StartBlindTestRequest = z.object({
+  personaIds: z.array(z.string().regex(/^[a-z0-9-]+$/)).min(2).max(6),
+  promptId: z.string().min(1),
+});
+export type StartBlindTestRequest = z.infer<typeof StartBlindTestRequest>;
+
+/** POST /api/personas/blindtest/:id/guesses — tebakan penguji (letter→persona). */
+export const SubmitBlindGuessesRequest = z.object({
+  guesses: z.record(z.string().min(1).max(1), z.string().regex(/^[a-z0-9-]+$/)),
+});
+export type SubmitBlindGuessesRequest = z.infer<typeof SubmitBlindGuessesRequest>;

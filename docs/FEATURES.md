@@ -120,11 +120,11 @@ Sisa (6):
 
 100% ketika: golden path jalan di project demo tanpa keluar platform.
 
-## F4 · Persona training & QA — 65%
+## F4 · Persona training & QA — 75%
 
 Arena latihan + bukti kualitas persona: skill lahir dari misi nyata,
 dinilai buta, readiness terlihat di roster; QA persona menonton layar.
-Basis hitung: 6/9 milestone.
+Basis hitung: 6.5/9 milestone (D77 blind test infrastruktur +0.5; gerbang numeriknya menunggu penguji manusia).
 
 Selesai (6):
 - [x] Dungeon v0 penuh: misi mission.yaml, runner sandbox, skill
@@ -138,12 +138,14 @@ Selesai (6):
 - [x] Template misi phaser-research + misi user custom.
 - [x] Metering skill/dungeon ikut usage ledger (jujur).
 
-Sisa (3):
+Sisa (2.5):
 - [ ] **ROADMAP #9** Minimal 1 persona produksi lulus misi research nyata
       → skill `ready` → di-assign ke project nyata (bukti end-to-end
       nilai arena, bukan hanya demo).
-- [ ] **P1-PER-5** Blind test antar persona: >= 80% penguji menebak
-      persona benar dari output (anti "hanya kosmetik").
+- [~] **P1-PER-5** Blind test antar persona — infrastruktur lengkap D77
+      (core blindtest + tab Blind test di Persona Studio: 5 prompt uji,
+      jawaban anonim A/B/C, tebakan penguji, skor + gate ≥80%, reveal).
+      Menunggu: run nyata dengan penguji manusia lulus gerbang 80%.
 - [ ] Scribe dokumen v1: docx, paging doc_read, tabel hasil ekstraksi
       di UI (evolusi persona dokumen).
 

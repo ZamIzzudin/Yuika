@@ -20,6 +20,7 @@ import { ApprovalEngine, resolvePendingApproval, getApprovalMode, setApprovalMod
 import { listPersonas } from "./personas/loader.js";
 import { buildPersonaGrowth } from "./personas/growth.js";
 import { loadPersonaShapes, savePersonaShape } from "./personas/shapes.js";
+import { createBlindTest, BLIND_PROMPTS } from "./personas/blindtest.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
 import { WorkflowEngine } from "./workflow/engine.js";
 import { loadSkillBindings, saveSkillBindings, applyBindingAction, effectiveSkillNames, type SkillBinding, type SkillBindingsFile } from "./skills/bindings.js";
@@ -554,6 +555,18 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     );
   }
 
+  // ---- P1-PER-5: blind test persona (anti "hanya kosmetik") ----
+  const blindTest = createBlindTest({
+    workspacePath: paths.workspacePath,
+    createSession: (personaId, projectId) => createSession(personaId, projectId).sessionId,
+    runTurn: (sessionId, text) => runTurnInternal(sessionId, text),
+    lastAssistantText: (sessionId) => {
+      const msgs = store.getMessages(sessionId).filter((m) => m.role === "assistant");
+      return msgs.length ? (msgs[msgs.length - 1]!.content ?? null) : null;
+    },
+    validPersonaIds: () => listPersonas(paths.personasDir).map((p) => p.manifest.id),
+  });
+
   function createSession(
     personaId: string,
     projectId?: string | null,
@@ -809,6 +822,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     personaGrowth,
     personaShapes,
     setPersonaShape,
+    blindTest,
+    blindPrompts: BLIND_PROMPTS,
     createSession,
     listProjectSessions,
     listRecentSessions,
