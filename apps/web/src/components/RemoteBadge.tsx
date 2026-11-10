@@ -32,7 +32,7 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
   }, []);
 
   if (!st?.linked || st.remotes.length === 0) return null;
-  const label = `${st.remotes.length} remote${st.remotes.length > 1 ? "s" : ""} connected`;
+  const label = `${st.remotes.length} Remote${st.remotes.length > 1 ? "s" : ""} Connected`;
 
   if (compact) {
     return (
