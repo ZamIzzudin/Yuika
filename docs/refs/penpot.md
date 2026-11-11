@@ -1,4 +1,8 @@
-# Referensi: Penpot (eksplorasi P2-DSN-1)
+> Status D81: jalur connector Penpot self-host DIBERHENTIKAN (lihat
+> FEATURES.md F3). File ini dipertahankan sebagai referensi riset data model
+> shapes (pages/parentId/z-order/fills) yang jadi dasar canvas embedded.
+
+# [ARSIP] Referensi: Penpot (eksplorasi P2-DSN-1)
 
 > Deliverable task **P2-DSN-1** · menjawab §12.11 (eksplorasi) + §12.15 (cloud vs self-host)
 > dan menentukan **mekanisme embed** untuk tab Design (D18, §13.9).

@@ -475,3 +475,11 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - **D77 · P1-PER-5 blind test infra**: core blindtest (5 prompt, run paralel sesi fresh, anon mapping server-side, skor + gate 80%) + runtime/routes contracts + tab Blind test di Persona Studio (chip persona, polling, tebakan, reveal) + test 7/7. FEATURES F4: 65% → 75% (gerbang numerik menunggu penguji manusia + provider live).
 - **D78 · Scribe docx v1**: doc_read baca .docx zero-dep (ZIP reader + document.xml → Markdown: heading, tabel pipe, entity, tab/br) + paging offset/nextOffset semua format + PERSONA.md scribe update + test 11/11; mobile codemagic materialize google-services.json. FEATURES F4: 75% → 83% (7.5/9; sisa dua gerbang live: blind test penguji ≥80% + misi riset nyata).
 - **D79+D80 · Penpot connector + stack + tab Design**: RPC client zero-dep (Token auth, create/update-file+revn cache, share-link, viewerUrl) + 5 tools designer + deploy/penpot (compose 2.18.5 lite + override X-Frame-Options) + skill penpot-designer-basics + misi dungeon penpot-design + tab Design iframe live (runtime penpotFiles + GET /api/penpot/files + EmptyState guide); test 7/7. FEATURES F3: 15% → 50% (4/7: DSN-1 riset, DSN-2 connector, DSN-3 tab, DSN-5 seed arena; sisanya verifikasi instance live + pipeline develop golden path).
+
+## Batch D81 — P3-CANVAS embedded design canvas
+
+- model+store+7 tools design_* (core), canvas editor 2D murni di tab Design
+  (select/move/resize/create/props/zoom/undo/multi-page/autosave), route CRUD
+  design, rewiring Picasso Yui (persona/skill/misi), hapus total jalur Penpot
+  (client RPC, tools, route, stack deploy, skill lama).
+- Test 5/5 suites hijau; typecheck 6/6.

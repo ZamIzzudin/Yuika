@@ -981,3 +981,37 @@ semuanya diperbaiki:
       persona walau terdaftar global. Ditambahkan ke whitelist designer.
 - [x] Test baru designer-wiring.test.ts (skill ter-load + bundled + toolset)
       2/2; skills-manager + skill-bindings tetap hijau (12/12).
+
+### D81 — P3-CANVAS: embedded design canvas (menggantikan jalur Penpot RPC) (SELESAI-KODE)
+Arahan user: konsep integrasi Penpot self-host DITOLAK — berat (stack
+eksternal + token per user + schema ketat) dan pada dasarnya hanya MCP dengan
+server sendiri. Yang diminta: leburkan Penpot jadi komponen Yuika (repo clone
+= referensi, bukan runtime).
+- [x] Keputusan: kode Penpot (ClojureScript + WASM renderer) tidak bisa
+      di-port; yang diadopsi = data model shapes (pages → frame/rect/circle/
+      text, parentId + z-order, fills/stroke/radius) + konsep editor.
+      Implementasi TS murni zero-dep di dalam studio.
+- [x] `packages/core/src/design/` (model.ts + store.ts + index barrel;
+      export `@yuika/core/design`): file JSON di workspace/design/, revn naik
+      per mutasi; validasi English; delete frame = hapus subtree.
+- [x] 7 tools `design_*` untuk persona (list/create_file/add_page/add_shape/
+      update_shape/delete_shape/get_file) — add_shape menerima parentId frame
+      (koordinat anak relatif frame) + ringkasan get_file persona-friendly.
+- [x] `apps/web/src/components/DesignCanvas.tsx` (canvas 2D murni):
+      render + grid, select/move/resize corner handles, toolbar create
+      (frame/rect/circle/text), props panel, zoom (ctrl+wheel) + pan, undo/redo
+      (snapshot 50), multi-page, autosave 1.5 dtk; DesignTab rewrite (dropdown
+      file + tombol New; EmptyState guide).
+- [x] Route `apps/api/src/routes/design.ts` (GET list/detail, POST create +
+      add page, PUT save dengan guard stale revn 409) menggantikan route
+      penpot; runtime `designFiles()` menggantikan `penpotFiles()`.
+- [x] Rewiring Picasso Yui: PERSONA.md (canvas studio jalur utama),
+      toolsets.yaml design_*, skills.yaml bundled design-canvas-basics; skill
+      baru `design-canvas-basics` (contoh kartu login, disiplin kontras/
+      spacing/penamaan); misi dungeon `design-mockup` menggantikan
+      penpot-design.
+- [x] Cleanup jalur lama: hapus packages/core/src/penpot/, tools/penpot-tools,
+      test penpot, route penpot, skill penpot-designer-basics, deploy/penpot
+      (stack docker tak lagi dibutuhkan; instance lokal boleh dimatikan).
+- [x] Test: design.test.ts 3/3 + designer-wiring.test.ts 2/2 (skill ter-load,
+      bundled, toolset) + dungeon tests tetap hijau; typecheck 6/6; test 5/5.

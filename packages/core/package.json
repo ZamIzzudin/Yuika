@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./project/diff": "./src/project/diff.ts"
+    "./project/diff": "./src/project/diff.ts",
+    "./design": "./src/design/index.ts"
   },
   "scripts": {
     "test": "vitest run",

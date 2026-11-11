@@ -31,24 +31,24 @@ targetSkill:
   name: phaser-basics
   description: "Dasar Phaser 3, scene, sprite, input, physics arcade, untuk memulai game 2D."
 `,
-  "penpot-design": `id: penpot-design
-title: "Desain produk di Penpot (headless)"
+  "design-mockup": `id: design-mockup
+title: "Desain produk di canvas studio"
 persona: yui-designer
 goal: >
-  Pelajari protocol changes Penpot (add-obj/mod-obj/del-obj) dan skill
-  penpot-designer-basics, lalu produksi satu file desain "Login — Mobile
-  390x844" berisi: frame canvas, kartu login (frame), label + input (rect),
-  tombol (rect berwarna aksen), dan heading (text). Bahasa konten English.
+  Pelajari tools design_* dan skill design-canvas-basics, lalu produksi satu
+  file desain "Login — Mobile 390x844" berisi: frame artboard, kartu login
+  (frame), label + input (rect), tombol (rect berwarna aksen), dan heading
+  (text). Bahasa konten English.
 resources:
-  - skill:penpot-designer-basics
+  - skill:design-canvas-basics
 acceptance:
-  - File Penpot berisi minimal 8 objek dengan penamaan jelas (bukan default)
-  - Semua objek berada dalam frame 390x844, tanpa tumpang tindih liar
+  - File desain berisi minimal 8 shape dengan penamaan jelas (bukan default)
+  - Semua shape berada dalam frame 390x844, tanpa tumpang tindih liar
   - Satu tombol dengan warna aksen dan teks "Sign in"
-  - viewerUrl share-link disertakan di laporan akhir
+  - fileId + nama halaman disertakan di laporan akhir (user cek di tab Design)
 targetSkill:
-  name: penpot-designer-basics
-  description: "Menggambar desain multi-layar di Penpot secara headless (changes protocol), siap dipantau live dari tab Design."
+  name: design-canvas-basics
+  description: "Menggambar desain multi-layar di canvas studio (tools design_*), terlihat live di tab Design dan bisa langsung di-edit user."
 `,
 };
 

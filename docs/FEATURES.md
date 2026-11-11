@@ -24,12 +24,12 @@
 | --- | --- | --- |
 | F1 Mobile remote (Yuika-Mobile) | 85% | push e2e device + Firebase, Play internal track |
 | F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
-| F3 Design-to-code (Penpot) | 50% | smoke instance live, pipeline develop, golden path |
+| F3 Design-to-code (embedded canvas) | 45% | canvas editor, persona draw, pipeline develop |
 | F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
-F1 [########·-] 85%   F2 [#######···] 75%   F3 [#####·····] 50%
+F1 [########·-] 85%   F2 [#######···] 75%   F3 [#####·····] 45%
 F4 [########·-] 83%   F5 [##········] 20%
 ```
 
@@ -95,36 +95,37 @@ Sisa (2):
 100% ketika: kedua sisa selesai dan installer teruji end-to-end
 (install bersih → pakai → update otomatis → reset factory).
 
-## F3 · Design-to-code (Penpot) — 50%
+## F3 · Design-to-code (embedded canvas) — 45%
 
-Pipeline desain → kode ter-embed: persona Designer produksi file Penpot di
-fase design, fase develop membacanya jadi komponen kode + diff. Basis
-hitung: 4/7 milestone (D79 connector+stack, D80 tab Design, DSN-5 seed).
+> **Putusan ulang (D81, arahan user):** jalur connector Penpot self-host
+> (instance + token + RPC) DIBERHENTIKAN — terlalu berat (requirement stack
+> eksternal, token per user, schema ketat). Yang dipertahankan dari Penpot
+> adalah REFERENSI: data model shapes + konsep editor. Implementasi Yuika
+> sendiri: **canvas editor embedded zero-dep** (tab Design) + tools
+> `design_*` — tanpa server eksternal, tanpa token, user & persona menggambar
+> di file yang sama. Riwayat jalur lama: TASKS.md D79–D79c.
 
-Selesai (1):
-- [x] **P2-DSN-1** Riset Penpot + keputusan arsitektur: self-host,
-      RPC API v0 (access token, update-file, share-link), MCP resmi v1
-      menyusul, exporter WASM untuk artefak (`docs/refs/penpot.md`).
+Selesai (2):
+- [x] **Model + store + tools** (D81): pages → frame/rect/circle/text
+      (parentId + z-order, fills/stroke/radius/text), JSON di
+      workspace/design/, revn per mutasi; 7 tools design_* (list/create_file/
+      add_page/add_shape/update_shape/delete_shape/get_file) dengan validasi
+      English + ringkasan persona-friendly. Test design.test.ts 3/3 +
+      designer-wiring 2/2.
+- [x] **Canvas editor embedded** (D81): tab Design = editor canvas 2D
+      murni (bukan iframe): render frame/rect/circle/text + grid, select +
+      move + resize handles, toolbar create, props panel (fill/stroke/radius/
+      text/opacity), zoom/pan, undo/redo, multi-page, autosave 1.5 dtk +
+      guard revn (409 stale). Persona ↔ user melihat saling mengedit
+      (polling 12-15 dtk).
 
 Sisa (3):
-- [x] Instance **Penpot self-host** berjalan + akun token — live di mesin dev
-      (D79b): e2e tool layer hijau end-to-end (register→token→create→update→
-      share-link→viewer 200), override X-Frame-Options terverifikasi,
-      kontrak vern/fdata/accept-json dikunci.
-- [x] **D79 P2-DSN-2** Connector RPC (client zero-dep: Token auth,
-      create/update-file + revn cache, share-link, get-file ringkas) +
-      tools penpot_status/setup_project/create_file/update_file/get_file +
-      PERSONA.md Picasso Yui (Penpot jalur utama) + skill
-      penpot-designer-basics; test 7/7.
-- [x] **D80 P2-DSN-3** Tab Design: viewer share-link Penpot ter-embed
-      (iframe live), pilihan file + revn, reload/open-in-Penpot, EmptyState
-      guide (belum konfigurasi / belum ada file), polling 15 dtk.
-- [ ] **P2-DSN-4** Pipeline develop: baca shapes + tokens → generate
+- [ ] **Persona draw loop hidup**: Picasso Yui (PERSONA.md + skill
+      design-canvas-basics + misi design-mockup sudah ter-wire) lulus run
+      nyata: user minta desain → file jadi → user edit → persona baca balik.
+- [ ] **P2-DSN-4** Pipeline develop: baca design_get_file → generate
       komponen → diff di tab Files → acceptance di human gate.
-- [~] **P2-DSN-5** Skill Penpot Designer: seed lengkap (skill
-      penpot-designer-basics + misi dungeon penpot-design, acceptance 8 objek
-      + tombol Sign in + viewerUrl); lulus gerbang menunggu run live.
-- [ ] **P2-DSN-6** Golden path E2E (design → lihat live → develop → diff)
+- [ ] **P2-DSN-6** Golden path E2E (design → edit user → develop → diff)
       hijau 2x berturut.
 
 100% ketika: golden path jalan di project demo tanpa keluar platform.

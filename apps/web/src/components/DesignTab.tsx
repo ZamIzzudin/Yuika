@@ -1,37 +1,32 @@
 "use client";
-// P2-DSN-3: tab Design — canvas Penpot ter-embed (viewer share-link).
-// File desain dibuat/diubah persona Designer lewat tools penpot_*; tab ini
-// hanya MEMANTAU live (viewer menerima perubahan realtime via websocket).
+// P3-CANVAS: tab Design — editor canvas embedded (bukan iframe eksternal).
+// File desain = JSON host; dibuat oleh persona (tools design_*) atau user
+// (tombol New); keduanya melihat perubahan satu sama lain (polling).
 import { useCallback, useEffect, useState } from "react";
-import { ArrowsClockwise, ArrowSquareOut, FrameCorners } from "@phosphor-icons/react";
+import { FrameCorners, Plus } from "@phosphor-icons/react";
 import { apiUrl, authFetch } from "@/lib/api";
-import { Button, Chip, EmptyState, Select } from "./ui";
+import { Button, EmptyState, Select } from "./ui";
+import { DesignCanvas } from "./DesignCanvas";
 
-interface PenpotFileRow {
-  fileId: string;
+interface DesignRow {
+  id: string;
   name: string;
   revn: number;
-  viewerUrl: string | null;
-}
-
-interface PenpotFilesResponse {
-  configured: boolean;
-  baseUrl: string;
-  files: PenpotFileRow[];
+  updatedAt: number;
+  pages: number;
 }
 
 export function DesignTab(): React.ReactElement {
-  const [cfg, setCfg] = useState<PenpotFilesResponse | null>(null);
-  const [sel, setSel] = useState<string>("");
-  const [frameKey, setFrameKey] = useState(0);
+  const [files, setFiles] = useState<DesignRow[] | null>(null);
+  const [sel, setSel] = useState("");
 
   const refresh = useCallback(async () => {
     try {
-      const r = await authFetch(apiUrl("/api/penpot/files"));
+      const r = await authFetch(apiUrl("/api/design/files"));
       if (r.ok) {
-        const j = (await r.json()) as PenpotFilesResponse;
-        setCfg(j);
-        setSel((cur) => (j.files.some((f) => f.fileId === cur) ? cur : (j.files[0]?.fileId ?? "")));
+        const j = (await r.json()) as { files: DesignRow[] };
+        setFiles(j.files);
+        setSel((cur) => (j.files.some((f) => f.id === cur) ? cur : (j.files[0]?.id ?? "")));
       }
     } catch {
       /* host belum siap */
@@ -40,78 +35,62 @@ export function DesignTab(): React.ReactElement {
 
   useEffect(() => {
     void refresh();
-    const t = setInterval(() => void refresh(), 15_000); // file baru dari persona muncul sendiri
+    const t = setInterval(() => void refresh(), 15_000);
     return () => clearInterval(t);
   }, [refresh]);
 
-  if (!cfg) return <EmptyState icon={<FrameCorners />} title="Loading design files…" />;
+  const create = async () => {
+    const name = window.prompt("Design file name", "Untitled design");
+    if (!name) return;
+    const r = await authFetch(apiUrl("/api/design/files"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (r.ok) {
+      const j = (await r.json()) as { id: string };
+      await refresh();
+      setSel(j.id);
+    }
+  };
 
-  if (!cfg.configured) {
-    return (
-      <EmptyState
-        icon={<FrameCorners />}
-        title="Penpot is not connected yet"
-        hint={
-          <>
-            Set <code className="rounded bg-inset px-1">YUI_PENPOT_URL</code> (self-host origin, e.g.
-            http://localhost:9001) and <code className="rounded bg-inset px-1">YUI_PENPOT_TOKEN</code>{" "}
-            (personal access token from Penpot profile settings) on the host, then restart it. See{" "}
-            <code className="rounded bg-inset px-1">deploy/penpot/</code> for the bundled stack.
-          </>
-        }
-      />
-    );
-  }
+  if (!files) return <EmptyState icon={<FrameCorners />} title="Loading design files…" />;
 
-  const file = cfg.files.find((f) => f.fileId === sel) ?? null;
-
-  if (!file || !file.viewerUrl) {
+  if (files.length === 0) {
     return (
       <EmptyState
         icon={<FrameCorners />}
         title="No design files yet"
-        hint={
-          <>
-            Ask the Designer persona to create one (tool{" "}
-            <code className="rounded bg-inset px-1">penpot_create_file</code>) or run{" "}
-            <code className="rounded bg-inset px-1">penpot_setup_project</code> first. The share-link
-            viewer appears here and updates live while the persona draws.
-          </>
+        hint="Ask the designer persona to design a screen (it draws via design_* tools), or start one yourself."
+        action={
+          <Button variant="primary" onClick={() => void create()}>
+            <Plus size={15} /> New design file
+          </Button>
         }
-        action={<Button onClick={() => void refresh()}><ArrowsClockwise size={13} aria-hidden /> Refresh</Button>}
       />
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={sel} onChange={(e) => setSel(e.target.value)} aria-label="Design file">
-          {cfg.files.map((f) => (
-            <option key={f.fileId} value={f.fileId}>
-              {f.name} (rev {f.revn})
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center gap-2 border-b border-line px-3 py-2">
+        <Select value={sel} onChange={(e) => setSel(e.target.value)} aria-label="Design file" className="max-w-56">
+          {files.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
             </option>
           ))}
         </Select>
-        <Chip tone="accent">live viewer</Chip>
-        <span className="flex-1" />
-        <Button size="sm" variant="secondary" onClick={() => setFrameKey((k) => k + 1)}>
-          <ArrowsClockwise size={13} aria-hidden /> Reload
+        <Button variant="ghost" className="!px-2 !py-1" title="New design file" onClick={() => void create()}>
+          <Plus size={15} />
         </Button>
-        <a href={file.viewerUrl} target="_blank" rel="noreferrer">
-          <Button size="sm" variant="secondary">
-            <ArrowSquareOut size={13} aria-hidden /> Open in Penpot
-          </Button>
-        </a>
+        <span className="ml-auto text-xs text-dim">revn {files.find((f) => f.id === sel)?.revn ?? 0}</span>
       </div>
-      {/* viewer share-link: tanpa X-Frame-Options (deploy override), updates realtime */}
-      <iframe
-        key={`${file.fileId}-${frameKey}`}
-        src={file.viewerUrl}
-        title={`Penpot design: ${file.name}`}
-        className="min-h-0 w-full flex-1 rounded-xl border border-line bg-surface"
-        allow="clipboard-read; clipboard-write"
-      />
+      {sel ? (
+        <div className="min-h-0 flex-1">
+          <DesignCanvas key={sel} fileId={sel} />
+        </div>
+      ) : null}
     </div>
   );
 }

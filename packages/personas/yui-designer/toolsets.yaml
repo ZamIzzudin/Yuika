@@ -10,9 +10,11 @@ tools:
   - todo_update
   - memory_append
   - session_search
-  - penpot_status
-  - penpot_setup_project
-  - penpot_create_file
-  - penpot_update_file
-  - penpot_get_file
+  - design_list
+  - design_create_file
+  - design_add_page
+  - design_add_shape
+  - design_update_shape
+  - design_delete_shape
+  - design_get_file
   - "mcp__*"
