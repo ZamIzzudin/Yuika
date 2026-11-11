@@ -957,3 +957,11 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 ### D80 — Penpot P2-DSN-3 tab Design (SELESAI, live verify menyusul)
 - [x] Runtime `penpotFiles()` (configured + baseUrl + file list + viewerUrl dari state); API `GET /api/penpot/files`.
 - [x] Tab "Design" workspace: dropdown file (dgn revn), iframe viewer share-link full-height, reload/open-in-Penpot; EmptyState terstruktur utk belum-konfigurasi / belum-ada-file (hint tool yang tepat); polling 15 dtk (file baru dari persona muncul sendiri).
+
+### D79b — Penpot: verifikasi LIVE terhadap instance lokal 2.18.5 (SELESAI)
+- [x] Instance self-host BERJALAN di mesin dev (deploy/penpot up; 6 service healthy; frontend :9001). Perbaikan compose: flags WAJIB prefix `enable-`/`disable-` (`enable-access-tokens`, bukan `access-tokens`) — tanpa itu PAT ditolak diam-diam (profile anonymous).
+- [x] Kontrak terverifikasi live: (1) RPC menerima `content-type: application/json` tapi BALAS transit kecuali header `accept: application/json` → client kirim accept; (2) `update-file` WAJIB `vern` (2.18; conflict-check) + hasil `{revn, lagged:[{revn}]}` — revn baru di lagged terakhir; (3) `get-file` param `id` (bukan fileId); (4) file data format fdata: `pages` = [page-id], detail nama+objek di `pagesIndex[pageId]`; (5) akses token dibuat via RPC `create-access-token` dengan cookie `auth-token` hasil login (login-with-password tanpa body-token).
+- [x] Shape minimal add-obj terverifikasi (validasi malli ketat): selrect {x,y,w,h,x1,y1,x2,y2} + points[4] + transform/transformInverse {a..f} + parentId/frameId + frame wajib `shapes:[]`; fills TANPA field style.
+- [x] Tool auto-heal: mod-obj/del-obj/mov-objects tanpa pageId = no-op server → tool inject pageId cache otomatis.
+- [x] E2E TOOL LAYER LIVE HIJAU: status → setup_project → create_file (share-link + viewerUrl 200) → update_file (frame 390x844 + Card + Button; revn 0→1) → get_file (4 objek) → mod-obj rename (revn 2, nama berubah). Override nginx terverifikasi: response TANPA X-Frame-Options → iframe embed jalan.
+- [x] Skill diperbarui dengan template shape live; unit test mock disinkronkan format fdata + vern (7/7).

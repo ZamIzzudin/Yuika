@@ -8,7 +8,7 @@
 #   + disable-email-verification + disable-secure-session-cookies (dev http).
 # Jalankan: docker compose up -d  (butuh .env: PENPOT_VERSION, PENPOT_SECRET_KEY)
 x-flags: &penpot-flags
-  PENPOT_FLAGS: login-with-password registration access-tokens disable-email-verification disable-secure-session-cookies enable-prepl-server
+  PENPOT_FLAGS: enable-login-with-password enable-registration enable-access-tokens disable-email-verification disable-secure-session-cookies enable-prepl-server
 
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001

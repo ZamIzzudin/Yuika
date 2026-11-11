@@ -76,14 +76,15 @@ describe("Penpot client (RPC)", () => {
 
   it("updateFile mengirim id/sessionId/revn/changes dan menangkap revn baru", async () => {
     const { calls, doFetch } = mockPenpot({
-      "update-file": () => [{ revn: 7, changes: [] }],
+      "update-file": () => ({ revn: 6, lagged: [{ revn: 7 }] }),
     });
     const c = createPenpotClient({ baseUrl: "http://p", token: "t" }, doFetch);
-    const r = await c.updateFile("f1", [{ type: "add-obj", pageId: "pg", obj: { id: "o1" } }], 6);
+    const r = await c.updateFile("f1", [{ type: "add-obj", pageId: "pg", obj: { id: "o1" } }], 6, 0);
     expect(r.revn).toBe(7);
     const p = calls[0]!.params;
     expect(p.id).toBe("f1");
     expect(p.revn).toBe(6);
+    expect(p.vern).toBe(0);
     expect(Array.isArray(p.changes)).toBe(true);
     expect(typeof p.sessionId).toBe("string");
   });
@@ -106,14 +107,14 @@ describe("Penpot tools (P2-DSN-2)", () => {
         "get-teams": () => ({ teams: [{ id: "team-1", name: "Studio" }] }),
         "get-projects": () => [],
         "create-project": (p) => ({ id: "proj-1", name: p.name, teamId: p.teamId }),
-        "create-file": () => ({ id: "file-1", name: "Mockup", revn: 0, data: { pages: [{ id: "pg-1", name: "Page 1", objects: {} }] } }),
+        "create-file": () => ({ id: "file-1", name: "Mockup", revn: 0, vern: 0, data: { pages: ["pg-1"], pagesIndex: { "pg-1": { name: "Page 1", objects: {} } } } }),
         "create-share-link": (p) => ({ id: "share-1", pages: p.pages }),
-        "update-file": () => [{ revn: 3, changes: [] }],
+        "update-file": () => ({ revn: 2, lagged: [{ revn: 3 }] }),
         "get-file": () => ({
           id: "file-1",
           name: "Mockup",
           revn: 3,
-          data: { pages: [{ id: "pg-1", name: "Page 1", objects: { o1: { id: "o1", name: "Hero", type: "frame", x: 0, y: 0, width: 120, height: 80 } } }] },
+          data: { pages: ["pg-1"], pagesIndex: { "pg-1": { name: "Page 1", objects: { o1: { id: "o1", name: "Hero", type: "frame", x: 0, y: 0, width: 120, height: 80 } } } } },
         }),
       },
       async () => {

@@ -9,6 +9,7 @@ export interface PenpotFileState {
   name: string;
   shareId?: string;
   revn: number;
+  vern?: number;
   pages?: Array<{ id: string; name: string }>;
   updatedAt: number;
 }

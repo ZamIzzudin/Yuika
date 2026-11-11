@@ -31,16 +31,18 @@ function parseChanges(input: string | Array<Record<string, unknown>>): Array<Rec
   return arr as Array<Record<string, unknown>>;
 }
 
-/** Ringkas objek satu halaman: cukup untuk generate komponen (fase develop). */
+/** Ringkas objek semua halaman (fdata: objek ada di pagesIndex[pageId].objects):
+ *  cukup untuk generate komponen (fase develop). */
 function summarizePageObjects(data: Record<string, unknown>): Array<Record<string, unknown>> {
-  const pages = Array.isArray(data.pages) ? (data.pages as Array<Record<string, unknown>>) : [];
   const out: Array<Record<string, unknown>> = [];
-  for (const p of pages) {
-    const objects = (p.objects ?? {}) as Record<string, Record<string, unknown>>;
-    for (const [id, o] of Object.entries(objects)) {
+  const ids = Array.isArray(data.pages) ? (data.pages as unknown[]) : [];
+  const index = (data.pagesIndex as Record<string, { name?: string; objects?: Record<string, Record<string, unknown>> }> | undefined) ?? {};
+  for (const pid of ids) {
+    const page = index[String(pid)];
+    for (const [id, o] of Object.entries(page?.objects ?? {})) {
       out.push({
-        pageId: String(p.id),
-        pageName: String(p.name ?? ""),
+        pageId: String(pid),
+        pageName: page?.name ?? "",
         id,
         name: o.name ?? "",
         type: o.type ?? "",
@@ -139,7 +141,7 @@ export function registerPenpotTools(workspacePath: string): void {
         const firstPage = file.pages[0];
         if (!firstPage) throw new Error("file baru tanpa halaman (aneh, cek versi Penpot)");
         const share = await c.createShareLink(file.id, [firstPage.id], { whoInspect: "all" });
-        state.files[file.id] = { name: args.name, shareId: share.id, revn: file.revn, pages: file.pages, updatedAt: Date.now() };
+        state.files[file.id] = { name: args.name, shareId: share.id, revn: file.revn, vern: file.vern, pages: file.pages, updatedAt: Date.now() };
         state.lastFileId = file.id;
         savePenpotState(workspacePath, state);
         return { result: { fileId: file.id, name: file.name, revn: file.revn, page: firstPage, shareId: share.id, viewerUrl: c.viewerUrl(share.id, firstPage.id) } };
@@ -173,8 +175,31 @@ export function registerPenpotTools(workspacePath: string): void {
         return { result: { error: "file tidak dikenal; panggil penpot_create_file dulu (atau berikan fileId)" }, isError: true };
       }
       try {
-        const r = await c.updateFile(fileId, changes, args.revn ?? cached.revn);
+        // change mod-obj/del-obj/mov-objects TANPA pageId = no-op server-side
+        // (jatuh ke branch component-id) → auto-inject page pertama cache.
+        const fallbackPage = cached.pages?.[0]?.id;
+        if (fallbackPage) {
+          for (const ch of changes) {
+            const t = typeof ch.type === "string" ? ch.type : undefined;
+            if (t === "del-obj" || t === "mov-objects" || (t && t.startsWith("mod-"))) {
+              if (!ch.pageId && !ch.componentId && !ch["page-id"] && !ch["component-id"]) {
+                ch.pageId = fallbackPage;
+                ch["page-id"] = fallbackPage;
+              }
+            }
+          }
+        }
+        // vern wajib utk optimistic concurrency; auto-heal via get-file bila cache belum punya
+        let revn = args.revn ?? cached.revn;
+        let vern = cached.vern;
+        if (vern === undefined) {
+          const got = await c.getFile(fileId);
+          revn = got.summary.revn;
+          vern = got.summary.vern;
+        }
+        const r = await c.updateFile(fileId, changes, revn, vern);
         cached.revn = r.revn;
+        cached.vern = r.vern;
         cached.updatedAt = Date.now();
         savePenpotState(workspacePath, state);
         const viewerUrl = cached.shareId ? c.viewerUrl(cached.shareId) : null;
@@ -204,6 +229,7 @@ export function registerPenpotTools(workspacePath: string): void {
       try {
         const { summary, data } = await c.getFile(fileId);
         cached.revn = summary.revn; // refresh cache (membantu update setelah get)
+        cached.vern = summary.vern;
         cached.pages = summary.pages;
         cached.updatedAt = Date.now();
         savePenpotState(workspacePath, state);

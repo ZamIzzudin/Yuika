@@ -29,31 +29,42 @@ Array of change objects. Yang paling sering dipakai:
 
 ### add-obj — tambah shape/frame/text
 
+Shape WAJIB lengkap (server memvalidasi ketat; template berikut terverifikasi
+live terhadap Penpot 2.18.5):
+
 ```json
 {
   "type": "add-obj",
   "pageId": "<page id dari penpot_create_file>",
-  "frameId": "<frame id (uuid); untuk objek level page = id page root>",
+  "frameId": "<page id — objek level page; id frame untuk anak>",
   "id": "<uuid objek>",
   "obj": {
-    "id": "<uuid sama dengan id change>",
+    "id": "<uuid sama>",
     "name": "Hero Section",
     "type": "frame",
     "x": 0, "y": 0, "width": 1440, "height": 320,
-    "fills": [{ "fillColor": "#007cf7", "fillOpacity": 1, "style": "solid" }],
-    "parentId": "<page id untuk level page, atau id frame untuk anak>"
+    "selrect": { "x": 0, "y": 0, "width": 1440, "height": 320, "x1": 0, "y1": 0, "x2": 1440, "y2": 320 },
+    "points": [ { "x": 0, "y": 0 }, { "x": 1440, "y": 0 }, { "x": 1440, "y": 320 }, { "x": 0, "y": 320 } ],
+    "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
+    "transformInverse": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
+    "parentId": "<page id atau id frame induk>",
+    "frameId": "<sama dengan parentId>",
+    "shapes": [],
+    "fills": [{ "fillColor": "#007cf7", "fillOpacity": 1 }]
   }
 }
 ```
 
-- `type` shape: `frame`, `rect`, `text`, `circle`, `path`, `image`.
+- `type` shape: `frame`, `rect`, `text`, `circle`, `path`.
 - Semua id = UUID v4 unik (generate sendiri, satu objek satu id).
+- `frame`/group WAJIB `"shapes": []` (daftar anak; isi id anak bila menata
+  hirarki). `rect`/`text` tidak butuh `shapes`.
+- `selrect` = posisi/ukuran juga sebagai rect {x,y,width,height,x1,y1,x2,y2};
+  `points` = 4 sudut; keduanya harus konsisten dengan x/y/width/height.
+- `fills` TANPA field style: `{"fillColor":"#hex","fillOpacity":1}`.
 - `text` butuh tambahan: `"content": {"type":"root","children":[{"type":"paragraph-set","children":[{"type":"paragraph","children":[{"type":"text","text":"Judul Halaman"}]}]}]}`,
   `"fillColor": "#1a1a1a"`, `"fontSize": "32"`.
-- `parentId`/`frameId`: objek di dalam frame → id frame; objek level page →
-  id page (root).
-- Border: `"strokeWidth": 1, "strokeColor": "#d4d4d4", "strokeAlignment": "inner"`,
-  `"strokeStyle": "solid"`.
+- Border: `"strokeWidth": 1, "strokeColor": "#d4d4d4", "strokeAlignment": "inner"`.
 - Sudut membulat: `"rx": 8, "ry": 8`.
 
 ### mod-obj — ubah properti objek yang sudah ada
@@ -61,11 +72,11 @@ Array of change objects. Yang paling sering dipakai:
 ```json
 { "type": "mod-obj", "id": "<uuid objek>", "operations": [
   { "type": "set", "attr": "width", "val": 720 },
-  { "type": "set", "attr": "fills", "val": [{ "fillColor": "#22c55e", "fillOpacity": 1, "style": "solid" }] }
+  { "type": "set", "attr": "fills", "val": [{ "fillColor": "#22c55e", "fillOpacity": 1 }] }
 ] }
 ```
 
-`attr` = nama properti (`x`, `y`, `width`, `height`, `name`, `fills`,
+`attr` = nama properti kebab (`x`, `y`, `width`, `height`, `name`, `fills`,
 `hidden`, `locked`, ...). `operations` bisa beberapa sekaligus per objek.
 
 ### del-obj — hapus
@@ -96,5 +107,5 @@ Array of change objects. Yang paling sering dipakai:
 
 - Upload gambar/asset media headless belum didukung (pakai shape + warna).
 - Design tokens library (set-tokens) belum; warna cukup konsisten manual.
-- Kalau update ditolak (`revn` mismatch): `penpot_get_file` sekali untuk
+- Kalau update ditolak `revn`/`vern` mismatch: `penpot_get_file` sekali untuk
   refresh cache, lalu ulangi batch terakhir.

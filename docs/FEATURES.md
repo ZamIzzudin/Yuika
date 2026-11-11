@@ -107,9 +107,10 @@ Selesai (1):
       menyusul, exporter WASM untuk artefak (`docs/refs/penpot.md`).
 
 Sisa (3):
-- [~] Instance **Penpot self-host** berjalan + akun token — stack siap
-      (deploy/penpot, compose 2.18.5 + override X-Frame-Options), menunggu
-      pull image selesai + registrasi akun + token utk smoke e2e live.
+- [x] Instance **Penpot self-host** berjalan + akun token — live di mesin dev
+      (D79b): e2e tool layer hijau end-to-end (register→token→create→update→
+      share-link→viewer 200), override X-Frame-Options terverifikasi,
+      kontrak vern/fdata/accept-json dikunci.
 - [x] **D79 P2-DSN-2** Connector RPC (client zero-dep: Token auth,
       create/update-file + revn cache, share-link, get-file ringkas) +
       tools penpot_status/setup_project/create_file/update_file/get_file +

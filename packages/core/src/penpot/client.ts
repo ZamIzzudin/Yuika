@@ -38,6 +38,7 @@ export interface PenpotFileSummary {
   id: string;
   name: string;
   revn: number;
+  vern: number;
   modifiedAt: string | null;
   pages: PenpotPageSummary[];
 }
@@ -56,7 +57,7 @@ export interface PenpotClient {
   createProject(teamId: string, name: string): Promise<{ id: string; name: string; teamId: string }>;
   createFile(projectId: string, name: string): Promise<PenpotFileSummary>;
   getFile(fileId: string): Promise<{ summary: PenpotFileSummary; data: Record<string, unknown> }>;
-  updateFile(fileId: string, changes: unknown[], revn: number): Promise<{ revn: number }>;
+  updateFile(fileId: string, changes: unknown[], revn: number, vern: number): Promise<{ revn: number; vern: number }>;
   createShareLink(fileId: string, pageIds: string[], opts?: { whoComment?: string; whoInspect?: string }): Promise<PenpotShareLink>;
   viewerUrl(shareId: string, pageId?: string): string;
 }
@@ -70,8 +71,10 @@ export function penpotConfig(): PenpotConfigSource {
 }
 
 function toPages(data: Record<string, unknown>): PenpotPageSummary[] {
-  const pages = Array.isArray(data.pages) ? (data.pages as Array<Record<string, unknown>>) : [];
-  return pages.map((p) => ({ id: String(p.id), name: String(p.name ?? "") }));
+  // fdata (2.18): data.pages = [page-id]; detail (name, objects) ada di pagesIndex
+  const ids = Array.isArray(data.pages) ? (data.pages as unknown[]) : [];
+  const index = (data.pagesIndex as Record<string, Record<string, unknown>> | undefined) ?? {};
+  return ids.map((id) => ({ id: String(id), name: String(index[String(id)]?.name ?? "") }));
 }
 
 function fileSummary(f: Record<string, unknown>): PenpotFileSummary {
@@ -80,6 +83,7 @@ function fileSummary(f: Record<string, unknown>): PenpotFileSummary {
     id: String(f.id),
     name: String(f.name ?? ""),
     revn: Number(f.revn ?? 0),
+    vern: Number(f.vern ?? 0),
     modifiedAt: typeof f.modifiedAt === "string" ? f.modifiedAt : null,
     pages: toPages(data),
   };
@@ -98,7 +102,7 @@ export function createPenpotClient(
     try {
       res = await doFetch(`${baseUrl}/api/main/methods/${method}`, {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Token ${cfg.token}` },
+        headers: { "content-type": "application/json", accept: "application/json", authorization: `Token ${cfg.token}` },
         body: JSON.stringify(params),
       });
     } catch (e) {
@@ -138,19 +142,25 @@ export function createPenpotClient(
     },
     createFile: async (projectId, name) => {
       const f = await call<Record<string, unknown>>("create-file", { projectId, name });
-      return fileSummary(f);
+      let summary = fileSummary(f);
+      // beberapa versi tidak menyertakan pages di create → refresh sekali
+      if (summary.pages.length === 0) {
+        const got = await call<Record<string, unknown>>("get-file", { id: summary.id });
+        summary = fileSummary(got);
+      }
+      return summary;
     },
     getFile: async (fileId) => {
-      const f = await call<Record<string, unknown>>("get-file", { fileId });
+      const f = await call<Record<string, unknown>>("get-file", { id: fileId });
       const data = (f.data as Record<string, unknown> | undefined) ?? {};
       return { summary: fileSummary(f), data };
     },
-    updateFile: async (fileId, changes, revn) => {
-      const r = await call<Record<string, unknown>>("update-file", { id: fileId, sessionId, revn, changes });
-      // hasil: vektor hasil update; revn baru di tiap elemen
-      const arr = Array.isArray(r) ? r : [];
-      const last = arr[arr.length - 1] as Record<string, unknown> | undefined;
-      return { revn: Number(last?.revn ?? revn) };
+    updateFile: async (fileId, changes, revn, vern) => {
+      const r = await call<Record<string, unknown>>("update-file", { id: fileId, sessionId, revn, vern, changes });
+      // hasil 2.18: {revn, lagged:[{revn,...}]}; revn baru = elemen lagged terakhir
+      const lagged = Array.isArray(r.lagged) ? (r.lagged as Array<Record<string, unknown>>) : [];
+      const last = lagged[lagged.length - 1];
+      return { revn: Number(last?.revn ?? r.revn ?? revn), vern };
     },
     createShareLink: async (fileId, pageIds, opts) => {
       const s = await call<Record<string, unknown>>("create-share-link", {
