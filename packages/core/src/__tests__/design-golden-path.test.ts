@@ -23,9 +23,17 @@ beforeEach(() => {
 });
 afterEach(() => fs.rmSync(ws, { recursive: true, force: true }));
 
-const ctx = { sessionId: "s", turnId: "t", workspacePath: ws, emit: () => {}, requestApproval: async () => true };
+// ctx dibuat per-dispatch (bukan konstanta modul): `ws` baru terisi di
+// beforeEach — konstanta modul membekankan "" dan write_file lari ke CWD.
+const mkCtx = () => ({
+  sessionId: "s",
+  turnId: "t",
+  workspacePath: ws,
+  emit: () => {},
+  requestApproval: async () => true,
+});
 const run = async (name: string, args: unknown) => {
-  const res = await registry.dispatch(name, args, ctx);
+  const res = await registry.dispatch(name, args, mkCtx());
   const r = res.result as Record<string, unknown>;
   if (res.isError) throw new Error(String(r.error));
   return r;
