@@ -940,3 +940,9 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] UI `BlindTestPanel` (tab "Blind test" di Persona Studio): chip pilih persona + prompt, polling 2.5s saat running, kartu jawaban per huruf (warna huruf), dropdown tebakan, submit → skor + correct/wrong reveal + nama asli; riwayat run.
 - [x] Test `blindtest.test.ts` 7/7 (anon tidak bocor, reveal setelah submit, gate 60% fail vs 100% pass, run aktif unik, validasi, partial failure).
 - [~] **Gerbang ≥80% penguji menunggu run nyata** (butuh provider live + penguji manusia): jalankan dari Persona Studio → Blind test; bila <80% iterasi PERSONA.md (voice/proses/format) lalu run ulang.
+
+### D78 — Scribe dokumen v1: docx + paging offset + tabel (SELESAI)
+- [x] `doc_read` dukung Word `.docx` ZERO-DEP: pembaca ZIP sendiri (EOCD → central directory → local header; method 0 stored & 8 deflate via node:zlib), `word/document.xml` → Markdown: paragraf, heading (`Heading1-6`, `Title` → `#`), `w:tab`/`w:br`, entity decode (`&amp;` dsb, numeric), tabel `w:tbl` → pipe table Markdown (baris pertama header, pipe dalam sel di-escape, sel multi-paragraf digabung).
+- [x] Paging semua format: param `offset` (default 0) + hasil `offset`/`nextOffset`/`note` ("panggil lagi dengan offset=N"); offset melebihi panjang → pesan jelas; PERSONA.md Poe Yui diperbarui (pahami docx, lanjutkan nextOffset sampai null).
+- [x] Test 11/11 doc-tools (fixture docx dibangun via ZIP writer mini in-test: deflate + stored; tabel, entity, paging 4 halaman, docx rusak, offset overflow) — suite doc 18/18 dengan blindtest.
+- [x] Mobile: `codemagic.yaml` step "Materialize google-services.json" (env `GOOGLE_SERVICES_JSON` raw/base64; tanpa env build tetap jalan push off) + PUSH-SETUP.md diperbarui — APK CI kini bisa membawa FCM.

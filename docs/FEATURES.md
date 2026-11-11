@@ -25,12 +25,12 @@
 | F1 Mobile remote (Yuika-Mobile) | 85% | push e2e device + Firebase, Play internal track |
 | F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
 | F3 Design-to-code (Penpot) | 15% | infra self-host, connector, tab embed, pipeline, golden path |
-| F4 Persona training & QA | 75% | misi nyata lulus, blind test run penguji, scribe dokumen v1 |
+| F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
 F1 [########·-] 85%   F2 [#######···] 75%   F3 [##········] 15%
-F4 [#######···] 75%   F5 [##········] 20%
+F4 [########·-] 83%   F5 [##········] 20%
 ```
 
 Urutan eksekusi yang disarankan: **F1 → F2 → F4 → F3 → F5** (F3 boleh
@@ -120,7 +120,7 @@ Sisa (6):
 
 100% ketika: golden path jalan di project demo tanpa keluar platform.
 
-## F4 · Persona training & QA — 75%
+## F4 · Persona training & QA — 83%
 
 Arena latihan + bukti kualitas persona: skill lahir dari misi nyata,
 dinilai buta, readiness terlihat di roster; QA persona menonton layar.
@@ -138,7 +138,7 @@ Selesai (6):
 - [x] Template misi phaser-research + misi user custom.
 - [x] Metering skill/dungeon ikut usage ledger (jujur).
 
-Sisa (2.5):
+Sisa (1.5):
 - [ ] **ROADMAP #9** Minimal 1 persona produksi lulus misi research nyata
       → skill `ready` → di-assign ke project nyata (bukti end-to-end
       nilai arena, bukan hanya demo).
@@ -146,11 +146,15 @@ Sisa (2.5):
       (core blindtest + tab Blind test di Persona Studio: 5 prompt uji,
       jawaban anonim A/B/C, tebakan penguji, skor + gate ≥80%, reveal).
       Menunggu: run nyata dengan penguji manusia lulus gerbang 80%.
-- [ ] Scribe dokumen v1: docx, paging doc_read, tabel hasil ekstraksi
-      di UI (evolusi persona dokumen).
+- [x] **D78** Scribe dokumen v1: docx zero-dep (ZIP + document.xml → Markdown,
+      heading + tabel pipe), paging offset/nextOffset semua format, PERSONA.md
+      scribe pahami nextOffset; test 11/11.
 
-100% ketika: tiga sisa selesai (arena terbukti menghasilkan persona yang
-terbedakan dan siap pakai).
+100% ketika: dua gerbang live selesai — blind test penguji manusia ≥80%
+dan 1 persona produksi lulus misi riset nyata → skill ready → di-assign
+ke project nyata (arena terbukti menghasilkan persona terbedakan dan
+siap pakai). Keduanya hanya butuh provider live di studio Anda; semua
+mekanika sudah terpasang dan teruji.
 
 ## F5 · Publish prep (GERBANG TERAKHIR) — 20%
 
