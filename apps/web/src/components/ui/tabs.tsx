@@ -60,11 +60,13 @@ export function EmptyState({
   icon,
   title,
   hint,
+  action,
   className = "",
 }: {
   icon?: ReactNode;
   title: ReactNode;
   hint?: ReactNode;
+  action?: ReactNode;
   className?: string;
 }) {
   return (
@@ -78,6 +80,7 @@ export function EmptyState({
       {hint ? (
         <small className="max-w-sm text-caption text-dim">{hint}</small>
       ) : null}
+      {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );
 }

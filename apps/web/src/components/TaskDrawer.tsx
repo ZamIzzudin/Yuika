@@ -28,6 +28,7 @@ import { TeamTree, fmtDur } from "./TeamTree";
 import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
+import { DesignTab } from "./DesignTab";
 import { WorkflowStepsCard } from "./WorkflowStepsCard";
 import { ProjectDashboardView } from "./ProjectDashboard";
 import { WorkshopPanel } from "./WorkshopPanel";
@@ -65,6 +66,7 @@ export type WorkspaceTab =
   | "team"
   | "files"
   | "board"
+  | "design"
   | "terminal"
   | "config";
 
@@ -1051,6 +1053,8 @@ export function ProjectTabs({
       )}
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
+      {/* P2-DSN-3: canvas Penpot ter-embed (viewer share-link, live). */}
+      {loaded && activeTab === "design" && <DesignTab />}
       {/* ++ (user 2026-11): tab Browser dibongkar, reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
       {loaded && activeTab === "terminal" && (
         <TerminalFullTab project={{ id: project.id, name: project.name }} />

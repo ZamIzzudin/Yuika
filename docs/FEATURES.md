@@ -24,12 +24,12 @@
 | --- | --- | --- |
 | F1 Mobile remote (Yuika-Mobile) | 85% | push e2e device + Firebase, Play internal track |
 | F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
-| F3 Design-to-code (Penpot) | 15% | infra self-host, connector, tab embed, pipeline, golden path |
+| F3 Design-to-code (Penpot) | 50% | smoke instance live, pipeline develop, golden path |
 | F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
-F1 [########·-] 85%   F2 [#######···] 75%   F3 [##········] 15%
+F1 [########·-] 85%   F2 [#######···] 75%   F3 [#####·····] 50%
 F4 [########·-] 83%   F5 [##········] 20%
 ```
 
@@ -95,26 +95,34 @@ Sisa (2):
 100% ketika: kedua sisa selesai dan installer teruji end-to-end
 (install bersih → pakai → update otomatis → reset factory).
 
-## F3 · Design-to-code (Penpot) — 15%
+## F3 · Design-to-code (Penpot) — 50%
 
 Pipeline desain → kode ter-embed: persona Designer produksi file Penpot di
 fase design, fase develop membacanya jadi komponen kode + diff. Basis
-hitung: 1/7 milestone.
+hitung: 4/7 milestone (D79 connector+stack, D80 tab Design, DSN-5 seed).
 
 Selesai (1):
 - [x] **P2-DSN-1** Riset Penpot + keputusan arsitektur: self-host,
       RPC API v0 (access token, update-file, share-link), MCP resmi v1
       menyusul, exporter WASM untuk artefak (`docs/refs/penpot.md`).
 
-Sisa (6):
-- [ ] Instance **Penpot self-host** berjalan (docker, CSP) + akun token.
-- [ ] **P2-DSN-2** Connector RPC (create/update headless, snapshot) +
-      binding ke persona Designer (roster, D17).
-- [ ] **P2-DSN-3** Tab Design: canvas Penpot ter-embed (lihat, navigasi
-      halaman/frame, zoom; artefak ter-link ke task).
+Sisa (3):
+- [~] Instance **Penpot self-host** berjalan + akun token — stack siap
+      (deploy/penpot, compose 2.18.5 + override X-Frame-Options), menunggu
+      pull image selesai + registrasi akun + token utk smoke e2e live.
+- [x] **D79 P2-DSN-2** Connector RPC (client zero-dep: Token auth,
+      create/update-file + revn cache, share-link, get-file ringkas) +
+      tools penpot_status/setup_project/create_file/update_file/get_file +
+      PERSONA.md Picasso Yui (Penpot jalur utama) + skill
+      penpot-designer-basics; test 7/7.
+- [x] **D80 P2-DSN-3** Tab Design: viewer share-link Penpot ter-embed
+      (iframe live), pilihan file + revn, reload/open-in-Penpot, EmptyState
+      guide (belum konfigurasi / belum ada file), polling 15 dtk.
 - [ ] **P2-DSN-4** Pipeline develop: baca shapes + tokens → generate
       komponen → diff di tab Files → acceptance di human gate.
-- [ ] **P2-DSN-5** Skill Penpot Designer dilatih lewat dungeon → ready.
+- [~] **P2-DSN-5** Skill Penpot Designer: seed lengkap (skill
+      penpot-designer-basics + misi dungeon penpot-design, acceptance 8 objek
+      + tombol Sign in + viewerUrl); lulus gerbang menunggu run live.
 - [ ] **P2-DSN-6** Golden path E2E (design → lihat live → develop → diff)
       hijau 2x berturut.
 

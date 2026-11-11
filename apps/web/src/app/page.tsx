@@ -1277,6 +1277,7 @@ export default function Home() {
                               },
                               { id: "files", label: "Files" },
                               { id: "board", label: "Task" },
+                              { id: "design", label: "Design" },
                               ...(showTerminalTab
                                 ? [{ id: "terminal", label: "Terminal" }]
                                 : []),

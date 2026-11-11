@@ -15,6 +15,7 @@ import { registerDungeonRoutes } from "./routes/dungeons.js";
 import { registerMcpRoutes } from "./routes/mcp.js";
 import { registerMemoryRoutes } from "./routes/memory.js";
 import { registerPersonaRoutes } from "./routes/personas.js";
+import { registerPenpotRoutes } from "./routes/penpot.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerSkillRoutes } from "./routes/skills.js";
 import { registerUsageRoutes } from "./routes/usage.js";
@@ -91,6 +92,7 @@ export function buildApp(rt?: YuiRuntime, opts?: { settingsDeps?: SettingsDeps }
   registerMcpRoutes(app, getRt);
   registerMemoryRoutes(app, getRt);
   registerPersonaRoutes(app, getRt);
+  registerPenpotRoutes(app, getRt); // P2-DSN-3: tab Design (embed viewer)
   registerSettingsRoutes(app, getRt, opts?.settingsDeps);
   registerSkillRoutes(app, getRt);
   registerUsageRoutes(app, getRt);

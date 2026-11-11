@@ -946,3 +946,14 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Paging semua format: param `offset` (default 0) + hasil `offset`/`nextOffset`/`note` ("panggil lagi dengan offset=N"); offset melebihi panjang → pesan jelas; PERSONA.md Poe Yui diperbarui (pahami docx, lanjutkan nextOffset sampai null).
 - [x] Test 11/11 doc-tools (fixture docx dibangun via ZIP writer mini in-test: deflate + stored; tabel, entity, paging 4 halaman, docx rusak, offset overflow) — suite doc 18/18 dengan blindtest.
 - [x] Mobile: `codemagic.yaml` step "Materialize google-services.json" (env `GOOGLE_SERVICES_JSON` raw/base64; tanpa env build tetap jalan push off) + PUSH-SETUP.md diperbarui — APK CI kini bisa membawa FCM.
+
+### D79 — Penpot P2-DSN-2 connector + deploy stack + seed arena (SELESAI, verifikasi instance live menyusul)
+- [x] Core `penpot/client.ts` (P2-DSN-2): RPC client zero-dep — endpoint `POST /api/main/methods/<m>`, header `Authorization: Token <jwt>` (verifikasi dari source penpot), unwrap `{status:"success",data}`; method: get-profile/get-teams/get-projects/create-project/create-file/get-file/update-file (id/sessionId/revn/changes, tangkap revn baru)/create-share-link; `viewerUrl(shareId,pageId)` = `/?share-id=..&index=0[&page-id=..]`; fetch injectable utk test.
+- [x] Tools designer (`penpot-tools.ts`): `penpot_status` (whoami+daftar file+viewerUrl), `penpot_setup_project` (team pertama + cari/buat project default), `penpot_create_file` (+share-link halaman pertama, simpan state), `penpot_update_file` (revn dari cache `.yuika/penpot.json`, auto-update), `penpot_get_file` (ringkasan objek utk fase develop); tanpa env → pesan konfigurasi jelas. Env: `YUI_PENPOT_URL` + `YUI_PENPOT_TOKEN`.
+- [x] Deploy stack `deploy/penpot/` (turunan compose 2.18.5, MPL-2.0): frontend/backend/exporter/admin-console/postgres15/valkey; tanpa mailpit (registrasi tanpa verifikasi email); override `nginx-security-headers.conf` melepas `X-Frame-Options SAMEORIGIN` hardcoded (kunci embed); README lengkap (run, token, embed).
+- [x] Skill `penpot-designer-basics` (format changes add-obj/mod-obj/del-obj/mov-objects + shape minimal + disiplin batch) + misi dungeon `penpot-design` (yui-designer, target skill penpot-designer-basics) + PERSONA.md Picasso Yui: Penpot jalur utama, HTML/CSS fallback.
+- [x] Test `penpot.test.ts` 7/7 (header+unwrap, error RPC, viewerUrl, setup→create→update revn cache→get, changes invalid, belum-konfigurasi).
+
+### D80 — Penpot P2-DSN-3 tab Design (SELESAI, live verify menyusul)
+- [x] Runtime `penpotFiles()` (configured + baseUrl + file list + viewerUrl dari state); API `GET /api/penpot/files`.
+- [x] Tab "Design" workspace: dropdown file (dgn revn), iframe viewer share-link full-height, reload/open-in-Penpot; EmptyState terstruktur utk belum-konfigurasi / belum-ada-file (hint tool yang tepat); polling 15 dtk (file baru dari persona muncul sendiri).

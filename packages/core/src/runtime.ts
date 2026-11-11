@@ -21,6 +21,8 @@ import { listPersonas } from "./personas/loader.js";
 import { buildPersonaGrowth } from "./personas/growth.js";
 import { loadPersonaShapes, savePersonaShape } from "./personas/shapes.js";
 import { createBlindTest, BLIND_PROMPTS } from "./personas/blindtest.js";
+import { penpotConfig } from "./penpot/client.js";
+import { loadPenpotState } from "./penpot/state.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
 import { WorkflowEngine } from "./workflow/engine.js";
 import { loadSkillBindings, saveSkillBindings, applyBindingAction, effectiveSkillNames, type SkillBinding, type SkillBindingsFile } from "./skills/bindings.js";
@@ -58,6 +60,7 @@ import { memoryPromptSection, readMemory, saveMemory } from "./memory/manager.js
 import { registerMemoryTools } from "./tools/memory-tools.js";
 import { registerSessionSearchTools } from "./tools/session-search.js";
 import { registerDocTools } from "./tools/doc-tools.js";
+import { registerPenpotTools } from "./tools/penpot-tools.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
 import { updateEnvFile } from "./env-file.js";
 import { env } from "./env.js";
@@ -232,6 +235,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   registerSkillTools(paths.skillsDir);
   registerSessionSearchTools(store); // : riwayat sesi bisa ditelusuri agent
   registerDocTools(); // dev-10: scribe membaca dokumen user (pdf/xlsx/csv)
+  registerPenpotTools(paths.workspacePath); // P2-DSN-2: designer headless ke Penpot self-host
   registerRunCommandTool();
   // Credential vault: an encrypted store separate from the main DB
   // (vault.db + vault.key in the data dir). Values never cross the model path.
@@ -555,6 +559,28 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     );
   }
 
+  // ---- P2-DSN-3: daftar file Penpot untuk tab Design (embed viewer) ----
+  function penpotFiles(): {
+    configured: boolean;
+    baseUrl: string;
+    files: Array<{ fileId: string; name: string; revn: number; viewerUrl: string | null }>;
+  } {
+    const cfg = penpotConfig();
+    const state = loadPenpotState(paths.workspacePath);
+    return {
+      configured: Boolean(cfg.baseUrl && cfg.token),
+      baseUrl: cfg.baseUrl,
+      files: Object.entries(state.files)
+        .map(([fileId, f]) => ({
+          fileId,
+          name: f.name,
+          revn: f.revn,
+          viewerUrl: f.shareId && cfg.baseUrl ? `${cfg.baseUrl}/?share-id=${f.shareId}&index=0` : null,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    };
+  }
+
   // ---- P1-PER-5: blind test persona (anti "hanya kosmetik") ----
   const blindTest = createBlindTest({
     workspacePath: paths.workspacePath,
@@ -824,6 +850,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     setPersonaShape,
     blindTest,
     blindPrompts: BLIND_PROMPTS,
+    penpotFiles,
     createSession,
     listProjectSessions,
     listRecentSessions,
