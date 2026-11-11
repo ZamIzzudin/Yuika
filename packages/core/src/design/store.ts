@@ -144,6 +144,8 @@ export interface AddShapeInput {
   fontWeight?: number;
   align?: "left" | "center" | "right";
   color?: string; // warna teks
+  // frame root saja
+  isScreen?: boolean;
 }
 
 function num(v: unknown, def = 0): number {
@@ -200,7 +202,10 @@ export function addDesignShape(
 
   let shape: DesignShape;
   if (type === "frame") {
-    shape = { ...base, type: "frame", children: [] };
+    if (input.isScreen === true && parentId) {
+      throw new Error('isScreen can only be set on root frames (artboards at page level, parentId null)');
+    }
+    shape = { ...base, type: "frame", children: [], isScreen: input.isScreen ?? !parentId };
   } else if (type === "circle") {
     shape = { ...base, type: "circle" };
   } else if (type === "text") {
@@ -237,7 +242,7 @@ export function addDesignShape(
   return shape;
 }
 
-const MUTABLE_COMMON = ["name", "x", "y", "width", "height", "rotation", "opacity", "hidden", "locked", "radius", "fill", "strokeColor", "strokeWidth", "text", "fontSize", "fontWeight", "align", "color", "interaction"] as const;
+const MUTABLE_COMMON = ["name", "x", "y", "width", "height", "rotation", "opacity", "hidden", "locked", "radius", "fill", "strokeColor", "strokeWidth", "text", "fontSize", "fontWeight", "align", "color", "interaction", "isScreen"] as const;
 
 export function updateDesignShape(
   workspacePath: string,
@@ -256,6 +261,14 @@ export function updateDesignShape(
     }
   }
   const p = patch as Record<string, never>;
+  // P3-PROTO: isScreen hanya untuk frame ROOT (penanda layar prototype)
+  if ("isScreen" in patch) {
+    if (s.type !== "frame") throw new Error('isScreen can only be set on frames');
+    if (s.parentId !== null) {
+      throw new Error('isScreen can only be set on root frames (artboards at page level)');
+    }
+    s.isScreen = Boolean((patch as Record<string, unknown>).isScreen);
+  }
   // Prototyping: interaction {action navigate, target frame-root/page} | null (hapus)
   if ("interaction" in patch) {
     const raw = (patch as Record<string, unknown>).interaction as

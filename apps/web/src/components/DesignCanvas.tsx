@@ -151,6 +151,21 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [tool, setTool] = useState<Tool>("select");
   const [view, setView] = useState({ zoom: 0.5, ox: 60, oy: 40 });
+
+  /** Zoom menjaga titik kanvas di bawah `at` (px relatif stage); null = tengah. */
+  const zoomAt = useCallback((at: { x: number; y: number } | null, factor: number) => {
+    setView((v) => {
+      const z = Math.min(4, Math.max(0.05, v.zoom * factor));
+      if (z === v.zoom) return v;
+      const rect = wrapRef.current?.getBoundingClientRect();
+      const mx = at?.x ?? (rect ? rect.width / 2 : 0);
+      const my = at?.y ?? (rect ? rect.height / 2 : 0);
+      // screen = (world + o) * z → jaga world tetap di bawah kursor
+      const wx = mx / v.zoom - v.ox;
+      const wy = my / v.zoom - v.oy;
+      return { zoom: z, ox: mx / z - wx, oy: my / z - wy };
+    });
+  }, []);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -189,6 +204,41 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   }, [load]);
 
   const page: DesignPage | null = useMemo(() => file?.pages.find((p) => p.id === pageId) ?? null, [file, pageId]);
+
+  /** Fit semua konten halaman ke viewport (padding 60px). */
+  const fitView = useCallback(() => {
+    const stage = wrapRef.current;
+    if (!stage || !page) return;
+    const shapes = Object.values(page.shapes);
+    if (shapes.length === 0) {
+      setView({ zoom: 0.5, ox: 60, oy: 40 });
+      return;
+    }
+    let bx = Infinity,
+      by = Infinity,
+      bx2 = -Infinity,
+      by2 = -Infinity;
+    for (const s of shapes) {
+      if (s.hidden) continue;
+      const p = canvasPos(s, page);
+      bx = Math.min(bx, p.x);
+      by = Math.min(by, p.y);
+      bx2 = Math.max(bx2, p.x + s.width);
+      by2 = Math.max(by2, p.y + s.height);
+    }
+    const bw = Math.max(1, bx2 - bx),
+      bh = Math.max(1, by2 - by);
+    const pad = 60;
+    const z = Math.min(
+      4,
+      Math.max(0.05, Math.min((stage.clientWidth - pad * 2) / bw, (stage.clientHeight - pad * 2) / bh)),
+    );
+    setView({
+      zoom: z,
+      ox: (stage.clientWidth - bw * z) / 2 - bx * z,
+      oy: (stage.clientHeight - bh * z) / 2 - by * z,
+    });
+  }, [page]);
 
   // ---- render loop ----
   useEffect(() => {
@@ -369,7 +419,7 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             : d.type === "circle"
               ? { ...base, type: "circle" }
               : d.type === "frame"
-                ? { ...base, type: "frame", children: [] }
+                ? { ...base, type: "frame", children: [], isScreen: true }
                 : { ...base, type: "rect" };
         pg.roots.push(id);
       });
@@ -538,14 +588,20 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           <Trash size={15} />
         </Button>
         <span className="mx-1 h-4 w-px bg-line" />
-        <Button variant="ghost" className="!px-2 !py-1" title="Zoom out" onClick={() => setView((v) => ({ ...v, zoom: Math.max(0.1, v.zoom * 0.8) }))}>
+        <Button variant="ghost" className="!px-2 !py-1" title="Zoom out" onClick={() => zoomAt(null, 1 / 1.25)}>
           <MagnifyingGlassMinus size={15} />
         </Button>
-        <Chip tone="muted">{Math.round(view.zoom * 100)}%</Chip>
-        <Button variant="ghost" className="!px-2 !py-1" title="Zoom in" onClick={() => setView((v) => ({ ...v, zoom: Math.min(4, v.zoom * 1.25) }))}>
+        <button
+          className="rounded px-1 text-xs text-dim hover:bg-inset hover:text-fg"
+          title="Reset zoom to 100%"
+          onClick={() => zoomAt(null, 1 / view.zoom)}
+        >
+          {Math.round(view.zoom * 100)}%
+        </button>
+        <Button variant="ghost" className="!px-2 !py-1" title="Zoom in" onClick={() => zoomAt(null, 1.25)}>
           <MagnifyingGlassPlus size={15} />
         </Button>
-        <Button variant="ghost" className="!px-2 !py-1" title="Fit" onClick={() => setView({ zoom: 0.5, ox: 60, oy: 40 })}>
+        <Button variant="ghost" className="!px-2 !py-1" title="Fit to screen" onClick={() => void fitView()}>
           <ArrowsIn size={15} />
         </Button>
         <span className="ml-auto flex items-center gap-2">
@@ -560,8 +616,16 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           className="relative min-h-0 flex-1 overflow-hidden"
           onWheel={(e) => {
             if (e.ctrlKey || e.metaKey) {
+              // P3-CANVAS: zoom menuju kursor (anchored) — ctrl/⌘+wheel dan
+              // pinch trackpad (browser kirim ctrlKey otomatis saat pinch)
               e.preventDefault();
-              setView((v) => ({ ...v, zoom: Math.min(4, Math.max(0.1, v.zoom * (e.deltaY < 0 ? 1.1 : 0.9))) }));
+              const rect = e.currentTarget.getBoundingClientRect();
+              const f = Math.exp(-e.deltaY * 0.0016);
+              zoomAt({ x: e.clientX - rect.left, y: e.clientY - rect.top }, f);
+            } else if (e.shiftKey) {
+              // shift+wheel = geser horizontal
+              e.preventDefault();
+              setView((v) => ({ ...v, ox: v.ox - e.deltaY / v.zoom }));
             } else {
               setView((v) => ({ ...v, ox: v.ox - e.deltaX / v.zoom, oy: v.oy - e.deltaY / v.zoom }));
             }
@@ -726,6 +790,16 @@ function ShapeProps({
         Hidden
         <input type="checkbox" checked={Boolean(shape.hidden)} onChange={(e) => onChange({ hidden: e.target.checked })} />
       </label>
+      {shape.type === "frame" && !shape.parentId ? (
+        <label className={`${row} cursor-pointer`} title="Root frames marked as screen appear in the prototype (Try it)">
+          Screen (prototype)
+          <input
+            type="checkbox"
+            checked={Boolean((shape as { isScreen?: boolean }).isScreen !== false)}
+            onChange={(e) => onChange({ isScreen: e.target.checked } as Partial<DesignShape>)}
+          />
+        </label>
+      ) : null}
       {/* P3-PROTO: wiring on-click navigasi (dipakai tombol Try it) */}
       <div>
         <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-dim">Prototype: on click</div>

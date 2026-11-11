@@ -153,6 +153,46 @@ it("prototyping: wiring interaction on-click + validasi target + cleanup saat de
   expect(file.pages[0]!.shapes[btn.id]!.interaction).toBeUndefined();
 });
 
+it("isScreen: frame root default layar, nested/loose tidak; validasi English", async () => {
+  const f = await run("design_create_file", { name: "S" });
+  const fileId = f.fileId as string;
+  const p1 = (f.page as { id: string }).id;
+  const root = (await run("design_add_shape", {
+    fileId, pageId: p1, shape: { type: "frame", name: "Artboard", x: 0, y: 0, width: 390, height: 844 },
+  })) as { id: string };
+  const nested = addDesignShape(dir, fileId, p1, { type: "frame", width: 100, height: 50, x: 0, y: 0 }, root.id);
+  const loose = addDesignShape(dir, fileId, p1, { type: "rect", width: 10, height: 10, x: 0, y: 0 });
+
+  let file = getDesignFile(dir, fileId)!;
+  expect((file.pages[0]!.shapes[root.id] as { isScreen?: boolean }).isScreen).toBe(true); // default root = screen
+  expect((file.pages[0]!.shapes[nested.id] as { isScreen?: boolean }).isScreen).toBe(false); // nested bukan layar
+  // loose node tidak punya konsep isScreen (bukan frame)
+  expect(file.pages[0]!.shapes[loose.id]!.type).toBe("rect");
+
+  // uncheck → keluar dari prototype
+  await run("design_update_shape", { fileId, pageId: p1, id: root.id, patch: { isScreen: false } });
+  file = getDesignFile(dir, fileId)!;
+  expect((file.pages[0]!.shapes[root.id] as { isScreen?: boolean }).isScreen).toBe(false);
+
+  // isScreen pada non-frame / frame bersarang → error English
+  await expect(
+    run("design_update_shape", { fileId, pageId: p1, id: loose.id, patch: { isScreen: true } }),
+  ).rejects.toThrow(/only be set on frames/);
+  await expect(
+    run("design_update_shape", { fileId, pageId: p1, id: nested.id, patch: { isScreen: true } }),
+  ).rejects.toThrow(/root frames/);
+  expect(() =>
+    addDesignShape(dir, fileId, p1, { type: "frame", width: 10, height: 10, x: 0, y: 0, isScreen: true }, root.id),
+  ).toThrow(/root frames/);
+
+  // ringkasan menampilkan isScreen untuk frame root
+  await run("design_update_shape", { fileId, pageId: p1, id: root.id, patch: { isScreen: true } });
+  const got = await run("design_get_file", { fileId });
+  const art = (got.pages as Array<{ shapes: Array<Record<string, unknown>> }>)[0]!.shapes.find((s) => s.name === "Artboard")!;
+  expect(art.isScreen).toBe(true);
+  expect((got.pages as Array<{ shapes: Array<Record<string, unknown>> }>)[0]!.shapes.find((s) => s.id === nested.id)!.isScreen).toBeUndefined(); // nested frame tidak diberi penanda di ringkasan
+});
+
 it("validasi: warna salah, ukuran, dan field patch terlarang ditolak (ENGLISH)", async () => {
   const f = await run("design_create_file", { name: "V" });
   const fileId = f.fileId as string;

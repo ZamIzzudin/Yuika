@@ -88,8 +88,13 @@ design_add_shape { fileId, pageId: p1, parentId: f1, shape: { type: text,
 
 ## Prototyping (wiring on-click)
 
-Satu frame root per halaman = satu **layar prototype** (tombol "Try it"
- di tab Design menjalankannya; user melihat perubahan desain live ~2.5 dtk).
+Satu frame root per halaman = satu **layar prototype**. Frame root baru
+otomatis ditandai `isScreen: true` (uncheck "Screen (prototype)" di panel
+props, atau patch `isScreen: false`, untuk menyembunyikannya dari player).
+Shape lepas di level halaman (bukan frame) TIDAK pernah jadi layar. Tombol
+"Try it" di tab Design menjalankan prototype; user melihat perubahan desain
+live ~2.5 dtk.
+
 Wire navigasi antar layar lewat update patch `interaction`:
 
 ```
@@ -101,4 +106,4 @@ Aturan: target harus frame ROOT di halaman yang sama atau id halaman lain
 dalam file yang sama; null menghapus wiring. Gunakan untuk flow multi-layar
 (mis. "Sign in" → Dashboard). Semua tombol penting sebaiknya ter-wire agar
 prototype terasa hidup. Ringkasan `design_get_file` menampilkan wiring
-sebagai `onClick: navigate:<target>`.
+sebagai `onClick: navigate:<target>` dan penanda `isScreen` per frame root.

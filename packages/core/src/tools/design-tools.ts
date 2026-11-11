@@ -32,6 +32,7 @@ const shapeFields = z
     rotation: z.number().optional(),
     opacity: z.number().min(0).max(1).optional(),
     hidden: z.boolean().optional(),
+    isScreen: z.boolean().optional(),
     text: z.string().max(4000).optional(),
     fontSize: z.number().min(8).max(200).optional(),
     fontWeight: z.number().min(100).max(900).optional(),
@@ -84,6 +85,7 @@ function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, 
               }
             : {}),
           ...(s.interaction ? { onClick: `navigate:${s.interaction.target}` } : {}),
+          ...(s.type === "frame" && !s.parentId ? { isScreen: s.isScreen !== false } : {}),
         })),
     })),
   };

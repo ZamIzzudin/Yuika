@@ -14,9 +14,10 @@ interface Props {
 }
 
 function screenFrames(page: DesignPage): DesignShape[] {
+  // hanya frame ROOT yang dinyatakan screen (default true, bisa di-uncheck di
+  // panel props). Loose nodes (rect/text di level halaman) tidak pernah layar.
   const roots = page.roots.map((r) => page.shapes[r]).filter((s): s is DesignShape => Boolean(s) && !s!.hidden);
-  const frames = roots.filter((s) => s.type === "frame");
-  return frames.length > 0 ? frames : roots.length > 0 ? roots.slice(0, 1) : [];
+  return roots.filter((s) => s.type === "frame" && (s as { isScreen?: boolean }).isScreen !== false);
 }
 
 function ShapeNode({
@@ -111,14 +112,15 @@ export function DesignPrototype({ fileId, onClose }: Props): React.ReactElement 
   }, [load]);
 
   const page = file?.pages.find((p) => p.id === cur.pageId) ?? file?.pages[0];
-  // layar: pilih halaman pertama bila state kosong / referensi hilang
+  // layar: pilih halaman pertama YANG PUNYA screen; state kosong/referensi hilang → reset
   useEffect(() => {
     if (!file || file.pages.length === 0) return;
-    const pg = file.pages.find((p) => p.id === cur.pageId) ?? file.pages[0]!;
+    const pagesWithScreens = file.pages.filter((p) => screenFrames(p).length > 0);
+    const pg =
+      pagesWithScreens.find((p) => p.id === cur.pageId) ?? pagesWithScreens[0] ?? file.pages[0]!;
     const frameStillOk = cur.frameId ? Boolean(pg.shapes[cur.frameId]) : false;
     const wanted = screenFrames(pg)[0]?.id ?? null;
     if (pg.id !== cur.pageId || (!frameStillOk && cur.frameId !== null && !pg.shapes[cur.frameId])) {
-      // halaman berganti atau layar terhapus → reset ke layar pertama halaman itu
       setCur({ pageId: pg.id, frameId: frameStillOk ? cur.frameId : wanted });
     } else if (!cur.frameId && wanted) {
       setCur({ pageId: pg.id, frameId: wanted });
@@ -128,12 +130,13 @@ export function DesignPrototype({ fileId, onClose }: Props): React.ReactElement 
   const frame = page && cur.frameId ? (page.shapes[cur.frameId] ?? undefined) : undefined;
   const screen = frame ?? (page ? screenFrames(page)[0] : undefined);
 
-  // fit screen ke viewport
+  // fit screen ke viewport (wrapper berukuran hasil scale; inner full-size di-
+  // transform origin top-left — layout tidak pernah overflow/terpotong)
   useLayoutEffect(() => {
     const measure = () => {
       const vp = viewportRef.current;
       if (!vp || !screen) return;
-      setScale(Math.min((vp.clientHeight - 16) / screen.height, (vp.clientWidth - 16) / screen.width, 1));
+      setScale(Math.min((vp.clientHeight - 20) / screen.height, (vp.clientWidth - 20) / screen.width, 1));
     };
     measure();
     window.addEventListener("resize", measure);
@@ -180,7 +183,7 @@ export function DesignPrototype({ fileId, onClose }: Props): React.ReactElement 
   }, [onClose]);
 
   const screens = page ? screenFrames(page) : [];
-  const screensOtherPages = file ? file.pages.filter((p) => p.id !== page?.id) : [];
+  const screensOtherPages = file ? file.pages.filter((p) => p.id !== page?.id && screenFrames(p).length > 0) : [];
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-sm">
@@ -205,27 +208,32 @@ export function DesignPrototype({ fileId, onClose }: Props): React.ReactElement 
         {page && screen ? (
           <div
             key={`${page.id}:${screen.id}`}
-            ref={screenRef}
-            className="screen-in relative overflow-hidden rounded-xl shadow-2xl"
-            style={{
-              width: screen.width,
-              height: screen.height,
-              transform: `scale(${scale})`,
-              background: screen.fills[0]?.color ?? "#0d0d10",
-            }}
+            className="screen-in relative"
+            style={{ width: screen.width * scale, height: screen.height * scale }}
           >
-            {/* anak-anak layar (koordinat relatif layar); layar non-frame: render semua root */}
-            {(screen.type === "frame"
-              ? (screen as { children?: string[] }).children ?? []
-              : page.roots.filter((r) => page.shapes[r])
-            ).map((cid) => {
-              const c = page.shapes[cid];
-              return c ? <ShapeNode key={cid} shape={c} page={page} onNavigate={navigate} /> : null;
-            })}
+            <div
+              ref={screenRef}
+              className="relative overflow-hidden rounded-xl shadow-2xl"
+              style={{
+                width: screen.width,
+                height: screen.height,
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+                background: screen.fills[0]?.color ?? "#0d0d10",
+              }}
+            >
+              {/* anak-anak layar (koordinat relatif layar) */}
+              {((screen as { children?: string[] }).children ?? []).map((cid) => {
+                const c = page.shapes[cid];
+                return c ? <ShapeNode key={cid} shape={c} page={page} onNavigate={navigate} /> : null;
+              })}
+            </div>
           </div>
         ) : (
-          <div className="text-sm text-white/60">
-            This page has no screens yet. Draw a root frame (e.g. 390x844 artboard) and it becomes a screen.
+          <div className="max-w-md text-center text-sm text-white/60">
+            No screens on this page. Screens are root frames with "Screen (prototype)" checked
+            in the canvas properties panel (new artboards are screens by default). Loose shapes
+            and pages without screens never appear here.
           </div>
         )}
       </div>

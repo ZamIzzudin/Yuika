@@ -497,3 +497,10 @@ daftar sesi datar, tapi **mission control project-oriented**.
   DesignPrototype player (Try it) dengan live sync 2.5s, navigasi on-click,
   back history, switcher; panel props wiring dropdown; skill updated.
 - Tests 7/7; typecheck 6/6.
+
+## Batch D84 — prototype polish (screens + lightbox + zoom)
+
+- isScreen flag (root frames default screen), player strict screens + page filter,
+  lightbox scaling fix (wrapper+origin top-left), canvas zoom anchored ke kursor
+  + Fit beneran + shift-wheel pan + reset 100%.
+- Core 431 passed; typecheck 6/6.

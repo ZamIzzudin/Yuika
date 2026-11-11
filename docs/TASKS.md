@@ -1052,3 +1052,26 @@ ubah komponen (label/warna/ukuran) via canvas, prototype ikut berubah".
       target, saran wire semua tombol penting).
 - [x] Test: prototyping wiring + validasi + cleanup (design.test.ts 4/4);
       typecheck 6/6.
+
+### D84 — P3-PROTO polish: screens eksplisit + fix lightbox + zoom canvas (SELESAI-KODE)
+Feedback user: (1) prototype hanya menampilkan yang dinyatakan screen,
+bukan semua nodes/page; (2) player terpotong karena layout overflow;
+(3) zoom canvas pakai ctrl+scroll yang nyaman (anchored, ala Figma/Team tab).
+- [x] isScreen: DesignFrameShape.isScreen (default true untuk frame ROOT baru,
+  via store + toolbar canvas; nested frame/loose node tidak pernah layar);
+  validasi English (non-frame / non-root ditolak); update patch.isScreen;
+  ringkasan design_get_file menampilkan isScreen per frame root; panel props
+  checkbox "Screen (prototype)".
+- [x] DesignPrototype: hanya frame root isScreen !== false; switcher hanya
+  halaman yang punya screen; initial page = halaman pertama ber-screen;
+  empty state menjelaskan cara menandai screen.
+- [x] Fix lightbox terpotong: wrapper berukuran width*scale/height*scale +
+  inner transform-origin top-left (layout tidak pernah overflow); animasi
+  transisi jadi opacity-only (tidak bentrok scale); padding measure 20px.
+- [x] Zoom canvas: ctrl/cmd+wheel = anchored zoom menuju kursor (faktor
+  eksponensial halus; pinch trackpad tertangkap otomatis karena browser
+  mengirim ctrlKey); shift+wheel = geser horizontal; tombol zoom in/out,
+  persen klik = reset 100%, Fit betulan (bounding box semua shape, center,
+  padding 60).
+- [x] Test isScreen (default/nested/loose/uncheck/validasi/ringkasan) —
+  design.test.ts 5/5; core 431 passed; typecheck 6/6.

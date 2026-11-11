@@ -43,6 +43,11 @@ export interface DesignShapeCommon {
 export interface DesignFrameShape extends DesignShapeCommon {
   type: "frame";
   children: string[]; // z-order anak (depan → belakang? tidak: belakang → depan, index akhir = paling depan)
+  /** Frame root yang ditandai sebagai LAYAR prototype (tombol Try it).
+   * Frame root baru otomatis true; frame bersarang/non-screen tidak tampil
+   * di prototype. Loose shapes (rect/text di level halaman) tidak pernah jadi
+   * layar — mereka elemen kanvas dekoratif/annotasi. */
+  isScreen?: boolean;
 }
 
 export interface DesignRectShape extends DesignShapeCommon {

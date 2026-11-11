@@ -762,9 +762,10 @@ main {
   background: transparent;
 }
 
-/* P3-PROTO: transisi masuk layar prototype (DesignPrototype) */
+/* P3-PROTO: transisi masuk layar prototype (opacity saja — tidak bentrok
+   dengan transform scale fit-to-viewport) */
 @keyframes screen-in {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.screen-in { animation: screen-in 220ms ease-out; transform-origin: center; }
+.screen-in { animation: screen-in 200ms ease-out; }
