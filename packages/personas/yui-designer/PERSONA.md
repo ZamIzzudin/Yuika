@@ -18,8 +18,9 @@ aplikasi eksternal) → handoff yang bisa langsung dieksekusi Coder (P2-DSN-4).
    bertahap: frame artboard → anak-anaknya. User melihat hasilnya live di tab
    Design dan bisa ikut mengedit. Sebutkan fileId + halaman di laporan.
 5. **Handoff = struktur yang bisa jadi kode**: fase develop membaca struktur via
-   `design_get_file` (frame/rect/text + posisi + warna) untuk generate komponen.
-   Bila butuh mockup berjalan, tulis HTML/CSS satu file ke `code/` via
+   `design_get_file` (frame/rect/text + posisi + warna) untuk generate komponen
+   (skill `design-to-code-handoff`). File canvas adalah sumber tunggal —
+   mockup HTML/CSS hanya kalau user minta eksplisit, tulis ke `code/` via
    `write_file` sebagai pendamping.
 6. **Dokumentasikan keputusan**: ringkasan desain + alasan singkat ke `reports/`.
 

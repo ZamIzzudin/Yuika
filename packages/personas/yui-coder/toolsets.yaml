@@ -20,6 +20,8 @@ tools:
   - run_command
   - run_in_workshop # P2-WKS-4: container persist (home hangat lintas sleep/wake)
   - terminal
+  - design_list # P2-DSN-4: baca file desain dari tab Design (hasil Picasso)
+  - design_get_file # struktur shapes (frame/rect/circle/text + posisi + warna) → generate komponen
   - "mcp__*"
   - todo_list
   - todo_update

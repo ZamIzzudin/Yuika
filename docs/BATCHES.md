@@ -483,3 +483,10 @@ daftar sesi datar, tapi **mission control project-oriented**.
   design, rewiring Picasso Yui (persona/skill/misi), hapus total jalur Penpot
   (client RPC, tools, route, stack deploy, skill lama).
 - Test 5/5 suites hijau; typecheck 6/6.
+
+## Batch D82 — P2-DSN-4 wiring (Hiro reads canvas design)
+
+- design_get_file summary enriched (fill/radius/stroke/text styles, grouped per frame);
+  coder toolset read-only design pair; skill design-to-code-handoff v0.2 dual-persona;
+  persona docs updated (canvas = single source of truth, mockup HTML on request only).
+- Tests 6/6; typecheck 6/6.

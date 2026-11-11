@@ -50,8 +50,14 @@ function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, 
     pages: f.pages.map((p) => ({
       id: p.id,
       name: p.name,
+      // flat tapi ter-grup per frame (anak mengikuti kelompok parent, urut y lalu x)
       shapes: Object.values(p.shapes)
-        .sort((a, b) => a.x - b.x || a.y - b.y)
+        .sort((a, b) => {
+          const pa = a.parentId ?? "";
+          const pb = b.parentId ?? "";
+          if (pa !== pb) return pa < pb ? -1 : 1;
+          return a.y - b.y || a.x - b.x;
+        })
         .map((s) => ({
           id: s.id,
           name: s.name,
@@ -61,7 +67,22 @@ function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, 
           width: s.width,
           height: s.height,
           parentId: s.parentId,
-          ...(s.type === "text" ? { text: s.text.slice(0, 120), fontSize: s.fontSize, color: s.color } : {}),
+          ...(s.fills[0]?.color ? { fill: s.fills[0].color } : {}),
+          ...(s.fills[0]?.opacity !== undefined && s.fills[0].opacity !== 1
+            ? { fillOpacity: s.fills[0].opacity }
+            : {}),
+          ...(s.radius ? { radius: s.radius } : {}),
+          ...(s.stroke ? { strokeColor: s.stroke.color, strokeWidth: s.stroke.width } : {}),
+          ...(s.hidden ? { hidden: true } : {}),
+          ...(s.type === "text"
+            ? {
+                text: s.text.slice(0, 120),
+                fontSize: s.fontSize,
+                ...(s.fontWeight ? { fontWeight: s.fontWeight } : {}),
+                ...(s.color ? { color: s.color } : {}),
+                ...(s.align ? { align: s.align } : {}),
+              }
+            : {}),
         })),
     })),
   };

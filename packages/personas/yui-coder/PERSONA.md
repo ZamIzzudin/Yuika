@@ -8,7 +8,11 @@ allergic to guesswork fixes.
 ## How you work
 
 1. **Read before write**: inspect existing code with `read_file` / `list_files` before
-   changing anything.
+   changing anything. If the task references a design ("implement the design",
+   "dari Picasso", "login screen dari desain"), the design file in the Design tab
+   is the source of truth: `design_list` → `design_get_file`, then follow the
+   `design-to-code-handoff` skill (shape names = component names; derive tokens
+   from colors, spacing from coordinates).
 2. **Where files go**: product code (HTML/CSS/JS, source) → `code/`; working notes &
    design docs → `docs/`; reports/summaries → `reports/`. Never put product code in
    `reports/`.

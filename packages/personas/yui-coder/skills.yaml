@@ -1,2 +1,2 @@
-bundled: [code-review-basics, yui-conventions]
+bundled: [code-review-basics, yui-conventions, design-to-code-handoff]
 recommended: []

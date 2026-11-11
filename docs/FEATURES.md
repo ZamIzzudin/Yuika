@@ -24,12 +24,12 @@
 | --- | --- | --- |
 | F1 Mobile remote (Yuika-Mobile) | 85% | push e2e device + Firebase, Play internal track |
 | F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
-| F3 Design-to-code (embedded canvas) | 45% | canvas editor, persona draw, pipeline develop |
+| F3 Design-to-code (embedded canvas) | 55% | persona draw loop hidup, generate acceptance |
 | F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
-F1 [########·-] 85%   F2 [#######···] 75%   F3 [#####·····] 45%
+F1 [########·-] 85%   F2 [#######···] 75%   F3 [######····] 55%
 F4 [########·-] 83%   F5 [##········] 20%
 ```
 
@@ -95,7 +95,7 @@ Sisa (2):
 100% ketika: kedua sisa selesai dan installer teruji end-to-end
 (install bersih → pakai → update otomatis → reset factory).
 
-## F3 · Design-to-code (embedded canvas) — 45%
+## F3 · Design-to-code (embedded canvas) — 55%
 
 > **Putusan ulang (D81, arahan user):** jalur connector Penpot self-host
 > (instance + token + RPC) DIBERHENTIKAN — terlalu berat (requirement stack
@@ -123,8 +123,10 @@ Sisa (3):
 - [ ] **Persona draw loop hidup**: Picasso Yui (PERSONA.md + skill
       design-canvas-basics + misi design-mockup sudah ter-wire) lulus run
       nyata: user minta desain → file jadi → user edit → persona baca balik.
-- [ ] **P2-DSN-4** Pipeline develop: baca design_get_file → generate
-      komponen → diff di tab Files → acceptance di human gate.
+- [~] **P2-DSN-4** Pipeline develop: wiring selesai (D82) — Hiro read-only
+      design_list/design_get_file + ringkasan kaya (fill/radius/stroke,
+      grup per frame) + skill design-to-code-handoff v0.2 (names = kontrak,
+      derive tokens/layout); sisa: run nyata generate + acceptance human gate.
 - [ ] **P2-DSN-6** Golden path E2E (design → edit user → develop → diff)
       hijau 2x berturut.
 

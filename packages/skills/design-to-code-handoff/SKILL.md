@@ -1,42 +1,60 @@
 ---
 name: design-to-code-handoff
-description: "Hand off design as working HTML/CSS mockups a coder can execute directly, one-file deliverables in code/, decisions documented in reports/."
-version: 0.1.0
+description: "Hand off design through the studio canvas: designer draws with design_* tools, coder reads design_get_file and generates components from the shape structure - canvas file is the single source of truth."
+version: 0.2.0
 author: Yuika Team
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   yui:
-    tags: [design, handoff, html]
+    tags: [design, handoff, canvas]
     category: design
-    personas: [yui-designer]
+    personas: [yui-designer, yui-coder]
+    status: ready
 ---
 
-# Design → Code Handoff
+# Design → Code Handoff (canvas studio)
 
-The deliverable is a **runnable mockup**, not a picture of one. A coder must open it
-in a browser and start porting immediately.
+The design lives in the **studio canvas** (tab Design), not in HTML mockups or
+screenshots. The `.json` design file is the single source of truth: Picasso
+draws it with `design_*` tools, the user can edit it live, and the coder reads
+the same file to generate components. No duplicate medium.
 
-## Steps
+## Designer side (Picasso)
 
-1. **Restate the goal** in one sentence, then list the screens/sections to build.
-2. **Load the tokens** (design-system-basics). If missing, create them first,
-   mockups without tokens are throwaways.
-3. **One file per screen**: self-contained HTML with inline `<style>` using the
-   tokens. Write to `code/` (via write_file), browsers open it directly.
-4. **Structure**: header / main / footer landmarks; real (or realistic) copy,
-   never lorem ipsum; states for hover, focus-visible, and empty included.
-5. **Responsive in two passes**: desktop first, then a ≤768px pass using only
-   wrapping and stacking, no new components.
-6. **Component inventory**: after each screen, list components with token usage
-   (e.g. `.card = surface-raised + radius-md + space-3 padding`).
-7. **Decisions memo** in `reports/`: mood sentence, palette/type choices, anything
-   deferred, each with a one-line reason.
-8. **Accessibility pass**: contrast, focus rings, text ≥14px, icon-only buttons
-   get aria-labels.
+1. Draw in the canvas (`design_create_file` → frame artboard per screen →
+   children with clear component names). Follow `design-canvas-basics`.
+2. **Names are the contract**: `Button Sign in`, `Card`, `Input Email` — the
+   coder maps names to components, so no `Rectangle 14`.
+3. One page per screen/flow state. Announce `fileId` + page names in the
+   handoff note so the coder can find them via `design_list`.
+4. HTML mockups are NOT the default handoff anymore. Produce one only when the
+   user explicitly asks for a runnable mockup.
+
+## Coder side (Hiro)
+
+1. Start from the design, not from imagination: `design_list` → find the file →
+   `design_get_file {fileId}`. Shapes come grouped per frame, children ordered
+   top-to-bottom with `x/y` relative to their parent frame.
+2. **Map structure to components**:
+   - `frame` → section/container (`<section>`, `.card`, screen wrapper).
+   - `rect` + radius → button, input, surface; `fill` = background color.
+   - `circle` → avatar, icon holder, indicator.
+   - `text` → label/heading/body with `fontSize`/`fontWeight`/`color`/`align`.
+   - `name` of each shape = intended component name — honor it.
+3. **Derive tokens, not literals**: collect repeated colors → CSS variables
+   (`--accent`, `--surface`, `--text`); snap coordinates to the 4/8 spacing
+   scale instead of copying raw px blindly (18 → 16, 22 → 24).
+4. **Derive layout from geometry**: child y-steps = vertical rhythm; equal x
+   margins = padding; centered widths = max-width + margin auto. Prefer flex
+   from stacking patterns over absolute positioning.
+5. Build into `code/` (via `write_file`), verify, and when done state which
+   `fileId`/page you implemented so the user can compare side-by-side in the
+   Design tab.
 
 ## Anti-patterns
 
-- Image attachments instead of HTML ("screenshot handoff").
-- Pixel-perfect demands, hand off structure + tokens, not absolute positions.
-- New design language per screen.
+- Screenshot handoff ("here is a picture of the design").
+- Re-deriving the design in HTML before reading the file (mockup detour).
+- Copying raw pixel positions wholesale — hand off structure + tokens.
+- Ignoring shape names, or renaming components away from the designer's names.

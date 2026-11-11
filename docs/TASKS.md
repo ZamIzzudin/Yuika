@@ -1015,3 +1015,19 @@ server sendiri. Yang diminta: leburkan Penpot jadi komponen Yuika (repo clone
       (stack docker tak lagi dibutuhkan; instance lokal boleh dimatikan).
 - [x] Test: design.test.ts 3/3 + designer-wiring.test.ts 2/2 (skill ter-load,
       bundled, toolset) + dungeon tests tetap hijau; typecheck 6/6; test 5/5.
+
+### D82 — P2-DSN-4 wiring: Hiro baca file desain (SELESAI-KODE)
+Jawab kebutuhan user: Picasso cukup menggambar di canvas (tab Design); Hiro
+membaca file yang sama saat eksekusi — mockup HTML bukan lagi handoff default.
+- [x] design_get_file ringkasan diperkaya: fill/fillOpacity/radius/stroke/
+      hidden + fontWeight/color/align teks; shapes flat ter-grup per frame,
+      anak urut y-lalu-x (koordinat anak tetap relatif parent).
+- [x] toolset Hiro: +design_list +design_get_file (read-only pair; tanpa tool
+      menggambar — dikunci regression test).
+- [x] Skill design-to-code-handoff v0.2 (persona designer+coder): file canvas
+      = single source of truth; coder map frame→section, name shape = nama
+      komponen, derive tokens dari warna berulang + snap spacing 4/8, layout
+      dari geometri (bukan absolute px mentah); mockup HTML hanya on request.
+- [x] PERSONA.md Hiro langkah 1: task yang menyebut desain → baca file dulu;
+      PERSONA.md Picasso: mockup HTML hanya eksplisit.
+- [x] Test wiring coder + ringkasan kaya (6/6); typecheck 6/6.

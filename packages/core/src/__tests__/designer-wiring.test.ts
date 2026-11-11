@@ -17,6 +17,20 @@ it("skill design-canvas-basics ter-load (frontmatter valid)", () => {
   expect(sk.personas).toContain("yui-designer");
 });
 
+it("persona coder (Hiro): baca desain read-only + skill handoff terpasang (P2-DSN-4)", () => {
+  const c = loadPersona(root("personas/yui-coder"));
+  expect(c.manifest.tools).toEqual(
+    expect.arrayContaining(["design_list", "design_get_file"]),
+  );
+  // read-only: coder TIDAK boleh menggambar (toolset tanpa design_create/add/update)
+  for (const t of c.manifest.tools) {
+    if (t.startsWith("design_")) expect(["design_list", "design_get_file"]).toContain(t);
+  }
+  expect(c.manifest.skills.bundled).toContain("design-to-code-handoff");
+  const sk = listSkills(root("skills")).find((s) => s.name === "design-to-code-handoff")!;
+  expect(sk.personas).toEqual(expect.arrayContaining(["yui-designer", "yui-coder"]));
+});
+
 it("persona designer: bundled skills + toolset design_* terpasang", () => {
   const p = loadPersona(root("personas/yui-designer"));
   expect([...p.manifest.skills.bundled]).toEqual(

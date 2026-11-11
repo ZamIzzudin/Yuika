@@ -56,12 +56,17 @@ it("create → add shapes (frame + anak + text) → get ringkasan", async () => 
   });
 
   const got = await run("design_get_file", { fileId });
-  const page = (got.pages as Array<{ id: string; shapes: Array<{ id: string; name: string; type: string; parentId: string | null }> }>)[0]!;
+  const page = (got.pages as Array<{ id: string; shapes: Array<Record<string, unknown>> }>)[0]!;
   expect(page.shapes).toHaveLength(3);
   const art = page.shapes.find((s) => s.name === "Artboard 390")!;
   expect(art.type).toBe("frame");
   const label = page.shapes.find((s) => s.name === "Button label")!;
   expect(label.parentId).toBe(art.id);
+  // P2-DSN-4: ringkasan kaya untuk coder — fill/radius + teks lengkap
+  const btnShape = page.shapes.find((s) => s.name === "Button Sign in")!;
+  expect(btnShape.fill).toBe("#007cf7");
+  expect(btnShape.radius).toBe(10);
+  expect(label).toMatchObject({ text: "Sign in", fontSize: 15 });
   expect((got as { revn: number }).revn).toBeGreaterThanOrEqual(3);
 
   // update patch
