@@ -83,6 +83,7 @@ function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, 
                 ...(s.align ? { align: s.align } : {}),
               }
             : {}),
+          ...(s.interaction ? { onClick: `navigate:${s.interaction.target}` } : {}),
         })),
     })),
   };
@@ -143,12 +144,18 @@ export function registerDesignTools(workspacePath: string): void {
   registry.register({
     name: "design_update_shape",
     description:
-      "Ubah sebagian field shape (patch). Bisa dipakai untuk iterasi desain atau menyesuaikan hasil edit user.",
+      "Ubah sebagian field shape (patch). Bisa dipakai untuk iterasi desain atau menyesuaikan hasil edit user. Untuk prototyping: patch.interaction = { action: 'navigate', target: <id frame root / id halaman> } meng-wire on-click; null menghapus wiring.",
     parameters: z.object({
       fileId: z.string().min(1),
       pageId: z.string().min(1),
       id: z.string().min(1),
-      patch: shapeFields.partial().extend({ locked: z.boolean().optional() }),
+      patch: shapeFields.partial().extend({
+        locked: z.boolean().optional(),
+        interaction: z
+          .object({ action: z.literal("navigate"), target: z.string().min(1) })
+          .nullable()
+          .optional(),
+      }),
     }),
     handler: async (args) => {
       const s = updateDesignShape(workspacePath, args.fileId, args.pageId, args.id, args.patch);

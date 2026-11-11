@@ -85,3 +85,20 @@ design_add_shape { fileId, pageId: p1, parentId: f1, shape: { type: text,
 - Halaman per layar/flow berbeda: `design_add_page`.
 - Handoff ke Coder: sebut fileId; Coder membaca `design_get_file` untuk
   struktur (nama, tipe, posisi, ukuran, warna) lalu generate komponen.
+
+## Prototyping (wiring on-click)
+
+Satu frame root per halaman = satu **layar prototype** (tombol "Try it"
+ di tab Design menjalankannya; user melihat perubahan desain live ~2.5 dtk).
+Wire navigasi antar layar lewat update patch `interaction`:
+
+```
+design_update_shape { fileId, pageId, id: tombol-login,
+  patch: { interaction: { action: "navigate", target: <id frame root / id halaman> } } }
+```
+
+Aturan: target harus frame ROOT di halaman yang sama atau id halaman lain
+dalam file yang sama; null menghapus wiring. Gunakan untuk flow multi-layar
+(mis. "Sign in" → Dashboard). Semua tombol penting sebaiknya ter-wire agar
+prototype terasa hidup. Ringkasan `design_get_file` menampilkan wiring
+sebagai `onClick: navigate:<target>`.

@@ -35,6 +35,9 @@ export interface DesignShapeCommon {
   stroke?: DesignStroke;
   radius?: number; // sudut membulat (px)
   parentId: string | null; // null = root halaman; id frame = anak frame
+  /** Prototyping: wiring navigasi (Figma-style). target = id frame root di
+   *  halaman yang sama, atau id halaman lain dalam file yang sama. */
+  interaction?: { event: "click"; action: "navigate"; target: string };
 }
 
 export interface DesignFrameShape extends DesignShapeCommon {

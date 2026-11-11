@@ -1031,3 +1031,24 @@ membaca file yang sama saat eksekusi — mockup HTML bukan lagi handoff default.
 - [x] PERSONA.md Hiro langkah 1: task yang menyebut desain → baca file dulu;
       PERSONA.md Picasso: mockup HTML hanya eksplisit.
 - [x] Test wiring coder + ringkasan kaya (6/6); typecheck 6/6.
+
+### D83 — P3-PROTO: prototype mode ala Figma (SELESAI-KODE)
+User: "tab design punya button mencoba prototype desain Picasso; kalau saya
+ubah komponen (label/warna/ukuran) via canvas, prototype ikut berubah".
+- [x] Model: DesignShapeCommon.interaction {event click, action navigate,
+      target = frame ROOT halaman sama | id halaman}; store validasi target
+      (English error), null = hapus wiring; deleteDesignShape membersihkan
+      wiring yang mengarah ke shape terhapus (semua halaman).
+- [x] Tools: design_update_shape patch.interaction (schema + deskripsi);
+      ringkasan design_get_file menyertakan onClick: navigate:<target>.
+- [x] Web DesignPrototype.tsx: player full-screen — frame root = layar,
+      render rekursif (frame/rect/circle/text + fill/stroke/radius/opacity),
+      klik shape ter-wire → navigasi (transisi fade + back history),
+      switcher layar/halaman, fit-to-viewport scale, Esc close; poll revn
+      2.5 dtk → edit canvas/persona langsung terlihat di player.
+- [x] DesignTab: tombol "Try it"; DesignCanvas panel props: dropdown
+      "Prototype: on click" (→ frame root / halaman / none).
+- [x] Skill design-canvas-basics: seksi Prototyping (contoh wiring, aturan
+      target, saran wire semua tombol penting).
+- [x] Test: prototyping wiring + validasi + cleanup (design.test.ts 4/4);
+      typecheck 6/6.

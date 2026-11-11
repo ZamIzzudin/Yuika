@@ -102,6 +102,57 @@ it("add_page + list + hit test koordinat relatif tersimpan benar", async () => {
   expect(stored.pages[0]!.roots).toEqual([fr.id]);
 });
 
+it("prototyping: wiring interaction on-click + validasi target + cleanup saat delete", async () => {
+  const f = await run("design_create_file", { name: "Flow" });
+  const fileId = f.fileId as string;
+  const p1 = (f.page as { id: string }).id;
+  const login = (await run("design_add_shape", {
+    fileId, pageId: p1, shape: { type: "frame", name: "Login", x: 0, y: 0, width: 390, height: 844 },
+  })) as { id: string };
+  const dash = (await run("design_add_shape", {
+    fileId, pageId: p1, shape: { type: "frame", name: "Dashboard", x: 450, y: 0, width: 390, height: 844 },
+  })) as { id: string };
+  const btn = (await run("design_add_shape", {
+    fileId, pageId: p1, parentId: login.id, shape: { type: "rect", name: "Button Sign in", x: 48, y: 700, width: 294, height: 48, fill: "#007cf7" },
+  })) as { id: string };
+
+  // wire ke frame root lain + ke halaman
+  await run("design_update_shape", { fileId, pageId: p1, id: btn.id, patch: { interaction: { action: "navigate", target: dash.id } } });
+  const p2 = await run("design_add_page", { fileId, name: "Onboarding" });
+  const heading = (await run("design_add_shape", {
+    fileId, pageId: p1, parentId: login.id, shape: { type: "text", name: "Title", x: 24, y: 60, width: 342, height: 40, text: "Welcome", fontSize: 28, color: "#f4f4f5" },
+  })) as { id: string };
+  await run("design_update_shape", { fileId, pageId: p1, id: heading.id, patch: { interaction: { action: "navigate", target: (p2 as { pageId: string }).pageId } } });
+
+  let file = getDesignFile(dir, fileId)!;
+  expect(file.pages[0]!.shapes[btn.id]!.interaction).toEqual({ event: "click", action: "navigate", target: dash.id });
+
+  // ringkasan persona/coder menampilkan wiring
+  const got = await run("design_get_file", { fileId });
+  const btnSum = (got.pages as Array<{ shapes: Array<Record<string, unknown>> }>)[0]!.shapes.find((s) => s.name === "Button Sign in")!;
+  expect(btnSum.onClick).toBe(`navigate:${dash.id}`);
+
+  // target tidak valid ditolak (ENGLISH)
+  await expect(
+    run("design_update_shape", { fileId, pageId: p1, id: btn.id, patch: { interaction: { action: "navigate", target: "nope" } } }),
+  ).rejects.toThrow(/target not found/);
+  // shape non-root (btn adalah anak frame) tidak sah sebagai target
+  await expect(
+    run("design_update_shape", { fileId, pageId: p1, id: btn.id, patch: { interaction: { action: "navigate", target: btn.id } } }),
+  ).rejects.toThrow(/target not found/);
+
+  // null = hapus wiring
+  await run("design_update_shape", { fileId, pageId: p1, id: heading.id, patch: { interaction: null } });
+  file = getDesignFile(dir, fileId)!;
+  expect(file.pages[0]!.shapes[heading.id]!.interaction).toBeUndefined();
+
+  // hapus frame target → wiring yang mengarah ke sana ikut bersih
+  await run("design_update_shape", { fileId, pageId: p1, id: btn.id, patch: { interaction: { action: "navigate", target: dash.id } } });
+  await run("design_delete_shape", { fileId, pageId: p1, id: dash.id });
+  file = getDesignFile(dir, fileId)!;
+  expect(file.pages[0]!.shapes[btn.id]!.interaction).toBeUndefined();
+});
+
 it("validasi: warna salah, ukuran, dan field patch terlarang ditolak (ENGLISH)", async () => {
   const f = await run("design_create_file", { name: "V" });
   const fileId = f.fileId as string;

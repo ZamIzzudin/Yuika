@@ -237,7 +237,7 @@ export function addDesignShape(
   return shape;
 }
 
-const MUTABLE_COMMON = ["name", "x", "y", "width", "height", "rotation", "opacity", "hidden", "locked", "radius", "fill", "strokeColor", "strokeWidth", "text", "fontSize", "fontWeight", "align", "color"] as const;
+const MUTABLE_COMMON = ["name", "x", "y", "width", "height", "rotation", "opacity", "hidden", "locked", "radius", "fill", "strokeColor", "strokeWidth", "text", "fontSize", "fontWeight", "align", "color", "interaction"] as const;
 
 export function updateDesignShape(
   workspacePath: string,
@@ -256,6 +256,30 @@ export function updateDesignShape(
     }
   }
   const p = patch as Record<string, never>;
+  // Prototyping: interaction {action navigate, target frame-root/page} | null (hapus)
+  if ("interaction" in patch) {
+    const raw = (patch as Record<string, unknown>).interaction as
+      | { event?: string; action?: string; target?: unknown }
+      | null
+      | undefined;
+    if (raw === null || raw === undefined) {
+      delete s.interaction;
+    } else {
+      const target = String(raw.target ?? "");
+      if (raw.action !== "navigate" || !target) {
+        throw new Error('interaction must be { action: "navigate", target: <frameId or pageId> }');
+      }
+      const targetOk =
+        file.pages.some((pg) => pg.id === target) ||
+        (page.roots.includes(target) && page.shapes[target]?.type === "frame");
+      if (!targetOk) {
+        throw new Error(
+          `interaction target not found: "${target}" (must be a root frame on this page, or a page id in the same file)`,
+        );
+      }
+      s.interaction = { event: "click", action: "navigate", target };
+    }
+  }
   if (p.name !== undefined) s.name = String(p.name).trim().slice(0, 120) || s.name;
   if (p.x !== undefined) s.x = num(p.x);
   if (p.y !== undefined) s.y = num(p.y);
@@ -310,6 +334,12 @@ export function deleteDesignShape(workspacePath: string, fileId: string, pageId:
   page.roots = page.roots.filter((r) => !removed.includes(r));
   for (const sh of Object.values(page.shapes)) {
     if (sh.type === "frame") sh.children = sh.children.filter((c) => !removed.includes(c));
+  }
+  // bersihkan wiring prototyping yang mengarah ke shape terhapus (semua halaman)
+  for (const pg of file.pages) {
+    for (const sh of Object.values(pg.shapes)) {
+      if (sh.interaction && removed.includes(sh.interaction.target)) delete sh.interaction;
+    }
   }
   file.revn += 1;
   file.updatedAt = Date.now();

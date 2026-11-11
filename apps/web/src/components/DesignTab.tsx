@@ -3,10 +3,11 @@
 // File desain = JSON host; dibuat oleh persona (tools design_*) atau user
 // (tombol New); keduanya melihat perubahan satu sama lain (polling).
 import { useCallback, useEffect, useState } from "react";
-import { FrameCorners, Plus } from "@phosphor-icons/react";
+import { FrameCorners, Play, Plus } from "@phosphor-icons/react";
 import { apiUrl, authFetch } from "@/lib/api";
 import { Button, EmptyState, Select } from "./ui";
 import { DesignCanvas } from "./DesignCanvas";
+import { DesignPrototype } from "./DesignPrototype";
 
 interface DesignRow {
   id: string;
@@ -19,6 +20,7 @@ interface DesignRow {
 export function DesignTab(): React.ReactElement {
   const [files, setFiles] = useState<DesignRow[] | null>(null);
   const [sel, setSel] = useState("");
+  const [playing, setPlaying] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -84,6 +86,14 @@ export function DesignTab(): React.ReactElement {
         <Button variant="ghost" className="!px-2 !py-1" title="New design file" onClick={() => void create()}>
           <Plus size={15} />
         </Button>
+        <Button
+          variant="primary"
+          className="!px-2.5 !py-1"
+          title="Try this design as a live prototype"
+          onClick={() => setPlaying(true)}
+        >
+          <Play size={14} weight="fill" /> Try it
+        </Button>
         <span className="ml-auto text-xs text-dim">revn {files.find((f) => f.id === sel)?.revn ?? 0}</span>
       </div>
       {sel ? (
@@ -91,6 +101,7 @@ export function DesignTab(): React.ReactElement {
           <DesignCanvas key={sel} fileId={sel} />
         </div>
       ) : null}
+      {playing && sel ? <DesignPrototype fileId={sel} onClose={() => setPlaying(false)} /> : null}
     </div>
   );
 }

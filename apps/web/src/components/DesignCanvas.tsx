@@ -597,12 +597,15 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           {selShape ? (
             <ShapeProps
               shape={selShape}
+              file={file}
+              pageId={page.id}
               onChange={(patch) =>
                 mutate((f) => {
                   const pg = f.pages.find((p) => p.id === page.id);
                   const s = pg?.shapes[selShape.id];
                   if (!s) return;
                   Object.assign(s, patch);
+                  if (patch.interaction === null) delete s.interaction;
                 })
               }
             />
@@ -619,9 +622,13 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
 
 function ShapeProps({
   shape,
+  file,
+  pageId,
   onChange,
 }: {
   shape: DesignShape;
+  file: DesignFile;
+  pageId: string;
   onChange: (patch: Partial<DesignShape>) => void;
 }): React.ReactElement {
   const fill = shape.fills[0]?.color ?? "#000000";
@@ -719,6 +726,44 @@ function ShapeProps({
         Hidden
         <input type="checkbox" checked={Boolean(shape.hidden)} onChange={(e) => onChange({ hidden: e.target.checked })} />
       </label>
+      {/* P3-PROTO: wiring on-click navigasi (dipakai tombol Try it) */}
+      <div>
+        <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-dim">Prototype: on click</div>
+        <Select
+          value={shape.interaction?.target ?? ""}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange(
+              v
+                ? ({ interaction: { event: "click", action: "navigate", target: v } } as Partial<DesignShape>)
+                : ({ interaction: null } as unknown as Partial<DesignShape>),
+            );
+          }}
+          aria-label="On click navigates to"
+          className="w-full"
+        >
+          <option value="">(none)</option>
+          {file.pages.flatMap((pg) =>
+            pg.roots
+              .map((r) => pg.shapes[r])
+              .filter((s): s is DesignShape => Boolean(s) && s!.type === "frame")
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {pg.id === pageId ? "\u2192 " : `\u2192 ${pg.name} / `}
+                  {s.name || "frame"}
+                </option>
+              )),
+          )}
+          {file.pages
+            .filter((pg) => pg.id !== pageId)
+            .map((pg) => (
+              <option key={pg.id} value={pg.id}>
+                {"\u2192 page: "}
+                {pg.name}
+              </option>
+            ))}
+        </Select>
+      </div>
     </div>
   );
 }

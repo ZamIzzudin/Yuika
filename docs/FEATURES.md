@@ -24,12 +24,12 @@
 | --- | --- | --- |
 | F1 Mobile remote (Yuika-Mobile) | 85% | push e2e device + Firebase, Play internal track |
 | F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
-| F3 Design-to-code (embedded canvas) | 55% | persona draw loop hidup, generate acceptance |
+| F3 Design-to-code (embedded canvas) | 65% | persona draw loop hidup, generate acceptance |
 | F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
-F1 [########·-] 85%   F2 [#######···] 75%   F3 [######····] 55%
+F1 [########·-] 85%   F2 [#######···] 75%   F3 [#######···] 65%
 F4 [########·-] 83%   F5 [##········] 20%
 ```
 
@@ -95,7 +95,7 @@ Sisa (2):
 100% ketika: kedua sisa selesai dan installer teruji end-to-end
 (install bersih → pakai → update otomatis → reset factory).
 
-## F3 · Design-to-code (embedded canvas) — 55%
+## F3 · Design-to-code (embedded canvas) — 65%
 
 > **Putusan ulang (D81, arahan user):** jalur connector Penpot self-host
 > (instance + token + RPC) DIBERHENTIKAN — terlalu berat (requirement stack
@@ -118,6 +118,14 @@ Selesai (2):
       text/opacity), zoom/pan, undo/redo, multi-page, autosave 1.5 dtk +
       guard revn (409 stale). Persona ↔ user melihat saling mengedit
       (polling 12-15 dtk).
+
+- [x] **Prototype mode (D83)**: tombol "Try it" di tab Design menjalankan
+      file desain sebagai prototype hidup — renderer DOM atas JSON yang sama;
+      wiring on-click antar layar (interaction navigate, Figma-style, bisa
+      diset user di panel props ATAU persona via design_update_shape);
+      live sync: edit canvas → autosave → player re-render (~2.5 dtk poll);
+      transisi layar + back history + switcher layar/halaman; hapus frame
+      target otomatis membersihkan wiring.
 
 Sisa (3):
 - [ ] **Persona draw loop hidup**: Picasso Yui (PERSONA.md + skill

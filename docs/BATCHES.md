@@ -490,3 +490,10 @@ daftar sesi datar, tapi **mission control project-oriented**.
   coder toolset read-only design pair; skill design-to-code-handoff v0.2 dual-persona;
   persona docs updated (canvas = single source of truth, mockup HTML on request only).
 - Tests 6/6; typecheck 6/6.
+
+## Batch D83 — P3-PROTO prototype mode
+
+- interaction model + validasi + auto-cleanup; design_update_shape wiring;
+  DesignPrototype player (Try it) dengan live sync 2.5s, navigasi on-click,
+  back history, switcher; panel props wiring dropdown; skill updated.
+- Tests 7/7; typecheck 6/6.
