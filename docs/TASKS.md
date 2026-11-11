@@ -1075,3 +1075,17 @@ bukan semua nodes/page; (2) player terpotong karena layout overflow;
   padding 60).
 - [x] Test isScreen (default/nested/loose/uncheck/validasi/ringkasan) —
   design.test.ts 5/5; core 431 passed; typecheck 6/6.
+
+### D85 — Tab dedicated per persona (SELESAI-KODE)
+Arahan user: Design tab dedicated Picasso; Task tab fully dedicated
+Rommel (planner) + Maestro (conductor); Team tab untuk semua persona yang
+bisa assign (can_spawn non-kosong); Terminal tetap milik Neo/Hiro — kini
+semuanya digate per PERSONA AKTIF (yang sedang diajak chat), bukan roster
+project (sebelumnya terminal pakai roster).
+- [x] page.tsx: showTerminalTab (yui-coder|yui-operator), showDesignTab
+      (yui-designer), showTaskTab (yui-planner|yui-conductor), showTeamTab
+      (yui-conductor|yui-planner|yui-operator — delegator via delegation.yaml
+      can_spawn;Neo dapat spawn sejak D75); tab tersembunyi dihapus dari
+      tab bar; efek reset ke chat bila tab aktif menjadi tersembunyi saat
+      persona berganti.
+- [x] Files/Config/Logs tetap untuk semua persona. Typecheck 6/6.

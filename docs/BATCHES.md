@@ -504,3 +504,8 @@ daftar sesi datar, tapi **mission control project-oriented**.
   lightbox scaling fix (wrapper+origin top-left), canvas zoom anchored ke kursor
   + Fit beneran + shift-wheel pan + reset 100%.
 - Core 431 passed; typecheck 6/6.
+
+## Batch D85 — tab dedicated per persona
+
+- Design=Picasso, Task=Rommel+Maestro, Team=delegator (Maestro/Rommel/Neo),
+  Terminal=Neo/Hiro; gate berbasis persona aktif sesi, reset otomatis ke chat.

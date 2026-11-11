@@ -882,11 +882,25 @@ export default function Home() {
 
  // tab Terminal hanya muncul bila Hiro/Neo ter-assign, tanpa itu
   // docker tak disiapkan (hemat resource), persis permintaan user.
-  const showTerminalTab =
-    rosterIds.includes("yui-coder") || rosterIds.includes("yui-operator");
+  // D85: tab dedicated per persona AKTIF (persona yang sedang diajak chat,
+  // bukan roster project) — selaras mental model user: Terminal milik Neo/Hiro,
+  // Design milik Picasso, Task milik Rommel/Maestro, Team untuk semua
+  // persona yang bisa assign (can_spawn non-kosong: Maestro/Rommel/Neo).
+  const activeId = active?.id ?? "";
+  const showTerminalTab = activeId === "yui-coder" || activeId === "yui-operator";
+  const showDesignTab = activeId === "yui-designer";
+  const showTaskTab = activeId === "yui-planner" || activeId === "yui-conductor";
+  const showTeamTab =
+    activeId === "yui-conductor" || activeId === "yui-planner" || activeId === "yui-operator";
   useEffect(() => {
-    if (mainTab === "terminal" && !showTerminalTab) setMainTab("chat");
-  }, [mainTab, showTerminalTab]);
+    const gate: Partial<Record<WorkspaceTab, boolean>> = {
+      terminal: showTerminalTab,
+      design: showDesignTab,
+      board: showTaskTab,
+      team: showTeamTab,
+    };
+    if (mainTab in gate && !gate[mainTab as WorkspaceTab]) setMainTab("chat");
+  }, [mainTab, showTerminalTab, showDesignTab, showTaskTab, showTeamTab]);
 
   async function send(text: string) {
     if (!sessionId) return;
@@ -1263,21 +1277,25 @@ export default function Home() {
                         },
                         ...(activeProject
                           ? ([
-                              {
-                                id: "team",
-                                label: (
-                                  <span className="flex items-center gap-1.5">
-                                    Team
-                                    {items.some(
-                                      (it) =>
-                                        it.kind === "delegation" && !it.text,
-                                    ) && <Dot pulse />}
-                                  </span>
-                                ),
-                              },
+                              ...(showTeamTab
+                                ? [
+                                    {
+                                      id: "team",
+                                      label: (
+                                        <span className="flex items-center gap-1.5">
+                                          Team
+                                          {items.some(
+                                            (it) =>
+                                              it.kind === "delegation" && !it.text,
+                                          ) && <Dot pulse />}
+                                        </span>
+                                      ),
+                                    },
+                                  ]
+                                : []),
                               { id: "files", label: "Files" },
-                              { id: "board", label: "Task" },
-                              { id: "design", label: "Design" },
+                              ...(showTaskTab ? [{ id: "board", label: "Task" }] : []),
+                              ...(showDesignTab ? [{ id: "design", label: "Design" }] : []),
                               ...(showTerminalTab
                                 ? [{ id: "terminal", label: "Terminal" }]
                                 : []),
