@@ -24,17 +24,16 @@
 | --- | --- | --- |
 | F1 Mobile remote (Yuika-Mobile) | 85% | push e2e device + Firebase, Play internal track |
 | F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
-| F3 Design-to-code (embedded canvas) | 65% | persona draw loop hidup, generate acceptance |
+| F3 Design-to-code (embedded canvas) | 100% | SELESAI (D86): draw loop live + generate acceptance + golden path |
 | F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
-F1 [########·-] 85%   F2 [#######···] 75%   F3 [#######···] 65%
+F1 [########·-] 85%   F2 [#######···] 75%   F3 [##########] 100%
 F4 [########·-] 83%   F5 [##········] 20%
 ```
 
-Urutan eksekusi yang disarankan: **F1 → F2 → F4 → F3 → F5** (F3 boleh
-jalan paralel karena butuh infra Penpot self-host yang dipasang dulu).
+Urutan eksekusi yang disarankan: **F1 → F2 → F4 → F5** (F3 selesai D86).
 
 ---
 
@@ -127,16 +126,17 @@ Selesai (2):
       transisi layar + back history + switcher layar/halaman; hapus frame
       target otomatis membersihkan wiring.
 
-Sisa (3):
-- [ ] **Persona draw loop hidup**: Picasso Yui (PERSONA.md + skill
-      design-canvas-basics + misi design-mockup sudah ter-wire) lulus run
-      nyata: user minta desain → file jadi → user edit → persona baca balik.
-- [~] **P2-DSN-4** Pipeline develop: wiring selesai (D82) — Hiro read-only
-      design_list/design_get_file + ringkasan kaya (fill/radius/stroke,
-      grup per frame) + skill design-to-code-handoff v0.2 (names = kontrak,
-      derive tokens/layout); sisa: run nyata generate + acceptance human gate.
-- [ ] **P2-DSN-6** Golden path E2E (design → edit user → develop → diff)
-      hijau 2x berturut.
+SELESAI (D86, run nyata):
+- [x] **Persona draw loop hidup**: Picasso (sesi nyata) membaca skill
+design-canvas-basics lalu design_create_file + 4x design_add_shape;
+artboard otomatis isScreen=true; user edit via route canvas (PUT guard
+revn) terbaca balik oleh persona.
+- [x] **P2-DSN-4**: Hiro (sesi nyata) design_list lalu design_get_file lalu
+write_file code/demo/LoginScreen.tsx dengan mapping nama shape ke elemen
+di header + token warna dari fills; regenerate setelah user edit
+(#007cf7 ke #5865f2) diff 3+/3- persis perubahan desain.
+- [x] **P2-DSN-6**: golden path otomatis (design-golden-path.test.ts)
+hijau 2x berturut + run nyata dua arah terverifikasi lewat trace.
 
 100% ketika: golden path jalan di project demo tanpa keluar platform.
 

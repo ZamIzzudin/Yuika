@@ -509,3 +509,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 - Design=Picasso, Task=Rommel+Maestro, Team=delegator (Maestro/Rommel/Neo),
   Terminal=Neo/Hiro; gate berbasis persona aktif sesi, reset otomatis ke chat.
+
+## Batch D86 — F3 tuntas (run nyata + golden path)
+
+- Picasso draw loop live (design_* tools via LLM nyata), user edit PUT guard
+  revn dua arah, Hiro generate + regenerate dengan diff minimal 3+/3-,
+  golden path otomatis hijau 2x. F3 = 100%.

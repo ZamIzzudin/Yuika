@@ -1089,3 +1089,20 @@ project (sebelumnya terminal pakai roster).
       tab bar; efek reset ke chat bila tab aktif menjadi tersembunyi saat
       persona berganti.
 - [x] Files/Config/Logs tetap untuk semua persona. Typecheck 6/6.
+
+### D86 — F3 SELESAI: draw loop live + P2-DSN-4 run nyata + P2-DSN-6 golden path
+Eksekusi penuh lewat API engine lokal (token sesi dev di auth.db, akun
+lokal); model nyata glm-5.1.
+- [x] Draw loop Picasso LIVE: sesi baru yui-designer → skill_view
+design-canvas-basics → design_create_file "Login Mobile" + 4x design_add_shape
+(frame LoginScreen isScreen=true, Title, Button Sign in, Button Label).
+- [x] User edit dua arah: PUT /api/design/files (guard revn 409) ubah warna
+tombol fills[0].color #007cf7 → #5865f2 (catatan: field warna = fills[]
+bukan fill; edit pertama salah field terdeteksi dari output Hiro).
+- [x] P2-DSN-4 run nyata: sesi yui-coder → design_list → design_get_file →
+write_file code/demo/LoginScreen.tsx (mapping nama shape → elemen di header,
+token --ls-accent dari fills, layout dari geometri); turn-2 regenerate
+setelah user edit: diff 3+/3- persis perubahan token warna.
+- [x] P2-DSN-6: design-golden-path.test.ts (2 test: loop penuh v1→edit→v2→
+diff; persistence lintas registry/sesi baru) hijau 2x berturut.
+- [x] FEATURES.md F3 65% → 100%; urutan saran kini F1 → F2 → F4 → F5.
