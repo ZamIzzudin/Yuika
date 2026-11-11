@@ -10,4 +10,9 @@ tools:
   - todo_update
   - memory_append
   - session_search
+  - penpot_status
+  - penpot_setup_project
+  - penpot_create_file
+  - penpot_update_file
+  - penpot_get_file
   - "mcp__*"

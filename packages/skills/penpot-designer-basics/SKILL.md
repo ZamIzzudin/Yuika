@@ -1,4 +1,15 @@
-# penpot-designer-basics
+---
+name: penpot-designer-basics
+description: "Draw real Penpot design files headless via penpot_* tools: build frames, shapes, and text through the changes protocol (add-obj/mod-obj), share-link viewer for live preview."
+version: 0.2.0
+author: Yuika Team
+license: MIT
+metadata:
+  yui:
+    category: design
+    personas: [yui-designer]
+    status: ready
+---
 
 Skill untuk persona Designer: menggambar desain di Penpot secara headless
 lewat tools `penpot_*` (protocol `changes`, jalur v0 sesuai

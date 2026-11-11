@@ -965,3 +965,19 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 - [x] Tool auto-heal: mod-obj/del-obj/mov-objects tanpa pageId = no-op server → tool inject pageId cache otomatis.
 - [x] E2E TOOL LAYER LIVE HIJAU: status → setup_project → create_file (share-link + viewerUrl 200) → update_file (frame 390x844 + Card + Button; revn 0→1) → get_file (4 objek) → mod-obj rename (revn 2, nama berubah). Override nginx terverifikasi: response TANPA X-Frame-Options → iframe embed jalan.
 - [x] Skill diperbarui dengan template shape live; unit test mock disinkronkan format fdata + vern (7/7).
+
+### D79c — Fix wiring designer: skill penpot tidak muncul (laporan user, SELESAI)
+User test: "Picasso Yui bilang tidak ada skill penpot". Tiga lapis penyebab,
+semuanya diperbaiki:
+- [x] `SKILL.md` penpot-designer-basics TANPA frontmatter → loader skip
+      diam-diam (robustness). Frontmatter valid ditambahkan (name/description/
+      metadata.yui personas+status ready).
+- [x] `yui-designer/skills.yaml` TIDAK ADA, sementara loader HANYA membaca
+      skills.yaml (`skills:` di persona.yaml adalah dead field yang tertimpa
+      {} → bundled kosong). Dibuat skills.yaml bundling
+      [design-system-basics, design-to-code-handoff, penpot-designer-basics];
+      blok dead di persona.yaml dihapus.
+- [x] `yui-designer/toolsets.yaml` tanpa `penpot_*` → 5 tool tak terlihat
+      persona walau terdaftar global. Ditambahkan ke whitelist designer.
+- [x] Test baru designer-wiring.test.ts (skill ter-load + bundled + toolset)
+      2/2; skills-manager + skill-bindings tetap hijau (12/12).
