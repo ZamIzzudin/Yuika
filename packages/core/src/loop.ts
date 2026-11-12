@@ -90,6 +90,7 @@ export class AgentLoop {
 
     // 1) append user message (append-only) + announce
     store.appendMessage(sessionId, { role: "user", content: userText });
+    emit({ type: "user.message", turnId, text: userText }); // bubble user ikut replay history
     emit({ type: "turn.started", turnId });
     log.info({ model, projectId: session.projectId }, "turn started");
     emit({ type: "persona.state", personaId: session.personaId, state: "thinking" });
@@ -176,6 +177,7 @@ export class AgentLoop {
         const steerMsg: InternalMessage = { role: "user", content: `[arahan user, mid-turn] ${st}` };
         messages.push(steerMsg);
         store.appendMessage(sessionId, steerMsg);
+        emit({ type: "user.message", turnId, text: `[arahan user, mid-turn] ${st}` });
         trace(`  steer: ${st.slice(0, 80)}`);
       }
  // pause (delegasi), anak menunggu di sini TANPA memanggil

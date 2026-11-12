@@ -515,3 +515,8 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - Picasso draw loop live (design_* tools via LLM nyata), user edit PUT guard
   revn dua arah, Hiro generate + regenerate dengan diff minimal 3+/3-,
   golden path otomatis hijau 2x. F3 = 100%.
+
+## Batch D87 — fix bubble user riwayat + windowing chat
+
+- Event user.message (emit + persist + steer), merge legacy via endpoint
+  messages baru, windowing 8/+16 + skeleton + offset stabil di ChatView.

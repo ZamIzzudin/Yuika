@@ -180,6 +180,9 @@ export default function Home() {
 
   // Assistant streaming: delta ditumpuk ke item terakhir; id item disimpan di sini.
   const openAssistant = useRef<number | null>(null);
+  /** Teks user terakhir yang dikirim optimistik (bubble sudah dirender):
+   * event user.message yang sama TIDAK menambah bubble kedua. */
+  const pendingUser = useRef<string | null>(null);
   // Reasoning streaming (fix dev-10): item sendiri, kolaps-able.
   const openReasoning = useRef<number | null>(null);
 
@@ -199,6 +202,17 @@ export default function Home() {
       case "turn.started":
         setBusy(true);
         break;
+      case "user.message": {
+        // fix 2026-11 (bubble user hilang di riwayat): event ini kini ikut
+        // replay; live-path sudah menampilkan bubble optimistik → dedupe.
+        const p = pendingUser.current;
+        if (p !== null && (e.text === p || e.text === `[arahan user, mid-turn] ${p}`)) {
+          pendingUser.current = null;
+          break;
+        }
+        setItems((prev) => [...prev, { kind: "msg", role: "user", text: e.text }]);
+        break;
+      }
       case "message.delta":
         setItems((prev) => {
           const idx = openAssistant.current;
@@ -601,6 +615,7 @@ export default function Home() {
           if (r.ok) {
             const text = await r.text();
             let last = 0;
+            let sawUserEvent = false;
             for (const block of text.split("\n\n")) {
               const idLine = block
                 .split("\n")
@@ -610,6 +625,7 @@ export default function Home() {
                 .split("\n")
                 .find((l) => l.startsWith("data: "));
               if (!line) continue;
+              if (line.includes('"user.message"')) sawUserEvent = true;
               try {
                 applyEvent(JSON.parse(line.slice(6)) as YuiEvent);
               } catch {
@@ -617,6 +633,53 @@ export default function Home() {
               }
             }
             if (last > 0) lastEventId.current = last;
+            // Sesi LAMA (dibuat sebelum event user.message): bubble user tidak
+            // ada di event stream → sisipkan dari messages table, interleave
+            // per posisi bubble assistant (urutan user/assistant bergantian).
+            if (!sawUserEvent) {
+              try {
+                const mr = await authFetch(
+                  apiUrl(`/api/sessions/${sessionId}/messages`),
+                );
+                if (mr.ok) {
+                  const md = (await mr.json()) as {
+                    messages: Array<{ role: string; content: string }>;
+                  };
+                  const users = md.messages
+                    .filter(
+                      (m) =>
+                        m.role === "user" &&
+                        // nudge internal sistem TIDAK jadi bubble user
+                        !m.content.startsWith("[sistem]"),
+                    )
+                    .map((m) => m.content);
+                  if (users.length > 0) {
+                    setItems((prev) => {
+                      const next = [...prev];
+                      let ui = 0;
+                      let placed = 0;
+                      for (let i = 0; i < next.length && ui < users.length; i++) {
+                        const it = next[i]!;
+                        if (it.kind === "msg" && it.role === "assistant") {
+                          next.splice(i, 0, { kind: "msg", role: "user", text: users[ui]! });
+                          ui++;
+                          placed++;
+                          i++;
+                        }
+                      }
+                      // user tanpa balasan (turn terputus) → ekor, urut asli
+                      for (; ui < users.length; ui++) {
+                        next.push({ kind: "msg", role: "user", text: users[ui]! });
+                        placed++;
+                      }
+                      return placed > 0 ? next : prev;
+                    });
+                  }
+                }
+              } catch {
+                /* merge best-effort */
+              }
+            }
           }
         } catch {
           /* fallback: SSE replay seperti biasa */
@@ -904,6 +967,7 @@ export default function Home() {
 
   async function send(text: string) {
     if (!sessionId) return;
+    pendingUser.current = text;
     setItems((prev) => [...prev, { kind: "msg", role: "user", text }]);
     await authFetch(apiUrl(`/api/sessions/${sessionId}/message`), {
       method: "POST",
@@ -1011,6 +1075,7 @@ export default function Home() {
         }
       }
       // pesan user tetap tercatat di thread (brief/steer masuk konteks lead)
+      pendingUser.current = text;
       setItems((prev) => [...prev, { kind: "msg", role: "user", text }]);
       void wfRun.loadActive();
     },
@@ -1462,6 +1527,7 @@ export default function Home() {
                       {items.length === 0 ? (
                         <ChatView
                           items={items}
+                          sessionKey={sessionId ?? active.id}
                           personaState={personaState}
                           personaId={active.id}
                           personaName={active.name}
@@ -1532,6 +1598,7 @@ export default function Home() {
                       ) : (
                         <ChatView
                           items={items}
+                          sessionKey={sessionId ?? active.id}
                           personaState={personaState}
                           personaId={active.id}
                           personaName={active.name}

@@ -76,6 +76,29 @@ describe("AgentLoop (fake provider)", () => {
     store.close();
   });
 
+  it("user.message event: bubble user ikut event stream (fix riwayat web)", async () => {
+    resetRegistryForTests();
+    const provider = new FakeProvider([
+      { deltas: ["oke"], done: { type: "done", finishReason: "stop", text: "oke", toolCalls: [] } },
+    ]);
+    const { store, events, loop, sessionId } = makeHarness(provider);
+    await loop.runTurn(sessionId, "hai saya user");
+
+    const um = events.find((e) => e.type === "user.message") as
+      | { type: "user.message"; turnId: string; text: string }
+      | undefined;
+    expect(um).toBeDefined();
+    expect(um!.text).toBe("hai saya user");
+    // urutan: user.message SEBELUM turn.started (bubble user dulu di atas)
+    expect(events.findIndex((e) => e.type === "user.message")).toBeLessThan(
+      events.findIndex((e) => e.type === "turn.started"),
+    );
+    // ter-persist → replay history (getEvents) memuat bubble user
+    const replay = store.getEvents(sessionId, 0);
+    expect(replay.some((e) => e.type === "user.message" && e.text === "hai saya user")).toBe(true);
+    store.close();
+  });
+
   it("tool round: tool_calls → result → iterasi → final (append-only sequence)", async () => {
     resetRegistryForTests();
     registry.register({

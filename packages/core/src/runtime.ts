@@ -889,6 +889,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       EventBus.publish(sessionId, e);
     },
     getEvents: (sessionId: string, since = 0): YuiEvent[] => store.getEvents(sessionId, since),
+    getMessagesWithSeq: (sessionId: string) => store.getMessagesWithSeq(sessionId),
     subscribe: (sessionId: string, listener: (e: YuiEvent) => void) => EventBus.subscribe(sessionId, listener),
     subscribeAll: (listener: (e: YuiEvent) => void) => EventBus.subscribeAll(listener),
     // ---- projects ----

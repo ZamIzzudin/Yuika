@@ -26,6 +26,15 @@ export const TurnStartedEvent = EventMeta.extend({
   turnId: z.string(),
 });
 
+/** Pesan user (fix 2026-11: riwayat web kehilangan bubble user — event
+ * stream dulu hanya membawa konten assistant). Di-emit saat turn mulai
+ * (dan saat steer mid-turn); replay history memakai ini utk bubble user. */
+export const UserMessageEvent = EventMeta.extend({
+  type: z.literal("user.message"),
+  turnId: z.string(),
+  text: z.string(),
+});
+
 export const MessageDeltaEvent = EventMeta.extend({
   type: z.literal("message.delta"),
   turnId: z.string(),
@@ -399,6 +408,7 @@ export const WorkshopCommandEvent = EventMeta.extend({
 
 export const YuiEvent = z.discriminatedUnion("type", [
   TurnStartedEvent,
+  UserMessageEvent,
   MessageDeltaEvent,
   ReasoningDeltaEvent,
   MessageDoneEvent,

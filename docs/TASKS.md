@@ -1106,3 +1106,27 @@ setelah user edit: diff 3+/3- persis perubahan token warna.
 - [x] P2-DSN-6: design-golden-path.test.ts (2 test: loop penuh v1→edit→v2→
 diff; persistence lintas registry/sesi baru) hijau 2x berturut.
 - [x] FEATURES.md F3 65% → 100%; urutan saran kini F1 → F2 → F4 → F5.
+
+### D87 — Fix riwayat chat: bubble user hilang + windowing 8/+16 + skeleton (SELESAI-KODE)
+Bug user: riwayat chat web menampilkan SEMUA bubble sebagai persona; bubble
+user tidak ada. Akar: pesan user tersimpan di messages table (role=user)
+TAPI tidak pernah di-emit ke event stream — web membangun riwayat dari
+replay event SSE (message.delta hanya membawa konten assistant), sementara
+mobile dapat session.snapshot dari messages table (makanya benar di sana).
+- [x] Event baru user.message (contracts + loop): di-emit SEBELUM
+      turn.started saat turn mulai + utk steer mid-turn; ter-persist →
+      replay history memuat bubble user (urutan benar, tanpa duplikasi:
+      live-path optimistik di-dedupe via pendingUser ref, steer dikenali
+      label [arahan user, mid-turn]).
+- [x] Sesi LAMA (event tanpa user.message): GET /api/sessions/:id/messages
+      baru (getMessagesWithSeq, nudge [sistem] dikecualikan) → web merge
+      interleave bubble user sebelum tiap bubble assistant saat snapshot
+      awal (fallback best-effort).
+- [x] Windowing ala mobile di ChatView: render 8 item terakhir; scroll
+      dekat atas (<80px) ATAU klik chip “Load earlier messages” → muat
+      +16 dengan skeleton bubble sesaat; posisi scroll dipertahankan
+      (metrik prevHeight/offset dipulihkan pasca render); ganti sesi →
+      reset window + auto ke bawah.
+- [x] Test: loop.test.ts user.message (emit, urutan, persist, replay);
+      core 434 hijau; contracts 34; typecheck 6/6; endpoint /messages
+      diverifikasi live di engine lokal (sesi Picasso lama terbaca).

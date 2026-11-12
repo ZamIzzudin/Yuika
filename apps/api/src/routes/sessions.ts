@@ -22,6 +22,18 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
    *  Abort HTTP provider + loop; progres tersimpan, turn berakhir graceful. */
   app.post("/api/sessions/:id/cancel", async (req) => ({ cancelled: getRt().cancelTurn((req.params as { id: string }).id) }));
 
+  /** Riwayat pesan mentah (messages table, seq monoton): sumber bubble
+   *  USER utk sesi lama sebelum event user.message ada (fix 2026-11). */
+  app.get("/api/sessions/:id/messages", async (req) => {
+    const { id } = req.params as { id: string };
+    const rows = getRt().getMessagesWithSeq(id);
+    return {
+      messages: rows
+        .filter((r) => r.msg.role === "user" || r.msg.role === "assistant")
+        .map((r) => ({ seq: r.seq, role: r.msg.role, content: r.msg.content })),
+    };
+  });
+
   /** Replay event (resume/reconnect), pola events.since Hermes. */
   app.get("/api/sessions/:id/events", async (req) => {
     const { id } = req.params as { id: string };
