@@ -15,6 +15,8 @@ import {
   ChatTeardropText,
   Lightning,
   PaperPlaneTilt,
+  Paperclip,
+  X,
   PauseCircle,
   PlayCircle,
   PencilSimple,
@@ -393,6 +395,50 @@ export function ChatView({
  // kontrol delegasi aktif, steer input per kartu + cancel.
   const [steerOpenFor, setSteerOpenFor] = useState<string | null>(null);
   const [steerText, setSteerText] = useState("");
+
+  // ---- Lampiran chat (D87+): pilih dokumen → upload ke uploads/ sesi →
+  //  chip di composer → path otomatis ditanam ke pesan (persona baca via
+  //  doc_read / read_file). Sama dgn tombol Upload di tab Files, tapi tanpa
+  //  pindah tab.
+  const MAX_ATTACH = 5;
+  const [attachments, setAttachments] = useState<
+    Array<{ name: string; size: number; path?: string; error?: string; busy: boolean }>
+  >([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function pickFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const room = MAX_ATTACH - attachments.length;
+    if (room <= 0) return;
+    const list = Array.from(files).slice(0, room);
+    const start = attachments.length;
+    setAttachments((prev) => [
+      ...prev,
+      ...list.map((f) => ({ name: f.name, size: f.size, busy: true })),
+    ]);
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i]!;
+      const idx = start + i;
+      try {
+        const r = await authFetch(
+          apiUrl(`/api/sessions/${sessionKey}/uploads?name=${encodeURIComponent(f.name)}`),
+          { method: "POST", body: await f.arrayBuffer() },
+        );
+        if (!r.ok) {
+          const body = (await r.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error ?? "upload failed");
+        }
+        const d = (await r.json()) as { path: string };
+        setAttachments((prev) => prev.map((a, j) => (j === idx ? { ...a, busy: false, path: d.path } : a)));
+      } catch (err) {
+        setAttachments((prev) =>
+          prev.map((a, j) =>
+            j === idx ? { ...a, busy: false, error: err instanceof Error ? err.message : "upload failed" } : a,
+          ),
+        );
+      }
+    }
+  }
   async function sendSteer(childSessionId: string) {
     const text = steerText.trim();
     if (!text) return;
@@ -517,24 +563,35 @@ export function ChatView({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const text = input.trim();
-    if (!text || busy) return;
+    const uploading = attachments.some((a) => a.busy);
+    if (uploading || busy) return;
+    const attached = attachments.filter((a) => a.path).map((a) => a.path!);
+    const base = input.trim();
+    if (!base && attached.length === 0) return;
+    // lampiran ditanam ke teks (transparan + ter-persist di riwayat);
+    const text =
+      attached.length > 0
+        ? `${base}${base ? "\n\n" : ""}[files attached via chat]\n${attached.map((p) => `- ${p}`).join("\n")}`
+        : base;
     // satu composer, makna menurut konteks: run hidup → steer; toggle
     // Workflow Mode nyala → brief; selain itu turn chat biasa.
     if (workflow) {
       if (workflow.activeRun) {
         void workflow.onSendWorkflow(text, "steer");
         setInput("");
+        setAttachments([]);
         return;
       }
       if (workflow.armed) {
         void workflow.onSendWorkflow(text, "brief");
         setInput("");
+        setAttachments([]);
         return;
       }
     }
     onSend(text);
     setInput("");
+    setAttachments([]);
   }
 
   return (
@@ -1178,10 +1235,68 @@ export function ChatView({
               onAction={workflow.onAction}
             />
           )}
+          {/* Lampiran chat: chip dokumen terpilih (upload → uploads/ sesi) */}
+          {attachments.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {attachments.map((a, i) => (
+                <div
+                  key={`${a.name}-${i}`}
+                  className="flex items-center gap-2 rounded-md2 border border-line bg-inset px-2.5 py-1.5 text-caption"
+                >
+                  {a.busy ? (
+                    <span className="size-3 shrink-0 animate-spin rounded-full border border-line-strong border-t-transparent" aria-hidden />
+                  ) : a.error ? (
+                    <span className="shrink-0 text-danger" title={a.error}>
+                      {a.error}
+                    </span>
+                  ) : (
+                    <Paperclip size={12} className="shrink-0 text-secondary" aria-hidden />
+                  )}
+                  <span className="min-w-0 flex-1 truncate text-primary">
+                    {a.name}
+                    {!a.busy && !a.error && (
+                      <span className="ml-1.5 text-dim">
+                        {(a.size / 1024).toFixed(0)} KB · {a.path}
+                      </span>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="cursor-pointer text-dim transition-colors hover:text-primary"
+                    aria-label={`Remove ${a.name}`}
+                    onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                  >
+                    <X size={12} weight="bold" aria-hidden />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <form
             className="flex items-end gap-2 rounded-lg2 border border-line bg-surface p-2 transition-colors ease-[var(--ease-out-yui)] duration-[var(--yui-dur-normal)] focus-within:border-line-strong"
             onSubmit={submit}
           >
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              hidden
+              accept=".pdf,.xlsx,.xls,.csv,.md,.txt,.json,.html,.htm,.xml,.yaml,.yml"
+              onChange={(e) => {
+                void pickFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              className="flex size-[34px] shrink-0 cursor-pointer items-center justify-center rounded-md2 text-secondary transition-colors hover:bg-inset hover:text-primary disabled:cursor-default disabled:text-dim"
+              onClick={() => fileRef.current?.click()}
+              disabled={attachments.length >= MAX_ATTACH}
+              aria-label="Attach documents"
+              title="Attach documents (pdf/xlsx/csv/md/…) → uploads/, read by the agent via doc_read"
+            >
+              <Paperclip size={15} aria-hidden />
+            </button>
             <textarea
               ref={taRef}
               rows={1}
@@ -1205,7 +1320,7 @@ export function ChatView({
             <button
               className="flex size-[34px] shrink-0 cursor-pointer items-center justify-center rounded-md2 bg-accent text-white transition-colors ease-out duration-[var(--yui-dur-fast)] hover:bg-accent-hover disabled:cursor-default disabled:bg-control-active disabled:text-dim"
               type="submit"
-              disabled={busy || !input.trim()}
+              disabled={busy || (!input.trim() && attachments.every((a) => !a.path)) || attachments.some((a) => a.busy)}
               aria-label="Send"
             >
               <PaperPlaneTilt size={15} weight="bold" aria-hidden />

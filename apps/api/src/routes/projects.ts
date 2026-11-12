@@ -1,19 +1,9 @@
 // @yuika/api, routes project (P1-PRJ-*) + files/tasks/tree/roster/delegations/uploads.
-import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { CreateProjectRequest, CreateTaskRequest, DelegationJob, lintTaskList, SaveRosterRequest, UpdateProjectRequest, UpdateTaskRequest } from "@yuika/contracts";
+import { MAX_UPLOAD, sanitizeUploadName } from "./upload-util.js";
 
-const MAX_UPLOAD = 10 * 1024 * 1024;
-const OK_EXT = new Set([".pdf", ".xlsx", ".xls", ".csv", ".md", ".txt", ".json", ".html", ".htm", ".xml", ".yaml", ".yml"]);
-
-function sanitizeUploadName(raw: string | undefined): { name: string } | { error: string } {
-  const name = (raw ?? "").replace(/[\\/:*?"<>|]/g, "_").trim();
-  if (!name || name.includes("..")) return { error: "nama file tidak valid" };
-  const ext = path.extname(name).toLowerCase();
-  if (!OK_EXT.has(ext)) return { error: `format ${ext || "?"} tidak didukung (pdf/xlsx/xls/csv/md/txt/json/html/yaml)` };
-  return { name };
-}
 
 export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.get("/api/projects", async () => ({ projects: getRt().listProjects() }));

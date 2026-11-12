@@ -1035,6 +1035,29 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       await fs.promises.mkdir(path.dirname(abs), { recursive: true });
       await fs.promises.writeFile(abs, data);
     },
+    /** D87+: lampiran chat. Sesi proyek → <root proyek>/uploads/, sesi
+     *  global → workspace/uploads/. Mengembalikan path RELATIF workspace agar
+     *  persona bisa membacanya via doc_read (ctx.workspacePath = workspace). */
+    writeSessionUpload: async (sessionId: string, filename: string, data: Buffer) => {
+      const session = store.getSession(sessionId);
+      if (!session) throw new Error("session not found");
+      if (/[\\/]/.test(filename) || filename.includes("..")) throw new Error("invalid file name");
+      let rootAbs: string;
+      let relToWs: string;
+      if (session.projectId) {
+        const p = projectStore.getProject(session.projectId);
+        if (!p) throw new Error("project tidak ditemukan");
+        rootAbs = path.join(paths.workspacePath, p.rootPath);
+        relToWs = `${p.rootPath}/uploads/${filename}`;
+      } else {
+        rootAbs = paths.workspacePath;
+        relToWs = `uploads/${filename}`;
+      }
+      const abs = path.join(rootAbs, "uploads", filename);
+      await fs.promises.mkdir(path.dirname(abs), { recursive: true });
+      await fs.promises.writeFile(abs, data);
+      return { path: relToWs, bytes: data.length };
+    },
  /** riwayat job delegasi persist (audit/monitor lintas restart).
      *  projectId = project sesi parent; undefined/null = semua. */
     delegationJobs: (projectId?: string | null) => store.listDelegationJobs(projectId ?? undefined),

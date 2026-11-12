@@ -520,3 +520,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 - Event user.message (emit + persist + steer), merge legacy via endpoint
   messages baru, windowing 8/+16 + skeleton + offset stabil di ChatView.
+
+## Batch D88 — upload dokumen sebagai context chat
+
+- POST /api/sessions/:id/uploads (scope proyek/global, path relatif workspace),
+  runtime writeSessionUpload, composer paperclip + chips + blok lampiran di
+  teks pesan, doc_read utk semua persona.

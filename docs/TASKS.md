@@ -1130,3 +1130,29 @@ mobile dapat session.snapshot dari messages table (makanya benar di sana).
 - [x] Test: loop.test.ts user.message (emit, urutan, persist, replay);
       core 434 hijau; contracts 34; typecheck 6/6; endpoint /messages
       diverifikasi live di engine lokal (sesi Picasso lama terbaca).
+
+### D88 — Upload dokumen sebagai context chat (paperclip di composer) (SELESAI-KODE)
+Request user: “pindahkan fitur upload file ke chat juga” — upload dokumen
+(pdf/xlsx/csv/md/txt/json/html/yaml, cap 10 MB, max 5 lampiran) langsung dari
+composer chat sebagai bahan context, tanpa pindah ke tab Files.
+- [x] Endpoint baru POST /api/sessions/:id/uploads?name=…: sesi proyek →
+      <root proyek>/uploads/, sesi global → workspace/uploads/; balas path
+      RELATIF workspace (persona baca via doc_read, ctx.workspacePath).
+      Sanitizer upload diekstrak ke upload-util.ts (error kini English).
+- [x] Runtime writeSessionUpload (scope per session.projectId; guard
+      traversal filename).
+- [x] ChatView: tombol paperclip + input file tersembunyi; upload langsung
+      saat pilih → chip nama/ukuran/path + spinner; error per-file; kirim
+      tertahan selama upload berjalan; path ditanam ke teks pesan sebagai
+      block “[files attached via chat]” (transparan, ter-persist, cocok
+      dgn bubble-user fix D87 — dedupe tetap konsisten); workflow
+      brief/steer juga bisa bawa lampiran.
+- [x] doc_read ditambahkan ke toolsets conductor/coder/designer/operator/
+      scholar (sebelumnya hanya analyst/planner/sherlock/scribe) sehingga
+      lampiran terbaca di chat persona mana pun. CATATAN: toolset dibekukan
+      saat createSession → sesi LAMA tidak melihat doc_read; mulai sesi
+      baru.
+- [x] Verifikasi live (engine lokal): sesi global → uploads/ctx-test.md;
+      sesi proyek → projects/p_080cefe6/uploads/ctx-test.md (file ada di
+      disk); traversal ../../evil.txt ditolak. Core 434, api 64, typecheck
+      6/6, build web sukses.
