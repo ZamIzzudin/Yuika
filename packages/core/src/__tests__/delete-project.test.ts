@@ -13,6 +13,7 @@ import { FileRevisionStore } from "../project/revisions.js";
 import { McpAuditStore } from "../mcp/audit.js";
 import { UsageLedger } from "../usage/ledger.js";
 import { DeleteProjectResult } from "@yuika/contracts";
+import { createDesignFile, deleteDesignFilesForProject, listDesignFiles } from "../design/store.js";
 
 let tmp = "";
 
@@ -77,6 +78,17 @@ describe("hapus project + artefak ()", () => {
     audit.log({ server: "fs", tool: "read", sessionId: "s_a", ok: true, durationMs: 5 });
     audit.log({ server: "fs", tool: "read", sessionId: "s_b", ok: true, durationMs: 5 });
 
+    // D94: artefak per-project yang dulu bocor saat delete
+    projects.addBrowserVisit({ projectId: "p_a", url: "https://a.example", byRole: "user" });
+    projects.addBrowserVisit({ projectId: "p_b", url: "https://b.example", byRole: "user" });
+    projects.createWorkflowRun({ id: "run_a", projectId: "p_a", leadSessionId: "s_a", workflow: {} });
+    projects.createWorkflowRun({ id: "run_b", projectId: "p_b", leadSessionId: "s_b", workflow: {} });
+    sessions.startDelegationJob({ parentSessionId: "s_a", parentTurnId: "t1", childSessionId: "s_child", personaId: "yui-coder", goal: "g" });
+    sessions.saveContextCheckpoint("s_a", 3, "ringkasan", "model");
+    const dgnA = createDesignFile(ws, "Design A", "p_a");
+    const dgnB = createDesignFile(ws, "Design B", "p_b");
+    const dgnLegacy = createDesignFile(ws, "Legacy", null);
+
     // Usage DIPERTAHANKAN (akuntansi), baris untuk project terhapus tetap historis.
     ledger.record({ sessionId: "s_a", projectId: "p_a", personaId: "yui-coder", model: "m", promptTokens: 10, outputTokens: 5, latencyMs: 100, at: Date.now() });
     ledger.record({ sessionId: "s_b", projectId: "p_b", personaId: "yui-scribe", model: "m", promptTokens: 20, outputTokens: 8, latencyMs: 120, at: Date.now() });
@@ -86,6 +98,7 @@ describe("hapus project + artefak ()", () => {
     const auditRows = audit.deleteForSessions(["s_a"]);
     const nRev = revisions.deleteRevisionsUnder(rootA + path.sep);
     fs.rmSync(rootA, { recursive: true, force: true });
+    const nDesign = deleteDesignFilesForProject(ws, "p_a");
     const delProject = projects.deleteProjectData("p_a");
     // ================================================
 
@@ -108,6 +121,11 @@ describe("hapus project + artefak ()", () => {
         // store-level replica has 0 terminal sessions (no manager).
         terminalSessions: 0,
         workspaceDir: rootA,
+        designFiles: nDesign,
+        browserVisits: delProject.browserVisits,
+        workflowRuns: delProject.workflowRuns,
+        delegationJobs: delSessions.delegationJobs,
+        contextCheckpoints: delSessions.contextCheckpoints,
       },
       keptUsage: true,
       keptSkills: true,
@@ -118,6 +136,20 @@ describe("hapus project + artefak ()", () => {
     expect(result.deleted.tasks).toBe(1);
     expect(result.deleted.revisions).toBe(1);
     expect(result.deleted.auditRows).toBe(1);
+    // D94: artefak bocor dulu kini ikut bersih
+    expect(result.deleted.browserVisits).toBe(1);
+    expect(result.deleted.workflowRuns).toBe(1);
+    expect(result.deleted.delegationJobs).toBe(1);
+    expect(result.deleted.contextCheckpoints).toBe(1);
+    expect(result.deleted.designFiles).toBe(1);
+    expect(projects.listBrowserVisits("p_a")).toHaveLength(0);
+    expect(projects.listBrowserVisits("p_b")).toHaveLength(1);
+    // file desain project A lenyap; B + legacy (no project) selamat
+    // (filter list D91 menyertakan file legacy null — saring strict by projectId)
+    expect(listDesignFiles(ws, "p_a").filter((f) => f.projectId === "p_a")).toHaveLength(0);
+    expect(listDesignFiles(ws, "p_b").filter((f) => f.projectId === "p_b").map((f) => f.id)).toEqual([dgnB.id]);
+    expect(listDesignFiles(ws, null).filter((f) => f.projectId === null).map((f) => f.name)).toContain("Legacy");
+    expect(dgnA.name).toBe("Design A"); // payload tetap terbaca (file json di disk sudah dihapus)
 
     // project A lenyap; project B utuh (sesi, task, event, file, revisi, audit)
     expect(projects.getProject("p_a")).toBeUndefined();
@@ -136,8 +168,8 @@ describe("hapus project + artefak ()", () => {
     expect(ledger.recent(10)).toHaveLength(2);
 
     // idempoten: hapus ulang aman (0 perubahan, tanpa throw)
-    expect(sessions.deleteProjectSessions("p_a")).toEqual({ sessions: 0, events: 0, approvals: 0 });
-    expect(projects.deleteProjectData("p_a")).toEqual({ tasks: 0, projectEvents: 0 });
+    expect(sessions.deleteProjectSessions("p_a")).toEqual({ sessions: 0, events: 0, approvals: 0, delegationJobs: 0, contextCheckpoints: 0 });
+    expect(projects.deleteProjectData("p_a")).toEqual({ tasks: 0, projectEvents: 0, browserVisits: 0, workflowRuns: 0 });
 
     for (const s of [projects, sessions, revisions, audit, ledger]) s.close();
   });

@@ -51,7 +51,13 @@ export interface ISessionStore {
   rememberApproval(sessionId: string, tool: string): void;
   getRememberedTools(sessionId: string): string[];
   expirePendingApprovals(): number;
-  deleteProjectSessions(projectId: string): { sessions: number; events: number; approvals: number };
+  deleteProjectSessions(projectId: string): {
+    sessions: number;
+    events: number;
+    approvals: number;
+    delegationJobs: number;
+    contextCheckpoints: number;
+  };
   close(): void;
 }
 
@@ -544,14 +550,23 @@ export class SessionStore implements ISessionStore {
 
  /** hapus SEMUA sesi milik project + turunannya (events, messages,
    *  approvals, approval_memory) dalam SATU transaksi. Return jumlah yang dihapus. */
-  deleteProjectSessions(projectId: string): { sessions: number; events: number; approvals: number } {
+  deleteProjectSessions(projectId: string): {
+    sessions: number;
+    events: number;
+    approvals: number;
+    delegationJobs: number;
+    contextCheckpoints: number;
+  } {
     const ids = (this.db.prepare("SELECT id FROM sessions WHERE project_id = ?").all(projectId) as { id: string }[]).map(
       (r) => r.id,
     );
-    if (ids.length === 0) return { sessions: 0, events: 0, approvals: 0 };
+    if (ids.length === 0)
+      return { sessions: 0, events: 0, approvals: 0, delegationJobs: 0, contextCheckpoints: 0 };
     const ph = ids.map(() => "?").join(",");
     let events = 0;
     let approvals = 0;
+    let delegationJobs = 0;
+    let contextCheckpoints = 0;
     const tx = this.db.transaction(() => {
       events = this.db.prepare(`DELETE FROM events WHERE session_id IN (${ph})`).run(...ids).changes;
  // arsip ikut dibersihkan (paritas driver PG, project terhapus
@@ -560,10 +575,13 @@ export class SessionStore implements ISessionStore {
       this.db.prepare(`DELETE FROM messages WHERE session_id IN (${ph})`).run(...ids);
       approvals = this.db.prepare(`DELETE FROM approvals WHERE session_id IN (${ph})`).run(...ids).changes;
       this.db.prepare(`DELETE FROM approval_memory WHERE session_id IN (${ph})`).run(...ids);
+      // D94: baris per-sesi yang sebelumnya jadi orphan saat sesi dihapus
+      delegationJobs = this.db.prepare(`DELETE FROM delegation_jobs WHERE parent_session_id IN (${ph}) OR child_session_id IN (${ph})`).run(...ids, ...ids).changes;
+      contextCheckpoints = this.db.prepare(`DELETE FROM context_checkpoints WHERE session_id IN (${ph})`).run(...ids).changes;
       this.db.prepare(`DELETE FROM sessions WHERE id IN (${ph})`).run(...ids);
     });
     tx();
-    return { sessions: ids.length, events, approvals };
+    return { sessions: ids.length, events, approvals, delegationJobs, contextCheckpoints };
   }
 
   close(): void {

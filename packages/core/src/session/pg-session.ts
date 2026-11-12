@@ -404,17 +404,27 @@ export class PgSessionStore {
     return pending.length;
   }
 
-  async deleteProjectSessions(projectId: string): Promise<{ sessions: number; events: number; approvals: number }> {
+  async deleteProjectSessions(projectId: string): Promise<{
+    sessions: number;
+    events: number;
+    approvals: number;
+    delegationJobs: number;
+    contextCheckpoints: number;
+  }> {
     const ids = (await this.sql`SELECT id FROM sessions WHERE project_id = ${projectId}`).map((r) => (r as { id: string }).id);
-    if (ids.length === 0) return { sessions: 0, events: 0, approvals: 0 };
+    if (ids.length === 0)
+      return { sessions: 0, events: 0, approvals: 0, delegationJobs: 0, contextCheckpoints: 0 };
     return this.sql.begin(async (tx) => {
       const ev = await tx`DELETE FROM events WHERE session_id = ANY(${ids}::text[]) RETURNING id`;
       await tx`DELETE FROM events_archive WHERE session_id = ANY(${ids}::text[])`;
       await tx`DELETE FROM messages WHERE session_id = ANY(${ids}::text[])`;
       const ap = await tx`DELETE FROM approvals WHERE session_id = ANY(${ids}::text[]) RETURNING request_id`;
       await tx`DELETE FROM approval_memory WHERE session_id = ANY(${ids}::text[])`;
+      // D94: baris per-sesi yang sebelumnya jadi orphan saat sesi dihapus
+      const dj = await tx`DELETE FROM delegation_jobs WHERE parent_session_id = ANY(${ids}::text[]) OR child_session_id = ANY(${ids}::text[]) RETURNING id`;
+      const cc = await tx`DELETE FROM context_checkpoints WHERE session_id = ANY(${ids}::text[]) RETURNING id`;
       await tx`DELETE FROM sessions WHERE id = ANY(${ids}::text[])`;
-      return { sessions: ids.length, events: ev.length, approvals: ap.length };
+      return { sessions: ids.length, events: ev.length, approvals: ap.length, delegationJobs: dj.length, contextCheckpoints: cc.length };
     });
   }
 

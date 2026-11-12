@@ -347,13 +347,27 @@ export class ProjectStore {
     return rows.map((r) => ProjectEvent.parse({ ...JSON.parse(r.payload), type: r.type }));
   }
 
- /** hapus SEMUA baris milik project (tasks + event + baris projects)
-   *  dalam SATU transaksi, panggil SETELAH artefak lain (sesi/file) bersih. */
-  deleteProjectData(projectId: string): { tasks: number; projectEvents: number } {
-    const tasks = this.db.prepare("DELETE FROM project_tasks WHERE project_id = ?").run(projectId).changes;
-    const projectEvents = this.db.prepare("DELETE FROM project_events WHERE project_id = ?").run(projectId).changes;
-    this.db.prepare("DELETE FROM projects WHERE id = ?").run(projectId);
-    return { tasks, projectEvents };
+ /** hapus SEMUA baris milik project (tasks + event + baris projects
+   *  + browser_visits + workflow_runs) dalam SATU transaksi, panggil SETELAH
+   *  artefak lain (sesi/file) bersih. */
+  deleteProjectData(projectId: string): {
+    tasks: number;
+    projectEvents: number;
+    browserVisits: number;
+    workflowRuns: number;
+  } {
+    let out: { tasks: number; projectEvents: number; browserVisits: number; workflowRuns: number };
+    const tx = this.db.transaction(() => {
+      const tasks = this.db.prepare("DELETE FROM project_tasks WHERE project_id = ?").run(projectId).changes;
+      const projectEvents = this.db.prepare("DELETE FROM project_events WHERE project_id = ?").run(projectId).changes;
+      // D94: dua tabel per-project yang sebelumnya tertinggal jadi sampah
+      const browserVisits = this.db.prepare("DELETE FROM browser_visits WHERE project_id = ?").run(projectId).changes;
+      const workflowRuns = this.db.prepare("DELETE FROM workflow_runs WHERE project_id = ?").run(projectId).changes;
+      this.db.prepare("DELETE FROM projects WHERE id = ?").run(projectId);
+      out = { tasks, projectEvents, browserVisits, workflowRuns };
+    });
+    tx();
+    return out!;
   }
 
   close(): void {

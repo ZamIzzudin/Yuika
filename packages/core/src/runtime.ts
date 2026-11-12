@@ -1,4 +1,4 @@
-import { listDesignFiles } from "./design/store.js";
+import { deleteDesignFilesForProject, listDesignFiles } from "./design/store.js";
 // @yuika/core, runtime wiring: satu factory untuk seluruh kernel (dipakai apps/web).
 // DEMO-SHORTCUT: core berjalan in-process di Next.js; P0 memisah jadi service + worker.
 import { execFileSync } from "node:child_process";
@@ -978,7 +978,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       //    project (file, uploads/, reports/, MEMORY.md project, roster, runs dungeon).
       const revisions = fileRevisions.deleteRevisionsUnder(root + path.sep);
       fs.rmSync(root, { recursive: true, force: true });
-      // 4. Terakhir: baris project itu sendiri (tasks + project_events + projects).
+      // 3b. D94: file desain yang terikat project (workspace/design/*.json
+      //     projectId) — dulu tertinggal jadi sampah setelah project dihapus.
+      const designFiles = deleteDesignFilesForProject(paths.workspacePath, id);
+      // 4. Terakhir: baris project itu sendiri (tasks + project_events +
+      //     projects + browser_visits + workflow_runs — D94).
       const delProject = projectStore.deleteProjectData(id);
       return {
         ok: true,
@@ -996,6 +1000,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
           workspaceDir: root,
           workshop: hadWorkshop,
           terminalSessions: killedTerminals,
+          // D94: artefak per-project yang dulu bocor
+          designFiles,
+          browserVisits: delProject.browserVisits,
+          workflowRuns: delProject.workflowRuns,
+          delegationJobs: delSessions.delegationJobs,
+          contextCheckpoints: delSessions.contextCheckpoints,
         },
         keptUsage: true,
         keptSkills: true,

@@ -35,6 +35,31 @@ export function saveDesignFile(workspacePath: string, file: DesignFile): void {
   fs.writeFileSync(fileOf(workspacePath, file.id), JSON.stringify(file, null, 1), "utf8");
 }
 
+/** D94: hapus SEMUA file desain yang terikat projectId ini saat
+ *  project dihapus (file legacy projectId=null dibiarkan). */
+export function deleteDesignFilesForProject(workspacePath: string, projectId: string): number {
+  const dir = designDir(workspacePath);
+  let entries: string[] = [];
+  try {
+    entries = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
+  } catch {
+    return 0;
+  }
+  let n = 0;
+  for (const f of entries) {
+    try {
+      const d = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as DesignFile;
+      if (d.projectId === projectId) {
+        fs.rmSync(path.join(dir, f), { force: true });
+        n++;
+      }
+    } catch {
+      /* file korup dilewati */
+    }
+  }
+  return n;
+}
+
 export function getDesignFile(workspacePath: string, id: string): DesignFile | null {
   try {
     return JSON.parse(fs.readFileSync(fileOf(workspacePath, id), "utf8")) as DesignFile;

@@ -383,6 +383,14 @@ export const DeleteProjectResult = z.object({
     /** The project's terminal sessions are killed and its sandbox
      *  containers stopped when the project is deleted. */
     terminalSessions: z.number().int(),
+    /** D94: design files bound to this project (workspace/design/*.json),
+     *  browser visit history rows, workflow run rows, orphaned delegation
+     *  jobs & context checkpoints of the project's sessions. */
+    designFiles: z.number().int(),
+    browserVisits: z.number().int(),
+    workflowRuns: z.number().int(),
+    delegationJobs: z.number().int(),
+    contextCheckpoints: z.number().int(),
   }),
   keptUsage: z.literal(true),
   keptSkills: z.literal(true),
