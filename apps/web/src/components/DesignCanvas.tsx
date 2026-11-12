@@ -21,12 +21,13 @@ import {
   Stack,
   ArrowsOutSimple,
   ChatCircleDots,
+  SidebarSimple,
 } from "@phosphor-icons/react";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { apiUrl, authFetch } from "@/lib/api";
 import { getAssetImage, loadAsset, useAssetNotify } from "@/lib/designAssets";
 import { makeDesignRefs, type DesignRefPayload } from "@/lib/designRef";
-import { Button, Chip, Select } from "@/components/ui";
+import { Button, Chip, Dropdown } from "@/components/ui";
 import { DesignLayers } from "@/components/DesignLayers";
 
 type Tool = "select" | "frame" | "rect" | "circle" | "text";
@@ -54,6 +55,41 @@ const hasChildren = (
   s.type === "frame" || s.type === "group";
 
 const HANDLE_DIRS: Dir[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+
+/** D96: satu garis bantu alignment (axis x = garis vertikal). */
+type GuideLine = { axis: "x" | "y"; v: number; a0: number; a1: number };
+
+/** D96: kandidat garis bantu — edge & center semua shape lain (abs),
+ *  dihitung SEKALI saat drag mulai (shape lain diam selama drag). */
+function guideTargets(
+  page: DesignPage,
+  movingIds: Set<string>,
+): {
+  xs: { v: number; y0: number; y1: number }[];
+  ys: { v: number; x0: number; x1: number }[];
+} {
+  const isMoving = (id: string): boolean => {
+    let cur: DesignShape | undefined = page.shapes[id];
+    while (cur) {
+      if (movingIds.has(cur.id)) return true;
+      cur = cur.parentId ? page.shapes[cur.parentId] : undefined;
+    }
+    return false;
+  };
+  const xs: { v: number; y0: number; y1: number }[] = [];
+  const ys: { v: number; x0: number; x1: number }[] = [];
+  for (const sh of Object.values(page.shapes)) {
+    if (sh.hidden || isMoving(sh.id)) continue;
+    const abs = canvasPos(sh, page);
+    const x0 = abs.x;
+    const x1 = abs.x + sh.width;
+    const y0 = abs.y;
+    const y1 = abs.y + sh.height;
+    xs.push({ v: x0, y0, y1 }, { v: (x0 + x1) / 2, y0, y1 }, { v: x1, y0, y1 });
+    ys.push({ v: y0, x0, x1 }, { v: (y0 + y1) / 2, x0, x1 }, { v: y1, x0, x1 });
+  }
+  return { xs, ys };
+}
 
 /** D92: clipboard internal copy/paste (lintas file dalam satu tab). */
 let CLIP: { shapes: DesignShape[]; parentId: string | null } | null = null;
@@ -302,14 +338,119 @@ function drawShape(
   }
 }
 
+/** D96: ruler strip (atas & kiri) — tick + label koordinat world +
+ *  indikator posisi kursor; sinkron zoom/pan (view transform canvas). */
+function Ruler({
+  view,
+  dir,
+  cursor,
+}: {
+  view: { zoom: number; ox: number; oy: number };
+  dir: "h" | "v";
+  cursor: number | null;
+}): React.ReactElement {
+  const THICK = 20;
+  const ref = useRef<HTMLCanvasElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [len, setLen] = useState(0);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      setLen(dir === "h" ? el.clientWidth : el.clientHeight);
+    });
+    ro.observe(el);
+    setLen(dir === "h" ? el.clientWidth : el.clientHeight);
+    return () => ro.disconnect();
+  }, [dir]);
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv || len <= 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = dir === "h" ? len : THICK;
+    const h = dir === "h" ? THICK : len;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    cv.style.width = `${w}px`;
+    cv.style.height = `${h}px`;
+    const ctx = cv.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const off = dir === "h" ? view.ox : view.oy;
+    const worldStart = -off;
+    const worldEnd = worldStart + len / view.zoom;
+    const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
+    const step = steps.find((st) => st * view.zoom >= 56) ?? 5000;
+    const start = Math.floor(worldStart / step) * step;
+    ctx.font = "9px ui-monospace, monospace";
+    ctx.fillStyle = "rgba(150,152,166,0.95)";
+    ctx.strokeStyle = "rgba(150,152,166,0.6)";
+    for (let w0 = start; w0 <= worldEnd + step; w0 += step) {
+      const pos = (w0 + off) * view.zoom;
+      if (dir === "h") {
+        if (pos < -24 || pos > w + 24) continue;
+        ctx.beginPath();
+        ctx.moveTo(pos + 0.5, THICK - 5);
+        ctx.lineTo(pos + 0.5, THICK);
+        ctx.stroke();
+        ctx.fillText(String(Math.round(w0)), pos + 3, THICK - 7);
+      } else {
+        if (pos < -24 || pos > h + 24) continue;
+        ctx.beginPath();
+        ctx.moveTo(THICK - 5, pos + 0.5);
+        ctx.lineTo(THICK, pos + 0.5);
+        ctx.stroke();
+        ctx.save();
+        ctx.translate(THICK - 7, pos + 3);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(String(Math.round(w0)), 0, 0);
+        ctx.restore();
+      }
+    }
+    if (cursor !== null) {
+      const cp = (cursor + off) * view.zoom;
+      if (cp >= 0 && cp <= len) {
+        ctx.fillStyle = "#5b8cff";
+        if (dir === "h") ctx.fillRect(cp, 0, 1, THICK);
+        else ctx.fillRect(0, cp, THICK, 1);
+      }
+    }
+  }, [view, dir, cursor, len]);
+  return (
+    <div ref={boxRef} className={dir === "h" ? "h-full w-full" : "h-full w-full"}>
+      <canvas ref={ref} />
+    </div>
+  );
+}
+
 export function DesignCanvas(props: Props): React.ReactElement | null {
   const [file, setFile] = useState<DesignFile | null>(null);
   const [pageId, setPageId] = useState("");
   const [sel, setSel] = useState<Set<string>>(new Set());
   /** D93: menu klik kanan (attach to chat) — null = tertutup. */
-  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; ids: string[] } | null>(null);
+  const [ctxMenu, setCtxMenu] = useState<{
+    x: number;
+    y: number;
+    ids: string[];
+  } | null>(null);
   const [tool, setTool] = useState<Tool>("select");
   const [view, setView] = useState({ zoom: 0.5, ox: 60, oy: 40 });
+  /** D96: garis bantu aktif saat drag (null = tidak ada). */
+  const [guides, setGuides] = useState<GuideLine[] | null>(null);
+  /** D96: posisi kursor world utk indikator ruler. */
+  const [ptrWorld, setPtrWorld] = useState<Pt | null>(null);
+  /** D96: layers panel foldable — canvas bisa lebih lebar (persist). */
+  const [layersOpen, setLayersOpen] = useState(true);
+  useEffect(() => {
+    if (localStorage.getItem("yuika.design.layersOpen") === "0")
+      setLayersOpen(false);
+  }, []);
+  const toggleLayers = () =>
+    setLayersOpen((o) => {
+      localStorage.setItem("yuika.design.layersOpen", o ? "0" : "1");
+      return !o;
+    });
   const [uploading, setUploading] = useState(false);
   /** D92: state terbaru utk handler asinkron (onUp auto-parent, paste, dll). */
   const liveRef = useRef<{
@@ -354,7 +495,15 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const undoStack = useRef<DesignFile[]>([]);
   const redoStack = useRef<DesignFile[]>([]);
   const drag = useRef<
-    | { kind: "move"; start: Pt; orig: Map<string, Pt>; moved: boolean }
+    | {
+        kind: "move";
+        start: Pt;
+        orig: Map<string, Pt>;
+        moved: boolean;
+        /** D96: bbox absolut seleksi saat mulai drag + kandidat snap. */
+        bbox: { x0: number; y0: number; x1: number; y1: number };
+        guides: ReturnType<typeof guideTargets>;
+      }
     | {
         kind: "resize";
         handle: Dir;
@@ -648,11 +797,28 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           const sh = page?.shapes[id];
           if (sh && !sh.locked) orig.set(id, { x: sh.x, y: sh.y });
         }
+        const mv = orig.size ? orig : new Map([[s.id, { x: s.x, y: s.y }]]);
+        // D96: bbox absolut seleksi + kandidat garis bantu (sekali per drag)
+        let bx0 = Infinity;
+        let by0 = Infinity;
+        let bx1 = -Infinity;
+        let by1 = -Infinity;
+        for (const id of mv.keys()) {
+          const sh = page?.shapes[id];
+          if (!sh) continue;
+          const abs = canvasPos(sh, page);
+          bx0 = Math.min(bx0, abs.x);
+          by0 = Math.min(by0, abs.y);
+          bx1 = Math.max(bx1, abs.x + sh.width);
+          by1 = Math.max(by1, abs.y + sh.height);
+        }
         drag.current = {
           kind: "move",
           start: w,
-          orig: orig.size ? orig : new Map([[s.id, { x: s.x, y: s.y }]]),
+          orig: mv,
           moved: false,
+          bbox: { x0: bx0, y0: by0, x1: bx1, y1: by1 },
+          guides: page ? guideTargets(page, new Set(mv.keys())) : { xs: [], ys: [] },
         };
       } else {
         setSel(new Set());
@@ -669,6 +835,8 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
 
   const onMove = (e: React.PointerEvent) => {
     const d = drag.current;
+    const wHover = toWorld(e);
+    setPtrWorld(wHover);
     if (!d || !page || !file) return;
     const w = toWorld(e);
     if (d.kind === "pan") {
@@ -678,9 +846,59 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         oy: d.vo.oy + (e.clientY - d.start.y) / v.zoom,
       }));
     } else if (d.kind === "move") {
-      const dx = w.x - d.start.x;
-      const dy = w.y - d.start.y;
+      let dx = w.x - d.start.x;
+      let dy = w.y - d.start.y;
       if (Math.abs(dx) > 1 || Math.abs(dy) > 1) d.moved = true;
+      // D96: smart guides — edge/tengah seleksi di-snap ke edge/tengah
+      // shape lain dalam radius 6px layar (Alt = tanpa snap).
+      const lines: GuideLine[] = [];
+      if (!e.altKey) {
+        const thr = 6 / view.zoom;
+        const b = d.bbox;
+        let bestX: { diff: number; v: number; y0: number; y1: number } | null =
+          null;
+        for (const se of [b.x0, (b.x0 + b.x1) / 2, b.x1]) {
+          for (const g of d.guides.xs) {
+            const diff = se + dx - g.v;
+            if (
+              Math.abs(diff) <= thr &&
+              (!bestX || Math.abs(diff) < Math.abs(bestX.diff))
+            )
+              bestX = { diff, v: g.v, y0: g.y0, y1: g.y1 };
+          }
+        }
+        if (bestX) {
+          dx -= bestX.diff;
+          lines.push({
+            axis: "x",
+            v: bestX.v,
+            a0: Math.min(b.y0, bestX.y0) - 24,
+            a1: Math.max(b.y1, bestX.y1) + 24,
+          });
+        }
+        let bestY: { diff: number; v: number; x0: number; x1: number } | null =
+          null;
+        for (const se of [b.y0, (b.y0 + b.y1) / 2, b.y1]) {
+          for (const g of d.guides.ys) {
+            const diff = se + dy - g.v;
+            if (
+              Math.abs(diff) <= thr &&
+              (!bestY || Math.abs(diff) < Math.abs(bestY.diff))
+            )
+              bestY = { diff, v: g.v, x0: g.x0, x1: g.x1 };
+          }
+        }
+        if (bestY) {
+          dy -= bestY.diff;
+          lines.push({
+            axis: "y",
+            v: bestY.v,
+            a0: Math.min(b.x0, bestY.x0) - 24,
+            a1: Math.max(b.x1, bestY.x1) + 24,
+          });
+        }
+      }
+      setGuides(lines.length ? lines : null);
       mutate((f) => {
         const pg = f.pages.find((p) => p.id === page.id);
         if (!pg) return;
@@ -734,6 +952,7 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const onUp = (e: React.PointerEvent) => {
     const d = drag.current;
     drag.current = null;
+    setGuides(null); // D96
     if (!d || !page || !file) return;
     const w = toWorld(e);
     if (d.kind === "create") {
@@ -1366,6 +1585,16 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     <div className="flex h-full min-h-0 flex-col">
       {/* toolbar */}
       <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-3 py-2">
+        {/* D96: layers panel foldable — canvas bisa lebih lebar */}
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title={layersOpen ? "Hide layers panel (wider canvas)" : "Show layers panel"}
+          aria-label="Toggle layers panel"
+          onClick={toggleLayers}
+        >
+          <SidebarSimple size={15} />
+        </Button>
         {(
           [
             ["select", <FrameCorners key="s" size={15} />, "Select / pan"],
@@ -1530,8 +1759,21 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       </div>
 
       <div className="flex min-h-0 flex-1">
-        {/* D90: layers tree ala Canva/Figma (menggantikan dropdown Pages) */}
-        {file ? (
+        {/* D90: layers tree ala Canva/Figma; D96: bisa di-fold utk canvas lebar */}
+        {!layersOpen ? (
+          <div className="hidden w-9 shrink-0 flex-col items-center border-r border-line py-2 md:flex">
+            <Button
+              variant="ghost"
+              className="!px-1.5 !py-1"
+              title="Show layers panel"
+              aria-label="Show layers panel"
+              onClick={toggleLayers}
+            >
+              <SidebarSimple size={15} />
+            </Button>
+          </div>
+        ) : null}
+        {layersOpen && file ? (
           <DesignLayers
             key={file.id}
             file={file}
@@ -1570,12 +1812,47 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
 
         {/* canvas */}
         <div ref={wrapRef} className="relative min-h-0 flex-1 overflow-hidden">
+          {/* D96: ruler atas & kiri — tick + label koordinat + indikator kursor */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-5 border-b border-line bg-surface/90">
+            <Ruler view={view} dir="h" cursor={ptrWorld?.x ?? null} />
+          </div>
+          <div className="pointer-events-none absolute bottom-0 left-0 top-5 z-20 w-5 border-r border-line bg-surface/90">
+            <Ruler view={view} dir="v" cursor={ptrWorld?.y ?? null} />
+          </div>
+          {/* D96: garis bantu alignment saat drag (smart guides) */}
+          {guides?.map((g, i) =>
+            g.axis === "x" ? (
+              <div
+                key={i}
+                className="pointer-events-none absolute z-20 w-px bg-[#f24e1e]"
+                style={{
+                  left: (g.v + view.ox) * view.zoom,
+                  top: (g.a0 + view.oy) * view.zoom,
+                  height: Math.max(1, (g.a1 - g.a0) * view.zoom),
+                }}
+              />
+            ) : (
+              <div
+                key={i}
+                className="pointer-events-none absolute z-20 h-px bg-[#f24e1e]"
+                style={{
+                  top: (g.v + view.oy) * view.zoom,
+                  left: (g.a0 + view.ox) * view.zoom,
+                  width: Math.max(1, (g.a1 - g.a0) * view.zoom),
+                }}
+              />
+            ),
+          )}
           {/* D92 (#10): status save jadi floating chip pojok kanan atas kanvas */}
           <div className="pointer-events-none absolute right-2 top-2 z-10">
             {dirty ? (
-              <Chip tone="warn">{saving ? "Saving…" : "Unsaved"}</Chip>
+              <Chip size="sm" tone="warn">
+                {saving ? "Saving…" : "Unsaved"}
+              </Chip>
             ) : (
-              <Chip tone="ok">Saved · revn {file.revn}</Chip>
+              <Chip size="sm" tone="ok">
+                Saved
+              </Chip>
             )}
           </div>
           {/* D92 (#12): input hidden upload background frame (dipicu props panel) */}
@@ -1675,7 +1952,11 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
                   setCtxMenu(null);
                 }}
               >
-                <ChatCircleDots size={14} className="shrink-0 text-accent" aria-hidden />
+                <ChatCircleDots
+                  size={14}
+                  className="shrink-0 text-accent"
+                  aria-hidden
+                />
                 {ctxMenu.ids.length > 1
                   ? `Attach ${ctxMenu.ids.length} components to chat`
                   : "Attach component to chat"}
@@ -1755,18 +2036,15 @@ function ShapeProps({
         <>
           <label>
             <span className={label}>Fit</span>
-            <Select
+            <Dropdown
               value={shape.fit ?? "cover"}
-              onChange={(e) =>
-                onChange({ fit: e.target.value } as Partial<DesignShape>)
-              }
-              aria-label="Image fit"
-              className="w-full"
-            >
-              <option value="cover">Cover</option>
-              <option value="contain">Contain</option>
-              <option value="stretch">Stretch</option>
-            </Select>
+              options={[
+                { value: "cover", label: "Cover" },
+                { value: "contain", label: "Contain" },
+                { value: "stretch", label: "Stretch" },
+              ]}
+              onChange={(v) => onChange({ fit: v } as Partial<DesignShape>)}
+            />
           </label>
           <Button
             variant="ghost"
@@ -1963,18 +2241,15 @@ function ShapeProps({
           </label>
           <label>
             <span className={label}>Align</span>
-            <Select
+            <Dropdown
               value={shape.align ?? "left"}
-              onChange={(e) =>
-                onChange({ align: e.target.value } as Partial<DesignShape>)
-              }
-              aria-label="Text align"
-              className="w-full"
-            >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
-            </Select>
+              options={[
+                { value: "left", label: "Left" },
+                { value: "center", label: "Center" },
+                { value: "right", label: "Right" },
+              ]}
+              onChange={(v) => onChange({ align: v } as Partial<DesignShape>)}
+            />
           </label>
         </>
       )}
@@ -2019,10 +2294,31 @@ function ShapeProps({
       {/* P3-PROTO: wiring on-click navigasi (dipakai tombol Try it) */}
       <div>
         <span className={label}>Prototype: on click</span>
-        <Select
+        <Dropdown
           value={shape.interaction?.target ?? ""}
-          onChange={(e) => {
-            const v = e.target.value;
+          options={[
+            { value: "", label: "(none)" },
+            ...file.pages.flatMap((pg) =>
+              pg.roots
+                .map((r) => pg.shapes[r])
+                .filter(
+                  (sh): sh is DesignShape => Boolean(sh) && sh!.type === "frame",
+                )
+                .map((sh) => ({
+                  value: sh.id,
+                  label: `${pg.id === pageId ? "" : pg.name + " / "}${sh.name || "frame"}`,
+                  title: "Navigate to frame on click",
+                })),
+            ),
+            ...file.pages
+              .filter((pg) => pg.id !== pageId)
+              .map((pg) => ({
+                value: pg.id,
+                label: `page: ${pg.name}`,
+                title: "Navigate to page on click",
+              })),
+          ]}
+          onChange={(v) =>
             onChange(
               v
                 ? ({
@@ -2033,34 +2329,9 @@ function ShapeProps({
                     },
                   } as Partial<DesignShape>)
                 : ({ interaction: null } as unknown as Partial<DesignShape>),
-            );
-          }}
-          aria-label="On click navigates to"
-          className="w-full"
-        >
-          <option value="(none)">(none)</option>
-          {file.pages.flatMap((pg) =>
-            pg.roots
-              .map((r) => pg.shapes[r])
-              .filter(
-                (s): s is DesignShape => Boolean(s) && s!.type === "frame",
-              )
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {pg.id === pageId ? "→ " : "→ " + pg.name + " / "}
-                  {s.name || "frame"}
-                </option>
-              )),
-          )}
-          {file.pages
-            .filter((pg) => pg.id !== pageId)
-            .map((pg) => (
-              <option key={pg.id} value={pg.id}>
-                {"→ page: "}
-                {pg.name}
-              </option>
-            ))}
-        </Select>
+            )
+          }
+        />
       </div>
     </div>
   );

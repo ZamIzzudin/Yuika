@@ -21,14 +21,14 @@ export function Chip({
   children,
 }: {
   tone?: ChipTone;
- /** md = default; sm = chip mini untuk card/baris compact . */
+  /** md = default; sm = chip mini untuk card/baris compact . */
   size?: "md" | "sm";
   className?: string;
   children: ReactNode;
 }) {
   const pad =
     size === "sm"
-      ? "gap-1 px-1.5 py-0.5 text-[10px] leading-3"
+      ? "gap-1 px-2 py-1 text-[10px] leading-3"
       : "gap-2 px-3 py-2 text-caption leading-4";
   return (
     <span
