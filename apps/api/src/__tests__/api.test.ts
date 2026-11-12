@@ -56,6 +56,10 @@ const fake = {
   },
   writeUpload: async (target: { sessionId?: string; projectId?: string }, filename: string, _buf: Buffer) =>
     ({ path: target.projectId ? `projects/${target.projectId}/uploads/${filename}` : `uploads/${filename}`, bytes: _buf.length }),
+  readUpload: async (relPath: string) => {
+    if (relPath === "projects/p_ok/uploads/ok.png") return { buf: Buffer.from("PNGDATA"), contentType: "image/png" };
+    throw new Error("asset not found");
+  },
   listProjectTasks: () => [
     { id: "t_a", projectId: "p_ok", title: "A", status: "todo", assignee: "yui-coder", refs: [], description: null, acceptance: ["done a"], dependsOn: ["t_hantu"], estimate: "1d", phase: "planning", createdAt: 0, updatedAt: 0 },
     { id: "t_b", projectId: "p_ok", title: "B", status: "todo", assignee: null, refs: [], description: null, acceptance: [], dependsOn: [], estimate: null, phase: "research", createdAt: 0, updatedAt: 0 },
@@ -241,4 +245,18 @@ describe("settings: reset + update runner", () => {
     expect(r.statusCode).toBe(400);
     expect(r.json().error).toContain("not configured");
   });
+});
+
+// D92: GET /api/uploads — serving aset image canvas design
+it("GET /api/uploads: 200 utk path valid, 404 traversal/missing", async () => {
+  const ok = await app.inject({ method: "GET", url: "/api/uploads?path=projects/p_ok/uploads/ok.png" });
+  expect(ok.statusCode).toBe(200);
+  expect(ok.headers["content-type"]).toContain("image/png");
+  expect(ok.body).toBe("PNGDATA");
+  const trav = await app.inject({ method: "GET", url: "/api/uploads?path=../auth.db" });
+  expect(trav.statusCode).toBe(404);
+  const miss = await app.inject({ method: "GET", url: "/api/uploads?path=projects/p_ok/uploads/ghost.png" });
+  expect(miss.statusCode).toBe(404);
+  const noext = await app.inject({ method: "GET", url: "/api/uploads" });
+  expect(noext.statusCode).toBe(400);
 });

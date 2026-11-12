@@ -1250,3 +1250,46 @@ besar, tanpa overflow, label di ATAS input.
       project lain), toolbar merged, props label-atas, delete page +
       dialog konfirmasi bekerja. (Catatan: engine lama zombie sempat
       melayani kode lama — EADDRINUSE; sudah dibersihkan.)
+### D92 — interaksi kanvas ala tool desain proper (12 catatan user) (SELESAI)
+1. Ctrl+wheel kini ZOOM KANVAS (listener wheel non-passive di wrap —
+   React onWheel passive membuat preventDefault tidak mencegah zoom
+   browser; re-attach saat file siap). Shift+wheel horizontal, wheel pan.
+2. RESIZE via 8 handle (sudut+sisi) untuk seleksi tunggal; clamp min 2px.
+3. DRAG & DROP di panel Layers: tarik node → jatuhkan pada frame/group =
+   jadi anak terdepan; jatuhkan pada leaf = sibling; drop zone "page
+   root" = naik ke root. Validasi anti-drop ke descendant sendiri.
+4. AUTO-PARENT: drop shape di canvas — pusat bbox masuk frame/group →
+   masuk hirarkinya (koordinat dikonversi relatif parent); keluar semua
+   frame → naik ke root page (perilaku Canva/Figma, dua arah).
+5. GROUP/UNGROUP: type baru "group" (wadah tanpa visual). Ctrl+G /
+   Ctrl+Shift+G + tombol toolbar. Anak beda parent dinaikkan ke parent
+   anak pertama; ungroup mengembalikan anak + posisi ke parent group.
+6. COPY/PASTE/DUPLICATE: Ctrl+C/V/D + tombol toolbar. Clipboard internal
+   lintas file (koordinat top-level disimpan ABSOLUT; paste mempertahankan
+   parent asal bila masih ada, offset +16).
+7. Dropdown file LAMA (<select>) DIGANTI FileMenu custom (popover list +
+   jumlah page + badge legacy + entri "New design…").
+8. window.prompt DIGANTI modal proper (input nama + Enter/Esc + error).
+9. CREATE DI DALAM SCREEN: shape baru digambar di dalam frame → otomatis
+   jadi anak frame itu (frame dalam frame → isScreen false).
+10. Chip "Saved · revn N" jadi FLOATING component pojok kanan atas kanvas
+    (pointer-events-none), keluar dari toolbar.
+11. UPLOAD IMAGE ke canvas: tombol Image → picker → POST /api/uploads
+    (kind=image, whitelist png/jpg/webp/gif/svg) → shape "image" (src =
+    path relatif workspace, fit cover/contain/stretch). Serving via GET
+    /api/uploads?path= (hanya folder uploads + ekstensi gambar); klien
+    fetch via authFetch → objectURL (token tidak bocor ke <img>).
+12. BACKGROUND IMAGE: fill.image pada frame (cover, di-clip radius). Dua
+    jalur: tombol "Use as frame background" pada shape image (frame
+    penaung), atau "Upload background…" di props frame. Prototype ikut
+    merender (img object-cover) + screen root.
+Infra: model += group/image + Fill.image; store validasi (validateAssetSrc,
+whitelist type, parentId frame ATAU group, delete walk group); runtime
+readUpload; uploads GET serving; design-tools persona menerima type baru
+(src/fit/fillImage) + summarize (src/backgroundImage/children).
+Verifikasi live (Playwright, file user "test (2)"): 12/12 fitur OK —
+ctrl+wheel 50→81%, create child frame, auto-parent root→frame, resize
+77→107, group 2 anak + ungroup, duplicate child +16, upload+serve 200
+image/png, bg applied ke frame, FileMenu, modal create, chip floating,
+DnD dispatch. File pulihkan ke kondisi awal setelah verifikasi.
+PENTING verifikasi: cek API harus menunggu autosave debounce 1.5s.

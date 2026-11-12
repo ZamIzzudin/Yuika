@@ -14,7 +14,7 @@ import { MAX_UPLOAD, sanitizeUploadName } from "../upload-util.js";
 export function registerUploadRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.post("/api/uploads", async (req, reply) => {
     const q = req.query as Record<string, string | undefined>;
-    const name = sanitizeUploadName(q.name);
+    const name = sanitizeUploadName(q.name, { images: q.kind === "image" });
     if ("error" in name) return reply.code(400).send({ error: name.error });
     const target: { sessionId?: string; projectId?: string } = {};
     if (q.session) target.sessionId = q.session;
@@ -26,6 +26,20 @@ export function registerUploadRoutes(app: FastifyInstance, getRt: () => YuiRunti
       return await getRt().writeUpload(target, name.name, buf);
     } catch (e) {
       return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  // D92: GET aset image (dipakai canvas design utk <img>/drawImage).
+  // Hanya path relatif workspace di folder uploads + ekstensi gambar.
+  app.get("/api/uploads", async (req, reply) => {
+    const q = req.query as { path?: string };
+    if (!q.path) return reply.code(400).send({ error: "path required" });
+    try {
+      const a = await getRt().readUpload(q.path);
+      reply.type(a.contentType);
+      return reply.send(a.buf);
+    } catch (e) {
+      return reply.code(404).send({ error: e instanceof Error ? e.message : String(e) });
     }
   });
 }

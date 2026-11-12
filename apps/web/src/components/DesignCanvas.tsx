@@ -8,6 +8,7 @@ import {
   ArrowsIn,
   Circle,
   FrameCorners,
+  Image as ImageIcon,
   MagnifyingGlassMinus,
   MagnifyingGlassPlus,
   Rectangle,
@@ -16,23 +17,40 @@ import {
   ArrowCounterClockwise,
   ArrowClockwise,
   Plus,
+  CopySimple,
+  Stack,
+  ArrowsOutSimple,
 } from "@phosphor-icons/react";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { apiUrl, authFetch } from "@/lib/api";
+import { getAssetImage, loadAsset, useAssetNotify } from "@/lib/designAssets";
 import { Button, Chip, Select } from "@/components/ui";
 import { DesignLayers } from "@/components/DesignLayers";
 
 type Tool = "select" | "frame" | "rect" | "circle" | "text";
 type Pt = { x: number; y: number };
+type Dir = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 interface Props {
   fileId: string;
+  /** D92: dipakai upload image asset (scope uploads project). */
+  projectId: string;
   /** D91: slot ujung kanan toolbar (pemilih file + Try it) — dipasang oleh
    *  DesignTab agar satu baris dengan tools & chip Saved. */
   headerRight?: React.ReactNode;
 }
 
 const R = (s: number) => Math.round(s * 100) / 100;
+
+/** D92: frame/group punya children (web tidak boleh import nilai dari
+ *  core — store menarik node:fs ke bundle). */
+const hasChildren = (s: DesignShape): s is Extract<DesignShape, { children: string[] }> =>
+  s.type === "frame" || s.type === "group";
+
+const HANDLE_DIRS: Dir[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+
+/** D92: clipboard internal copy/paste (lintas file dalam satu tab). */
+let CLIP: { shapes: DesignShape[]; parentId: string | null } | null = null;
 
 function canvasPos(shape: DesignShape, page: DesignPage): { x: number; y: number } {
   let x = shape.x;
@@ -46,6 +64,57 @@ function canvasPos(shape: DesignShape, page: DesignPage): { x: number; y: number
   return { x, y };
 }
 
+/** D92: posisi handle (screen px) utk satu shape — dipakai resize drag. */
+function handlePoints(abs: Pt, w: number, h: number): Record<Dir, Pt> {
+  return {
+    nw: { x: abs.x, y: abs.y },
+    n: { x: abs.x + w / 2, y: abs.y },
+    ne: { x: abs.x + w, y: abs.y },
+    e: { x: abs.x + w, y: abs.y + h / 2 },
+    se: { x: abs.x + w, y: abs.y + h },
+    s: { x: abs.x + w / 2, y: abs.y + h },
+    sw: { x: abs.x, y: abs.y + h },
+    w: { x: abs.x, y: abs.y + h / 2 },
+  };
+}
+
+/** D92: frame/group paling depan yang mengandung titik (world), tidak
+ *  termasuk id yang di-exclude (shape yang digerakkan + descendant-nya).
+ *  Dipakai auto-parent saat drop / create (perilaku Canva/Figma). */
+function findContainer(page: DesignPage, wx: number, wy: number, excl: Set<string>): DesignShape | null {
+  const test = (id: string): DesignShape | null => {
+    const s = page.shapes[id];
+    if (!s || s.hidden) return null;
+    if (hasChildren(s)) {
+      // anak selalu di depan parent — cek anak dulu (z terdepan)
+      for (let i = s.children.length - 1; i >= 0; i--) {
+        const r = test(s.children[i]!);
+        if (r) return r;
+      }
+    }
+    if (excl.has(id)) return null;
+    if (!hasChildren(s)) return null;
+    const pos = canvasPos(s, page);
+    if (wx >= pos.x && wx <= pos.x + s.width && wy >= pos.y && wy <= pos.y + s.height) return s;
+    return null;
+  };
+  for (let i = page.roots.length - 1; i >= 0; i--) {
+    const r = test(page.roots[i]!);
+    if (r) return r;
+  }
+  return null;
+}
+
+/** D92: apakah `id` berada dalam subtree `anc` (frame/group)? */
+function isDescendantOf(page: DesignPage, anc: string, id: string): boolean {
+  let p = page.shapes[id]?.parentId ?? null;
+  while (p) {
+    if (p === anc) return true;
+    p = page.shapes[p]?.parentId ?? null;
+  }
+  return false;
+}
+
 function drawShape(
   ctx: CanvasRenderingContext2D,
   shape: DesignShape,
@@ -53,6 +122,7 @@ function drawShape(
   selIds: Set<string>,
   view: { zoom: number; ox: number; oy: number },
   depth = 0,
+  singleSel = false,
 ): void {
   if (shape.hidden) return;
   const pos = canvasPos(shape, page);
@@ -96,11 +166,69 @@ function drawShape(
     const tx = shape.align === "center" ? x + w / 2 : shape.align === "right" ? x + w : x;
     ctx.textAlign = shape.align === "center" ? "center" : shape.align === "right" ? "right" : "left";
     wrapped.forEach((t, i) => ctx.fillText(t, tx, y + i * lh));
+  } else if (shape.type === "image") {
+    const img = getAssetImage(shape.src);
+    const r0 = Math.min(shape.radius ?? 0, w / 2, h / 2) * view.zoom;
+    if (img) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, r0);
+      ctx.clip();
+      const fit = shape.fit ?? "cover";
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+      let dw = w;
+      let dh = h;
+      let dx = x;
+      let dy = y;
+      if (fit !== "stretch") {
+        const sc = fit === "cover" ? Math.max(w / iw, h / ih) : Math.min(w / iw, h / ih);
+        dw = iw * sc;
+        dh = ih * sc;
+        dx = x + (w - dw) / 2;
+        dy = y + (h - dh) / 2;
+      }
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+    } else {
+      loadAsset(shape.src); // trigger fetch; re-render saat siap
+      ctx.fillStyle = shape.fills[0]?.color ?? "#1c1c24";
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, r0);
+      ctx.fill();
+      ctx.strokeStyle = "#3a3a44";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(x, y + h);
+      ctx.lineTo(x + w, y);
+      ctx.strokeStyle = "#2c2c34";
+      ctx.stroke();
+    }
+  } else if (shape.type === "group") {
+    // group = wadah logis tanpa visual sendiri (hanya children + selection)
   } else {
     const r = Math.min(shape.radius ?? 0, w / 2, h / 2) * view.zoom;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, r);
     ctx.fill();
+    // D92: background image frame (cover, di-clip bentuk rounded)
+    if (shape.type === "frame" && shape.fills[0]?.image) {
+      const img = getAssetImage(shape.fills[0].image);
+      if (img) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+        ctx.clip();
+        const sc = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+        const dw = img.naturalWidth * sc;
+        const dh = img.naturalHeight * sc;
+        ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+        ctx.restore();
+      } else loadAsset(shape.fills[0].image);
+    }
     if (shape.stroke && shape.stroke.width > 0) {
       ctx.strokeStyle = shape.stroke.color;
       ctx.lineWidth = shape.stroke.width * view.zoom;
@@ -123,28 +251,22 @@ function drawShape(
     ctx.beginPath();
     ctx.roundRect(x - 1, y - 1, w + 2, h + 2, 3);
     ctx.stroke();
-    if (depth === 0) {
-      // handles resize 4 sudut
+    if (depth === 0 && singleSel) {
+      // D92: 8 handle resize (sudut + sisi) — hanya seleksi tunggal
       ctx.fillStyle = "#0c0c10";
-      const corners: Array<[number, number]> = [
-        [x, y],
-        [x + w, y],
-        [x, y + h],
-        [x + w, y + h],
-      ];
-      for (const [hx, hy] of corners) {
+      for (const hp of Object.values(handlePoints({ x, y }, w, h))) {
         ctx.beginPath();
-        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+        ctx.arc(hp.x, hp.y, 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       }
     }
     ctx.restore();
   }
-  if (shape.type === "frame") {
+  if (hasChildren(shape)) {
     for (const c of shape.children) {
       const ch = page.shapes[c];
-      if (ch) drawShape(ctx, ch, page, selIds, view, depth + 1);
+      if (ch) drawShape(ctx, ch, page, selIds, view, depth + 1, singleSel);
     }
   }
 }
@@ -155,6 +277,17 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [tool, setTool] = useState<Tool>("select");
   const [view, setView] = useState({ zoom: 0.5, ox: 60, oy: 40 });
+  const [uploading, setUploading] = useState(false);
+  /** D92: state terbaru utk handler asinkron (onUp auto-parent, paste, dll). */
+  const liveRef = useRef<{ file: DesignFile | null; page: DesignPage | null; sel: Set<string> }>({
+    file: null,
+    page: null,
+    sel: new Set(),
+  });
+  liveRef.current = { file, page: file?.pages.find((p) => p.id === pageId) ?? null, sel };
+  const assetTick = useAssetNotify();
+  const imgInputRef = useRef<HTMLInputElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
 
   /** Zoom menjaga titik kanvas di bawah `at` (px relatif stage); null = tengah. */
   const zoomAt = useCallback((at: { x: number; y: number } | null, factor: number) => {
@@ -178,7 +311,7 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const redoStack = useRef<DesignFile[]>([]);
   const drag = useRef<
     | { kind: "move"; start: Pt; orig: Map<string, Pt>; moved: boolean }
-    | { kind: "resize"; corner: number; id: string; orig: DesignShape }
+    | { kind: "resize"; handle: Dir; id: string; orig: { x: number; y: number; width: number; height: number }; start: Pt }
     | { kind: "create"; start: Pt; type: Tool }
     | { kind: "pan"; start: Pt; vo: { ox: number; oy: number } }
     | null
@@ -291,9 +424,33 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     ctx.fillRect((view.ox + 0) * view.zoom, (view.oy + 0) * view.zoom, 20000 * view.zoom, 20000 * view.zoom);
     for (const id of page.roots) {
       const s = page.shapes[id];
-      if (s) drawShape(ctx, s, page, sel, view);
+      if (s) drawShape(ctx, s, page, sel, view, 0, sel.size === 1);
     }
-  }, [file, page, sel, view]);
+  }, [file, page, sel, view, assetTick]);
+
+  // D92: wheel NON-PASSIVE — React onWheel bersifat passive sehingga
+  // preventDefault tidak mencegah zoom browser (Ctrl+wheel). Dipasang
+  // manual agar Ctrl/⌘+wheel = zoom kanvas (anchored ke kursor),
+  // Shift+wheel = geser horizontal, wheel = pan.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent): void => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const rect = el.getBoundingClientRect();
+        const f = Math.exp(-e.deltaY * 0.0016);
+        zoomAt({ x: e.clientX - rect.left, y: e.clientY - rect.top }, f);
+      } else if (e.shiftKey) {
+        e.preventDefault();
+        setView((v) => ({ ...v, ox: v.ox - e.deltaY / v.zoom }));
+      } else {
+        setView((v) => ({ ...v, ox: v.ox - e.deltaX / v.zoom, oy: v.oy - e.deltaY / v.zoom }));
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [zoomAt, file]); // file: wrap belum ada saat "Loading canvas…" → re-attach saat siap
 
   const mutate = useCallback(
     (fn: (f: DesignFile) => void) => {
@@ -351,6 +508,31 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     const w = toWorld(e);
     if (tool === "select") {
+      // D92: resize — cek kena handle (screen px) utk seleksi tunggal dulu
+      if (page && sel.size === 1) {
+        const one = page.shapes[[...sel][0]!];
+        if (one && !one.locked) {
+          const abs = canvasPos(one, page);
+          const rect = canvasRef.current?.getBoundingClientRect();
+          if (rect) {
+            for (const d of HANDLE_DIRS) {
+              const hp = handlePoints(abs, one.width, one.height)[d];
+              const px = (hp.x + view.ox) * view.zoom;
+              const py = (hp.y + view.oy) * view.zoom;
+              if (Math.abs(e.clientX - rect.left - px) <= 8 && Math.abs(e.clientY - rect.top - py) <= 8) {
+                drag.current = {
+                  kind: "resize",
+                  handle: d,
+                  id: one.id,
+                  orig: { x: one.x, y: one.y, width: one.width, height: one.height },
+                  start: w,
+                };
+                return;
+              }
+            }
+          }
+        }
+      }
       const s = hit(w.x, w.y);
       if (s) {
         if (e.shiftKey) {
@@ -397,6 +579,40 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           }
         }
       });
+    } else if (d.kind === "resize") {
+      // D92: resize via handle — sudut & sisi, clamp minimal 2px
+      const dx = w.x - d.start.x;
+      const dy = w.y - d.start.y;
+      const o = d.orig;
+      let { x, y, width, height } = o;
+      if (d.handle.includes("w")) {
+        x = o.x + dx;
+        width = o.width - dx;
+      }
+      if (d.handle.includes("e")) width = o.width + dx;
+      if (d.handle.includes("n")) {
+        y = o.y + dy;
+        height = o.height - dy;
+      }
+      if (d.handle.includes("s")) height = o.height + dy;
+      if (width < 2) {
+        width = 2;
+        if (d.handle.includes("w")) x = o.x + o.width - 2;
+      }
+      if (height < 2) {
+        height = 2;
+        if (d.handle.includes("n")) y = o.y + o.height - 2;
+      }
+      mutate((f) => {
+        const pg = f.pages.find((p) => p.id === page.id);
+        const s = pg?.shapes[d.id];
+        if (s) {
+          s.x = R(x);
+          s.y = R(y);
+          s.width = R(width);
+          s.height = R(height);
+        }
+      });
     } else if (d.kind === "create") {
       // preview digambar saat pointer up; cukup kursor
     }
@@ -421,6 +637,10 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         width = Math.max(width, 100);
         height = Math.max(height, 100);
       }
+      // D92 (#9): object baru dibuat DI DALAM frame → jadi anak frame itu
+      // (pusat bbox menentukan), koordinat relatif frame.
+      const cont = findContainer(page, x + width / 2, y + height / 2, new Set());
+      const contAbs = cont ? canvasPos(cont, page) : null;
       mutate((f) => {
         const pg = f.pages.find((p) => p.id === page.id);
         if (!pg) return;
@@ -428,12 +648,12 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         const base = {
           id,
           name: `${d.type} ${Object.keys(pg.shapes).length + 1}`,
-          x: R(x),
-          y: R(y),
+          x: R(contAbs ? x - contAbs.x : x),
+          y: R(contAbs ? y - contAbs.y : y),
           width: R(width),
           height: R(height),
           fills: [{ color: d.type === "frame" ? "#16161c" : "#2c2c34", opacity: 1 }],
-          parentId: null,
+          parentId: cont ? cont.id : null,
         };
         pg.shapes[id] =
           d.type === "text"
@@ -441,58 +661,76 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             : d.type === "circle"
               ? { ...base, type: "circle" }
               : d.type === "frame"
-                ? { ...base, type: "frame", children: [], isScreen: true }
+                ? { ...base, type: "frame", children: [], isScreen: !cont }
                 : { ...base, type: "rect" };
-        pg.roots.push(id);
+        if (cont) {
+          const par = pg.shapes[cont.id];
+          if (par && hasChildren(par)) par.children.push(id);
+          else pg.roots.push(id);
+        } else pg.roots.push(id);
       });
       setTool("select");
+    } else if (d.kind === "move" && d.moved) {
+      // D92 (#4): auto-parent — drop shape di atas frame/group → masuk
+      // hirarkinya (pusat bbox); keluar dari semua frame → naik ke root page.
+      const live = liveRef.current;
+      if (!live.page) return;
+      const pg0 = live.page;
+      const excl = new Set<string>();
+      const addSub = (id: string): void => {
+        excl.add(id);
+        const s = pg0.shapes[id];
+        if (s && hasChildren(s)) for (const c of s.children) addSub(c);
+      };
+      for (const id of d.orig.keys()) addSub(id);
+      const targets: Array<{ id: string; parent: string | null }> = [];
+      for (const id of d.orig.keys()) {
+        const s = pg0.shapes[id];
+        if (!s) continue;
+        const abs = canvasPos(s, pg0);
+        const cont = findContainer(pg0, abs.x + s.width / 2, abs.y + s.height / 2, excl);
+        const want = cont ? cont.id : null;
+        if (s.parentId !== want) targets.push({ id, parent: want });
+      }
+      if (targets.length)
+        mutate((f) => {
+          const pg = f.pages.find((p) => p.id === pg0.id);
+          if (!pg) return;
+          for (const t of targets) {
+            const s = pg.shapes[t.id];
+            if (!s) continue;
+            const abs = canvasPos(s, pg);
+            if (s.parentId) {
+              const par = pg.shapes[s.parentId];
+              if (par && hasChildren(par)) par.children = par.children.filter((c) => c !== s.id);
+            } else {
+              pg.roots = pg.roots.filter((r) => r !== s.id);
+            }
+            if (t.parent) {
+              const np = pg.shapes[t.parent];
+              if (np && hasChildren(np)) {
+                const npAbs = canvasPos(np, pg);
+                s.parentId = t.parent;
+                s.x = R(abs.x - npAbs.x);
+                s.y = R(abs.y - npAbs.y);
+                np.children.push(s.id);
+              } else {
+                s.parentId = null;
+                s.x = R(abs.x);
+                s.y = R(abs.y);
+                pg.roots.push(s.id);
+              }
+            } else {
+              s.parentId = null;
+              s.x = R(abs.x);
+              s.y = R(abs.y);
+              pg.roots.push(s.id);
+            }
+          }
+        });
     }
   };
 
-  // keyboard: delete, undo/redo
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName?.match(/INPUT|TEXTAREA|SELECT/)) return;
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (sel.size && page && file) {
-          mutate((f) => {
-            const pg = f.pages.find((p) => p.id === page.id);
-            if (!pg) return;
-            const rm: string[] = [];
-            const walk = (id: string) => {
-              rm.push(id);
-              const s = pg.shapes[id];
-              if (s?.type === "frame") for (const c of s.children) walk(c);
-            };
-            for (const id of sel) walk(id);
-            for (const id of rm) delete pg.shapes[id];
-            pg.roots = pg.roots.filter((r) => !rm.includes(r));
-            for (const s of Object.values(pg.shapes)) if (s.type === "frame") s.children = s.children.filter((c) => !rm.includes(c));
-          });
-          setSel(new Set());
-        }
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
-        e.preventDefault();
-        if (e.shiftKey) {
-          const nx = redoStack.current.pop();
-          if (nx && file) {
-            undoStack.current.push(JSON.parse(JSON.stringify(file)));
-            setFile(nx);
-            setDirty(true);
-          }
-        } else {
-          const prev = undoStack.current.pop();
-          if (prev && file) {
-            redoStack.current.push(JSON.parse(JSON.stringify(file)));
-            setFile(prev);
-            setDirty(true);
-          }
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [sel, page, file, mutate]);
 
   const save = useCallback(async () => {
     if (!file || !dirty) return;
@@ -548,6 +786,368 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     }
   };
 
+  // ── D92: copy / paste / duplicate / group / ungroup / reparent ──────────
+
+  /** Salin subtree shape terpilih (top-level only) ke clipboard internal.
+   *  Koordinat top-level disimpan ABSOLUT agar paste bisa ke parent mana pun. */
+  const copySel = useCallback((): void => {
+    const live = liveRef.current;
+    if (!live.page || live.sel.size === 0) return;
+    const tops = [...live.sel].filter((id) => {
+      const s = live.page!.shapes[id];
+      return s && (!s.parentId || !live.sel.has(s.parentId));
+    });
+    if (!tops.length) return;
+    const nodes: DesignShape[] = [];
+    const walk = (id: string): void => {
+      const s = live.page!.shapes[id];
+      if (!s) return;
+      const c = JSON.parse(JSON.stringify(s)) as DesignShape;
+      if (!c.parentId || tops.includes(id)) {
+        const abs = canvasPos(s, live.page!);
+        c.x = R(abs.x);
+        c.y = R(abs.y);
+      }
+      nodes.push(c);
+      if (hasChildren(s)) for (const ch of s.children) walk(ch);
+    };
+    tops.forEach(walk);
+    CLIP = { shapes: nodes, parentId: live.page.shapes[tops[0]!]?.parentId ?? null };
+  }, []);
+
+  const pasteSel = useCallback((): void => {
+    const live = liveRef.current;
+    if (!CLIP || !live.page) return;
+    const pgId = live.page.id;
+    const clip = CLIP;
+    const tops = clip.shapes.filter((s) => !s.parentId || !clip.shapes.some((p) => p.id === s.parentId));
+    const idMap = new Map<string, string>();
+    for (const n of clip.shapes) idMap.set(n.id, crypto.randomUUID());
+    mutate((f) => {
+      const pg = f.pages.find((p) => p.id === pgId);
+      if (!pg) return;
+      const parentOk =
+        clip.parentId && pg.shapes[clip.parentId] && hasChildren(pg.shapes[clip.parentId]!) ? clip.parentId : null;
+      const parAbs = parentOk ? canvasPos(pg.shapes[parentOk]!, pg) : null;
+      for (const n of clip.shapes) {
+        const c = JSON.parse(JSON.stringify(n)) as DesignShape;
+        c.id = idMap.get(n.id)!;
+        c.parentId = n.parentId ? (idMap.get(n.parentId) ?? null) : null;
+        if (!c.parentId) {
+          c.x = R(c.x + 16);
+          c.y = R(c.y + 16);
+          if (parentOk && parAbs) {
+            c.parentId = parentOk;
+            c.x = R(c.x - parAbs.x);
+            c.y = R(c.y - parAbs.y);
+          }
+        }
+        pg.shapes[c.id] = c;
+      }
+      for (const t of tops) {
+        const c = pg.shapes[idMap.get(t.id)!];
+        if (!c) continue;
+        if (c.parentId) {
+          const par = pg.shapes[c.parentId];
+          if (par && hasChildren(par)) par.children.push(c.id);
+        } else pg.roots.push(c.id);
+      }
+    });
+    setSel(new Set(tops.map((t) => idMap.get(t.id)!)));
+  }, [mutate]);
+
+  const duplicateSel = useCallback((): void => {
+    copySel();
+    pasteSel();
+  }, [copySel, pasteSel]);
+
+  /** Ctrl+G: gabungkan seleksi (>=2) jadi satu group — anak boleh beda
+   *  parent (semua dinaikkan/diturunkan ke parent anak terpilih pertama,
+   *  koordinat dikonversi). Group = wadah tanpa visual. */
+  const groupSel = useCallback((): void => {
+    const live = liveRef.current;
+    if (!live.page || live.sel.size < 2) return;
+    const pg0 = live.page;
+    const ids = [...live.sel].filter((id) => pg0.shapes[id]);
+    if (ids.length < 2) return;
+    const parent = pg0.shapes[ids[0]!]?.parentId ?? null;
+    let bx = Infinity,
+      by = Infinity,
+      bx2 = -Infinity,
+      by2 = -Infinity;
+    for (const id of ids) {
+      const s = pg0.shapes[id]!;
+      const abs = canvasPos(s, pg0);
+      bx = Math.min(bx, abs.x);
+      by = Math.min(by, abs.y);
+      bx2 = Math.max(bx2, abs.x + s.width);
+      by2 = Math.max(by2, abs.y + s.height);
+    }
+    const gid = crypto.randomUUID();
+    const groupCount = Object.values(pg0.shapes).filter((s) => s.type === "group").length + 1;
+    const pgId = pg0.id;
+    mutate((f) => {
+      const pg = f.pages.find((p) => p.id === pgId);
+      if (!pg) return;
+      pg.shapes[gid] = {
+        id: gid,
+        name: `Group ${groupCount}`,
+        type: "group",
+        x: R(bx),
+        y: R(by),
+        width: R(bx2 - bx),
+        height: R(by2 - by),
+        fills: [{ color: "#000000", opacity: 0 }],
+        parentId: parent,
+        children: [],
+      };
+      // urut z sesuai array parent (belakang → depan)
+      const arrOf = (s: DesignShape): string[] =>
+        s.parentId && pg.shapes[s.parentId] && hasChildren(pg.shapes[s.parentId]!) ? (pg.shapes[s.parentId] as { children: string[] }).children : pg.roots;
+      const order = [...(parent && pg.shapes[parent] && hasChildren(pg.shapes[parent]!) ? (pg.shapes[parent] as { children: string[] }).children : pg.roots)].filter((id) => live.sel.has(id));
+      for (const id of order) {
+        const s = pg.shapes[id];
+        if (!s) continue;
+        const abs = canvasPos(s, pg);
+        const arr = arrOf(s);
+        const i = arr.indexOf(id);
+        if (i >= 0) arr.splice(i, 1);
+        s.parentId = gid;
+        s.x = R(abs.x - bx);
+        s.y = R(abs.y - by);
+        (pg.shapes[gid] as { children: string[] }).children.push(id);
+      }
+      const parr = parent && pg.shapes[parent] && hasChildren(pg.shapes[parent]!) ? (pg.shapes[parent] as { children: string[] }).children : pg.roots;
+      parr.push(gid);
+    });
+    setSel(new Set([gid]));
+  }, [mutate]);
+
+  /** Ctrl+Shift+G: bongkar group — anak naik ke parent group (koordinat
+   *  dikonversi), group dihapus. */
+  const ungroupSel = useCallback((): void => {
+    const live = liveRef.current;
+    if (!live.page || live.sel.size !== 1) return;
+    const g = live.page.shapes[[...live.sel][0]!];
+    if (!g || g.type !== "group") return;
+    const kids = [...g.children];
+    const pgId = live.page.id;
+    mutate((f) => {
+      const pg = f.pages.find((p) => p.id === pgId);
+      if (!pg) return;
+      const grp = pg.shapes[g.id];
+      if (!grp || grp.type !== "group") return;
+      const arr = grp.parentId && pg.shapes[grp.parentId] && hasChildren(pg.shapes[grp.parentId]!) ? (pg.shapes[grp.parentId] as { children: string[] }).children : pg.roots;
+      const gi = arr.indexOf(grp.id);
+      if (gi >= 0) arr.splice(gi, 1);
+      for (const k of kids) {
+        const c = pg.shapes[k];
+        if (!c) continue;
+        c.parentId = grp.parentId;
+        c.x = R(c.x + grp.x);
+        c.y = R(c.y + grp.y);
+        if (gi >= 0) arr.splice(gi + 1, 0, k);
+        else arr.push(k);
+      }
+      delete pg.shapes[grp.id];
+    });
+    setSel(new Set(kids));
+  }, [mutate]);
+
+  /** D92 (#3): reparent dari layers panel drag & drop. */
+  const moveShapeTo = useCallback(
+    (sid: string, parentId: string | null) => {
+      const live = liveRef.current;
+      if (!live.page) return;
+      const pg0 = live.page;
+      const s = pg0.shapes[sid];
+      if (!s) return;
+      if (parentId && (parentId === sid || isDescendantOf(pg0, sid, parentId))) return;
+      if (parentId && !(pg0.shapes[parentId] && hasChildren(pg0.shapes[parentId]!))) return;
+      const pgId = pg0.id;
+      mutate((f) => {
+        const pg = f.pages.find((p) => p.id === pgId);
+        if (!pg) return;
+        const sh = pg.shapes[sid];
+        if (!sh) return;
+        const abs = canvasPos(sh, pg);
+        if (sh.parentId) {
+          const par = pg.shapes[sh.parentId];
+          if (par && hasChildren(par)) par.children = par.children.filter((c) => c !== sid);
+        } else {
+          pg.roots = pg.roots.filter((r) => r !== sid);
+        }
+        if (parentId) {
+          const np = pg.shapes[parentId];
+          if (np && hasChildren(np)) {
+            const npAbs = canvasPos(np, pg);
+            sh.parentId = parentId;
+            sh.x = R(abs.x - npAbs.x);
+            sh.y = R(abs.y - npAbs.y);
+            np.children.push(sid);
+          }
+        } else {
+          sh.parentId = null;
+          sh.x = R(abs.x);
+          sh.y = R(abs.y);
+          pg.roots.push(sid);
+        }
+      });
+    },
+    [mutate],
+  );
+
+  /** D92 (#11): upload image → uploads/ project → shape image di tengah
+   *  viewport. #12: handler "jadikan background frame" (dipakai props panel). */
+  const uploadImage = useCallback(
+    async (f: File): Promise<void> => {
+      const live = liveRef.current;
+      if (!live.page || !live.file) return;
+      setUploading(true);
+      try {
+        const r = await authFetch(
+          apiUrl(`/api/uploads?name=${encodeURIComponent(f.name)}&project=${props.projectId}&kind=image`),
+          { method: "POST", body: await f.arrayBuffer() },
+        );
+        if (!r.ok) {
+          console.error("image upload failed", r.status);
+          return;
+        }
+        const j = (await r.json()) as { path: string };
+        // tunggu decode sebentar utk ukuran natural (clamp 480px sisi terpanjang)
+        for (let i = 0; i < 40 && !getAssetImage(j.path); i++) {
+          loadAsset(j.path);
+          await new Promise((res) => setTimeout(res, 120));
+        }
+        let w = 320;
+        let h = 200;
+        const probe = getAssetImage(j.path);
+        if (probe) {
+          const sc = Math.min(1, 480 / Math.max(probe.naturalWidth, probe.naturalHeight));
+          w = Math.max(24, Math.round(probe.naturalWidth * sc));
+          h = Math.max(24, Math.round(probe.naturalHeight * sc));
+        }
+        const stage = wrapRef.current;
+        const cz = view.zoom;
+        const cwx = stage ? stage.clientWidth / 2 / cz - view.ox : 0;
+        const cwy = stage ? stage.clientHeight / 2 / cz - view.oy : 0;
+        const x = R(cwx - w / 2);
+        const y = R(cwy - h / 2);
+        const pgId = live.page.id;
+        const fid = live.file.id;
+        const newId = crypto.randomUUID();
+        mutate((f2) => {
+          const ff = f2.pages.find((p) => p.id === pgId);
+          if (!ff || f2.id !== fid) return;
+          ff.shapes[newId] = {
+            id: newId,
+            name: f.name.replace(/\.[^.]+$/, "").slice(0, 60) || "Image",
+            type: "image",
+            x,
+            y,
+            width: w,
+            height: h,
+            fills: [{ color: "#1c1c24", opacity: 1 }],
+            parentId: null,
+            src: j.path,
+            fit: "cover",
+          };
+          ff.roots.push(newId);
+        });
+        setSel(new Set([newId]));
+      } finally {
+        setUploading(false);
+      }
+    },
+    [mutate, props.projectId, view],
+  );
+
+  /** #12: jadikan src image sebagai background frame penaungnya. */
+  const useAsBackground = useCallback((): void => {
+    const live = liveRef.current;
+    if (!live.page) return;
+    const pg0 = live.page;
+    const one = live.sel.size === 1 ? pg0.shapes[[...live.sel][0]!] : null;
+    if (!one || one.type !== "image") return;
+    let frameId = one.parentId;
+    if (!frameId || !pg0.shapes[frameId] || !hasChildren(pg0.shapes[frameId]!)) {
+      // cari frame root yang mengandung pusat image
+      const abs = canvasPos(one, pg0);
+      const cont = findContainer(pg0, abs.x + one.width / 2, abs.y + one.height / 2, new Set([one.id]));
+      frameId = cont ? cont.id : null;
+    }
+    if (!frameId) return;
+    const pgId = pg0.id;
+    mutate((f) => {
+      const pg = f.pages.find((p) => p.id === pgId);
+      const fr = pg?.shapes[frameId!];
+      if (fr && hasChildren(fr)) {
+        fr.fills = [{ ...(fr.fills[0] ?? { color: "#16161c", opacity: 1 }), image: one.src }];
+      }
+    });
+  }, [mutate]);
+
+  // keyboard: delete, undo/redo, copy/paste/duplicate, group/ungroup (D92)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName?.match(/INPUT|TEXTAREA|SELECT/)) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (sel.size && page && file) {
+          mutate((f) => {
+            const pg = f.pages.find((p) => p.id === page.id);
+            if (!pg) return;
+            const rm: string[] = [];
+            const walk = (id: string) => {
+              rm.push(id);
+              const s = pg.shapes[id];
+              if (s?.type === "frame") for (const c of s.children) walk(c);
+            };
+            for (const id of sel) walk(id);
+            for (const id of rm) delete pg.shapes[id];
+            pg.roots = pg.roots.filter((r) => !rm.includes(r));
+            for (const s of Object.values(pg.shapes)) if (s.type === "frame") s.children = s.children.filter((c) => !rm.includes(c));
+          });
+          setSel(new Set());
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          const nx = redoStack.current.pop();
+          if (nx && file) {
+            undoStack.current.push(JSON.parse(JSON.stringify(file)));
+            setFile(nx);
+            setDirty(true);
+          }
+        } else {
+          const prev = undoStack.current.pop();
+          if (prev && file) {
+            redoStack.current.push(JSON.parse(JSON.stringify(file)));
+            setFile(prev);
+            setDirty(true);
+          }
+        }
+      } else if (e.ctrlKey || e.metaKey) {
+        const k = e.key.toLowerCase();
+        if (k === "c" && sel.size > 0) {
+          e.preventDefault();
+          copySel();
+        } else if (k === "v" && CLIP) {
+          e.preventDefault();
+          pasteSel();
+        } else if (k === "d" && sel.size > 0) {
+          e.preventDefault();
+          duplicateSel();
+        } else if (k === "g") {
+          e.preventDefault();
+          if (e.shiftKey) ungroupSel();
+          else if (sel.size >= 2) groupSel();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sel, page, file, mutate, copySel, pasteSel, duplicateSel, groupSel, ungroupSel]);
+
   if (!file || !page) return <div className="grid h-full place-items-center text-sm text-dim">Loading canvas…</div>;
 
   const selShape = sel.size === 1 ? page.shapes[[...sel][0]!] : null;
@@ -575,6 +1175,27 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             {icon}
           </Button>
         ))}
+        {/* D92 (#11): upload image ke canvas */}
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Insert image (upload from your device)"
+          disabled={uploading}
+          onClick={() => imgInputRef.current?.click()}
+        >
+          <ImageIcon size={15} />
+        </Button>
+        <input
+          ref={imgInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) void uploadImage(f);
+          }}
+        />
         <span className="mx-1 h-4 w-px bg-line" />
         <Button
           variant="ghost"
@@ -631,6 +1252,34 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         >
           <Trash size={15} />
         </Button>
+        {/* D92 (#6/#5): duplicate + group/ungroup */}
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Duplicate selection (Ctrl+D)"
+          disabled={sel.size === 0}
+          onClick={duplicateSel}
+        >
+          <CopySimple size={15} />
+        </Button>
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Group selection (Ctrl+G)"
+          disabled={sel.size < 2}
+          onClick={groupSel}
+        >
+          <Stack size={15} />
+        </Button>
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Ungroup (Ctrl+Shift+G)"
+          disabled={!(sel.size === 1 && selShape?.type === "group")}
+          onClick={ungroupSel}
+        >
+          <ArrowsOutSimple size={15} />
+        </Button>
         <span className="mx-1 h-4 w-px bg-line" />
         <Button variant="ghost" className="!px-2 !py-1" title="Zoom out" onClick={() => zoomAt(null, 1 / 1.25)}>
           <MagnifyingGlassMinus size={15} />
@@ -650,7 +1299,6 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         </Button>
         <span className="ml-auto flex items-center gap-2">
           {props.headerRight}
-          {dirty ? <Chip tone="warn">{saving ? "Saving…" : "Unsaved"}</Chip> : <Chip tone="ok">Saved · revn {file.revn}</Chip>}
         </span>
       </div>
 
@@ -689,30 +1337,55 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             onFocus={focusShape}
             onAddPage={() => void addPage()}
             onDeletePage={(pid) => void deletePage(pid)}
+            onMoveShape={moveShapeTo}
           />
         ) : null}
 
         {/* canvas */}
-        <div
-          ref={wrapRef}
-          className="relative min-h-0 flex-1 overflow-hidden"
-          onWheel={(e) => {
-            if (e.ctrlKey || e.metaKey) {
-              // P3-CANVAS: zoom menuju kursor (anchored) — ctrl/⌘+wheel dan
-              // pinch trackpad (browser kirim ctrlKey otomatis saat pinch)
-              e.preventDefault();
-              const rect = e.currentTarget.getBoundingClientRect();
-              const f = Math.exp(-e.deltaY * 0.0016);
-              zoomAt({ x: e.clientX - rect.left, y: e.clientY - rect.top }, f);
-            } else if (e.shiftKey) {
-              // shift+wheel = geser horizontal
-              e.preventDefault();
-              setView((v) => ({ ...v, ox: v.ox - e.deltaY / v.zoom }));
-            } else {
-              setView((v) => ({ ...v, ox: v.ox - e.deltaX / v.zoom, oy: v.oy - e.deltaY / v.zoom }));
-            }
-          }}
-        >
+        <div ref={wrapRef} className="relative min-h-0 flex-1 overflow-hidden">
+          {/* D92 (#10): status save jadi floating chip pojok kanan atas kanvas */}
+          <div className="pointer-events-none absolute right-2 top-2 z-10">
+            {dirty ? (
+              <Chip tone="warn">{saving ? "Saving…" : "Unsaved"}</Chip>
+            ) : (
+              <Chip tone="ok">Saved · revn {file.revn}</Chip>
+            )}
+          </div>
+          {/* D92 (#12): input hidden upload background frame (dipicu props panel) */}
+          <input
+            ref={bgInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (!f) return;
+              void (async () => {
+                setUploading(true);
+                try {
+                  const r = await authFetch(
+                    apiUrl(`/api/uploads?name=${encodeURIComponent(f.name)}&project=${props.projectId}&kind=image`),
+                    { method: "POST", body: await f.arrayBuffer() },
+                  );
+                  if (!r.ok) return;
+                  const j = (await r.json()) as { path: string };
+                  loadAsset(j.path);
+                  const one = liveRef.current.sel.size === 1 ? liveRef.current.page?.shapes[[...liveRef.current.sel][0]!] : null;
+                  if (one && hasChildren(one)) {
+                    const id = one.id;
+                    mutate((f2) => {
+                      const pg = f2.pages.find((p) => p.id === liveRef.current.page?.id);
+                      const s = pg?.shapes[id];
+                      if (s && hasChildren(s)) s.fills = [{ ...(s.fills[0] ?? { color: "#16161c", opacity: 1 }), image: j.path }];
+                    });
+                  }
+                } finally {
+                  setUploading(false);
+                }
+              })();
+            }}
+          />
           <canvas
             ref={canvasRef}
             className={tool === "select" ? "cursor-default" : "cursor-crosshair"}
@@ -730,6 +1403,8 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
               shape={selShape}
               file={file}
               pageId={page.id}
+              onUseAsBackground={useAsBackground}
+              onPickBackground={() => bgInputRef.current?.click()}
               onChange={(patch) =>
                 mutate((f) => {
                   const pg = f.pages.find((p) => p.id === page.id);
@@ -756,11 +1431,15 @@ function ShapeProps({
   file,
   pageId,
   onChange,
+  onUseAsBackground,
+  onPickBackground,
 }: {
   shape: DesignShape;
   file: DesignFile;
   pageId: string;
   onChange: (patch: Partial<DesignShape>) => void;
+  onUseAsBackground?: () => void;
+  onPickBackground?: () => void;
 }): React.ReactElement {
   // D91: label DI ATAS input (bukan samping) — layout stabil, tanpa overflow.
   const label = "mb-1 block text-[11px] font-medium uppercase tracking-wide text-dim";
@@ -773,6 +1452,57 @@ function ShapeProps({
         <span className={label}>Name</span>
         <input className={input} value={shape.name} onChange={(e) => onChange({ name: e.target.value })} />
       </label>
+      {/* D92 (#11/#12): image — fit + tombol jadikan background frame */}
+      {shape.type === "image" && (
+        <>
+          <label>
+            <span className={label}>Fit</span>
+            <Select
+              value={shape.fit ?? "cover"}
+              onChange={(e) => onChange({ fit: e.target.value } as Partial<DesignShape>)}
+              aria-label="Image fit"
+              className="w-full"
+            >
+              <option value="cover">Cover</option>
+              <option value="contain">Contain</option>
+              <option value="stretch">Stretch</option>
+            </Select>
+          </label>
+          <Button variant="ghost" className="w-full justify-center !py-1.5" title="Set this image as the background of its parent screen/frame" onClick={() => onUseAsBackground?.()}>
+            Use as frame background
+          </Button>
+        </>
+      )}
+      {/* D92 (#12): frame — background image (cover, di atas warna fill) */}
+      {shape.type === "frame" && (
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>Background image</span>
+          {shape.fills[0]?.image ? (
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate text-[12px] text-dim" title={shape.fills[0].image}>
+                {shape.fills[0].image.split("/").pop()}
+              </span>
+              <Button
+                variant="ghost"
+                className="!px-2 !py-1"
+                title="Remove background image"
+                onClick={() =>
+                  onChange({
+                    fills: [{ ...(shape.fills[0] ?? { color: "#16161c", opacity: 1 }) }].map(({ image: _img, ...rest }) => rest),
+                  } as Partial<DesignShape>)
+                }
+              >
+                <Trash size={13} />
+              </Button>
+            </div>
+          ) : (
+            <span className="text-[12px] text-dim">Solid color only.</span>
+          )}
+          <Button variant="ghost" className="w-full justify-center !py-1.5" title="Upload an image as this frame's background" onClick={() => onPickBackground?.()}>
+            Upload background…
+          </Button>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-2">
         {(["x", "y", "width", "height"] as const).map((k) => (
           <label key={k}>

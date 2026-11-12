@@ -40,7 +40,7 @@ const shapeFields = z
     align: z.enum(["left", "center", "right"]).optional(),
     color: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(),
   })
-  .describe("Shape fields; frame = artboard/container, text = label dengan content");
+  .describe("Shape fields; frame = artboard/container, text = label dengan content, group = wadah logis tanpa visual (D92), image = gambar upload (D92, pakai src)");
 
 /** Ringkas file untuk prompt persona (tanpa mengirim seluruh JSON). */
 function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, unknown> {
@@ -85,6 +85,9 @@ function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, 
                 ...(s.align ? { align: s.align } : {}),
               }
             : {}),
+          ...(s.type === "image" ? { src: s.src, fit: s.fit ?? "cover" } : {}),
+          ...(s.fills[0]?.image ? { backgroundImage: s.fills[0].image } : {}),
+          ...(s.type === "group" ? { children: s.children.length } : {}),
           ...(s.interaction ? { onClick: `navigate:${s.interaction.target}` } : {}),
           ...(s.type === "frame" && !s.parentId ? { isScreen: s.isScreen !== false } : {}),
         })),

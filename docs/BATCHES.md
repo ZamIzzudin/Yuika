@@ -550,3 +550,11 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - UI: select+New+Try it pindah ke ujung kanan toolbar (sebelah Saved),
   props panel label-di-atas font 13px tanpa overflow, layers font besar
   + cursor pointer + tombol hapus halaman.
+
+## Batch D92 — canvas interactions proper
+
+- Wheel non-passive (ctrl+wheel zoom kanvas), 8 resize handles,
+  auto-parent drop/create, group/ungroup, copy/paste/duplicate,
+  DnD reparent layers, FileMenu custom + modal nama desain,
+  chip Saved floating, upload image + serving GET, background image
+  frame (canvas + prototype). Model: type group/image, Fill.image.

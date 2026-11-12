@@ -9,15 +9,23 @@ const OK_EXT = new Set([
   ".html", ".htm", ".xml", ".yaml", ".yml",
 ]);
 
+/** D92: ekstensi gambar (canvas design assets) — hanya diizinkan bila
+ *  pemanggil meminta mode image (kind=image). */
+export const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"]);
+
 export function sanitizeUploadName(
   raw: string | undefined,
+  opts?: { images?: boolean },
 ): { name: string } | { error: string } {
   const name = (raw ?? "").replace(/[\\/:*?"<>|]/g, "_").trim();
   if (!name || name.includes("..")) return { error: "invalid file name" };
   const ext = path.extname(name).toLowerCase();
-  if (!OK_EXT.has(ext))
+  const ok = opts?.images ? IMAGE_EXT.has(ext) : OK_EXT.has(ext);
+  if (!ok)
     return {
-      error: `unsupported format ${ext || "?"} (allowed: pdf, xlsx, xls, csv, md, txt, json, html, yaml)`,
+      error: opts?.images
+        ? `unsupported image format ${ext || "?"} (allowed: png, jpg, jpeg, webp, gif, svg)`
+        : `unsupported format ${ext || "?"} (allowed: pdf, xlsx, xls, csv, md, txt, json, html, yaml)`,
     };
   return { name };
 }

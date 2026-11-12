@@ -265,3 +265,40 @@ it("D91 deleteDesignPage: hapus wiring ke halaman terhapus; halaman terakhir dit
   expect(after.pages[0]!.shapes[btn.id]!.interaction).toBeUndefined();
   expect(() => deleteDesignPage(dir, f.id, p1.id)).toThrow(/last page/);
 });
+
+// ── D92: group + image + background image frame ───────────────────────
+it("D92 addDesignShape group/image; src divalidasi; fillImage utk frame", async () => {
+  const f = createDesignFile(dir, "D92", "p_d");
+  const p1 = f.pages[0]!;
+  const fr = addDesignShape(dir, f.id, p1.id, { type: "frame", x: 0, y: 0, width: 300, height: 600 });
+  const img = addDesignShape(dir, f.id, p1.id, { type: "image", x: 10, y: 10, width: 100, height: 60, src: "projects/p_d/uploads/hero.png" }, fr.id);
+  expect(img.parentId).toBe(fr.id);
+  const frLive = getDesignFile(dir, f.id)!.pages[0]!.shapes[fr.id] as { children: string[] };
+  expect(frLive.children).toContain(img.id);
+  expect(() => addDesignShape(dir, f.id, p1.id, { type: "image", x: 0, y: 0, width: 1, height: 1, src: "../secret.txt" })).toThrow(/http/);
+  const grp = addDesignShape(dir, f.id, p1.id, { type: "group", x: 0, y: 0, width: 10, height: 10 }, fr.id);
+  expect(grp.type).toBe("group");
+  const frBg = addDesignShape(dir, f.id, p1.id, { type: "frame", x: 0, y: 0, width: 50, height: 50, fillImage: "uploads/bg.png" });
+  expect(frBg.fills[0]!.image).toBe("uploads/bg.png");
+});
+
+it("D92 deleteDesignShape pada group menghapus seluruh children; update fills dgn image", async () => {
+  const f = createDesignFile(dir, "D92b", "p_e");
+  const p1 = f.pages[0]!;
+  const a = addDesignShape(dir, f.id, p1.id, { type: "rect", x: 0, y: 0, width: 5, height: 5 });
+  const b = addDesignShape(dir, f.id, p1.id, { type: "rect", x: 8, y: 0, width: 5, height: 5 });
+  const grp = addDesignShape(dir, f.id, p1.id, { type: "group", x: 0, y: 0, width: 20, height: 10 });
+  // pindah a & b ke group (simulasi UI): langsung mutasi via updateDesignShape tidak menyentuh parentId —
+  // gunakan delete utk memastikan walk children group
+  const g2 = getDesignFile(dir, f.id)!;
+  const pg = g2.pages[0]!;
+  (pg.shapes[grp.id] as { children: string[] }).children = [a.id, b.id];
+  require("node:fs").writeFileSync(require("node:path").join(dir, "design", f.id + ".json"), JSON.stringify(g2, null, 1));
+  const r = deleteDesignShape(dir, f.id, p1.id, grp.id);
+  expect(r.deleted.sort()).toEqual([a.id, b.id, grp.id].sort());
+  // patch fills dgn image (background frame) via updateDesignShape
+  const fr = addDesignShape(dir, f.id, p1.id, { type: "frame", x: 0, y: 0, width: 9, height: 9 });
+  updateDesignShape(dir, f.id, p1.id, fr.id, { fills: [{ color: "#101014", opacity: 1, image: "uploads/x.png" }] });
+  expect(getDesignFile(dir, f.id)!.pages[0]!.shapes[fr.id]!.fills[0]!.image).toBe("uploads/x.png");
+  expect(() => updateDesignShape(dir, f.id, p1.id, fr.id, { fills: [{ color: "#101014", image: "../../etc/passwd" }] })).toThrow();
+});

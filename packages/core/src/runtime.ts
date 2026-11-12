@@ -1069,6 +1069,34 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       await fs.promises.writeFile(abs, data);
       return { path: relToWs, bytes: data.length };
     },
+
+    /** D92: baca aset upload (image) utk di-render klien — hanya path relatif
+     *  workspace di dalam folder uploads, hanya ekstensi gambar. */
+    readUpload: async (relPath: string): Promise<{ buf: Buffer; contentType: string }> => {
+      if (typeof relPath !== "string" || relPath.includes("..") || relPath.startsWith("/") || relPath.includes("\\")) {
+        throw new Error("invalid path");
+      }
+      const wsAbs = path.resolve(paths.workspacePath);
+      const abs = path.resolve(wsAbs, relPath);
+      if (!abs.startsWith(wsAbs + path.sep)) throw new Error("invalid path");
+      if (!relPath.split("/").includes("uploads")) throw new Error("path must be inside an uploads folder");
+      const CT: Record<string, string> = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+      };
+      const contentType = CT[path.extname(abs).toLowerCase()];
+      if (!contentType) throw new Error("only image assets can be served");
+      try {
+        const buf = await fs.promises.readFile(abs);
+        return { buf, contentType };
+      } catch {
+        throw new Error("asset not found");
+      }
+    },
  /** riwayat job delegasi persist (audit/monitor lintas restart).
      *  projectId = project sesi parent; undefined/null = semua. */
     delegationJobs: (projectId?: string | null) => store.listDelegationJobs(projectId ?? undefined),

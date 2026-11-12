@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowLeft, Play, X } from "@phosphor-icons/react";
 import { apiUrl, authFetch } from "@/lib/api";
+import { getAssetUrl, useAssetNotify } from "@/lib/designAssets";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { Button } from "./ui";
 
@@ -12,6 +13,9 @@ interface Props {
   fileId: string;
   onClose: () => void;
 }
+
+const hasChildren = (s: DesignShape): s is Extract<DesignShape, { children: string[] }> =>
+  s.type === "frame" || s.type === "group";
 
 function screenFrames(page: DesignPage): DesignShape[] {
   // hanya frame ROOT yang dinyatakan screen (default true, bisa di-uncheck di
@@ -32,13 +36,59 @@ function ShapeNode({
   if (shape.hidden) return null;
   const fill = shape.fills[0];
   const clickable = Boolean(shape.interaction);
+  // D92: image di prototype — render <img> (objectURL via authFetch cache)
+  if (shape.type === "image") {
+    const url = getAssetUrl(shape.src);
+    const fit = shape.fit ?? "cover";
+    return (
+      <div
+        style={{
+          ...{
+            position: "absolute",
+            left: shape.x,
+            top: shape.y,
+            width: shape.width,
+            height: shape.height,
+            opacity: shape.opacity ?? 1,
+            borderRadius: shape.radius ? shape.radius : undefined,
+            background: fill?.color ?? "#1c1c24",
+          },
+          overflow: "hidden",
+          cursor: clickable ? "pointer" : undefined,
+        }}
+        className={clickable ? "transition hover:brightness-110 active:brightness-90" : undefined}
+        onClick={
+          clickable
+            ? (e) => {
+                e.stopPropagation();
+                onNavigate(shape.interaction!.target);
+              }
+            : undefined
+        }
+      >
+        {url ? (
+          <img
+            src={url}
+            alt={shape.name}
+            draggable={false}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: fit === "stretch" ? "fill" : fit,
+              display: "block",
+            }}
+          />
+        ) : null}
+      </div>
+    );
+  }
   const base: React.CSSProperties = {
     position: "absolute",
     left: shape.x,
     top: shape.y,
     width: shape.width,
     height: shape.height,
-    background: shape.type === "text" ? undefined : fill?.color,
+    background: shape.type === "text" || shape.type === "group" ? undefined : fill?.color,
     opacity: shape.opacity ?? 1,
     borderRadius: shape.type === "circle" ? "50%" : shape.radius ? shape.radius : undefined,
     border: shape.stroke && shape.stroke.width > 0 ? `${shape.stroke.width}px solid ${shape.stroke.color}` : undefined,
@@ -64,7 +114,8 @@ function ShapeNode({
       </div>
     );
   }
-  const children = shape.type === "frame" ? shape.children : [];
+  const children = hasChildren(shape) ? shape.children : [];
+  const bgUrl = shape.type === "frame" && fill?.image ? getAssetUrl(fill.image) : null;
   return (
     <div
       style={{ ...base, overflow: shape.type === "frame" ? "hidden" : undefined, cursor: clickable ? "pointer" : undefined }}
@@ -78,6 +129,14 @@ function ShapeNode({
           : undefined
       }
     >
+      {bgUrl ? (
+        <img
+          src={bgUrl}
+          alt=""
+          draggable={false}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      ) : null}
       {children.map((cid) => {
         const c = page.shapes[cid];
         return c ? <ShapeNode key={cid} shape={c} page={page} onNavigate={onNavigate} /> : null;
@@ -91,6 +150,7 @@ export function DesignPrototype({ fileId, onClose }: Props): React.ReactElement 
   const [cur, setCur] = useState<{ pageId: string; frameId: string | null }>({ pageId: "", frameId: null });
   const [history, setHistory] = useState<Array<{ pageId: string; frameId: string | null }>>([]);
   const [scale, setScale] = useState(1);
+  useAssetNotify(); // D92: re-render saat aset image selesai dimuat
   const viewportRef = useRef<HTMLDivElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
 
@@ -222,6 +282,20 @@ export function DesignPrototype({ fileId, onClose }: Props): React.ReactElement 
                 background: screen.fills[0]?.color ?? "#0d0d10",
               }}
             >
+              {/* D92: background image layar (cover) */}
+              {screen.fills[0]?.image
+                ? (() => {
+                    const u = getAssetUrl(screen.fills[0]!.image!);
+                    return u ? (
+                      <img
+                        src={u}
+                        alt=""
+                        draggable={false}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    ) : null;
+                  })()
+                : null}
               {/* anak-anak layar (koordinat relatif layar) */}
               {((screen as { children?: string[] }).children ?? []).map((cid) => {
                 const c = page.shapes[cid];

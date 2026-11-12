@@ -5,9 +5,11 @@ import path from "node:path";
 import crypto from "node:crypto";
 import {
   type DesignFile,
+  type DesignFill,
   type DesignPage,
   type DesignShape,
   type DesignShapeType,
+  hasChildren,
   isHexColor,
   normalizeHex,
   validateColor,
@@ -184,10 +186,27 @@ export interface AddShapeInput {
   color?: string; // warna teks
   // frame root saja
   isScreen?: boolean;
+  // D92: image saja
+  src?: string;
+  fit?: "cover" | "contain" | "stretch";
+  // D92: background image frame (fills[0].image)
+  fillImage?: string;
 }
 
 function num(v: unknown, def = 0): number {
   return typeof v === "number" && Number.isFinite(v) ? v : def;
+}
+
+/** D92: validasi src image — http(s) URL atau path relatif workspace tanpa
+ *  traversal (contoh: projects/p1/uploads/hero.png). */
+export function validateAssetSrc(field: string, v: unknown): string {
+  const s = String(v ?? "").trim();
+  if (!s || s.length > 2048) throw new Error(`${field} must be 1-2048 characters`);
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("/") || s.includes("..") || /[\\:\0]/.test(s)) {
+    throw new Error(`${field} must be an http(s) URL or a workspace-relative path`);
+  }
+  return s;
 }
 
 export function addDesignShape(
@@ -200,8 +219,8 @@ export function addDesignShape(
   const file = mustGetDesignFile(workspacePath, fileId);
   const page = mustGetPage(file, pageId);
   const type = input.type;
-  if (!["frame", "rect", "circle", "text"].includes(type)) {
-    throw new Error('type must be one of: frame, rect, circle, text');
+  if (!["frame", "rect", "circle", "text", "group", "image"].includes(type)) {
+    throw new Error('type must be one of: frame, rect, circle, text, group, image');
   }
   const width = num(input.width, -1);
   const height = num(input.height, -1);
@@ -214,8 +233,14 @@ export function addDesignShape(
   }
 
   const id = uuid();
-  const fill = validateColor("fill", input.fill, type === "frame" ? "#16161c" : "#2c2c34");
-  const fills = [{ color: fill, opacity: validateOpacity("fillOpacity", input.fillOpacity ?? 1) }];
+  const fill = validateColor("fill", input.fill, type === "frame" ? "#16161c" : type === "group" ? "#000000" : "#2c2c34");
+  const fills: DesignFill[] = [
+    {
+      color: fill,
+      opacity: type === "group" ? 0 : validateOpacity("fillOpacity", input.fillOpacity ?? 1),
+      ...(type === "frame" && input.fillImage ? { image: validateAssetSrc("fillImage", input.fillImage) } : {}),
+    },
+  ];
   let stroke: DesignShape["stroke"];
   if (input.strokeColor) {
     stroke = { color: validateColor("strokeColor", input.strokeColor, "#3a3a44"), width: Math.max(0, num(input.strokeWidth, 1)) };
@@ -246,6 +271,10 @@ export function addDesignShape(
     shape = { ...base, type: "frame", children: [], isScreen: input.isScreen ?? !parentId };
   } else if (type === "circle") {
     shape = { ...base, type: "circle" };
+  } else if (type === "group") {
+    shape = { ...base, type: "group", children: [] };
+  } else if (type === "image") {
+    shape = { ...base, type: "image", src: validateAssetSrc("src", input.src), ...(input.fit ? { fit: input.fit } : {}) };
   } else if (type === "text") {
     const text = String(input.text ?? "Text");
     if (text.length > 4000) throw new Error("text must be <= 4000 characters");
@@ -262,11 +291,11 @@ export function addDesignShape(
     shape = { ...base, type: "rect" };
   }
 
-  // attach ke parent (frame) atau root halaman
+  // attach ke parent (frame/group) atau root halaman
   if (parentId) {
     const parent = page.shapes[parentId];
     if (!parent) throw new Error(`Parent frame not found: ${parentId}`);
-    if (parent.type !== "frame") throw new Error("parentId must reference a frame (or null for page root)");
+    if (!hasChildren(parent)) throw new Error("parentId must reference a frame or group (or null for page root)");
     shape.parentId = parentId;
     // koordinat child = relatif ke parent (konvensi penpot frame)
     parent.children.push(id);
@@ -280,7 +309,31 @@ export function addDesignShape(
   return shape;
 }
 
-const MUTABLE_COMMON = ["name", "x", "y", "width", "height", "rotation", "opacity", "hidden", "locked", "radius", "fill", "strokeColor", "strokeWidth", "text", "fontSize", "fontWeight", "align", "color", "interaction", "isScreen"] as const;
+const MUTABLE_COMMON = [
+  "name",
+  "x",
+  "y",
+  "width",
+  "height",
+  "rotation",
+  "opacity",
+  "hidden",
+  "locked",
+  "radius",
+  "fill",
+  "fills",
+  "strokeColor",
+  "strokeWidth",
+  "text",
+  "fontSize",
+  "fontWeight",
+  "align",
+  "color",
+  "interaction",
+  "isScreen",
+  "src",
+  "fit",
+] as const;
 
 export function updateDesignShape(
   workspacePath: string,
@@ -347,6 +400,29 @@ export function updateDesignShape(
     s.fills = [{ color: c, opacity: cur?.opacity ?? 1 }];
   }
   if (p.fillOpacity !== undefined && s.fills[0]) s.fills[0].opacity = validateOpacity("fillOpacity", p.fillOpacity);
+  // D92: patch fills penuh (dipakai utk background image frame) — validasi tiap entri
+  if (p.fills !== undefined) {
+    const arr = p.fills as unknown;
+    if (!Array.isArray(arr)) throw new Error("fills must be an array");
+    const next: DesignFill[] = arr.map((f) => {
+      const o = f as Partial<DesignFill>;
+      return {
+        color: validateColor("fills.color", o.color, "#2c2c34"),
+        ...(o.opacity !== undefined ? { opacity: validateOpacity("fills.opacity", o.opacity) } : {}),
+        ...(o.image !== undefined && o.image !== null ? { image: validateAssetSrc("fills.image", o.image) } : {}),
+      };
+    });
+    if (next.length > 0) s.fills = next;
+  }
+  // D92: image src / fit
+  if (p.src !== undefined && s.type === "image") {
+    (s as { src: string }).src = validateAssetSrc("src", p.src);
+  }
+  if (p.fit !== undefined && s.type === "image") {
+    const f = String(p.fit);
+    if (!["cover", "contain", "stretch"].includes(f)) throw new Error('fit must be one of: cover, contain, stretch');
+    (s as { fit?: string }).fit = f as "cover" | "contain" | "stretch";
+  }
   if (p.strokeColor !== undefined || p.strokeWidth !== undefined) {
     const cur = s.stroke ?? { color: "#3a3a44", width: 1 };
     s.stroke = {
@@ -378,13 +454,13 @@ export function deleteDesignShape(workspacePath: string, fileId: string, pageId:
     const sh = page.shapes[sid];
     if (!sh) return;
     removed.push(sid);
-    if (sh.type === "frame") for (const c of sh.children) walk(c);
+    if (hasChildren(sh)) for (const c of sh.children) walk(c);
   };
   walk(id);
   for (const sid of removed) delete page.shapes[sid];
   page.roots = page.roots.filter((r) => !removed.includes(r));
   for (const sh of Object.values(page.shapes)) {
-    if (sh.type === "frame") sh.children = sh.children.filter((c) => !removed.includes(c));
+    if (hasChildren(sh)) sh.children = sh.children.filter((c) => !removed.includes(c));
   }
   // bersihkan wiring prototyping yang mengarah ke shape terhapus (semua halaman)
   for (const pg of file.pages) {

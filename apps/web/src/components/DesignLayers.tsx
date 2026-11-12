@@ -15,9 +15,11 @@ import {
   Eye,
   EyeSlash,
   FrameCorners,
+  Image as ImageIcon,
   Monitor,
   Plus,
   Rectangle,
+  Stack,
   TextAa,
 } from "@phosphor-icons/react";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
@@ -33,14 +35,30 @@ interface Props {
   onFocus: (id: string) => void;
   onAddPage: () => void;
   onDeletePage: (pageId: string) => void;
+  /** D92 (#3): drop target reparent — parentId null = pindah ke root page. */
+  onMoveShape: (shapeId: string, parentId: string | null) => void;
 }
 
 function typeIcon(s: DesignShape): React.ReactNode {
   if (s.type === "frame") return <FrameCorners size={12} />;
   if (s.type === "circle") return <Circle size={12} />;
   if (s.type === "text") return <TextAa size={12} />;
+  if (s.type === "group") return <Stack size={12} />;
+  if (s.type === "image") return <ImageIcon size={12} />;
   return <Rectangle size={12} />;
 }
+
+/** D92: apakah `id` berada dalam subtree `anc`? (validasi drop target) */
+function isDescendantOf(page: DesignPage, anc: string, id: string): boolean {
+  let p = page.shapes[id]?.parentId ?? null;
+  while (p) {
+    if (p === anc) return true;
+    p = page.shapes[p]?.parentId ?? null;
+  }
+  return false;
+}
+
+const hasKids = (s: DesignShape): boolean => s.type === "frame" || s.type === "group";
 
 /** Rantai leluhur (frame) dari sebuah shape — dipakai auto-expand saat
  *  shape terpilih lewat klik canvas agar node-nya terlihat di tree. */
@@ -59,6 +77,9 @@ export function DesignLayers(props: Props): React.ReactElement {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<{ id: string; draft: string } | null>(null);
   const [filter, setFilter] = useState("");
+  /** D92: id yang sedang di-drag + highlight drop target. */
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropAt, setDropAt] = useState<string | null>(null);
 
   const page = file.pages.find((p) => p.id === pageId) ?? null;
 
@@ -78,20 +99,50 @@ export function DesignLayers(props: Props): React.ReactElement {
   /** Satu baris node shape (rekursif untuk frame). */
   const row = (shape: DesignShape, pg: DesignPage, depth: number): React.ReactNode => {
     const selected = sel.has(shape.id);
-    const isFrame = shape.type === "frame";
-    const isScreen = isFrame && !shape.parentId && (shape as { isScreen?: boolean }).isScreen !== false;
+    const isContainer = hasKids(shape);
+    const isScreen = shape.type === "frame" && !shape.parentId && (shape as { isScreen?: boolean }).isScreen !== false;
     const autoOpen = selAncestors.has(shape.id);
     const open = autoOpen || !collapsed.has(shape.id);
-    const kids = isFrame
-      ? [...(shape as { children: string[] }).children].reverse().map((c) => pg.shapes[c]).filter(Boolean)
-      : [];
+    const kids = isContainer ? [...(shape as { children: string[] }).children].reverse().map((c) => pg.shapes[c]).filter(Boolean) : [];
+    const dropping = dropAt === shape.id;
+    const canDrop =
+      dragId !== null && dragId !== shape.id && page !== null && !isDescendantOf(page, dragId, shape.id);
     return (
       <div key={shape.id}>
         <div
           className={`group flex cursor-default items-center gap-1 rounded px-1.5 py-[3px] text-[13px] ${
             selected ? "bg-accent/25 text-fg" : "text-fg/80 hover:bg-inset"
-          }`}
+          } ${dropping ? "ring-1 ring-accent" : ""}`}
           style={{ paddingLeft: 6 + depth * 12 }}
+          draggable={editing?.id !== shape.id}
+          onDragStart={(e) => {
+            e.dataTransfer.setData("text/yui-shape", shape.id);
+            e.dataTransfer.effectAllowed = "move";
+            setDragId(shape.id);
+          }}
+          onDragEnd={() => {
+            setDragId(null);
+            setDropAt(null);
+          }}
+          onDragOver={(e) => {
+            if (!canDrop) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setDropAt(shape.id);
+          }}
+          onDragLeave={() => setDropAt((cur) => (cur === shape.id ? null : cur))}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = e.dataTransfer.getData("text/yui-shape");
+            if (id && id !== shape.id && (!page || !isDescendantOf(page, id, shape.id))) {
+              // drop PADA container = masuk sebagai anak terdepan;
+              // drop pada leaf = jadi sibling (parent sama dgn leaf)
+              props.onMoveShape(id, isContainer ? shape.id : (shape.parentId ?? null));
+            }
+            setDragId(null);
+            setDropAt(null);
+          }}
           onClick={(e) => {
             e.stopPropagation();
             props.onSelect(shape.id, e.shiftKey || e.metaKey || e.ctrlKey);
@@ -102,7 +153,7 @@ export function DesignLayers(props: Props): React.ReactElement {
           }}
           title={`${shape.name} (double-click to rename)`}
         >
-          {isFrame ? (
+          {isContainer ? (
             <button
               className="shrink-0 cursor-pointer text-dim hover:text-fg"
               onClick={(e) => {
@@ -183,7 +234,7 @@ export function DesignLayers(props: Props): React.ReactElement {
             </span>
           )}
         </div>
-        {isFrame && open ? kids.map((k) => row(k as DesignShape, pg, depth + 1)) : null}
+        {isContainer && open ? kids.map((k) => row(k as DesignShape, pg, depth + 1)) : null}
       </div>
     );
   };
@@ -291,9 +342,30 @@ export function DesignLayers(props: Props): React.ReactElement {
                     </button>
                   ) : null}
                 </div>
-                {active && !collapsed.has(pg.id)
-                  ? [...pg.roots].reverse().map((r) => pg.shapes[r]).filter(Boolean).map((s) => row(s as DesignShape, pg, 1))
-                  : null}
+                {active && !collapsed.has(pg.id) ? (
+                  <div
+                    className={`rounded ${dragId !== null && dropAt === null ? "ring-1 ring-dashed ring-line" : ""}`}
+                    onDragOver={(e) => {
+                      if (dragId === null) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      setDropAt(null);
+                    }}
+                    onDrop={(e) => {
+                      if (dragId === null) return;
+                      e.preventDefault();
+                      const id = e.dataTransfer.getData("text/yui-shape");
+                      if (id) props.onMoveShape(id, null);
+                      setDragId(null);
+                      setDropAt(null);
+                    }}
+                  >
+                    {[...pg.roots].reverse().map((r) => pg.shapes[r]).filter(Boolean).map((s) => row(s as DesignShape, pg, 1))}
+                    {dragId !== null ? (
+                      <div className="px-3 py-1 text-[11px] text-dim">Drop here to move to page root</div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             );
           })

@@ -5,11 +5,16 @@
 // server eksternal, tanpa token. Fitur inti saja (design tools): frame,
 // rect, circle, text + halaman; tanpa prototype/comment/inspect/PM.
 
-export type DesignShapeType = "frame" | "rect" | "circle" | "text";
+// D92: "group" = wadah logis (z-order, gerak bareng) tanpa visual fill;
+// "image" = aset raster di-upload ke uploads/ (src = path relatif workspace
+// atau URL http(s)); Fill.image = background image pada frame (cover).
+export type DesignShapeType = "frame" | "rect" | "circle" | "text" | "group" | "image";
 
 export interface DesignFill {
   color: string; // "#rrggbb"
   opacity?: number; // 0..1
+  /** D92: background image frame (di-render cover di atas warna fill). */
+  image?: string;
 }
 
 export interface DesignStroke {
@@ -68,7 +73,29 @@ export interface DesignTextShape extends DesignShapeCommon {
   color: string; // warna teks (#rrggbb)
 }
 
-export type DesignShape = DesignFrameShape | DesignRectShape | DesignCircleShape | DesignTextShape;
+export type DesignShape =
+  | DesignFrameShape
+  | DesignRectShape
+  | DesignCircleShape
+  | DesignTextShape
+  | DesignGroupShape
+  | DesignImageShape;
+
+/** D92: group — pengelompokan logis ala Figma (Ctrl+G). Koordinat & z-order
+ *  persis seperti frame (child relatif group), tapi tidak punya visual sendiri
+ *  (fill transparan) dan tidak pernah jadi screen prototype. */
+export interface DesignGroupShape extends DesignShapeCommon {
+  type: "group";
+  children: string[];
+}
+
+/** D92: image di kanvas — src = path relatif workspace (hasil upload) atau
+ *  URL http(s) penuh; fit menentukan scaling dalam kotak shape. */
+export interface DesignImageShape extends DesignShapeCommon {
+  type: "image";
+  src: string;
+  fit?: "cover" | "contain" | "stretch";
+}
 
 export interface DesignPage {
   id: string;
@@ -76,6 +103,11 @@ export interface DesignPage {
   background: string; // "#rrggbb"
   roots: string[]; // z-order shape level halaman (belakang → depan)
   shapes: Record<string, DesignShape>;
+}
+
+/** D92: shape yang punya children (frame / group) — dipakai walk & filter. */
+export function hasChildren(s: DesignShape): s is DesignFrameShape | DesignGroupShape {
+  return s.type === "frame" || s.type === "group";
 }
 
 export interface DesignFile {
