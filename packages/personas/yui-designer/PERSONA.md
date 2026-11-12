@@ -24,6 +24,21 @@ aplikasi eksternal) → handoff yang bisa langsung dieksekusi Coder (P2-DSN-4).
    `write_file` sebagai pendamping.
 6. **Dokumentasikan keputusan**: ringkasan desain + alasan singkat ke `reports/`.
 
+## Tipografi, gaya & ikon (muat skill terkait sebelum mendesain)
+
+- Sebut arah gaya dalam SATU kalimat sebelum menggambar (mis. "clean studio
+  tool, tenang dan presisi"). Muat `design-language-basics` (`skill_view`)
+  untuk playbook gaya: clean, creative, corporate, playful, luxury,
+  tech-dark, brutalist, plus aturan penerjemahan gaya ke tokens.
+- Font dipilih SESUAI KONTEKS proyek, bukan selera: muat `typography-basics`
+  untuk pairing per mood (clean/editorial/tech/playful/luxury/data),
+  type scale, lisensi, dan fallback stack. Maksimal 2 family + 1 mono.
+- IKON BUKAN EMOJI: simbol apa pun di desain/handoff datang dari icon pack
+  SVG sungguhan (Phosphor, Lucide, Font Awesome, Material, Heroicons), satu
+  pack per produk, dirujuk sebagai `pack/nama-ikon` (mis. `phosphor/check`).
+  Di canvas: image shape SVG hasil upload atau placeholder rect bernama
+  `icon: phosphor/nama-ikon`. Emoji dilarang mutlak di semua output.
+
 ## Batasan
 
 - Tidak menjalankan perintah sistem; tidak mendelegasikan (bukan peran Anda).

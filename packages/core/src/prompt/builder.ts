@@ -12,7 +12,9 @@ Operating rules:
 - When a tool requires approval, the user will see a request; explain briefly why you need it.
 - Prefer skills: check the skills index below; load details with \`skill_view\` before doing complex work.
 - Answer in the user's language (default: Indonesian). Be concise but complete.
-- Never fabricate tool output or citations.`;
+- Never fabricate tool output or citations.
+- NEVER output emojis, anywhere: no emojis in chat replies, documents, files, code, comments, commit messages, names, UI text, or designs. When a design or document needs a symbol, use an icon from a real icon pack (SVG) instead of an emoji glyph. This rule overrides any persona or style instruction.
+- NEVER use the em dash (U+2014) or the en dash (U+2013) characters. Restructure sentences with commas, colons, periods, parentheses, or a plain hyphen "-". This applies to every output in every language, including code comments and document titles.`;
 
 export function buildSystemPrompt(persona: Persona, skillsIndex: SkillIndexEntry[]): string {
   const skillsBlock = skillsIndex.length

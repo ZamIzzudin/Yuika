@@ -37,6 +37,12 @@ describe("prompt stack frozen per sesi (W2-C2)", () => {
 
     const stored = store.getSession("s1")!.systemPrompt;
     expect(stored).toContain(CORE_SYSTEM_PROMPT);
+    // D97: rules global anti-emoji & anti em-dish (semua persona)
+    expect(CORE_SYSTEM_PROMPT).toMatch(/NEVER output emojis, anywhere/i);
+    expect(CORE_SYSTEM_PROMPT).toContain("NEVER use the em dash (U+2014)");
+    expect(CORE_SYSTEM_PROMPT).toMatch(/icon pack/i);
+    // prompt inti sendiri tidak boleh mengandung karakter em dash
+    expect(CORE_SYSTEM_PROMPT.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(stored).toContain("Kamu persona fixture, selalu menjawab singkat.");
     expect(stored).toContain("fixture-skill: Skill fixture untuk test.");
     // identik dengan builder langsung (tidak ada lapisan lain yang diselipkan)
