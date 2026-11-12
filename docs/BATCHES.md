@@ -532,3 +532,6 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - POST /api/uploads (scope session/project/workspace), runtime writeUpload,
   amandemen v1.3 CONTRACTS-REMOTE (act session.upload fragmen base64,
   assembler host, ev progress/uploaded), docs mirror portal.
+- Mobile yuika-mobile: uploadSessionFile (fragmen 240k) + UI paperclip
+  SessionChat (picker expo-file-system, chips, [files attached via chat]).
+- Test e2e relay: portal.test.ts +2 (fragmen + reject). api 72, typecheck 6/6.

@@ -80,6 +80,7 @@ function fakeRuntime() {
   const listeners = new Map<string, Array<(e: YuiEvent) => void>>();
   const allListeners: Array<(e: YuiEvent) => void> = [];
   const messages = new Map<string, Array<{ role: string; content: string }>>();
+  const uploadsLog: Array<{ target: { sessionId?: string; projectId?: string }; filename: string; bytes: number }> = [];
   const sessions = new Map<string, { personaId: string; projectId?: string | null }>();
   let eventSeq = 0;
   const emit = (sessionId: string, draft: Omit<YuiEvent, "id" | "ts" | "sessionId">) => {
@@ -158,6 +159,13 @@ function fakeRuntime() {
     getUsageMatrix: () => [{ personaId: "yui-coder", model: "m1", calls: 1, promptTokens: 10, outputTokens: 5, cost: 0.001, currency: "USD" }],
     projectWorkspacePath: (id: string) => `/w/${id}`,
     paths: { workspacePath: "/w", dbPath: "/w/demo.db" },
+    uploads: uploadsLog,
+    writeUpload: async (target: { sessionId?: string; projectId?: string }, filename: string, buf: Buffer) => {
+      const sess = sessions.get(target.sessionId ?? "");
+      const inProject = sess?.projectId === "p_demo" || target.projectId === "p_demo";
+      uploadsLog.push({ target, filename, bytes: buf.length });
+      return { path: inProject ? `projects/p_demo/uploads/${filename}` : `uploads/${filename}`, bytes: buf.length };
+    },
     runTurn: async (sessionId: string, text: string) => {
       messages.get(sessionId)?.push({ role: "user", content: text });
       emit(sessionId, { type: "message.delta", turnId: "t1", delta: `echo:${text}` } as YuiEvent);
@@ -176,7 +184,7 @@ function fakeRuntime() {
     resolveApproval: (id: string) => id === "ap_ok",
     emitSessionError: (sessionId: string, message: string) =>
       emit(sessionId, { type: "session.error", message, recoverable: false } as YuiEvent),
-  } as unknown as YuiRuntime & { emit: typeof emit };
+  } as unknown as YuiRuntime & { emit: typeof emit; uploads: typeof uploadsLog };
 }
 
 let relay: ReturnType<typeof createSpecRelay>;
@@ -444,6 +452,32 @@ describe("portal host worker, SCR-7 screen watch", () => {
     await remote.sendAction({ proto: 1, act: "watch_screen", rid: "r-bad", key: "p_x/nope" });
     await waitUntil(() => events.some((e) => e.ev === "error" && e.rid === "r-bad"));
     expect(events.find((e) => e.ev === "error" && e.rid === "r-bad")).toMatchObject({ code: "unknown_screen" });
+  });
+
+
+  it("v1.3 session.upload (2 fragmen) → progress + session.uploaded (scope sesi proyek)", async () => {
+    await remote.sendAction({ proto: 1, act: "session.create", rid: "r-u1", personaId: "yui-scholar", projectId: "p_demo" });
+    await waitUntil(() => events.some((e) => e.ev === "session.snapshot" && (e as { rid?: string }).rid === "r-u1"));
+    const sid = (events.find((e) => e.ev === "session.snapshot" && (e as { rid?: string }).rid === "r-u1") as unknown as { sessionId: string }).sessionId;
+    const b64 = Buffer.from("relay upload v13").toString("base64"); // 15 bytes → 20 chars
+    const half = 12; // %4 == 0 → dua fragmen base64-valid
+    await remote.sendAction({ proto: 1, act: "session.upload", rid: "r-up0", sessionId: sid, name: "note-v13.txt", part: 0, parts: 2, chunk: b64.slice(0, half) });
+    await waitUntil(() => events.some((e) => e.ev === "session.upload.progress" && (e as { rid?: string }).rid === "r-up0"));
+    expect(events.find((e) => e.ev === "session.upload.progress" && (e as { rid?: string }).rid === "r-up0")).toMatchObject({ received: 1 });
+    await remote.sendAction({ proto: 1, act: "session.upload", rid: "r-up1", sessionId: sid, name: "note-v13.txt", part: 1, parts: 2, chunk: b64.slice(half) });
+    await waitUntil(() => events.some((e) => e.ev === "session.uploaded" && (e as { rid?: string }).rid === "r-up1"));
+    expect(events.find((e) => e.ev === "session.uploaded" && (e as { rid?: string }).rid === "r-up1")).toMatchObject({ path: "projects/p_demo/uploads/note-v13.txt", bytes: 16 });
+    const rt = (globalThis as unknown as { __rt: ReturnType<typeof fakeRuntime> }).__rt;
+    expect(rt.uploads).toEqual([{ target: { sessionId: sid }, filename: "note-v13.txt", bytes: 16 }]);
+  });
+
+  it("v1.3 session.upload nama buruk → error upload_rejected ber-rid", async () => {
+    await remote.sendAction({ proto: 1, act: "session.create", rid: "r-u2", personaId: "yui-scholar" });
+    await waitUntil(() => events.some((e) => e.ev === "session.snapshot" && (e as { rid?: string }).rid === "r-u2"));
+    const sid = (events.find((e) => e.ev === "session.snapshot" && (e as { rid?: string }).rid === "r-u2") as unknown as { sessionId: string }).sessionId;
+    await remote.sendAction({ proto: 1, act: "session.upload", rid: "r-badup", sessionId: sid, name: "evil.exe", part: 0, parts: 1, chunk: "QUJD" });
+    await waitUntil(() => events.some((e) => e.ev === "error" && (e as { rid?: string }).rid === "r-badup"));
+    expect(events.find((e) => e.ev === "error" && (e as { rid?: string }).rid === "r-badup")).toMatchObject({ code: "upload_rejected" });
   });
 
   it("host.state intro memuat daftar screens (v1.1)", async () => {

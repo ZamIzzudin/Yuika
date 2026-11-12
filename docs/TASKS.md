@@ -1157,7 +1157,7 @@ composer chat sebagai bahan context, tanpa pindah ke tab Files.
       disk); traversal ../../evil.txt ditolak. Core 434, api 64, typecheck
       6/6, build web sukses.
 
-### D89 — Endpoint upload TUNGGAL + lampiran chat via relay (mobile) (SELESAI-KODE)
+### D89 — Endpoint upload TUNGGAL + lampiran chat via relay (mobile) (SELESAI)
 Request user: satukan upload jadi satu endpoint; terapkan juga di mobile
 remote karena file mungkin diupload dari HP.
 - [x] SATU endpoint: POST /api/uploads?name=… dengan scope opsional
@@ -1178,5 +1178,13 @@ remote karena file mungkin diupload dari HP.
 - [x] Test: upload-acc.test.ts 6 (assembler), remote.test.ts +2 (schema
       v1.3 + refine part<parts), api.test.ts diarahkan ke endpoint tunggal
       (+case scope sesi). api 70, contracts 36, core 434, typecheck 6/6.
-- [ ] Mobile UI (repo yuika-mobile, batch terpisah): paperclip SessionChat
-      via expo-document-picker + expo-file-system → perlu build APK baru.
+- [x] Mobile UI (repo yuika-mobile): paperclip SessionChat via picker bawaan
+      expo-file-system (File.pickFileAsync {multipleFiles}) + File.base64();
+      uploadSessionFile di relay.ts (fragmen 240.000 char, fragmen final via
+      request() 120s, progress chip n/N); chips lampiran (busy/ok/error, X hapus);
+      komposisi kirim sama persis web ([files attached via chat]). Whitelist
+      ekstensi + cap 10MB + max 5 chip di sisi client. Dep baru:
+      expo-file-system ~58.0.13 (expo-document-picker TIDAK dipakai — picker
+      sudah built-in). Perlu build APK/native baru.
+- [x] Test relay e2e: portal.test.ts +2 (2 fragmen → progress + uploaded scope
+      projects/p_demo/uploads/, evil.exe → upload_rejected ber-rid). api 72.
