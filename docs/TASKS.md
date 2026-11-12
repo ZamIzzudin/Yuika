@@ -1327,3 +1327,52 @@ DeleteProjectResult.deleted += 5 field. Bonus temuan: TIDAK ada endpoint
 DELETE design file (file tak bisa dihapus via API/UI) — dicatat backlog.
 Test: delete-project.test.ts extend (angka 5 bocor + idempoten + project
 lain & file legacy selamat). Verifikasi live: ulang eksperimen → 0 sampah.
+
+### D95 — hapus file desain (endpoint + UI) (SELESAI)
+Backlog D94: tidak ada cara menghapus file desain (file probe verifikasi
+menumpuk di workspace/design). Kini: core deleteDesignFile (throw bila file
+tidak ada; id di-regex → path traversal diblok); route DELETE
+/api/design/files/:id (404 bila tak ada); tool persona design_delete_file
+(dgn peringatan konfirmasi utk file yang masih dipakai); UI: ikon trash
+per baris di file menu (muncul saat hover, span role=button supaya HTML
+valid dalam row) + ConfirmDialog danger; setelah hapus daftar refresh dan
+seleksi jatuh ke file berikutnya (empty state bila habis). File project
+lain & legacy tidak tersentuh. Verifikasi live: buat + hapus via API/UI.
+
+### D96 — canvas: ruler + smart guides + dropdown + layers fold (SELESAI)
+1. Ruler strip atas & kiri (canvas 2D, DPR-aware): tick + label koordinat
+   world mengikuti zoom/pan + garis indikator posisi kursor (accent).
+2. Smart guides ala Figma: saat drag move, edge/tengah bbox seleksi
+   di-snap ke edge/tengah shape lain (radius 6px layar, Alt menonaktifkan);
+   garis bantu merah (#f24e1e) digambar overlay; kandidat dihitung sekali
+   per drag (shape lain diam). Resize belum ikut snap (backlog).
+3. Props panel: <select> native diganti Dropdown custom (komponen sama
+   dgn Settings) utk Fit / Align / Prototype on-click (0 <option> tersisa).
+4. Layers panel foldable: tombol toggle di toolbar (aria Toggle layers
+   panel) + rail expand saat collapsed; state persist localStorage
+   (yuika.design.layersOpen) — canvas jadi lebih lebar.
+Verifikasi live Playwright: ruler 3 canvas; fold 3→2 aside + rail + restore;
+dropdown custom 3 item & 0 native option; drag Rect A → guide terlihat &
+snap presisi ke right-edge Rect B (x=560 eksak); zero page error.
+
+### D97 — rules global output + enhance skill Picasso (SELESAI)
+User: output persona dilarang emoji & em dash (terlihat AI slop) di semua
+media; Picasso perlu skill font + icon + style. Implementasi:
+1. CORE_SYSTEM_PROMPT +2 rules berlaku SEMUA persona (chat, dokumen,
+   kode, desain): never emojis (icon pack SVG sbg pengganti simbol) &
+   never em/en dash (U+2014/U+2013) — pakai koma/titik/kurung/hyphen.
+   Prompt inti sendiri bebas karakter em dash (dicek test).
+2. Skill baru typography-basics: pairing font per mood proyek
+   (clean/editorial/tech/playful/luxury/data/handmade), kontras pairing,
+   type scale, lisensi & fallback stack, angka tabular, canvas-safe text.
+3. Skill baru design-language-basics: 7 arah gaya (clean, creative,
+   corporate, playful, luxury, tech-dark, brutalist) + cara memilih
+   (audiens/kepadatan/tone) + penerjemahan ke tokens; iconography: satu
+   pack per produk (Phosphor/Lucide/FontAwesome/Material/Heroicons),
+   sizing ikut type scale, referensi pack/nama-ikon, representasi di
+   canvas (image SVG / placeholder icon: pack/nama), emoji dilarang mutlak.
+4. Picasso (yui-designer): kedua skill di-bundle (skills.yaml) + bagian
+   baru di PERSONA.md (arah gaya 1 kalimat, font sesuai konteks, ikon
+   bukan emoji).
+Test: prompt-stack.test.ts assert kedua rules + prompt bebas karakter
+em dash; full core 440 passed; typecheck bersih.

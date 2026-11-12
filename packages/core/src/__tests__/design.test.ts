@@ -7,6 +7,7 @@ import { registry, resetRegistryForTests } from "../registry.js";
 import { registerDesignTools } from "../tools/design-tools.js";
 import {
   createDesignFile,
+  deleteDesignFile,
   addDesignShape,
   addDesignPage,
   updateDesignShape,
@@ -264,6 +265,20 @@ it("D91 deleteDesignPage: hapus wiring ke halaman terhapus; halaman terakhir dit
   expect(after.pages.map((p) => p.id)).toEqual([p1.id]);
   expect(after.pages[0]!.shapes[btn.id]!.interaction).toBeUndefined();
   expect(() => deleteDesignPage(dir, f.id, p1.id)).toThrow(/last page/);
+});
+
+// ── D95: hapus seluruh file desain ───────────────────────────────────
+it("D95 deleteDesignFile: file lenyap, file lain selamat, id tak dikenal throw", () => {
+  const fA = createDesignFile(dir, "Keep", "p_d95");
+  const fB = createDesignFile(dir, "Gone", "p_d95");
+  const legacy = createDesignFile(dir, "Legacy", null);
+  const r = deleteDesignFile(dir, fB.id);
+  expect(r).toEqual({ deleted: fB.id, name: "Gone" });
+  expect(getDesignFile(dir, fB.id)).toBeNull();
+  expect(getDesignFile(dir, fA.id)?.name).toBe("Keep");
+  expect(getDesignFile(dir, legacy.id)?.name).toBe("Legacy");
+  expect(() => deleteDesignFile(dir, fB.id)).toThrow();
+  expect(() => deleteDesignFile(dir, "../evil")).toThrow(); // traversal diblok id-regex
 });
 
 // ── D92: group + image + background image frame ───────────────────────

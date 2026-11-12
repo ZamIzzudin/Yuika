@@ -569,3 +569,13 @@ daftar sesi datar, tapi **mission control project-oriented**.
   context_checkpoints (SQLite + PG paritas); kontrak +report field; test
 
   extend; verifikasi live 0 sampah.
+
+
+## Batch D95 + D96 + D97 — delete design file, canvas guides & rules persona
+
+- D95: DELETE /api/design/files/:id + tool design_delete_file + trash di
+  file menu + ConfirmDialog (menutup backlog D94).
+- D96: ruler atas/kiri + smart guides snap saat drag + Dropdown custom di
+  props panel + layers panel foldable (persist).
+- D97: core prompt rules anti-emoji & anti em-dash (semua persona); skill
+  typography-basics + design-language-basics di-bundle ke Picasso.

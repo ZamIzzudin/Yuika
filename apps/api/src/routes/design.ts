@@ -6,6 +6,7 @@ import type { FastifyInstance } from "fastify";
 import {
   addDesignPage,
   createDesignFile,
+  deleteDesignFile,
   deleteDesignPage,
   listDesignFiles,
   saveDesignFile,
@@ -58,6 +59,15 @@ export function registerDesignRoutes(app: FastifyInstance, getRt: () => YuiRunti
       const msg = e instanceof Error ? e.message : "bad request";
       return reply.code(400).send({ error: msg });
     }
+  });
+
+  // D95: hapus SELURUH file desain (backlog D94: selama ini tidak ada cara
+  // menghapus file — file probe verifikasi menumpuk di workspace/design).
+  app.delete("/api/design/files/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const cur = getDesignFile(ws(), id);
+    if (!cur) return reply.code(404).send({ error: "not found" });
+    return deleteDesignFile(ws(), id);
   });
 
   app.put("/api/design/files/:id", async (req, reply) => {

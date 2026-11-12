@@ -9,6 +9,7 @@ import {
   addDesignPage,
   addDesignShape,
   createDesignFile,
+  deleteDesignFile,
   deleteDesignPage,
   deleteDesignShape,
   getDesignFile,
@@ -132,6 +133,13 @@ export function registerDesignTools(workspacePath: string): void {
     description: "Hapus halaman dari file desain (tidak bisa menghapus halaman terakhir). Wiring navigasi ke halaman terhapus dibersihkan otomatis.",
     parameters: z.object({ fileId: z.string().min(1), pageId: z.string().min(1) }),
     handler: async (args) => ({ result: deleteDesignPage(workspacePath, args.fileId, args.pageId) }),
+  });
+
+  registry.register({
+    name: "design_delete_file",
+    description: "Hapus SELURUH file desain (semua halaman dan shape di dalamnya, permanen). Hanya untuk file yang jelas tidak dipakai lagi — konfirmasi dengan user bila ragu.",
+    parameters: z.object({ fileId: z.string().min(1) }),
+    handler: async (args) => ({ result: deleteDesignFile(workspacePath, args.fileId) }),
   });
 
   registry.register({

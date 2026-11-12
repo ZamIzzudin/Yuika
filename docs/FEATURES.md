@@ -99,7 +99,15 @@ Sisa (2):
 > **Polish D90 (layers panel):** dropdown Pages diganti layers tree ala
 > Canva/Figma di panel kiri — Pages → Screen (badge Monitor) → komponen
 > nested (z-order depan-ke-belakang); rename inline double-click (nama =
-> D93: klik kanan shape → "Attach to chat" — komponen desain jadi
+> D95: hapus file desain (trash di file menu + konfirmasi, tool
+persona design_delete_file).
+D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
+(edge/tengah) saat drag; props panel pakai Dropdown custom; layers
+panel bisa di-fold (canvas lebih lebar).
+D97: semua persona dilarang emoji & em dash di output (prompt inti);
+skill Picasso +typography-basics +design-language-basics (gaya, ikon
+SVG pack, pairing font).
+D93: klik kanan shape → "Attach to chat" — komponen desain jadi
 context chat (chip + snapshot JSON, bisa dirujuk/diubah persona).
 D94: delete project bersih total (design files, browser_visits,
 workflow_runs, orphan delegation/checkpoint rows).

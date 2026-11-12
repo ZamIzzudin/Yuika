@@ -153,6 +153,13 @@ export function createDesignFile(workspacePath: string, name: string, projectId?
   return file;
 }
 
+/** D95: hapus SELURUH file desain (semua halaman+shape).
+ *  Throw bila file tidak ada (mustGetDesignFile). */
+export function deleteDesignFile(workspacePath: string, id: string): { deleted: string; name: string } {
+  const f = mustGetDesignFile(workspacePath, id);
+  fs.rmSync(fileOf(workspacePath, id), { force: true });
+  return { deleted: id, name: f.name };
+}
 export function addDesignPage(workspacePath: string, fileId: string, name?: string): DesignPage {
   const file = mustGetDesignFile(workspacePath, fileId);
   const n = String(name ?? `Page ${file.pages.length + 1}`).trim().slice(0, 80) || `Page ${file.pages.length + 1}`;

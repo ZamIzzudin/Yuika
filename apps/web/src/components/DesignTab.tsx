@@ -6,9 +6,9 @@
 // D92: pemilih file = dropdown custom (bukan <select> bawaan browser) +
 // form nama desain = modal proper (bukan window.prompt).
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CaretDown, FrameCorners, Play, Plus, X } from "@phosphor-icons/react";
+import { CaretDown, FrameCorners, Play, Plus, Trash, X } from "@phosphor-icons/react";
 import { apiUrl, authFetch } from "@/lib/api";
-import { Button, EmptyState } from "./ui";
+import { Button, ConfirmDialog, EmptyState } from "./ui";
 import { DesignCanvas } from "./DesignCanvas";
 import type { DesignRefPayload } from "@/lib/designRef";
 import { DesignPrototype } from "./DesignPrototype";
@@ -28,11 +28,14 @@ function FileMenu({
   sel,
   onPick,
   onNew,
+  onDelete,
 }: {
   files: DesignRow[];
   sel: string;
   onPick: (id: string) => void;
   onNew: () => void;
+  /** D95: hapus file (dengan konfirmasi di level DesignTab). */
+  onDelete: (f: DesignRow) => void;
 }): React.ReactElement {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -66,7 +69,7 @@ function FileMenu({
             {files.map((f) => (
               <button
                 key={f.id}
-                className={`flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-2 text-left text-[13px] ${
+                className={`group flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-2 text-left text-[13px] ${
                   f.id === sel
                     ? "bg-accent/25 text-fg"
                     : "text-fg/85 hover:bg-inset"
@@ -85,6 +88,29 @@ function FileMenu({
                 <span className="shrink-0 text-[11px] text-dim">
                   {f.pages} page{f.pages === 1 ? "" : "s"}
                   {f.projectId ? "" : " · no project"}
+                </span>
+                {/* D95: hapus file — span (bukan button) supaya HTML valid
+                    di dalam row button; muncul saat hover/focus. */}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Delete ${f.name}`}
+                  className="shrink-0 rounded p-1 text-dim opacity-0 transition-opacity hover:bg-danger/15 hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                    onDelete(f);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setOpen(false);
+                      onDelete(f);
+                    }
+                  }}
+                >
+                  <Trash size={13} />
                 </span>
               </button>
             ))}
@@ -188,6 +214,10 @@ export function DesignTab({
   const [modal, setModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createErr, setCreateErr] = useState("");
+  // D95: hapus file via ikon trash di file menu (dengan konfirmasi)
+  const [delTarget, setDelTarget] = useState<DesignRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [delErr, setDelErr] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -236,6 +266,29 @@ export function DesignTab({
       setCreateErr("host unreachable, try again");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deleteFile = async (id: string) => {
+    setDeleting(true);
+    setDelErr("");
+    try {
+      const r = await authFetch(apiUrl(`/api/design/files/${id}`), {
+        method: "DELETE",
+      });
+      if (!r.ok) {
+        setDelErr(
+          ((await r.json()) as { error?: string }).error ??
+            "failed to delete design",
+        );
+        return;
+      }
+      setDelTarget(null);
+      await refresh();
+    } catch {
+      setDelErr("host unreachable, try again");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -289,6 +342,10 @@ export function DesignTab({
                     setCreateErr("");
                     setModal(true);
                   }}
+                  onDelete={(f) => {
+                    setDelErr("");
+                    setDelTarget(f);
+                  }}
                 />
                 {tryIt}
               </>
@@ -307,6 +364,24 @@ export function DesignTab({
           onSubmit={(n) => void create(n)}
         />
       ) : null}
+      <ConfirmDialog
+        open={!!delTarget}
+        title="Delete design file"
+        message={
+          <>
+            Delete <b>{delTarget?.name}</b>? All pages and components inside
+            it will be removed permanently. This cannot be undone.
+            {delErr ? (
+              <div className="mt-2 text-[12px] text-danger">{delErr}</div>
+            ) : null}
+          </>
+        }
+        busy={deleting}
+        onConfirm={() => delTarget && void deleteFile(delTarget.id)}
+        onClose={() => {
+          if (!deleting) setDelTarget(null);
+        }}
+      />
       <span className="sr-only">revn {current?.revn ?? 0}</span>
     </div>
   );
