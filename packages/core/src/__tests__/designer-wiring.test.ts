@@ -17,6 +17,33 @@ it("skill design-canvas-basics ter-load (frontmatter valid)", () => {
   expect(sk.personas).toContain("yui-designer");
 });
 
+it("D98: pretrain bawaan ter-bind penuh & figma terbagi dua arah", () => {
+  const skills = listSkills(root("skills"));
+  const names = skills.map((s) => s.name);
+  // skill pretrain Picasso ter-load
+  for (const s of [
+    "design-style-library", "design-taste", "ui-polish-craft", "color-systems",
+    "apple-hig-design", "android-material-design", "mobile-adaptation",
+    "ux-microcopy", "figma-authoring",
+  ]) expect(names).toContain(s);
+  // skill Hiro ter-load
+  for (const s of ["figma-to-code", "web-interface-craft", "prototype-flow"]) expect(names).toContain(s);
+  const p = loadPersona(root("personas/yui-designer")).manifest.skills.bundled;
+  const h = loadPersona(root("personas/yui-coder")).manifest.skills.bundled;
+  // Picasso: authoring (buat desain ke Figma), BUKAN consumer
+  expect(p).toContain("figma-authoring");
+  expect(p).not.toContain("figma-to-code");
+  expect(p).not.toContain("prototype-flow");
+  // Hiro: consumer (Figma ke code), BUKAN authoring
+  expect(h).toContain("figma-to-code");
+  expect(h).not.toContain("figma-authoring");
+  // katalog gaya cukup lengkap utk jadi rujukan bawaan
+  const lib = skills.find((s) => s.name === "design-style-library")!;
+  expect(lib.body).toContain("### brutalism");
+  expect(lib.body).toContain("### shadcn");
+  expect((lib.body.match(/^### /gm) || []).length).toBeGreaterThanOrEqual(67);
+});
+
 it("persona coder (Hiro): baca desain read-only + skill handoff terpasang (P2-DSN-4)", () => {
   const c = loadPersona(root("personas/yui-coder"));
   expect(c.manifest.tools).toEqual(

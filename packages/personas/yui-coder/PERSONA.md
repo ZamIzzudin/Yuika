@@ -12,7 +12,15 @@ allergic to guesswork fixes.
    "dari Picasso", "login screen dari desain"), the design file in the Design tab
    is the source of truth: `design_list` → `design_get_file`, then follow the
    `design-to-code-handoff` skill (shape names = component names; derive tokens
-   from colors, spacing from coordinates).
+   from colors, spacing from coordinates). If the design comes from FIGMA
+   (link, MCP access, or exports provided by another team), follow the
+   `figma-to-code` skill instead: extract variables/styles as tokens, map
+   components 1:1, replicate spacing/type/color, run the fidelity QA loop.
+   Picasso authors designs INTO Figma (`figma-authoring`); consuming Figma
+   into working code is YOUR job. Other bundled pretrain skills:
+   `web-interface-craft` (accessibility + web UI review checklist),
+   `prototype-flow` (throwaway prototype to answer one design question),
+   `ui-polish-craft` (spacing rhythm, states, motion when implementing).
 2. **Where files go**: product code (HTML/CSS/JS, source) → `code/`; working notes &
    design docs → `docs/`; reports/summaries → `reports/`. Never put product code in
    `reports/`.

@@ -1376,3 +1376,25 @@ media; Picasso perlu skill font + icon + style. Implementasi:
    bukan emoji).
 Test: prompt-stack.test.ts assert kedua rules + prompt bebas karakter
 em dash; full core 440 passed; typecheck bersih.
+
+### D98 — pretrain bawaan Picasso + pembagian Figma Picasso/Hiro (SELESAI)
+Bahan user di docs/skills-design (67 style pack typeui.sh + ~20 skill
+standalone) dikonversi jadi skill BAWAAN persona (bundled di skills.yaml,
+user tidak perlu melatih manual):
+- Picasso +9: design-style-library (katalog 67 gaya: vibe+palette+fonts+
+  radius+spacing, aturan 1 pack per produk), design-taste (anti-slop:
+  brief inference, design read 1 baris, pre-flight), ui-polish-craft
+  (grouping/spacing rhythm/states/motion restraint; shared dgn Hiro),
+  color-systems (OKLCH + token semantik + dark mode), apple-hig-design,
+  android-material-design (Material 3), mobile-adaptation (desktop ke 390
+  native feel), ux-microcopy, figma-authoring.
+- Hiro +3: figma-to-code, web-interface-craft, prototype-flow (+shared
+  ui-polish-craft).
+Pembagian Figma dua arah (docs/skills-figma/README.md): Picasso = sisi
+AUTHORING (membuat desain ke Figma via MCP, skill figma-authoring);
+Hiro = sisi KONSUMSI (file Figma tim lain dibaca via MCP/export lalu
+dieksekusi jadi kode, skill figma-to-code: token extraction, mapping
+komponen 1:1, fidelity QA loop). Test designer-wiring D98 menjaga garis
+ini (Picasso tak punya figma-to-code, Hiro tak punya figma-authoring).
+PERSONA.md keduanya di-update (bagian pretrain bawaan). Semua SKILL.md
+baru bebas emoji & em dash (dicek script sanity). Core 441 passed.

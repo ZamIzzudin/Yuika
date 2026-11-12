@@ -579,3 +579,12 @@ daftar sesi datar, tapi **mission control project-oriented**.
   props panel + layers panel foldable (persist).
 - D97: core prompt rules anti-emoji & anti em-dash (semua persona); skill
   typography-basics + design-language-basics di-bundle ke Picasso.
+
+
+## Batch D98 — pretrain persona & pembagian Figma
+
+- 12 skill baru dari bahan docs/skills-design; 9 bundled ke Picasso,
+  3 ke Hiro (+1 shared ui-polish-craft).
+- docs/skills-figma/README.md: kontrak dua arah Figma (authoring vs
+  to-code) + tabel pembagian + mapping bahan asli.
+- Test designer-wiring.test.ts D98 (bundling penuh + garis figma).

@@ -104,6 +104,9 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D98: pretrain bawaan Picasso (67 style pack + taste/color/platform/microcopy)
+dan Hiro (figma-to-code, web craft, prototype); Figma dua arah:
+Picasso authoring, Hiro konsumsi (docs/skills-figma).
 D97: semua persona dilarang emoji & em dash di output (prompt inti);
 skill Picasso +typography-basics +design-language-basics (gaya, ikon
 SVG pack, pairing font).
