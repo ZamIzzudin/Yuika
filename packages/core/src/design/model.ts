@@ -81,6 +81,9 @@ export interface DesignPage {
 export interface DesignFile {
   id: string;
   name: string;
+  /** D91: file desain diikat ke project pembuatnya; null/undefined = legacy
+   *  (tampil di semua project, dibuat sebelum D91). */
+  projectId?: string | null;
   revn: number;
   pages: DesignPage[];
   updatedAt: number; // epoch ms

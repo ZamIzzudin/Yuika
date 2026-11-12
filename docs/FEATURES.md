@@ -99,6 +99,9 @@ Sisa (2):
 > **Polish D90 (layers panel):** dropdown Pages diganti layers tree ala
 > Canva/Figma di panel kiri — Pages → Screen (badge Monitor) → komponen
 > nested (z-order depan-ke-belakang); rename inline double-click (nama =
+> D91: file desain diikat per-project (dropdown hanya file project itu +
+> legacy); toolbar tunggal (select file+Try it di ujung kanan sebelah
+> chip Saved); delete page; props panel label-di-atas tanpa overflow.
 > kontrak komponen design-to-code), eye toggle hidden, filter nama lintas
 > halaman (breadcrumb), crosshair zoom-ke-shape, klik = select sinkron
 > canvas.

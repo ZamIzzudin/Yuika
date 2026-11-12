@@ -41,9 +41,13 @@ export function getDesignFile(workspacePath: string, id: string): DesignFile | n
   }
 }
 
-export function listDesignFiles(workspacePath: string): Array<{
+export function listDesignFiles(
+  workspacePath: string,
+  projectId?: string | null,
+): Array<{
   id: string;
   name: string;
+  projectId: string | null;
   revn: number;
   updatedAt: number;
   pages: number;
@@ -59,12 +63,20 @@ export function listDesignFiles(workspacePath: string): Array<{
     .map((f) => {
       try {
         const d = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as DesignFile;
-        return { id: d.id, name: d.name, revn: d.revn, updatedAt: d.updatedAt, pages: d.pages?.length ?? 0 };
+        return {
+          id: d.id,
+          name: d.name,
+          projectId: d.projectId ?? null,
+          revn: d.revn,
+          updatedAt: d.updatedAt,
+          pages: d.pages?.length ?? 0,
+        };
       } catch {
         return null;
       }
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
+    .filter((d) => projectId == null || d.projectId === projectId || d.projectId === null)
     .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
@@ -97,13 +109,15 @@ export function findShape(file: DesignFile, id: string): { page: DesignPage; sha
 
 // ---- mutasi ----
 
-export function createDesignFile(workspacePath: string, name: string): DesignFile {
+export function createDesignFile(workspacePath: string, name: string, projectId?: string | null): DesignFile {
   const t = (v: unknown) => String(v ?? "").trim();
   const n = t(name);
   if (n.length < 1 || n.length > 120) throw new Error("name must be 1-120 characters");
   const file: DesignFile = {
     id: uuid().slice(0, 8),
     name: n,
+    // D91: file desain diikat per-project (null hanya utk pemanggil eksplisit)
+    projectId: projectId ?? null,
     revn: 0,
     pages: [{ id: uuid(), name: "Page 1", background: "#101014", roots: [], shapes: {} }],
     updatedAt: Date.now(),
@@ -121,6 +135,30 @@ export function addDesignPage(workspacePath: string, fileId: string, name?: stri
   file.updatedAt = Date.now();
   saveDesignFile(workspacePath, file);
   return page;
+}
+
+/** D91: hapus halaman (minimal satu harus tersisa). Wiring prototyping yang
+ *  mengarah ke halaman terhapus dibersihkan. Return sisa halaman. */
+export function deleteDesignPage(
+  workspacePath: string,
+  fileId: string,
+  pageId: string,
+): { pages: number; removed: string } {
+  const file = mustGetDesignFile(workspacePath, fileId);
+  const idx = file.pages.findIndex((p) => p.id === pageId);
+  if (idx < 0) throw new Error(`Page not found: ${pageId}`);
+  if (file.pages.length <= 1) throw new Error("cannot delete the last page of a design file");
+  file.pages.splice(idx, 1);
+  // bersihkan wiring navigate yang menarget halaman terhapus
+  for (const pg of file.pages) {
+    for (const sh of Object.values(pg.shapes)) {
+      if (sh.interaction?.target === pageId) delete sh.interaction;
+    }
+  }
+  file.revn += 1;
+  file.updatedAt = Date.now();
+  saveDesignFile(workspacePath, file);
+  return { pages: file.pages.length, removed: pageId };
 }
 
 export interface AddShapeInput {

@@ -11,6 +11,7 @@ import {
   addDesignPage,
   updateDesignShape,
   deleteDesignShape,
+  deleteDesignPage,
   getDesignFile,
   listDesignFiles,
 } from "../design/store.js";
@@ -215,4 +216,52 @@ it("validasi: warna salah, ukuran, dan field patch terlarang ditolak (ENGLISH)",
     run("design_update_shape", { fileId, pageId, id: s.id, patch: { type: "circle" } }),
   ).rejects.toThrow(/Cannot patch field "type"/);
   await expect(run("design_get_file", { fileId: "tidakada" })).rejects.toThrow(/not found/);
+});
+
+// ── D91: file desain diikat per-project + delete page ──────────────────
+it("D91 createDesignFile dengan projectId; listDesignFiles filter per project (legacy tampil)", async () => {
+  const fa = createDesignFile(dir, "Milik A", "p_a");
+  const fb = createDesignFile(dir, "Milik B", "p_b");
+  createDesignFile(dir, "Legacy Global");
+  const a = listDesignFiles(dir, "p_a").map((f) => f.id);
+  expect(a).toContain(fa.id);
+  expect(a).toContain(listDesignFiles(dir, "p_a").find((f) => f.name === "Legacy Global")!.id);
+  expect(a).not.toContain(fb.id);
+  const b = listDesignFiles(dir, "p_b").map((f) => f.id);
+  expect(b).toContain(fb.id);
+  expect(b).not.toContain(fa.id);
+  // tanpa filter = semua
+  expect(listDesignFiles(dir, null).length).toBe(3);
+});
+
+it("D91 design_create_file tool mengikat ctx.projectId; design_list filter sesi", async () => {
+  const res = await registry.dispatch("design_create_file", { name: "Via Persona" }, { ...ctx, projectId: "p_ses" });
+  const f = res.result as { fileId: string; projectId: string };
+  expect(f.projectId).toBe("p_ses");
+  const lst = (await run("design_list", {})) as { files: Array<{ id: string; projectId: string | null }> };
+  // ctx tanpa projectId → semua file (legacy behavior utk view global)
+  expect(lst.files.some((x) => x.id === f.fileId)).toBe(true);
+  const lstB = (await registry.dispatch("design_list", {}, { ...ctx, projectId: "p_ses" }).then((r) => r.result)) as {
+    files: Array<{ id: string }>;
+  };
+  expect(lstB.files.some((x) => x.id === f.fileId)).toBe(true);
+  const lstC = (await registry.dispatch("design_list", {}, { ...ctx, projectId: "p_lain" }).then((r) => r.result)) as {
+    files: Array<{ id: string }>;
+  };
+  expect(lstC.files.some((x) => x.id === f.fileId)).toBe(false);
+});
+
+it("D91 deleteDesignPage: hapus wiring ke halaman terhapus; halaman terakhir ditolak", async () => {
+  const f = createDesignFile(dir, "Pages", "p_x");
+  const p1 = f.pages[0]!;
+  const p2 = addDesignPage(dir, f.id, "Two");
+  // tombol di p1 men-navigate ke p2
+  const btn = addDesignShape(dir, f.id, p1.id, { type: "rect", x: 0, y: 0, width: 10, height: 10 });
+  updateDesignShape(dir, f.id, p1.id, btn.id, { interaction: { action: "navigate", target: p2.id } });
+  const r = deleteDesignPage(dir, f.id, p2.id);
+  expect(r.pages).toBe(1);
+  const after = getDesignFile(dir, f.id)!;
+  expect(after.pages.map((p) => p.id)).toEqual([p1.id]);
+  expect(after.pages[0]!.shapes[btn.id]!.interaction).toBeUndefined();
+  expect(() => deleteDesignPage(dir, f.id, p1.id)).toThrow(/last page/);
 });

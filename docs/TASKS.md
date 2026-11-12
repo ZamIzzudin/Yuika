@@ -1212,3 +1212,41 @@ komponen di dalam screen-nya dan bisa diberi nama.
       Flow): tree & badge tampil, filter login OK, rename persist
       (Button Sign in → Primary CTA), hide/show, focus zoom 229%.
       Typecheck 6/6, web build OK.
+
+### D91 — Design diikat per-project + UX Tab Design (SELESAI)
+Request user: (1) dropdown design menampilkan file project lain — ikat
+per-project; (2) gabungkan dropdown+Try it sebaris toolbar ujung kanan
+sebelah status Saved; (3) fitur delete page; (4) tombol add page cursor
+pointer; (5) font layers panel diperbesar; (6) panel kanan: teks lebih
+besar, tanpa overflow, label di ATAS input.
+- [x] Model: DesignFile.projectId (null = legacy, tampil di semua
+      project agar file lama tidak hilang; PUT menjaga ikatan tersimpan
+      agar UI dgn salinan lama tidak melepasnya).
+- [x] Store: createDesignFile(ws,name,projectId?); listDesignFiles(ws,
+      projectId?) filter; deleteDesignPage BARU (guard halaman terakhir,
+      bersihkan wiring navigate ke halaman terhapus).
+- [x] API: GET /api/design/files?project=; POST body projectId; DELETE
+      /api/design/files/:id/pages/:pageId; PUT claim-guard.
+- [x] Tools persona: design_create_file auto-ikat ctx.projectId;
+      design_list filter ctx.projectId (param opsional override); tool
+      BARU design_delete_page. Tool index lama (sesi pra-D91) tetap jalan
+      — dispatch signature tak berubah.
+- [x] UI: DesignTab terima projectId (TaskDrawer pass project.id);
+      header row DIHAPUS — select file + New + Try it jadi headerRight
+      DesignCanvas di ujung kanan toolbar sebelum chip Saved; label file
+      legacy diberi suffix (no project).
+- [x] DesignCanvas: addPage mem-flush dirty lalu aktifkan page baru;
+      deletePage (confirm English, pindah page aktif bila terhapus);
+      ShapeProps di-rewrite — label DI ATAS input, font 13px, color
+      picker full-width h-8, grid 2 kolom, panel w-64→w-72, opacity
+      menampilkan persen; tanpa overflow.
+- [x] DesignLayers: font text-xs→13px (filter/count 11px), semua tombol
+      cursor-pointer, tombol TrashSimple per page (hover; hidden bila
+      halaman tersisa satu).
+- [x] Test: design.test.ts +3 (binding+filter+legacy, tool ctx.projectId,
+      delete page + wiring cleanup + last-page guard). Core 437, api 72,
+      typecheck 6/6, web build OK.
+- [x] Verifikasi live: filter ?project= benar (file bound tak muncul di
+      project lain), toolbar merged, props label-atas, delete page +
+      dialog konfirmasi bekerja. (Catatan: engine lama zombie sempat
+      melayani kode lama — EADDRINUSE; sudah dibersihkan.)

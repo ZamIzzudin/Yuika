@@ -1054,7 +1054,7 @@ export function ProjectTabs({
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
       {/* P2-DSN-3: canvas Penpot ter-embed (viewer share-link, live). */}
-      {loaded && activeTab === "design" && <DesignTab />}
+      {loaded && activeTab === "design" && <DesignTab projectId={project.id} />}
       {/* ++ (user 2026-11): tab Browser dibongkar, reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
       {loaded && activeTab === "terminal" && (
         <TerminalFullTab project={{ id: project.id, name: project.name }} />

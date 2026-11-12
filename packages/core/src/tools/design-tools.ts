@@ -9,6 +9,7 @@ import {
   addDesignPage,
   addDesignShape,
   createDesignFile,
+  deleteDesignPage,
   deleteDesignShape,
   getDesignFile,
   listDesignFiles,
@@ -94,19 +95,22 @@ function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, 
 export function registerDesignTools(workspacePath: string): void {
   registry.register({
     name: "design_list",
-    description: "Daftar file desain di host ini (tab Design).",
-    parameters: z.object({}),
-    handler: async () => ({ result: { files: listDesignFiles(workspacePath) } }),
+    description:
+      "Daftar file desain di host ini (tab Design). Default: hanya file project sesi ini (+ file legacy tanpa project).",
+    parameters: z.object({ projectId: z.string().optional() }),
+    handler: async (args, ctx) => ({
+      result: { files: listDesignFiles(workspacePath, args.projectId ?? ctx.projectId ?? null) },
+    }),
   });
 
   registry.register({
     name: "design_create_file",
     description:
-      "Buat file desain baru (satu halaman 'Page 1' kosong). Mulai dari sini lalu design_add_shape. File langsung terlihat user di tab Design.",
+      "Buat file desain baru (satu halaman 'Page 1' kosong). Mulai dari sini lalu design_add_shape. File langsung terlihat user di tab Design dan otomatis terikat ke project sesi ini.",
     parameters: z.object({ name: z.string().min(1).max(120) }),
-    handler: async (args) => {
-      const f = createDesignFile(workspacePath, args.name);
-      return { result: { fileId: f.id, name: f.name, page: { id: f.pages[0]!.id, name: f.pages[0]!.name }, revn: f.revn } };
+    handler: async (args, ctx) => {
+      const f = createDesignFile(workspacePath, args.name, ctx.projectId ?? null);
+      return { result: { fileId: f.id, name: f.name, projectId: f.projectId ?? null, page: { id: f.pages[0]!.id, name: f.pages[0]!.name }, revn: f.revn } };
     },
   });
 
@@ -118,6 +122,13 @@ export function registerDesignTools(workspacePath: string): void {
       const p = addDesignPage(workspacePath, args.fileId, args.name);
       return { result: { pageId: p.id, name: p.name } };
     },
+  });
+
+  registry.register({
+    name: "design_delete_page",
+    description: "Hapus halaman dari file desain (tidak bisa menghapus halaman terakhir). Wiring navigasi ke halaman terhapus dibersihkan otomatis.",
+    parameters: z.object({ fileId: z.string().min(1), pageId: z.string().min(1) }),
+    handler: async (args) => ({ result: deleteDesignPage(workspacePath, args.fileId, args.pageId) }),
   });
 
   registry.register({

@@ -27,6 +27,9 @@ type Pt = { x: number; y: number };
 
 interface Props {
   fileId: string;
+  /** D91: slot ujung kanan toolbar (pemilih file + Try it) — dipasang oleh
+   *  DesignTab agar satu baris dengan tools & chip Saved. */
+  headerRight?: React.ReactNode;
 }
 
 const R = (s: number) => Math.round(s * 100) / 100;
@@ -519,8 +522,30 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
 
   const addPage = async () => {
     if (!file) return;
-    await authFetch(apiUrl(`/api/design/files/${file.id}/pages`), { method: "POST" });
-    await load();
+    if (dirty) await save(); // flush edit lokal sebelum mutasi server
+    const r = await authFetch(apiUrl(`/api/design/files/${file.id}/pages`), { method: "POST" });
+    if (r.ok) {
+      const j = (await r.json()) as { pageId: string };
+      await load();
+      setPageId(j.pageId); // langsung aktifkan halaman baru
+    }
+  };
+
+  /** D91: hapus halaman via API (setelah flush edit lokal); bila halaman
+   *  aktif dihapus, pindah ke halaman tersisa pertama. */
+  const deletePage = async (pid: string) => {
+    if (!file || file.pages.length <= 1) return;
+    const pg = file.pages.find((p) => p.id === pid);
+    if (!pg) return;
+    if (!window.confirm(`Delete page "${pg.name}" and all its shapes? This cannot be undone.`)) return;
+    if (dirty) await save();
+    const r = await authFetch(apiUrl(`/api/design/files/${file.id}/pages/${pid}`), { method: "DELETE" });
+    if (r.ok) {
+      const rest = file.pages.filter((p) => p.id !== pid);
+      await load();
+      if (pid === pageId) setPageId(rest[0]?.id ?? "");
+      setSel(new Set());
+    }
   };
 
   if (!file || !page) return <div className="grid h-full place-items-center text-sm text-dim">Loading canvas…</div>;
@@ -624,6 +649,7 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           <ArrowsIn size={15} />
         </Button>
         <span className="ml-auto flex items-center gap-2">
+          {props.headerRight}
           {dirty ? <Chip tone="warn">{saving ? "Saving…" : "Unsaved"}</Chip> : <Chip tone="ok">Saved · revn {file.revn}</Chip>}
         </span>
       </div>
@@ -662,6 +688,7 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             }
             onFocus={focusShape}
             onAddPage={() => void addPage()}
+            onDeletePage={(pid) => void deletePage(pid)}
           />
         ) : null}
 
@@ -697,7 +724,7 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         </div>
 
         {/* props panel */}
-        <aside className="hidden w-64 shrink-0 flex-col gap-3 overflow-y-auto border-l border-line p-3 md:flex">
+        <aside className="hidden w-72 shrink-0 flex-col gap-3 overflow-y-auto border-l border-line p-3 md:flex">
           {selShape ? (
             <ShapeProps
               shape={selShape}
@@ -735,20 +762,21 @@ function ShapeProps({
   pageId: string;
   onChange: (patch: Partial<DesignShape>) => void;
 }): React.ReactElement {
+  // D91: label DI ATAS input (bukan samping) — layout stabil, tanpa overflow.
+  const label = "mb-1 block text-[11px] font-medium uppercase tracking-wide text-dim";
+  const input = "w-full rounded border border-line bg-inset px-2 py-1.5 text-[13px]";
   const fill = shape.fills[0]?.color ?? "#000000";
-  const row = "flex items-center justify-between gap-2 py-1 text-xs";
-  const input = "w-24 rounded border border-line bg-inset px-1.5 py-1 text-xs";
   return (
-    <div className="flex flex-col gap-2">
-      <div className="text-xs font-medium uppercase tracking-wide text-dim">{shape.type}</div>
-      <label className={row}>
-        Name
-        <input className={`${input} flex-1`} value={shape.name} onChange={(e) => onChange({ name: e.target.value })} />
+    <div className="flex flex-col gap-3 text-[13px]">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">{shape.type}</div>
+      <label>
+        <span className={label}>Name</span>
+        <input className={input} value={shape.name} onChange={(e) => onChange({ name: e.target.value })} />
       </label>
       <div className="grid grid-cols-2 gap-2">
         {(["x", "y", "width", "height"] as const).map((k) => (
-          <label key={k} className={row}>
-            <span className="text-dim">{k}</span>
+          <label key={k}>
+            <span className={label}>{k}</span>
             <input
               type="number"
               className={input}
@@ -759,56 +787,75 @@ function ShapeProps({
         ))}
       </div>
       {shape.type !== "text" && (
-        <label className={row}>
-          Fill
-          <input type="color" value={fill} onChange={(e) => onChange({ fills: [{ color: e.target.value, opacity: shape.fills[0]?.opacity ?? 1 }] })} />
+        <label>
+          <span className={label}>Fill</span>
+          <input
+            type="color"
+            className="h-8 w-full cursor-pointer rounded border border-line bg-inset"
+            value={fill}
+            onChange={(e) => onChange({ fills: [{ color: e.target.value, opacity: shape.fills[0]?.opacity ?? 1 }] })}
+          />
         </label>
       )}
-      <label className={row}>
-        Stroke
-        <input
-          type="color"
-          value={shape.stroke?.color ?? "#3a3a44"}
-          onChange={(e) => onChange({ stroke: { color: e.target.value, width: shape.stroke?.width ?? 1 } })}
-        />
-      </label>
-      <label className={row}>
-        Stroke width
-        <input type="number" min={0} className={input} value={shape.stroke?.width ?? 0} onChange={(e) => onChange({ stroke: { color: shape.stroke?.color ?? "#3a3a44", width: Number(e.target.value) } })} />
-      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label>
+          <span className={label}>Stroke</span>
+          <input
+            type="color"
+            className="h-8 w-full cursor-pointer rounded border border-line bg-inset"
+            value={shape.stroke?.color ?? "#3a3a44"}
+            onChange={(e) => onChange({ stroke: { color: e.target.value, width: shape.stroke?.width ?? 1 } })}
+          />
+        </label>
+        <label>
+          <span className={label}>Stroke width</span>
+          <input
+            type="number"
+            min={0}
+            className={input}
+            value={shape.stroke?.width ?? 0}
+            onChange={(e) => onChange({ stroke: { color: shape.stroke?.color ?? "#3a3a44", width: Number(e.target.value) } })}
+          />
+        </label>
+      </div>
       {shape.type !== "text" && (
-        <label className={row}>
-          Radius
+        <label>
+          <span className={label}>Radius</span>
           <input type="number" min={0} max={200} className={input} value={shape.radius ?? 0} onChange={(e) => onChange({ radius: Number(e.target.value) })} />
         </label>
       )}
       {shape.type === "text" && (
         <>
-          <label className="flex flex-col gap-1 text-xs">
-            Text
+          <label>
+            <span className={label}>Text</span>
             <textarea
-              className="min-h-16 rounded border border-line bg-inset px-1.5 py-1 text-xs"
+              className="min-h-16 w-full resize-y rounded border border-line bg-inset px-2 py-1.5 text-[13px]"
               value={shape.text}
               onChange={(e) => onChange({ text: e.target.value } as Partial<DesignShape>)}
             />
           </label>
           <div className="grid grid-cols-2 gap-2">
-            <label className={row}>
-              <span className="text-dim">Size</span>
+            <label>
+              <span className={label}>Size</span>
               <input type="number" min={8} max={200} className={input} value={shape.fontSize} onChange={(e) => onChange({ fontSize: Number(e.target.value) } as Partial<DesignShape>)} />
             </label>
-            <label className={row}>
-              <span className="text-dim">Weight</span>
+            <label>
+              <span className={label}>Weight</span>
               <input type="number" step={100} min={100} max={900} className={input} value={shape.fontWeight ?? 400} onChange={(e) => onChange({ fontWeight: Number(e.target.value) } as Partial<DesignShape>)} />
             </label>
           </div>
-          <label className={row}>
-            Color
-            <input type="color" value={shape.color} onChange={(e) => onChange({ color: e.target.value } as Partial<DesignShape>)} />
+          <label>
+            <span className={label}>Color</span>
+            <input
+              type="color"
+              className="h-8 w-full cursor-pointer rounded border border-line bg-inset"
+              value={shape.color}
+              onChange={(e) => onChange({ color: e.target.value } as Partial<DesignShape>)}
+            />
           </label>
-          <label className={row}>
-            Align
-            <Select value={shape.align ?? "left"} onChange={(e) => onChange({ align: e.target.value } as Partial<DesignShape>)} aria-label="Text align">
+          <label>
+            <span className={label}>Align</span>
+            <Select value={shape.align ?? "left"} onChange={(e) => onChange({ align: e.target.value } as Partial<DesignShape>)} aria-label="Text align" className="w-full">
               <option value="left">Left</option>
               <option value="center">Center</option>
               <option value="right">Right</option>
@@ -816,22 +863,23 @@ function ShapeProps({
           </label>
         </>
       )}
-      <label className={row}>
-        Opacity
+      <label>
+        <span className={label}>Opacity · {Math.round((shape.opacity ?? 1) * 100)}%</span>
         <input
           type="range"
           min={0}
           max={100}
+          className="w-full"
           value={Math.round((shape.opacity ?? 1) * 100)}
           onChange={(e) => onChange({ opacity: Number(e.target.value) / 100 })}
         />
       </label>
-      <label className={`${row} cursor-pointer`}>
+      <label className="flex cursor-pointer items-center justify-between gap-2">
         Hidden
         <input type="checkbox" checked={Boolean(shape.hidden)} onChange={(e) => onChange({ hidden: e.target.checked })} />
       </label>
       {shape.type === "frame" && !shape.parentId ? (
-        <label className={`${row} cursor-pointer`} title="Root frames marked as screen appear in the prototype (Try it)">
+        <label className="flex cursor-pointer items-center justify-between gap-2" title="Root frames marked as screen appear in the prototype (Try it)">
           Screen (prototype)
           <input
             type="checkbox"
@@ -842,7 +890,7 @@ function ShapeProps({
       ) : null}
       {/* P3-PROTO: wiring on-click navigasi (dipakai tombol Try it) */}
       <div>
-        <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-dim">Prototype: on click</div>
+        <span className={label}>Prototype: on click</span>
         <Select
           value={shape.interaction?.target ?? ""}
           onChange={(e) => {
@@ -856,14 +904,14 @@ function ShapeProps({
           aria-label="On click navigates to"
           className="w-full"
         >
-          <option value="">(none)</option>
+          <option value="(none)">(none)</option>
           {file.pages.flatMap((pg) =>
             pg.roots
               .map((r) => pg.shapes[r])
               .filter((s): s is DesignShape => Boolean(s) && s!.type === "frame")
               .map((s) => (
                 <option key={s.id} value={s.id}>
-                  {pg.id === pageId ? "\u2192 " : `\u2192 ${pg.name} / `}
+                  {pg.id === pageId ? "→ " : "→ " + pg.name + " / "}
                   {s.name || "frame"}
                 </option>
               )),
@@ -872,7 +920,7 @@ function ShapeProps({
             .filter((pg) => pg.id !== pageId)
             .map((pg) => (
               <option key={pg.id} value={pg.id}>
-                {"\u2192 page: "}
+                {"→ page: "}
                 {pg.name}
               </option>
             ))}

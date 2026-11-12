@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import {
   CaretDown,
   CaretRight,
+  TrashSimple,
   Circle,
   Crosshair,
   Eye,
@@ -31,6 +32,7 @@ interface Props {
   onToggleHidden: (id: string, hidden: boolean) => void;
   onFocus: (id: string) => void;
   onAddPage: () => void;
+  onDeletePage: (pageId: string) => void;
 }
 
 function typeIcon(s: DesignShape): React.ReactNode {
@@ -86,7 +88,7 @@ export function DesignLayers(props: Props): React.ReactElement {
     return (
       <div key={shape.id}>
         <div
-          className={`group flex cursor-default items-center gap-1 rounded px-1.5 py-[3px] text-xs ${
+          className={`group flex cursor-default items-center gap-1 rounded px-1.5 py-[3px] text-[13px] ${
             selected ? "bg-accent/25 text-fg" : "text-fg/80 hover:bg-inset"
           }`}
           style={{ paddingLeft: 6 + depth * 12 }}
@@ -102,7 +104,7 @@ export function DesignLayers(props: Props): React.ReactElement {
         >
           {isFrame ? (
             <button
-              className="shrink-0 text-dim hover:text-fg"
+              className="shrink-0 cursor-pointer text-dim hover:text-fg"
               onClick={(e) => {
                 e.stopPropagation();
                 setCollapsed((c) => {
@@ -123,7 +125,7 @@ export function DesignLayers(props: Props): React.ReactElement {
           {editing?.id === shape.id ? (
             <input
               autoFocus
-              className="min-w-0 flex-1 rounded border border-accent bg-inset px-1 py-0 text-xs"
+              className="min-w-0 flex-1 rounded border border-accent bg-inset px-1 py-0 text-[13px]"
               value={editing.draft}
               onChange={(e) => setEditing({ id: shape.id, draft: e.target.value })}
               onBlur={() => commitRename()}
@@ -144,7 +146,7 @@ export function DesignLayers(props: Props): React.ReactElement {
           ) : null}
           {shape.hidden ? (
             <button
-              className="shrink-0 text-dim hover:text-fg"
+              className="shrink-0 cursor-pointer text-dim hover:text-fg"
               title="Show"
               onClick={(e) => {
                 e.stopPropagation();
@@ -157,7 +159,7 @@ export function DesignLayers(props: Props): React.ReactElement {
           ) : (
             <span className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
               <button
-                className="text-dim hover:text-fg"
+                className="cursor-pointer text-dim hover:text-fg"
                 title="Zoom to this shape"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -168,7 +170,7 @@ export function DesignLayers(props: Props): React.ReactElement {
                 <Crosshair size={11} />
               </button>
               <button
-                className="text-dim hover:text-fg"
+                className="cursor-pointer text-dim hover:text-fg"
                 title="Hide"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -200,7 +202,7 @@ export function DesignLayers(props: Props): React.ReactElement {
         out.push(
           <div
             key={`${pg.id}:${s.id}`}
-            className={`flex cursor-default items-center gap-1 rounded px-1.5 py-[3px] text-xs ${
+            className={`flex cursor-default items-center gap-1 rounded px-1.5 py-[3px] text-[13px] ${
               sel.has(s.id) ? "bg-accent/25 text-fg" : "text-fg/80 hover:bg-inset"
             }`}
             onClick={(e) => {
@@ -215,7 +217,7 @@ export function DesignLayers(props: Props): React.ReactElement {
           >
             <span className="shrink-0 text-dim">{typeIcon(s)}</span>
             <span className="min-w-0 flex-1 truncate">{s.name || s.type}</span>
-            <span className="max-w-[45%] shrink-0 truncate text-[10px] text-dim">{trail}</span>
+            <span className="max-w-[45%] shrink-0 truncate text-[11px] text-dim">{trail}</span>
           </div>,
         );
       }
@@ -227,13 +229,13 @@ export function DesignLayers(props: Props): React.ReactElement {
     <aside className="hidden w-60 shrink-0 flex-col border-r border-line md:flex">
       <div className="flex items-center justify-between border-b border-line px-3 py-2">
         <span className="text-xs font-medium uppercase tracking-wide text-dim">Layers</span>
-        <button className="text-dim hover:text-fg" title="Add page" onClick={() => props.onAddPage()}>
+        <button className="cursor-pointer text-dim hover:text-fg" title="Add page" onClick={() => props.onAddPage()}>
           <Plus size={14} />
         </button>
       </div>
       <div className="border-b border-line px-2 py-1.5">
         <input
-          className="w-full rounded border border-line bg-inset px-2 py-1 text-xs placeholder:text-dim"
+          className="w-full rounded border border-line bg-inset px-2 py-1.5 text-[13px] placeholder:text-dim"
           placeholder="Filter by name…"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -244,7 +246,7 @@ export function DesignLayers(props: Props): React.ReactElement {
           filterRows(filter.trim()).length > 0 ? (
             filterRows(filter.trim())
           ) : (
-            <div className="px-2 py-3 text-xs text-dim">No shapes match “{filter.trim()}”.</div>
+            <div className="px-2 py-3 text-[13px] text-dim">No shapes match “{filter.trim()}”.</div>
           )
         ) : (
           file.pages.map((pg) => {
@@ -252,7 +254,7 @@ export function DesignLayers(props: Props): React.ReactElement {
             return (
               <div key={pg.id} className="mb-0.5">
                 <div
-                  className={`flex cursor-pointer items-center gap-1 rounded px-1.5 py-1 text-xs font-medium ${
+                  className={`group flex cursor-pointer items-center gap-1 rounded px-1.5 py-1 text-[13px] font-medium ${
                     active ? "bg-inset text-fg" : "text-dim hover:text-fg"
                   }`}
                   onClick={() => props.onPage(pg.id)}
@@ -274,7 +276,20 @@ export function DesignLayers(props: Props): React.ReactElement {
                     {active && !collapsed.has(pg.id) ? <CaretDown size={11} /> : <CaretRight size={11} />}
                   </button>
                   <span className="min-w-0 flex-1 truncate">{pg.name}</span>
-                  <span className="shrink-0 text-[10px] text-dim">{Object.keys(pg.shapes).length}</span>
+                  <span className="shrink-0 text-[11px] text-dim">{Object.keys(pg.shapes).length}</span>
+                  {file.pages.length > 1 ? (
+                    <button
+                      className="hidden shrink-0 cursor-pointer text-dim hover:text-danger group-hover:flex"
+                      title={"Delete page " + pg.name}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        props.onDeletePage(pg.id);
+                      }}
+                      tabIndex={-1}
+                    >
+                      <TrashSimple size={11} />
+                    </button>
+                  ) : null}
                 </div>
                 {active && !collapsed.has(pg.id)
                   ? [...pg.roots].reverse().map((r) => pg.shapes[r]).filter(Boolean).map((s) => row(s as DesignShape, pg, 1))

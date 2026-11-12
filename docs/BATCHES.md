@@ -542,3 +542,11 @@ daftar sesi datar, tapi **mission control project-oriented**.
   z-order Figma-style), rename inline double-click, eye toggle, filter
   nama + breadcrumb, crosshair zoom-ke-shape, select sinkron canvas.
 - Dropdown Pages dihapus dari panel kanan. FEATURES.md F3 catatan polish.
+
+## Batch D91 — design per-project + UX tab Design
+
+- DesignFile.projectId + filter per project (legacy tampil di semua),
+  deleteDesignPage + tool design_delete_page, PUT claim-guard.
+- UI: select+New+Try it pindah ke ujung kanan toolbar (sebelah Saved),
+  props panel label-di-atas font 13px tanpa overflow, layers font besar
+  + cursor pointer + tombol hapus halaman.
