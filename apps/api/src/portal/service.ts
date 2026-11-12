@@ -18,6 +18,8 @@ import {
   writeTerminalInput,
 } from "@yuika/core";
 import { UpdateBudgetRequest, type RemoteAction, type RemoteEvent, type YuiEvent } from "@yuika/contracts";
+import { MAX_UPLOAD, sanitizeUploadName } from "../upload-util.js";
+import { UploadAssembler } from "./upload-acc.js";
 import {
   RelayClient,
   RelayHost,
@@ -161,6 +163,8 @@ export class PortalHostService {
   private remoteSubs = new Map<string, Set<string>>(); // remoteDeviceId → sessionIds
   /** SCR-7: remoteDeviceId → screen watch aktif (1 per remote, v0). */
   private screenWatches = new Map<string, ScreenWatch>();
+  /** v1.3: assembler upload fragmen base64 per perangkat remote. */
+  private uploads = new UploadAssembler();
   /** v1.2: remoteDeviceId → terminal watch aktif (1 per remote). */
   private terminalWatches = new Map<string, TerminalWatch>();
   private known = new Set<string>(); // session id yang pernah divalidasi/dibuat
@@ -566,6 +570,30 @@ export class PortalHostService {
         const w = this.terminalWatches.get(from.deviceId);
         if (w && w.id === action.id) this.stopTerminalWatch(from.deviceId);
         return;
+      }
+      // v1.3: lampiran chat via relay — fragmen base64 (MAX_FRAME 256KB),
+      // host menyusun lalu menyimpan via writeUpload (scope sesi).
+      case "session.upload": {
+        let asm: ReturnType<UploadAssembler["add"]>;
+        try {
+          asm = this.uploads.add(from.deviceId, action.sessionId, action.name, action.part, action.parts, action.chunk);
+        } catch (e) {
+          return void err("upload_rejected", e instanceof Error ? e.message : String(e), action.rid);
+        }
+        if (!asm.done) {
+          return void reply({ proto: 1, ev: "session.upload.progress", rid: action.rid, received: action.part + 1 });
+        }
+        try {
+          const buf = Buffer.from(asm.dataB64, "base64");
+          const name = sanitizeUploadName(action.name);
+          if ("error" in name) return void err("upload_rejected", name.error, action.rid);
+          if (buf.length === 0) return void err("upload_rejected", "empty file", action.rid);
+          if (buf.length > MAX_UPLOAD) return void err("upload_rejected", "max 10 MB", action.rid);
+          const r = await rt.writeUpload({ sessionId: action.sessionId }, name.name, buf);
+          return void reply({ proto: 1, ev: "session.uploaded", rid: action.rid, path: r.path, bytes: r.bytes });
+        } catch (e) {
+          return void err("upload_failed", e instanceof Error ? e.message : String(e), action.rid);
+        }
       }
       case "list_screens": {
         const screens = listScreens().map((s) => ({

@@ -20,6 +20,15 @@
 // reset.acked / terminal.list / terminal.state / terminal.output /
 // screens.list. Tetap murni aditif (aturan forward-compat §1/§2).
 //
+// Amandemen aditif v1.3 (chat attachments, D89 2026-11): +act session.upload
+// (upload lampiran chat VIA RELAY, di-chunk agar lolos MAX_FRAME 256KB:
+// field `chunk` = FRAGMEN base64 (potongan string base64 utuh di sisi
+// remote, split kelipatan 4), `part`/`parts` = urutan), +ev
+// session.upload.progress {received} utk tiap fragmen non-final, +ev
+// session.uploaded {path, bytes} utk fragmen final (path relatif
+// workspace; scope: sesi proyek → <root>/uploads/, global →
+// workspace/uploads/). Tetap murni aditif.
+//
 // Aturan (CONTRACTS §1): action ber-rid dibalas event ber-rid sama; delta
 // ber-seq per sessionId (resume via subscribe{sinceSeq}); ping_host→pong_host
 // tiap 20 dtk; unknown act → event error code "unknown_action".
@@ -164,6 +173,21 @@ export const RemoteAction = z.discriminatedUnion("act", [
   /** Lepas langganan remote (sesi terminal SHARED tetap hidup di host). */
   z.object({ proto: z.literal(1), act: z.literal("terminal.close"), rid: z.string(), id: z.string() }),
   z.object({ proto: z.literal(1), act: z.literal("list_screens"), rid: z.string() }),
+  // v1.3: lampiran chat via relay — base64 utuh dipecah fragmen (kelipatan 4
+  // karakter) karena MAX_FRAME relay 256KB; fragmen FINAL dibalas
+  // session.uploaded, non-final dibalas session.upload.progress.
+  z.object({
+    proto: z.literal(1),
+    act: z.literal("session.upload"),
+    rid: z.string(),
+    sessionId: z.string(),
+    name: z.string(),
+    /** index fragmen 0-based; total fragmen. */
+    part: z.number().int().min(0),
+    parts: z.number().int().min(1),
+    /** fragmen base64 (panjang kelipatan 4). */
+    chunk: z.string(),
+  }).refine((a) => a.part < a.parts, { message: "part must be < parts" }),
 ]);
 export type RemoteAction = z.infer<typeof RemoteAction>;
 
@@ -262,6 +286,22 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
     proto: z.literal(1),
     ev: z.literal("pong_host"),
     rid: z.string(),
+  }),
+  // v1.3: balasan per-fragmen upload (non-final).
+  z.object({
+    proto: z.literal(1),
+    ev: z.literal("session.upload.progress"),
+    rid: z.string(),
+    /** jumlah fragmen yang sudah diterima host. */
+    received: z.number().int(),
+  }),
+  // v1.3: upload selesai (fragmen final) — path relatif workspace.
+  z.object({
+    proto: z.literal(1),
+    ev: z.literal("session.uploaded"),
+    rid: z.string(),
+    path: z.string(),
+    bytes: z.number().int(),
   }),
   // SCR-7 (v1.1): remote watch, state saat mulai/berubah; frame ~1fps.
   z.object({

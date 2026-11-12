@@ -421,7 +421,7 @@ export function ChatView({
       const idx = start + i;
       try {
         const r = await authFetch(
-          apiUrl(`/api/sessions/${sessionKey}/uploads?name=${encodeURIComponent(f.name)}`),
+          apiUrl(`/api/uploads?name=${encodeURIComponent(f.name)}&session=${sessionKey}`),
           { method: "POST", body: await f.arrayBuffer() },
         );
         if (!r.ok) {

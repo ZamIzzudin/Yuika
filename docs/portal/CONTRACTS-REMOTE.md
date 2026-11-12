@@ -331,3 +331,41 @@ rid kosong = update pasca-exit), `terminal.output`, `screens.list`.
   tipe dari modul saudara langsung, bukan barrel — hindari circular).
 - Tes regresi: `apps/api/src/__tests__/portal.test.ts` (22 kasus: dispatch
   v1.2 penuh + terminal mock + SpecRelay nyata).
+
+---
+
+# Amandemen v1.3 — Lampiran chat via relay (session.upload)
+
+> Aditif murni (aturan §6). Tujuan: remote (mobile) dapat mengunggah dokumen
+> sebagai lampiran context chat — jalur yang sama dengan paperclip web.
+> Relay membatasi frame (SPEC §6, 256 KB) sehingga payload base64 dikirim
+> PER-FRAGMEN: remote mem-encode file SEKALI menjadi string base64 utuh lalu
+> memotongnya di kelipatan 4 karakter (fragmen base64 valid); host menyusun
+> ulang lalu men-decode sekali di akhir.
+
+## A.1 Action baru
+
+| act | rid | field | makna |
+|---|---|---|---|
+| `session.upload` | ya | `sessionId`, `name`, `part` (0-based), `parts` (total), `chunk` (fragmen base64, panjang kelipatan 4) | kirim satu fragmen lampiran |
+
+Guard host: `part < parts`, `parts ≤ 5000`, total fragmen ≤ 10 MB (bytes
+hasil decode), nama disanitasi (whitelist ekstensi sama dengan HTTP upload),
+satu entri per (device, sessionId, name); fragmen duplikat idempoten, entri
+basi > 10 menit dibuang.
+
+## A.2 Event baru
+
+| ev | rid | field | makna |
+|---|---|---|---|
+| `session.upload.progress` | ya | `received` | ack fragmen non-final |
+| `session.uploaded` | ya | `path`, `bytes` | upload selesai; `path` relatif workspace |
+
+Scope penyimpanan = scope sesi: sesi proyek → `<root>/uploads/`, sesi
+global → `workspace/uploads/`. Path dikembalikan RELATIF workspace sehingga
+persona membacanya via `doc_read`/`read_file`. Remote menanamkan path ke
+teks pesan sebagai block `[files attached via chat]` (identik komposisi web)
+sebelum `send_prompt`.
+
+Host: `apps/api/src/portal/service.ts` + `upload-acc.ts` (assembler);
+kontrak zod: `packages/contracts/src/remote.ts`.

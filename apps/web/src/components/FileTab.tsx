@@ -477,7 +477,7 @@ export function FileTab({ projectId }: { projectId: string }) {
     // FIX: authFetch + content-type hanya bila ada body
     const r = await authFetch(
       apiUrl(
-        `/api/projects/${projectId}/uploads?name=${encodeURIComponent(f.name)}`,
+        `/api/uploads?name=${encodeURIComponent(f.name)}&project=${projectId}`,
       ),
       { method: "POST", body: await f.arrayBuffer() },
     );

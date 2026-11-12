@@ -54,7 +54,8 @@ const fake = {
     }),
     listLog: () => [],
   },
-  writeProjectUpload: async (_id: string, rel: string, _buf: Buffer) => rel,
+  writeUpload: async (target: { sessionId?: string; projectId?: string }, filename: string, _buf: Buffer) =>
+    ({ path: target.projectId ? `projects/${target.projectId}/uploads/${filename}` : `uploads/${filename}`, bytes: _buf.length }),
   listProjectTasks: () => [
     { id: "t_a", projectId: "p_ok", title: "A", status: "todo", assignee: "yui-coder", refs: [], description: null, acceptance: ["done a"], dependsOn: ["t_hantu"], estimate: "1d", phase: "planning", createdAt: 0, updatedAt: 0 },
     { id: "t_b", projectId: "p_ok", title: "B", status: "todo", assignee: null, refs: [], description: null, acceptance: [], dependsOn: [], estimate: null, phase: "research", createdAt: 0, updatedAt: 0 },
@@ -140,12 +141,16 @@ describe("apps/api REST contract", () => {
     expect(r.json().error).toContain("tidak ditemukan");
   });
 
-  it("POST /api/projects/:id/uploads, nama divalidasi & ext luar daftar → 400", async () => {
-    const bad = await app.inject({ method: "POST", url: "/api/projects/p_ok/uploads?name=..%2Fevil.exe", payload: Buffer.from("x"), headers: { "content-type": "application/octet-stream" } });
+  it("POST /api/uploads (endpoint tunggal), nama divalidasi & ext luar daftar → 400", async () => {
+    const bad = await app.inject({ method: "POST", url: "/api/uploads?project=p_ok&name=..%2Fevil.exe", payload: Buffer.from("x"), headers: { "content-type": "application/octet-stream" } });
     expect(bad.statusCode).toBe(400);
-    const ok = await app.inject({ method: "POST", url: "/api/projects/p_ok/uploads?name=doc.pdf", payload: Buffer.from("%PDF-1.4"), headers: { "content-type": "application/octet-stream" } });
+    const ok = await app.inject({ method: "POST", url: "/api/uploads?project=p_ok&name=doc.pdf", payload: Buffer.from("%PDF-1.4"), headers: { "content-type": "application/octet-stream" } });
     expect(ok.statusCode).toBe(200);
-    expect(ok.json().path).toBe("uploads/doc.pdf");
+    expect(ok.json().path).toBe("projects/p_ok/uploads/doc.pdf");
+    // scope sesi: sesi global → workspace/uploads
+    const g = await app.inject({ method: "POST", url: "/api/uploads?session=s_global&name=note.md", payload: Buffer.from("hi"), headers: { "content-type": "application/octet-stream" } });
+    expect(g.statusCode).toBe(200);
+    expect(g.json().path).toBe("uploads/note.md");
   });
 
   it("GET /tasks/validate lints the DAG + coverage (contract shape)", async () => {

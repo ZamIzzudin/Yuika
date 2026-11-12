@@ -27,6 +27,12 @@ describe("RemoteAction (CONTRACTS-REMOTE v1)", () => {
   });
 
   // ── SCR-7 (v1.1 aditif): watch_screen/unwatch_screen + screen.state/frame ──
+  it("v1.3: session.upload (fragmen base64) valid", () => {
+    expect(RemoteAction.safeParse({ proto: 1, act: "session.upload", rid: "r", sessionId: "s1", name: "notes.pdf", part: 0, parts: 3, chunk: "QUJD" }).success).toBe(true);
+    // index rusak ditolak
+    expect(RemoteAction.safeParse({ proto: 1, act: "session.upload", rid: "r", sessionId: "s1", name: "n.pdf", part: 3, parts: 3, chunk: "QUJD" }).success).toBe(false);
+  });
+
   it("watch_screen/unwatch_screen valid", () => {
     expect(RemoteAction.safeParse({ proto: 1, act: "watch_screen", rid: "r", key: "p1/yui-coder" }).success).toBe(true);
     expect(RemoteAction.safeParse({ proto: 1, act: "unwatch_screen", rid: "r" }).success).toBe(true);
@@ -37,6 +43,11 @@ describe("RemoteEvent (CONTRACTS-REMOTE v1)", () => {
   it("contoh wire §4: message.delta & approval.request valid", () => {
     expect(RemoteEvent.parse({ proto: 1, ev: "message.delta", sessionId: "s-demo", seq: 1, delta: "According to 2026 data" })).toBeTruthy();
     expect(RemoteEvent.parse({ proto: 1, ev: "approval.request", approvalId: "ap-1", title: "run_command", summary: "npm install", risk: "medium" })).toBeTruthy();
+  });
+
+  it("v1.3: session.upload.progress & session.uploaded valid", () => {
+    expect(RemoteEvent.safeParse({ proto: 1, ev: "session.upload.progress", rid: "r", received: 2 }).success).toBe(true);
+    expect(RemoteEvent.safeParse({ proto: 1, ev: "session.uploaded", rid: "r", path: "uploads/notes.pdf", bytes: 1024 }).success).toBe(true);
   });
 
   it("risk di luar enum ditolak", () => {

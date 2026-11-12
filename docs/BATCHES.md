@@ -526,3 +526,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - POST /api/sessions/:id/uploads (scope proyek/global, path relatif workspace),
   runtime writeSessionUpload, composer paperclip + chips + blok lampiran di
   teks pesan, doc_read utk semua persona.
+
+## Batch D89 — endpoint upload tunggal + relay session.upload
+
+- POST /api/uploads (scope session/project/workspace), runtime writeUpload,
+  amandemen v1.3 CONTRACTS-REMOTE (act session.upload fragmen base64,
+  assembler host, ev progress/uploaded), docs mirror portal.

@@ -7,6 +7,7 @@ import cors from "@fastify/cors";
 import { ZodError } from "zod";
 import type { YuiRuntime } from "@yuika/core";
 import { registerSessionRoutes } from "./routes/sessions.js";
+import { registerUploadRoutes } from "./routes/uploads.js";
 import { registerDelegationRoutes } from "./routes/delegations.js";
 import { registerApprovalRoutes } from "./routes/approvals.js";
 import { registerVaultRoutes } from "./routes/vault.js";
@@ -84,6 +85,7 @@ export function buildApp(rt?: YuiRuntime, opts?: { settingsDeps?: SettingsDeps }
   registerAuthSsoRoutes(app, getRt); // portal sign-in (start + complete)
   registerMetaRoutes(app); // /api/meta (version + update indicator)
   registerSessionRoutes(app, getRt);
+  registerUploadRoutes(app, getRt);
   registerDelegationRoutes(app, getRt);
   registerApprovalRoutes(app, getRt);
   registerVaultRoutes(app, getRt); // metadata-only + fill

@@ -1027,25 +1027,36 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       if (!p) throw new Error("project tidak ditemukan");
       return fileRevisions.getRevision(safeProjectPath(projectRoot(id), relPath), rev);
     },
-    /** dev-10: simpan file upload user (pdf/xlsx/…) ke root proyek (uploads/…). */
-    writeProjectUpload: async (id: string, rel: string, data: Buffer) => {
-      const p = projectStore.getProject(id);
-      if (!p) throw new Error("project tidak ditemukan");
-      const abs = safeProjectPath(projectRoot(id), rel);
-      await fs.promises.mkdir(path.dirname(abs), { recursive: true });
-      await fs.promises.writeFile(abs, data);
-    },
-    /** D87+: lampiran chat. Sesi proyek → <root proyek>/uploads/, sesi
-     *  global → workspace/uploads/. Mengembalikan path RELATIF workspace agar
-     *  persona bisa membacanya via doc_read (ctx.workspacePath = workspace). */
-    writeSessionUpload: async (sessionId: string, filename: string, data: Buffer) => {
-      const session = store.getSession(sessionId);
-      if (!session) throw new Error("session not found");
+    /** D88/D89: upload dokumen (endpoint tunggal POST /api/uploads +
+     *  relay act session.upload). Target bebas-scope:
+     *  - {sessionId} → ikut sesi (proyek → <root>/uploads, global →
+     *    workspace/uploads)
+     *  - {projectId} → <root proyek>/uploads
+     *  - keduanya kosong → workspace/uploads
+     *  Mengembalikan path RELATIF workspace agar persona bisa membacanya
+     *  via doc_read (ctx.workspacePath = workspace root). */
+    writeUpload: async (
+      target: { sessionId?: string; projectId?: string },
+      filename: string,
+      data: Buffer,
+    ): Promise<{ path: string; bytes: number }> => {
       if (/[\\/]/.test(filename) || filename.includes("..")) throw new Error("invalid file name");
       let rootAbs: string;
       let relToWs: string;
-      if (session.projectId) {
-        const p = projectStore.getProject(session.projectId);
+      if (target.sessionId) {
+        const session = store.getSession(target.sessionId);
+        if (!session) throw new Error("session not found");
+        if (session.projectId) {
+          const p = projectStore.getProject(session.projectId);
+          if (!p) throw new Error("project tidak ditemukan");
+          rootAbs = path.join(paths.workspacePath, p.rootPath);
+          relToWs = `${p.rootPath}/uploads/${filename}`;
+        } else {
+          rootAbs = paths.workspacePath;
+          relToWs = `uploads/${filename}`;
+        }
+      } else if (target.projectId) {
+        const p = projectStore.getProject(target.projectId);
         if (!p) throw new Error("project tidak ditemukan");
         rootAbs = path.join(paths.workspacePath, p.rootPath);
         relToWs = `${p.rootPath}/uploads/${filename}`;

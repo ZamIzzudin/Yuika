@@ -1156,3 +1156,27 @@ composer chat sebagai bahan context, tanpa pindah ke tab Files.
       sesi proyek → projects/p_080cefe6/uploads/ctx-test.md (file ada di
       disk); traversal ../../evil.txt ditolak. Core 434, api 64, typecheck
       6/6, build web sukses.
+
+### D89 — Endpoint upload TUNGGAL + lampiran chat via relay (mobile) (SELESAI-KODE)
+Request user: satukan upload jadi satu endpoint; terapkan juga di mobile
+remote karena file mungkin diupload dari HP.
+- [x] SATU endpoint: POST /api/uploads?name=… dengan scope opsional
+      ?session=<sid> (ikut scope sesi) / ?project=<pid> / tanpa keduanya
+      (workspace/uploads). Route lama projects/:id/uploads +
+      sessions/:id/uploads DIHAPUS; runtime writeProjectUpload +
+      writeSessionUpload diganti writeUpload(target, filename, data)
+      tunggal. FileTab (?project=) dan ChatView (?session=) beralih.
+      upload-util.ts dipindah ke level app (dipakai routes + portal).
+- [x] Relay (mobile) — amandemen aditif v1.3 CONTRACTS-REMOTE:
+      act session.upload (fragmen base64, relay MAX_FRAME 256KB → remote
+      split string base64 utuh di kelipatan 4; host assembler upload-acc.ts
+      gabung → decode sekali), ev session.upload.progress (ack per
+      fragmen) + session.uploaded (path relatif workspace + bytes).
+      Guard: part<parts, parts≤5000, total ≤10MB, sanitasi nama, idempoten
+      retry, entri basi >10 menit dibuang, konflik fragmen → reset.
+- [x] Docs: CONTRACTS-REMOTE.md v1.3 (your-yui + mirror yuika-portal).
+- [x] Test: upload-acc.test.ts 6 (assembler), remote.test.ts +2 (schema
+      v1.3 + refine part<parts), api.test.ts diarahkan ke endpoint tunggal
+      (+case scope sesi). api 70, contracts 36, core 434, typecheck 6/6.
+- [ ] Mobile UI (repo yuika-mobile, batch terpisah): paperclip SessionChat
+      via expo-document-picker + expo-file-system → perlu build APK baru.

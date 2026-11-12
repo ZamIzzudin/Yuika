@@ -2,7 +2,6 @@
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import { CreateProjectRequest, CreateTaskRequest, DelegationJob, lintTaskList, SaveRosterRequest, UpdateProjectRequest, UpdateTaskRequest } from "@yuika/contracts";
-import { MAX_UPLOAD, sanitizeUploadName } from "./upload-util.js";
 
 
 export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
@@ -64,25 +63,6 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
         return getRt().readProjectFile(id, p);
       }
       return { tree: getRt().listProjectFiles(id) };
-    } catch (e) {
-      return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
-    }
-  });
-
-  /** POST /api/projects/:id/uploads?name=<filename>  body = raw file bytes
-   *  Simpan file user (pdf/xlsx/csv/…) ke <root proyek>/uploads/, dibaca agent
-   *  via tool doc_read (persona scribe). Nama disanitasi; cap 10 MB. */
-  app.post("/api/projects/:id/uploads", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const name = sanitizeUploadName((req.query as Record<string, string | undefined>).name);
-    if ("error" in name) return reply.code(400).send({ error: name.error });
-    try {
-      const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.from(String(req.body ?? ""));
-      if (buf.length === 0) return reply.code(400).send({ error: "file kosong" });
-      if (buf.length > MAX_UPLOAD) return reply.code(400).send({ error: "maks 10 MB" });
-      const rel = `uploads/${name.name}`;
-      await getRt().writeProjectUpload(id, rel, buf);
-      return { path: rel, bytes: buf.length };
     } catch (e) {
       return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
     }

@@ -3,7 +3,6 @@ import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import type { YuiEvent } from "@yuika/contracts";
 import { CreateSessionRequest, SendMessageRequest } from "@yuika/contracts";
-import { MAX_UPLOAD, sanitizeUploadName } from "./upload-util.js";
 
 export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.post("/api/sessions", async (req, reply) => {
@@ -52,24 +51,6 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
       rt.emitSessionError(id, err instanceof Error ? err.message : String(err));
     });
     return reply.code(200).send({ accepted: true });
-  });
-
-  /** POST /api/sessions/:id/uploads?name=<filename> — lampiran chat (D87+).
-   *  Body = raw bytes. Disimpan sesuai scope sesi (project → <root>/uploads,
-   *  global → workspace/uploads). Balas path relatif workspace: persona
-   *  membacanya via doc_read / read_file; client menautkan path ke pesan. */
-  app.post("/api/sessions/:id/uploads", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const name = sanitizeUploadName((req.query as Record<string, string | undefined>).name);
-    if ("error" in name) return reply.code(400).send({ error: name.error });
-    try {
-      const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.from(String(req.body ?? ""));
-      if (buf.length === 0) return reply.code(400).send({ error: "empty file" });
-      if (buf.length > MAX_UPLOAD) return reply.code(400).send({ error: "max 10 MB" });
-      return await getRt().writeSessionUpload(id, name.name, buf);
-    } catch (e) {
-      return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
-    }
   });
 
  /** GET → trace per turn sesi ini : langkah kronologis (model/tool/
