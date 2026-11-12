@@ -1293,3 +1293,37 @@ ctrl+wheel 50→81%, create child frame, auto-parent root→frame, resize
 image/png, bg applied ke frame, FileMenu, modal create, chip floating,
 DnD dispatch. File pulihkan ke kondisi awal setelah verifikasi.
 PENTING verifikasi: cek API harus menunggu autosave debounce 1.5s.
+### D93 — attach komponen desain sebagai context chat (SELESAI)
+Alur: klik kanan shape di canvas (tab Design) → "Attach component to chat"
+→ shape berpindah ke composer chat sebagai chip (maks 3) → tulis komentar/
+pertanyaan → kirim. Snapshot JSON subtree shape (dgn anaknya, cap 40 node /
+6000 char) ditanam ke pesan user sebagai blok [design component attached] +
+fenced json — persona membaca data komponen langsung dan bisa merujuk/
+mengubahnya (design_get_file / design_update_shape). Riwayat bubble user
+merender ulang blok itu sebagai chip + "Component data" collapsed (JSON tak
+tampil polos; expand utk lihat).
+Implementasi: lib/designRef.ts (makeDesignRefs/build/parse); DesignCanvas
+context menu (fixed popover, klik kanan = pilih + menu; multi-select ikut
+semua); props threading DesignTab→ProjectTabs→page.tsx (state designRefs,
+auto pindah tab Chat + toast); ChatView chips composer + submit (3 jalur:
+chat/steer/brief) + bubble parser. Verifikasi live Playwright 8/8 OK.
+
+### D94 — audit sampah delete project (SELESAI)
+Eksperimen (project dummy + artifact + delete) menemukan 5 bocor:
+1. workspace/design/*.json terikat projectId TERTINGGAL (dilaporkan user).
+2. Tabel browser_visits (project_id) tidak dihapus.
+3. Tabel workflow_runs (project_id) tidak dihapus.
+4. delegation_jobs jadi orphan (parent/child session dihapus).
+5. context_checkpoints jadi orphan (session dihapus).
+Yang sudah bersih (diverifikasi): sessions+events+archive+messages+
+approvals+approval_memory, tasks, project_events, projects, workspace dir
+project (uploads/MEMORY/file), revisi, audit MCP, workshop, terminal,
+dungeon (root dungeons/<slug> = rootPath project), uploads ?project= &
+?session=project. Usage ledger & skill persona memang DIPERTAHANKAN.
+Fix: deleteDesignFilesForProject (design store); deleteProjectData +
+browser_visits + workflow_runs dalam satu transaksi; deleteProjectSessions +
+delegation_jobs + context_checkpoints (SQLite & PG paritas); kontrak
+DeleteProjectResult.deleted += 5 field. Bonus temuan: TIDAK ada endpoint
+DELETE design file (file tak bisa dihapus via API/UI) — dicatat backlog.
+Test: delete-project.test.ts extend (angka 5 bocor + idempoten + project
+lain & file legacy selamat). Verifikasi live: ulang eksperimen → 0 sampah.

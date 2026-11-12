@@ -10,6 +10,7 @@ import { CaretDown, FrameCorners, Play, Plus, X } from "@phosphor-icons/react";
 import { apiUrl, authFetch } from "@/lib/api";
 import { Button, EmptyState } from "./ui";
 import { DesignCanvas } from "./DesignCanvas";
+import type { DesignRefPayload } from "@/lib/designRef";
 import { DesignPrototype } from "./DesignPrototype";
 
 interface DesignRow {
@@ -38,7 +39,8 @@ function FileMenu({
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -53,7 +55,9 @@ function FileMenu({
         onClick={() => setOpen((o) => !o)}
       >
         <FrameCorners size={14} />
-        <span className="max-w-36 truncate text-[13px]">{cur?.name ?? "Select file"}</span>
+        <span className="max-w-36 truncate text-[13px]">
+          {cur?.name ?? "Select file"}
+        </span>
         <CaretDown size={11} className="text-dim" />
       </Button>
       {open ? (
@@ -63,7 +67,9 @@ function FileMenu({
               <button
                 key={f.id}
                 className={`flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-2 text-left text-[13px] ${
-                  f.id === sel ? "bg-accent/25 text-fg" : "text-fg/85 hover:bg-inset"
+                  f.id === sel
+                    ? "bg-accent/25 text-fg"
+                    : "text-fg/85 hover:bg-inset"
                 }`}
                 onClick={() => {
                   onPick(f.id);
@@ -71,7 +77,10 @@ function FileMenu({
                 }}
                 title={f.name}
               >
-                <FrameCorners size={13} className={f.id === sel ? "text-accent" : "text-dim"} />
+                <FrameCorners
+                  size={13}
+                  className={f.id === sel ? "text-accent" : "text-dim"}
+                />
                 <span className="min-w-0 flex-1 truncate">{f.name}</span>
                 <span className="shrink-0 text-[11px] text-dim">
                   {f.pages} page{f.pages === 1 ? "" : "s"}
@@ -118,11 +127,18 @@ function NameModal({
       <div className="w-full max-w-sm rounded-lg2 border border-line bg-surface p-4 shadow-2xl">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-medium text-fg">New design file</span>
-          <button className="cursor-pointer text-dim hover:text-fg" onClick={onCancel} title="Cancel">
+          <button
+            className="cursor-pointer text-dim hover:text-fg"
+            onClick={onCancel}
+            title="Cancel"
+          >
             <X size={15} />
           </button>
         </div>
-        <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-dim" htmlFor="yui-design-name">
+        <label
+          className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-dim"
+          htmlFor="yui-design-name"
+        >
           Name
         </label>
         <input
@@ -138,12 +154,18 @@ function NameModal({
             e.stopPropagation();
           }}
         />
-        {error ? <div className="mt-2 text-[12px] text-danger">{error}</div> : null}
+        {error ? (
+          <div className="mt-2 text-[12px] text-danger">{error}</div>
+        ) : null}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button variant="primary" disabled={!v.trim() || busy} onClick={() => onSubmit(v.trim())}>
+          <Button
+            variant="primary"
+            disabled={!v.trim() || busy}
+            onClick={() => onSubmit(v.trim())}
+          >
             {busy ? "Creating…" : "Create"}
           </Button>
         </div>
@@ -152,7 +174,14 @@ function NameModal({
   );
 }
 
-export function DesignTab({ projectId }: { projectId: string }): React.ReactElement {
+export function DesignTab({
+  projectId,
+  onAttachToChat,
+}: {
+  projectId: string;
+  /** D93: canvas klik kanan → attach komponen ke composer chat. */
+  onAttachToChat?: (refs: DesignRefPayload[]) => void;
+}): React.ReactElement {
   const [files, setFiles] = useState<DesignRow[] | null>(null);
   const [sel, setSel] = useState("");
   const [playing, setPlaying] = useState(false);
@@ -162,11 +191,15 @@ export function DesignTab({ projectId }: { projectId: string }): React.ReactElem
 
   const refresh = useCallback(async () => {
     try {
-      const r = await authFetch(apiUrl(`/api/design/files?project=${projectId}`));
+      const r = await authFetch(
+        apiUrl(`/api/design/files?project=${projectId}`),
+      );
       if (r.ok) {
         const j = (await r.json()) as { files: DesignRow[] };
         setFiles(j.files);
-        setSel((cur) => (j.files.some((f) => f.id === cur) ? cur : (j.files[0]?.id ?? "")));
+        setSel((cur) =>
+          j.files.some((f) => f.id === cur) ? cur : (j.files[0]?.id ?? ""),
+        );
       }
     } catch {
       /* host belum siap */
@@ -189,7 +222,10 @@ export function DesignTab({ projectId }: { projectId: string }): React.ReactElem
         body: JSON.stringify({ name, projectId }),
       });
       if (!r.ok) {
-        setCreateErr((((await r.json()) as { error?: string }).error ?? "failed to create design") );
+        setCreateErr(
+          ((await r.json()) as { error?: string }).error ??
+            "failed to create design",
+        );
         return;
       }
       const j = (await r.json()) as { id: string };
@@ -204,12 +240,18 @@ export function DesignTab({ projectId }: { projectId: string }): React.ReactElem
   };
 
   const tryIt = (
-    <Button variant="primary" className="!px-2.5 !py-1" title="Try this design as a live prototype" onClick={() => setPlaying(true)}>
+    <Button
+      variant="primary"
+      className="!px-2.5 !py-1"
+      title="Try this design as a live prototype"
+      onClick={() => setPlaying(true)}
+    >
       <Play size={14} weight="fill" /> Try it
     </Button>
   );
 
-  if (!files) return <EmptyState icon={<FrameCorners />} title="Loading design files…" />;
+  if (!files)
+    return <EmptyState icon={<FrameCorners />} title="Loading design files…" />;
 
   if (files.length === 0) {
     return (
@@ -236,6 +278,7 @@ export function DesignTab({ projectId }: { projectId: string }): React.ReactElem
             key={sel}
             fileId={sel}
             projectId={projectId}
+            onAttachToChat={onAttachToChat}
             headerRight={
               <>
                 <FileMenu
@@ -253,7 +296,9 @@ export function DesignTab({ projectId }: { projectId: string }): React.ReactElem
           />
         </div>
       ) : null}
-      {playing && sel ? <DesignPrototype fileId={sel} onClose={() => setPlaying(false)} /> : null}
+      {playing && sel ? (
+        <DesignPrototype fileId={sel} onClose={() => setPlaying(false)} />
+      ) : null}
       {modal ? (
         <NameModal
           busy={creating}

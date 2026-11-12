@@ -29,6 +29,7 @@ import { Skeleton } from "./Skeleton";
 import { SkillsTab } from "./SkillsTab";
 import { FileTab } from "./FileTab";
 import { DesignTab } from "./DesignTab";
+import type { DesignRefPayload } from "@/lib/designRef";
 import { WorkflowStepsCard } from "./WorkflowStepsCard";
 import { ProjectDashboardView } from "./ProjectDashboard";
 import { WorkshopPanel } from "./WorkshopPanel";
@@ -562,6 +563,7 @@ export function ProjectTabs({
   live,
   onProjectUpdated,
   onDeleted,
+  onDesignAttach,
 }: {
   project: ProjectInfo;
   personas: PersonaInfo[];
@@ -573,10 +575,12 @@ export function ProjectTabs({
     parentState: PersonaState;
     delegations: LiveDelegation[];
   };
- /** setelah edit nama/deskripsi (menu Project), parent refresh. */
+  /** setelah edit nama/deskripsi (menu Project), parent refresh. */
   onProjectUpdated?: () => void;
   /** Project deleted from Config: parent resets scope + refreshes. */
   onDeleted?: (projectId: string) => void;
+  /** D93: shape desain di-attach dari canvas → composer chat (page.tsx). */
+  onDesignAttach?: (refs: DesignRefPayload[]) => void;
 }) {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [tree, setTree] = useState<TaskNode[]>([]);
@@ -656,7 +660,7 @@ export function ProjectTabs({
       );
       if (res.ok) {
         setRoster(((await res.json()) as { roster: RosterEntry[] }).roster);
- // assignment berubah → gating tab Terminal (Hiro/Neo) hidup.
+        // assignment berubah → gating tab Terminal (Hiro/Neo) hidup.
         window.dispatchEvent(new Event("yui:roster-changed"));
       }
     } finally {
@@ -747,7 +751,7 @@ export function ProjectTabs({
     }
   }
 
- /** pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
+  /** pindah kartu antar kolom papan (drag&drop HTML5) → PATCH status. */
   async function moveTask(taskId: string, status: TaskStatus) {
     await authFetch(apiUrl(`/api/projects/${project.id}/tasks/${taskId}`), {
       method: "PATCH",
@@ -758,7 +762,7 @@ export function ProjectTabs({
   }
 
   const done = tasks.filter((t) => t.status === "done").length;
- /** kartu papan = flatten TaskTree + task pra-migrasi (hanya di DB) di depth 0. */
+  /** kartu papan = flatten TaskTree + task pra-migrasi (hanya di DB) di depth 0. */
   const treeFlat = tree.flatMap((n) => {
     const out: Array<{ node: TaskNode; depth: number }> = [];
     const walk = (x: TaskNode, d: number) => {
@@ -1054,7 +1058,9 @@ export function ProjectTabs({
 
       {loaded && activeTab === "files" && <FileTab projectId={project.id} />}
       {/* P2-DSN-3: canvas Penpot ter-embed (viewer share-link, live). */}
-      {loaded && activeTab === "design" && <DesignTab projectId={project.id} />}
+      {loaded && activeTab === "design" && (
+          <DesignTab projectId={project.id} onAttachToChat={onDesignAttach} />
+        )}
       {/* ++ (user 2026-11): tab Browser dibongkar, reader dihapus; live screen = floating window via bubble chat; tab = TERMINAL PENUH (Shell shared + Commands). */}
       {loaded && activeTab === "terminal" && (
         <TerminalFullTab project={{ id: project.id, name: project.name }} />

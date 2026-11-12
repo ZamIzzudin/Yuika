@@ -99,7 +99,11 @@ Sisa (2):
 > **Polish D90 (layers panel):** dropdown Pages diganti layers tree ala
 > Canva/Figma di panel kiri — Pages → Screen (badge Monitor) → komponen
 > nested (z-order depan-ke-belakang); rename inline double-click (nama =
-> D92: interaksi ala Figma — resize 8 handle, auto-parent saat
+> D93: klik kanan shape → "Attach to chat" — komponen desain jadi
+context chat (chip + snapshot JSON, bisa dirujuk/diubah persona).
+D94: delete project bersih total (design files, browser_visits,
+workflow_runs, orphan delegation/checkpoint rows).
+D92: interaksi ala Figma — resize 8 handle, auto-parent saat
 drop/create, group/ungroup (Ctrl+G), copy/paste/duplicate, DnD
 reparent di layers, upload image ke canvas + background image frame,
 file menu custom + modal nama, chip Saved floating, ctrl+wheel zoom.

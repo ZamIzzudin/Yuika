@@ -1,5 +1,6 @@
 "use client";
 import { apiUrl, authFetch } from "@/lib/api";
+import { buildDesignAttachmentText, designRefLabel, parseDesignAttachment, type DesignRefPayload } from "@/lib/designRef";
 /**
  * ChatView, pola visual OpenBot (D:\projects\openbot):
  * pesan agent = teks polos + gutter wajah + nama muted; user = bubble terang rata kanan;
@@ -15,6 +16,7 @@ import {
   ChatTeardropText,
   Lightning,
   PaperPlaneTilt,
+  FrameCorners,
   Paperclip,
   X,
   PauseCircle,
@@ -367,6 +369,9 @@ export function ChatView({
   workflow,
   onOpenScreen,
   sessionKey,
+  designRefs,
+  onRemoveDesignRef,
+  onClearDesignRefs,
 }: {
   items: ChatItem[];
   personaState: PersonaState;
@@ -390,6 +395,11 @@ export function ChatView({
   /** Identitas sesi utk reset window (ganti sesi → kembali ke 8 terakhir). */
   sessionKey: string;
   busy: boolean;
+  /** D93: komponen desain di-attach dari canvas → chip composer; saat kirim
+   *  snapshot JSON ditanam ke teks pesan (bisa dirujuk persona). */
+  designRefs?: DesignRefPayload[];
+  onRemoveDesignRef?: (idx: number) => void;
+  onClearDesignRefs?: () => void;
 }) {
   const [input, setInput] = useState("");
  // kontrol delegasi aktif, steer input per kartu + cancel.
@@ -440,7 +450,7 @@ export function ChatView({
     }
   }
   async function sendSteer(childSessionId: string) {
-    const text = steerText.trim();
+    let text = steerText.trim();
     if (!text) return;
     try {
       const r = await authFetch(apiUrl(`/api/delegations/${childSessionId}`), {
@@ -569,10 +579,15 @@ export function ChatView({
     const base = input.trim();
     if (!base && attached.length === 0) return;
     // lampiran ditanam ke teks (transparan + ter-persist di riwayat);
-    const text =
+    let text =
       attached.length > 0
         ? `${base}${base ? "\n\n" : ""}[files attached via chat]\n${attached.map((p) => `- ${p}`).join("\n")}`
         : base;
+    // D93: snapshot komponen desain ditanam setelah teks user (riwayat bubble
+    // merender ulang via parseDesignAttachment — JSON tak tampil polos).
+    const drefs = designRefs ?? [];
+    if (drefs.length > 0)
+      text = `${text}${text ? "\n\n" : ""}${buildDesignAttachmentText(drefs)}`;
     // satu composer, makna menurut konteks: run hidup → steer; toggle
     // Workflow Mode nyala → brief; selain itu turn chat biasa.
     if (workflow) {
@@ -580,18 +595,21 @@ export function ChatView({
         void workflow.onSendWorkflow(text, "steer");
         setInput("");
         setAttachments([]);
+        onClearDesignRefs?.();
         return;
       }
       if (workflow.armed) {
         void workflow.onSendWorkflow(text, "brief");
         setInput("");
         setAttachments([]);
+        onClearDesignRefs?.();
         return;
       }
     }
     onSend(text);
     setInput("");
     setAttachments([]);
+    onClearDesignRefs?.();
   }
 
   return (
@@ -639,8 +657,37 @@ export function ChatView({
             if (it.kind === "msg" && it.role === "user") {
               return (
                 <div key={`r${i}`} className="msg-in flex justify-end">
-                  <div className="max-w-[80%] rounded-bubble bg-[var(--yui-surface-light)] px-3.5 py-2 leading-relaxed whitespace-pre-wrap break-words text-body text-onlight">
-                    {it.text}
+                  <div className="max-w-[80%] rounded-bubble bg-[var(--yui-surface-light)] px-3.5 py-2 leading-relaxed text-body text-onlight">
+                    {(() => {
+                      // D93: blok [design component attached] dirender sebagai chip
+                      // + data collapsed — bukan JSON polos di bubble.
+                      const att = parseDesignAttachment(it.text ?? "");
+                      return (
+                        <>
+                          {att?.labels.map((l, k) => (
+                            <span
+                              key={k}
+                              className="mb-1 flex items-center gap-1.5 rounded-md2 bg-black/10 px-2 py-1 text-caption text-onlight"
+                              title={l}
+                            >
+                              <FrameCorners size={11} className="shrink-0" aria-hidden />
+                              <span className="max-w-[280px] truncate">{l}</span>
+                            </span>
+                          ))}
+                          {att?.json ? (
+                            <details className="mb-1">
+                              <summary className="cursor-pointer text-caption text-onlight/70">Component data</summary>
+                              <pre className="mt-1 max-h-48 overflow-auto rounded-md2 bg-black/10 p-2 text-caption whitespace-pre-wrap">{att.json}</pre>
+                            </details>
+                          ) : null}
+                          {att ? (
+                            att.text ? <span className="whitespace-pre-wrap break-words">{att.text}</span> : null
+                          ) : (
+                            <span className="whitespace-pre-wrap break-words">{it.text}</span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               );
@@ -1235,6 +1282,31 @@ export function ChatView({
               onAction={workflow.onAction}
             />
           )}
+          {/* D93: chip komponen desain (attach dari canvas via klik kanan) */}
+          {(designRefs ?? []).length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              {designRefs!.map((r, i) => (
+                <div
+                  key={`${r.shapeId}-${i}`}
+                  className="flex items-center gap-2 rounded-md2 border border-accent/40 bg-accent/5 px-2.5 py-1.5 text-caption"
+                >
+                  <FrameCorners size={12} className="shrink-0 text-accent" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-primary" title={designRefLabel(r)}>
+                    {designRefLabel(r)}
+                  </span>
+                  <button
+                    type="button"
+                    className="cursor-pointer text-dim transition-colors hover:text-primary"
+                    aria-label={`Remove component ${r.shapeName}`}
+                    onClick={() => onRemoveDesignRef?.(i)}
+                  >
+                    <X size={12} weight="bold" aria-hidden />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Lampiran chat: chip dokumen terpilih (upload → uploads/ sesi) */}
           {attachments.length > 0 && (
             <div className="flex flex-col gap-1.5">

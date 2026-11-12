@@ -558,3 +558,14 @@ daftar sesi datar, tapi **mission control project-oriented**.
   DnD reparent layers, FileMenu custom + modal nama desain,
   chip Saved floating, upload image + serving GET, background image
   frame (canvas + prototype). Model: type group/image, Fill.image.
+
+## Batch D93 + D94 — design-to-chat attach & delete-project cleanup
+
+- D93: klik kanan shape → attach ke chat (chip + snapshot JSON + bubble
+  render ringkas); threading page.tsx → ProjectTabs → DesignTab → Canvas.
+
+- D94: delete project kini membersihkan design files per-project,
+  browser_visits, workflow_runs, orphan delegation_jobs &
+  context_checkpoints (SQLite + PG paritas); kontrak +report field; test
+
+  extend; verifikasi live 0 sampah.

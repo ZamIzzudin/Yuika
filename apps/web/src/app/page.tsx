@@ -39,9 +39,10 @@ import {
   type LiveDelegation,
   type WorkspaceTab,
 } from "@/components/TaskDrawer";
+import { MAX_DESIGN_REFS, type DesignRefPayload } from "@/lib/designRef";
 import { ScreenPip } from "@/components/ScreenPip";
 import { Dot, StateChip, TabPills } from "@/components/ui";
-import { toastErr } from "@/components/ui/toast";
+import { toastErr, toastOk } from "@/components/ui/toast";
 import { useWorkflowRun } from "@/components/useWorkflowRun";
 import type {
   PersonaInfo,
@@ -117,6 +118,20 @@ export default function Home() {
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [taskRev, setTaskRev] = useState(0); // naik saat agent menyentuh todo_* → drawer refresh
+  // D93: komponen desain di-attach dari canvas (klik kanan) → chip composer
+  // chat. Dimiliki di level ini agar hidup lintas tab (Design → Chat).
+  const [designRefs, setDesignRefs] = useState<DesignRefPayload[]>([]);
+
+  /** D93: canvas "Attach to chat" → simpan chip, pindah ke tab Chat. */
+  const attachDesignToChat = useCallback((refs: DesignRefPayload[]) => {
+    setDesignRefs((prev) => [...prev, ...refs].slice(-MAX_DESIGN_REFS));
+    setMainTab("chat");
+    toastOk(
+      refs.length === 1
+        ? `Component "${refs[0]!.shapeName}" attached to chat`
+        : `${refs.length} components attached to chat`,
+    );
+  }, []);
   const [mainTab, setMainTab] = useState<WorkspaceTab>("chat");
   // Menu auto-close (fix test user #6): dropdown header persona + Sessions.
   const personaMenu = useMenuAutoClose<HTMLDetailsElement>();
@@ -1539,6 +1554,11 @@ export default function Home() {
                                 personaId: pid,
                               });
                           }}
+                          designRefs={designRefs}
+                          onRemoveDesignRef={(i) =>
+                            setDesignRefs((prev) => prev.filter((_, j) => j !== i))
+                          }
+                          onClearDesignRefs={() => setDesignRefs([])}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
@@ -1610,6 +1630,11 @@ export default function Home() {
                                 personaId: pid,
                               });
                           }}
+                          designRefs={designRefs}
+                          onRemoveDesignRef={(i) =>
+                            setDesignRefs((prev) => prev.filter((_, j) => j !== i))
+                          }
+                          onClearDesignRefs={() => setDesignRefs([])}
                           onSend={send}
                           onCancel={cancelTurn}
                           onApprove={approve}
@@ -1638,6 +1663,7 @@ export default function Home() {
                             personas={personas}
                             activeTab={mainTab}
                             rev={taskRev}
+                            onDesignAttach={attachDesignToChat}
                             onProjectUpdated={() => void loadProjects()}
                             onDeleted={(pid) => {
                               // Deleted from Config: refresh the list; if the active scope was

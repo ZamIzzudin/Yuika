@@ -20,10 +20,12 @@ import {
   CopySimple,
   Stack,
   ArrowsOutSimple,
+  ChatCircleDots,
 } from "@phosphor-icons/react";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { apiUrl, authFetch } from "@/lib/api";
 import { getAssetImage, loadAsset, useAssetNotify } from "@/lib/designAssets";
+import { makeDesignRefs, type DesignRefPayload } from "@/lib/designRef";
 import { Button, Chip, Select } from "@/components/ui";
 import { DesignLayers } from "@/components/DesignLayers";
 
@@ -38,13 +40,17 @@ interface Props {
   /** D91: slot ujung kanan toolbar (pemilih file + Try it) — dipasang oleh
    *  DesignTab agar satu baris dengan tools & chip Saved. */
   headerRight?: React.ReactNode;
+  /** D93: klik kanan shape → "Attach to chat" → chip di composer chat. */
+  onAttachToChat?: (refs: DesignRefPayload[]) => void;
 }
 
 const R = (s: number) => Math.round(s * 100) / 100;
 
 /** D92: frame/group punya children (web tidak boleh import nilai dari
  *  core — store menarik node:fs ke bundle). */
-const hasChildren = (s: DesignShape): s is Extract<DesignShape, { children: string[] }> =>
+const hasChildren = (
+  s: DesignShape,
+): s is Extract<DesignShape, { children: string[] }> =>
   s.type === "frame" || s.type === "group";
 
 const HANDLE_DIRS: Dir[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
@@ -52,7 +58,10 @@ const HANDLE_DIRS: Dir[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
 /** D92: clipboard internal copy/paste (lintas file dalam satu tab). */
 let CLIP: { shapes: DesignShape[]; parentId: string | null } | null = null;
 
-function canvasPos(shape: DesignShape, page: DesignPage): { x: number; y: number } {
+function canvasPos(
+  shape: DesignShape,
+  page: DesignPage,
+): { x: number; y: number } {
   let x = shape.x;
   let y = shape.y;
   let p = shape.parentId ? page.shapes[shape.parentId] : undefined;
@@ -81,7 +90,12 @@ function handlePoints(abs: Pt, w: number, h: number): Record<Dir, Pt> {
 /** D92: frame/group paling depan yang mengandung titik (world), tidak
  *  termasuk id yang di-exclude (shape yang digerakkan + descendant-nya).
  *  Dipakai auto-parent saat drop / create (perilaku Canva/Figma). */
-function findContainer(page: DesignPage, wx: number, wy: number, excl: Set<string>): DesignShape | null {
+function findContainer(
+  page: DesignPage,
+  wx: number,
+  wy: number,
+  excl: Set<string>,
+): DesignShape | null {
   const test = (id: string): DesignShape | null => {
     const s = page.shapes[id];
     if (!s || s.hidden) return null;
@@ -95,7 +109,13 @@ function findContainer(page: DesignPage, wx: number, wy: number, excl: Set<strin
     if (excl.has(id)) return null;
     if (!hasChildren(s)) return null;
     const pos = canvasPos(s, page);
-    if (wx >= pos.x && wx <= pos.x + s.width && wy >= pos.y && wy <= pos.y + s.height) return s;
+    if (
+      wx >= pos.x &&
+      wx <= pos.x + s.width &&
+      wy >= pos.y &&
+      wy <= pos.y + s.height
+    )
+      return s;
     return null;
   };
   for (let i = page.roots.length - 1; i >= 0; i--) {
@@ -163,8 +183,18 @@ function drawShape(
       }
       wrapped.push(cur);
     }
-    const tx = shape.align === "center" ? x + w / 2 : shape.align === "right" ? x + w : x;
-    ctx.textAlign = shape.align === "center" ? "center" : shape.align === "right" ? "right" : "left";
+    const tx =
+      shape.align === "center"
+        ? x + w / 2
+        : shape.align === "right"
+          ? x + w
+          : x;
+    ctx.textAlign =
+      shape.align === "center"
+        ? "center"
+        : shape.align === "right"
+          ? "right"
+          : "left";
     wrapped.forEach((t, i) => ctx.fillText(t, tx, y + i * lh));
   } else if (shape.type === "image") {
     const img = getAssetImage(shape.src);
@@ -182,7 +212,8 @@ function drawShape(
       let dx = x;
       let dy = y;
       if (fit !== "stretch") {
-        const sc = fit === "cover" ? Math.max(w / iw, h / ih) : Math.min(w / iw, h / ih);
+        const sc =
+          fit === "cover" ? Math.max(w / iw, h / ih) : Math.min(w / iw, h / ih);
         dw = iw * sc;
         dh = ih * sc;
         dx = x + (w - dw) / 2;
@@ -275,34 +306,47 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const [file, setFile] = useState<DesignFile | null>(null);
   const [pageId, setPageId] = useState("");
   const [sel, setSel] = useState<Set<string>>(new Set());
+  /** D93: menu klik kanan (attach to chat) — null = tertutup. */
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; ids: string[] } | null>(null);
   const [tool, setTool] = useState<Tool>("select");
   const [view, setView] = useState({ zoom: 0.5, ox: 60, oy: 40 });
   const [uploading, setUploading] = useState(false);
   /** D92: state terbaru utk handler asinkron (onUp auto-parent, paste, dll). */
-  const liveRef = useRef<{ file: DesignFile | null; page: DesignPage | null; sel: Set<string> }>({
+  const liveRef = useRef<{
+    file: DesignFile | null;
+    page: DesignPage | null;
+    sel: Set<string>;
+  }>({
     file: null,
     page: null,
     sel: new Set(),
   });
-  liveRef.current = { file, page: file?.pages.find((p) => p.id === pageId) ?? null, sel };
+  liveRef.current = {
+    file,
+    page: file?.pages.find((p) => p.id === pageId) ?? null,
+    sel,
+  };
   const assetTick = useAssetNotify();
   const imgInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
 
   /** Zoom menjaga titik kanvas di bawah `at` (px relatif stage); null = tengah. */
-  const zoomAt = useCallback((at: { x: number; y: number } | null, factor: number) => {
-    setView((v) => {
-      const z = Math.min(4, Math.max(0.05, v.zoom * factor));
-      if (z === v.zoom) return v;
-      const rect = wrapRef.current?.getBoundingClientRect();
-      const mx = at?.x ?? (rect ? rect.width / 2 : 0);
-      const my = at?.y ?? (rect ? rect.height / 2 : 0);
-      // screen = (world + o) * z → jaga world tetap di bawah kursor
-      const wx = mx / v.zoom - v.ox;
-      const wy = my / v.zoom - v.oy;
-      return { zoom: z, ox: mx / z - wx, oy: my / z - wy };
-    });
-  }, []);
+  const zoomAt = useCallback(
+    (at: { x: number; y: number } | null, factor: number) => {
+      setView((v) => {
+        const z = Math.min(4, Math.max(0.05, v.zoom * factor));
+        if (z === v.zoom) return v;
+        const rect = wrapRef.current?.getBoundingClientRect();
+        const mx = at?.x ?? (rect ? rect.width / 2 : 0);
+        const my = at?.y ?? (rect ? rect.height / 2 : 0);
+        // screen = (world + o) * z → jaga world tetap di bawah kursor
+        const wx = mx / v.zoom - v.ox;
+        const wy = my / v.zoom - v.oy;
+        return { zoom: z, ox: mx / z - wx, oy: my / z - wy };
+      });
+    },
+    [],
+  );
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -311,7 +355,13 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const redoStack = useRef<DesignFile[]>([]);
   const drag = useRef<
     | { kind: "move"; start: Pt; orig: Map<string, Pt>; moved: boolean }
-    | { kind: "resize"; handle: Dir; id: string; orig: { x: number; y: number; width: number; height: number }; start: Pt }
+    | {
+        kind: "resize";
+        handle: Dir;
+        id: string;
+        orig: { x: number; y: number; width: number; height: number };
+        start: Pt;
+      }
     | { kind: "create"; start: Pt; type: Tool }
     | { kind: "pan"; start: Pt; vo: { ox: number; oy: number } }
     | null
@@ -328,7 +378,11 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         if (cur && j.file.revn < cur.revn) return cur;
         return j.file;
       });
-      setPageId((p) => (j.file.pages.some((pg) => pg.id === p) ? p : (j.file.pages[0]?.id ?? "")));
+      setPageId((p) =>
+        j.file.pages.some((pg) => pg.id === p)
+          ? p
+          : (j.file.pages[0]?.id ?? ""),
+      );
     } catch {
       /* offline */
     }
@@ -340,25 +394,40 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     return () => clearInterval(t);
   }, [load]);
 
-  const page: DesignPage | null = useMemo(() => file?.pages.find((p) => p.id === pageId) ?? null, [file, pageId]);
+  const page: DesignPage | null = useMemo(
+    () => file?.pages.find((p) => p.id === pageId) ?? null,
+    [file, pageId],
+  );
 
   /** D90: zoom + center ke satu shape (dipakai layers panel & filter). */
-  const focusShape = useCallback((id: string) => {
-    if (!page) return;
-    const s = page.shapes[id];
-    const stage = wrapRef.current;
-    if (!s || !stage) return;
-    const pos = canvasPos(s, page);
-    const bw = Math.max(40, s.width);
-    const bh = Math.max(40, s.height);
-    const pad = 140;
-    const z = Math.min(2, Math.max(0.1, Math.min((stage.clientWidth - pad) / bw, (stage.clientHeight - pad) / bh)));
-    setView({
-      zoom: z,
-      ox: stage.clientWidth / 2 / z - (pos.x + s.width / 2),
-      oy: stage.clientHeight / 2 / z - (pos.y + s.height / 2),
-    });
-  }, [page]);
+  const focusShape = useCallback(
+    (id: string) => {
+      if (!page) return;
+      const s = page.shapes[id];
+      const stage = wrapRef.current;
+      if (!s || !stage) return;
+      const pos = canvasPos(s, page);
+      const bw = Math.max(40, s.width);
+      const bh = Math.max(40, s.height);
+      const pad = 140;
+      const z = Math.min(
+        2,
+        Math.max(
+          0.1,
+          Math.min(
+            (stage.clientWidth - pad) / bw,
+            (stage.clientHeight - pad) / bh,
+          ),
+        ),
+      );
+      setView({
+        zoom: z,
+        ox: stage.clientWidth / 2 / z - (pos.x + s.width / 2),
+        oy: stage.clientHeight / 2 / z - (pos.y + s.height / 2),
+      });
+    },
+    [page],
+  );
 
   /** Fit semua konten halaman ke viewport (padding 60px). */
   const fitView = useCallback(() => {
@@ -386,7 +455,13 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     const pad = 60;
     const z = Math.min(
       4,
-      Math.max(0.05, Math.min((stage.clientWidth - pad * 2) / bw, (stage.clientHeight - pad * 2) / bh)),
+      Math.max(
+        0.05,
+        Math.min(
+          (stage.clientWidth - pad * 2) / bw,
+          (stage.clientHeight - pad * 2) / bh,
+        ),
+      ),
     );
     setView({
       zoom: z,
@@ -417,11 +492,17 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     const step = 24 * view.zoom;
     if (step > 6) {
       for (let gx = (view.ox * view.zoom) % step; gx < w; gx += step)
-        for (let gy = (view.oy * view.zoom) % step; gy < h; gy += step) ctx.fillRect(gx, gy, 1, 1);
+        for (let gy = (view.oy * view.zoom) % step; gy < h; gy += step)
+          ctx.fillRect(gx, gy, 1, 1);
     }
     // background halaman
     ctx.fillStyle = page.background;
-    ctx.fillRect((view.ox + 0) * view.zoom, (view.oy + 0) * view.zoom, 20000 * view.zoom, 20000 * view.zoom);
+    ctx.fillRect(
+      (view.ox + 0) * view.zoom,
+      (view.oy + 0) * view.zoom,
+      20000 * view.zoom,
+      20000 * view.zoom,
+    );
     for (const id of page.roots) {
       const s = page.shapes[id];
       if (s) drawShape(ctx, s, page, sel, view, 0, sel.size === 1);
@@ -445,30 +526,31 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         e.preventDefault();
         setView((v) => ({ ...v, ox: v.ox - e.deltaY / v.zoom }));
       } else {
-        setView((v) => ({ ...v, ox: v.ox - e.deltaX / v.zoom, oy: v.oy - e.deltaY / v.zoom }));
+        setView((v) => ({
+          ...v,
+          ox: v.ox - e.deltaX / v.zoom,
+          oy: v.oy - e.deltaY / v.zoom,
+        }));
       }
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, [zoomAt, file]); // file: wrap belum ada saat "Loading canvas…" → re-attach saat siap
 
-  const mutate = useCallback(
-    (fn: (f: DesignFile) => void) => {
-      setFile((cur) => {
-        if (!cur) return cur;
-        undoStack.current.push(JSON.parse(JSON.stringify(cur)));
-        if (undoStack.current.length > 50) undoStack.current.shift();
-        redoStack.current = [];
-        const next = JSON.parse(JSON.stringify(cur)) as DesignFile;
-        fn(next);
-        next.revn = cur.revn + 1;
-        next.updatedAt = Date.now();
-        return next;
-      });
-      setDirty(true);
-    },
-    [],
-  );
+  const mutate = useCallback((fn: (f: DesignFile) => void) => {
+    setFile((cur) => {
+      if (!cur) return cur;
+      undoStack.current.push(JSON.parse(JSON.stringify(cur)));
+      if (undoStack.current.length > 50) undoStack.current.shift();
+      redoStack.current = [];
+      const next = JSON.parse(JSON.stringify(cur)) as DesignFile;
+      fn(next);
+      next.revn = cur.revn + 1;
+      next.updatedAt = Date.now();
+      return next;
+    });
+    setDirty(true);
+  }, []);
 
   // ---- hit test ----
   const hit = useCallback(
@@ -484,7 +566,13 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             if (r) return r;
           }
         }
-        if (wx >= pos.x && wx <= pos.x + s.width && wy >= pos.y && wy <= pos.y + s.height) return s;
+        if (
+          wx >= pos.x &&
+          wx <= pos.x + s.width &&
+          wy >= pos.y &&
+          wy <= pos.y + s.height
+        )
+          return s;
         return null;
       };
       for (let i = page.roots.length - 1; i >= 0; i--) {
@@ -499,12 +587,16 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const toWorld = useCallback(
     (e: React.PointerEvent): Pt => {
       const r = canvasRef.current!.getBoundingClientRect();
-      return { x: (e.clientX - r.left) / view.zoom - view.ox, y: (e.clientY - r.top) / view.zoom - view.oy };
+      return {
+        x: (e.clientX - r.left) / view.zoom - view.ox,
+        y: (e.clientY - r.top) / view.zoom - view.oy,
+      };
     },
     [view],
   );
 
   const onDown = (e: React.PointerEvent) => {
+    setCtxMenu(null);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     const w = toWorld(e);
     if (tool === "select") {
@@ -519,12 +611,20 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
               const hp = handlePoints(abs, one.width, one.height)[d];
               const px = (hp.x + view.ox) * view.zoom;
               const py = (hp.y + view.oy) * view.zoom;
-              if (Math.abs(e.clientX - rect.left - px) <= 8 && Math.abs(e.clientY - rect.top - py) <= 8) {
+              if (
+                Math.abs(e.clientX - rect.left - px) <= 8 &&
+                Math.abs(e.clientY - rect.top - py) <= 8
+              ) {
                 drag.current = {
                   kind: "resize",
                   handle: d,
                   id: one.id,
-                  orig: { x: one.x, y: one.y, width: one.width, height: one.height },
+                  orig: {
+                    x: one.x,
+                    y: one.y,
+                    width: one.width,
+                    height: one.height,
+                  },
                   start: w,
                 };
                 return;
@@ -548,10 +648,19 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           const sh = page?.shapes[id];
           if (sh && !sh.locked) orig.set(id, { x: sh.x, y: sh.y });
         }
-        drag.current = { kind: "move", start: w, orig: orig.size ? orig : new Map([[s.id, { x: s.x, y: s.y }]]), moved: false };
+        drag.current = {
+          kind: "move",
+          start: w,
+          orig: orig.size ? orig : new Map([[s.id, { x: s.x, y: s.y }]]),
+          moved: false,
+        };
       } else {
         setSel(new Set());
-        drag.current = { kind: "pan", start: { x: e.clientX, y: e.clientY }, vo: { ox: view.ox, oy: view.oy } };
+        drag.current = {
+          kind: "pan",
+          start: { x: e.clientX, y: e.clientY },
+          vo: { ox: view.ox, oy: view.oy },
+        };
       }
     } else {
       drag.current = { kind: "create", start: w, type: tool };
@@ -563,7 +672,11 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     if (!d || !page || !file) return;
     const w = toWorld(e);
     if (d.kind === "pan") {
-      setView((v) => ({ ...v, ox: d.vo.ox + (e.clientX - d.start.x) / v.zoom, oy: d.vo.oy + (e.clientY - d.start.y) / v.zoom }));
+      setView((v) => ({
+        ...v,
+        ox: d.vo.ox + (e.clientX - d.start.x) / v.zoom,
+        oy: d.vo.oy + (e.clientY - d.start.y) / v.zoom,
+      }));
     } else if (d.kind === "move") {
       const dx = w.x - d.start.x;
       const dy = w.y - d.start.y;
@@ -639,7 +752,12 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       }
       // D92 (#9): object baru dibuat DI DALAM frame → jadi anak frame itu
       // (pusat bbox menentukan), koordinat relatif frame.
-      const cont = findContainer(page, x + width / 2, y + height / 2, new Set());
+      const cont = findContainer(
+        page,
+        x + width / 2,
+        y + height / 2,
+        new Set(),
+      );
       const contAbs = cont ? canvasPos(cont, page) : null;
       mutate((f) => {
         const pg = f.pages.find((p) => p.id === page.id);
@@ -652,12 +770,20 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           y: R(contAbs ? y - contAbs.y : y),
           width: R(width),
           height: R(height),
-          fills: [{ color: d.type === "frame" ? "#16161c" : "#2c2c34", opacity: 1 }],
+          fills: [
+            { color: d.type === "frame" ? "#16161c" : "#2c2c34", opacity: 1 },
+          ],
           parentId: cont ? cont.id : null,
         };
         pg.shapes[id] =
           d.type === "text"
-            ? { ...base, type: "text", text: text!, fontSize: 16, color: "#f4f4f5" }
+            ? {
+                ...base,
+                type: "text",
+                text: text!,
+                fontSize: 16,
+                color: "#f4f4f5",
+              }
             : d.type === "circle"
               ? { ...base, type: "circle" }
               : d.type === "frame"
@@ -688,7 +814,12 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         const s = pg0.shapes[id];
         if (!s) continue;
         const abs = canvasPos(s, pg0);
-        const cont = findContainer(pg0, abs.x + s.width / 2, abs.y + s.height / 2, excl);
+        const cont = findContainer(
+          pg0,
+          abs.x + s.width / 2,
+          abs.y + s.height / 2,
+          excl,
+        );
         const want = cont ? cont.id : null;
         if (s.parentId !== want) targets.push({ id, parent: want });
       }
@@ -702,7 +833,8 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             const abs = canvasPos(s, pg);
             if (s.parentId) {
               const par = pg.shapes[s.parentId];
-              if (par && hasChildren(par)) par.children = par.children.filter((c) => c !== s.id);
+              if (par && hasChildren(par))
+                par.children = par.children.filter((c) => c !== s.id);
             } else {
               pg.roots = pg.roots.filter((r) => r !== s.id);
             }
@@ -730,7 +862,6 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         });
     }
   };
-
 
   const save = useCallback(async () => {
     if (!file || !dirty) return;
@@ -761,7 +892,9 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   const addPage = async () => {
     if (!file) return;
     if (dirty) await save(); // flush edit lokal sebelum mutasi server
-    const r = await authFetch(apiUrl(`/api/design/files/${file.id}/pages`), { method: "POST" });
+    const r = await authFetch(apiUrl(`/api/design/files/${file.id}/pages`), {
+      method: "POST",
+    });
     if (r.ok) {
       const j = (await r.json()) as { pageId: string };
       await load();
@@ -775,9 +908,17 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     if (!file || file.pages.length <= 1) return;
     const pg = file.pages.find((p) => p.id === pid);
     if (!pg) return;
-    if (!window.confirm(`Delete page "${pg.name}" and all its shapes? This cannot be undone.`)) return;
+    if (
+      !window.confirm(
+        `Delete page "${pg.name}" and all its shapes? This cannot be undone.`,
+      )
+    )
+      return;
     if (dirty) await save();
-    const r = await authFetch(apiUrl(`/api/design/files/${file.id}/pages/${pid}`), { method: "DELETE" });
+    const r = await authFetch(
+      apiUrl(`/api/design/files/${file.id}/pages/${pid}`),
+      { method: "DELETE" },
+    );
     if (r.ok) {
       const rest = file.pages.filter((p) => p.id !== pid);
       await load();
@@ -812,7 +953,10 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       if (hasChildren(s)) for (const ch of s.children) walk(ch);
     };
     tops.forEach(walk);
-    CLIP = { shapes: nodes, parentId: live.page.shapes[tops[0]!]?.parentId ?? null };
+    CLIP = {
+      shapes: nodes,
+      parentId: live.page.shapes[tops[0]!]?.parentId ?? null,
+    };
   }, []);
 
   const pasteSel = useCallback((): void => {
@@ -820,14 +964,20 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     if (!CLIP || !live.page) return;
     const pgId = live.page.id;
     const clip = CLIP;
-    const tops = clip.shapes.filter((s) => !s.parentId || !clip.shapes.some((p) => p.id === s.parentId));
+    const tops = clip.shapes.filter(
+      (s) => !s.parentId || !clip.shapes.some((p) => p.id === s.parentId),
+    );
     const idMap = new Map<string, string>();
     for (const n of clip.shapes) idMap.set(n.id, crypto.randomUUID());
     mutate((f) => {
       const pg = f.pages.find((p) => p.id === pgId);
       if (!pg) return;
       const parentOk =
-        clip.parentId && pg.shapes[clip.parentId] && hasChildren(pg.shapes[clip.parentId]!) ? clip.parentId : null;
+        clip.parentId &&
+        pg.shapes[clip.parentId] &&
+        hasChildren(pg.shapes[clip.parentId]!)
+          ? clip.parentId
+          : null;
       const parAbs = parentOk ? canvasPos(pg.shapes[parentOk]!, pg) : null;
       for (const n of clip.shapes) {
         const c = JSON.parse(JSON.stringify(n)) as DesignShape;
@@ -884,7 +1034,8 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       by2 = Math.max(by2, abs.y + s.height);
     }
     const gid = crypto.randomUUID();
-    const groupCount = Object.values(pg0.shapes).filter((s) => s.type === "group").length + 1;
+    const groupCount =
+      Object.values(pg0.shapes).filter((s) => s.type === "group").length + 1;
     const pgId = pg0.id;
     mutate((f) => {
       const pg = f.pages.find((p) => p.id === pgId);
@@ -903,8 +1054,16 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       };
       // urut z sesuai array parent (belakang → depan)
       const arrOf = (s: DesignShape): string[] =>
-        s.parentId && pg.shapes[s.parentId] && hasChildren(pg.shapes[s.parentId]!) ? (pg.shapes[s.parentId] as { children: string[] }).children : pg.roots;
-      const order = [...(parent && pg.shapes[parent] && hasChildren(pg.shapes[parent]!) ? (pg.shapes[parent] as { children: string[] }).children : pg.roots)].filter((id) => live.sel.has(id));
+        s.parentId &&
+        pg.shapes[s.parentId] &&
+        hasChildren(pg.shapes[s.parentId]!)
+          ? (pg.shapes[s.parentId] as { children: string[] }).children
+          : pg.roots;
+      const order = [
+        ...(parent && pg.shapes[parent] && hasChildren(pg.shapes[parent]!)
+          ? (pg.shapes[parent] as { children: string[] }).children
+          : pg.roots),
+      ].filter((id) => live.sel.has(id));
       for (const id of order) {
         const s = pg.shapes[id];
         if (!s) continue;
@@ -917,7 +1076,10 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         s.y = R(abs.y - by);
         (pg.shapes[gid] as { children: string[] }).children.push(id);
       }
-      const parr = parent && pg.shapes[parent] && hasChildren(pg.shapes[parent]!) ? (pg.shapes[parent] as { children: string[] }).children : pg.roots;
+      const parr =
+        parent && pg.shapes[parent] && hasChildren(pg.shapes[parent]!)
+          ? (pg.shapes[parent] as { children: string[] }).children
+          : pg.roots;
       parr.push(gid);
     });
     setSel(new Set([gid]));
@@ -937,7 +1099,12 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       if (!pg) return;
       const grp = pg.shapes[g.id];
       if (!grp || grp.type !== "group") return;
-      const arr = grp.parentId && pg.shapes[grp.parentId] && hasChildren(pg.shapes[grp.parentId]!) ? (pg.shapes[grp.parentId] as { children: string[] }).children : pg.roots;
+      const arr =
+        grp.parentId &&
+        pg.shapes[grp.parentId] &&
+        hasChildren(pg.shapes[grp.parentId]!)
+          ? (pg.shapes[grp.parentId] as { children: string[] }).children
+          : pg.roots;
       const gi = arr.indexOf(grp.id);
       if (gi >= 0) arr.splice(gi, 1);
       for (const k of kids) {
@@ -962,8 +1129,13 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       const pg0 = live.page;
       const s = pg0.shapes[sid];
       if (!s) return;
-      if (parentId && (parentId === sid || isDescendantOf(pg0, sid, parentId))) return;
-      if (parentId && !(pg0.shapes[parentId] && hasChildren(pg0.shapes[parentId]!))) return;
+      if (parentId && (parentId === sid || isDescendantOf(pg0, sid, parentId)))
+        return;
+      if (
+        parentId &&
+        !(pg0.shapes[parentId] && hasChildren(pg0.shapes[parentId]!))
+      )
+        return;
       const pgId = pg0.id;
       mutate((f) => {
         const pg = f.pages.find((p) => p.id === pgId);
@@ -973,7 +1145,8 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         const abs = canvasPos(sh, pg);
         if (sh.parentId) {
           const par = pg.shapes[sh.parentId];
-          if (par && hasChildren(par)) par.children = par.children.filter((c) => c !== sid);
+          if (par && hasChildren(par))
+            par.children = par.children.filter((c) => c !== sid);
         } else {
           pg.roots = pg.roots.filter((r) => r !== sid);
         }
@@ -1006,7 +1179,9 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       setUploading(true);
       try {
         const r = await authFetch(
-          apiUrl(`/api/uploads?name=${encodeURIComponent(f.name)}&project=${props.projectId}&kind=image`),
+          apiUrl(
+            `/api/uploads?name=${encodeURIComponent(f.name)}&project=${props.projectId}&kind=image`,
+          ),
           { method: "POST", body: await f.arrayBuffer() },
         );
         if (!r.ok) {
@@ -1023,7 +1198,10 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         let h = 200;
         const probe = getAssetImage(j.path);
         if (probe) {
-          const sc = Math.min(1, 480 / Math.max(probe.naturalWidth, probe.naturalHeight));
+          const sc = Math.min(
+            1,
+            480 / Math.max(probe.naturalWidth, probe.naturalHeight),
+          );
           w = Math.max(24, Math.round(probe.naturalWidth * sc));
           h = Math.max(24, Math.round(probe.naturalHeight * sc));
         }
@@ -1070,10 +1248,19 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     const one = live.sel.size === 1 ? pg0.shapes[[...live.sel][0]!] : null;
     if (!one || one.type !== "image") return;
     let frameId = one.parentId;
-    if (!frameId || !pg0.shapes[frameId] || !hasChildren(pg0.shapes[frameId]!)) {
+    if (
+      !frameId ||
+      !pg0.shapes[frameId] ||
+      !hasChildren(pg0.shapes[frameId]!)
+    ) {
       // cari frame root yang mengandung pusat image
       const abs = canvasPos(one, pg0);
-      const cont = findContainer(pg0, abs.x + one.width / 2, abs.y + one.height / 2, new Set([one.id]));
+      const cont = findContainer(
+        pg0,
+        abs.x + one.width / 2,
+        abs.y + one.height / 2,
+        new Set([one.id]),
+      );
       frameId = cont ? cont.id : null;
     }
     if (!frameId) return;
@@ -1082,7 +1269,12 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       const pg = f.pages.find((p) => p.id === pgId);
       const fr = pg?.shapes[frameId!];
       if (fr && hasChildren(fr)) {
-        fr.fills = [{ ...(fr.fills[0] ?? { color: "#16161c", opacity: 1 }), image: one.src }];
+        fr.fills = [
+          {
+            ...(fr.fills[0] ?? { color: "#16161c", opacity: 1 }),
+            image: one.src,
+          },
+        ];
       }
     });
   }, [mutate]);
@@ -1090,7 +1282,8 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   // keyboard: delete, undo/redo, copy/paste/duplicate, group/ungroup (D92)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName?.match(/INPUT|TEXTAREA|SELECT/)) return;
+      if ((e.target as HTMLElement)?.tagName?.match(/INPUT|TEXTAREA|SELECT/))
+        return;
       if (e.key === "Delete" || e.key === "Backspace") {
         if (sel.size && page && file) {
           mutate((f) => {
@@ -1105,7 +1298,9 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             for (const id of sel) walk(id);
             for (const id of rm) delete pg.shapes[id];
             pg.roots = pg.roots.filter((r) => !rm.includes(r));
-            for (const s of Object.values(pg.shapes)) if (s.type === "frame") s.children = s.children.filter((c) => !rm.includes(c));
+            for (const s of Object.values(pg.shapes))
+              if (s.type === "frame")
+                s.children = s.children.filter((c) => !rm.includes(c));
           });
           setSel(new Set());
         }
@@ -1146,9 +1341,24 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sel, page, file, mutate, copySel, pasteSel, duplicateSel, groupSel, ungroupSel]);
+  }, [
+    sel,
+    page,
+    file,
+    mutate,
+    copySel,
+    pasteSel,
+    duplicateSel,
+    groupSel,
+    ungroupSel,
+  ]);
 
-  if (!file || !page) return <div className="grid h-full place-items-center text-sm text-dim">Loading canvas…</div>;
+  if (!file || !page)
+    return (
+      <div className="grid h-full place-items-center text-sm text-dim">
+        Loading canvas…
+      </div>
+    );
 
   const selShape = sel.size === 1 ? page.shapes[[...sel][0]!] : null;
 
@@ -1245,7 +1455,9 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
               for (const id of sel) walk(id);
               for (const id of rm) delete pg.shapes[id];
               pg.roots = pg.roots.filter((r) => !rm.includes(r));
-              for (const s of Object.values(pg.shapes)) if (s.type === "frame") s.children = s.children.filter((c) => !rm.includes(c));
+              for (const s of Object.values(pg.shapes))
+                if (s.type === "frame")
+                  s.children = s.children.filter((c) => !rm.includes(c));
             });
             setSel(new Set());
           }}
@@ -1281,7 +1493,12 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           <ArrowsOutSimple size={15} />
         </Button>
         <span className="mx-1 h-4 w-px bg-line" />
-        <Button variant="ghost" className="!px-2 !py-1" title="Zoom out" onClick={() => zoomAt(null, 1 / 1.25)}>
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Zoom out"
+          onClick={() => zoomAt(null, 1 / 1.25)}
+        >
           <MagnifyingGlassMinus size={15} />
         </Button>
         <button
@@ -1291,10 +1508,20 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         >
           {Math.round(view.zoom * 100)}%
         </button>
-        <Button variant="ghost" className="!px-2 !py-1" title="Zoom in" onClick={() => zoomAt(null, 1.25)}>
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Zoom in"
+          onClick={() => zoomAt(null, 1.25)}
+        >
           <MagnifyingGlassPlus size={15} />
         </Button>
-        <Button variant="ghost" className="!px-2 !py-1" title="Fit to screen" onClick={() => void fitView()}>
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Fit to screen"
+          onClick={() => void fitView()}
+        >
           <ArrowsIn size={15} />
         </Button>
         <span className="ml-auto flex items-center gap-2">
@@ -1365,19 +1592,34 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
                 setUploading(true);
                 try {
                   const r = await authFetch(
-                    apiUrl(`/api/uploads?name=${encodeURIComponent(f.name)}&project=${props.projectId}&kind=image`),
+                    apiUrl(
+                      `/api/uploads?name=${encodeURIComponent(f.name)}&project=${props.projectId}&kind=image`,
+                    ),
                     { method: "POST", body: await f.arrayBuffer() },
                   );
                   if (!r.ok) return;
                   const j = (await r.json()) as { path: string };
                   loadAsset(j.path);
-                  const one = liveRef.current.sel.size === 1 ? liveRef.current.page?.shapes[[...liveRef.current.sel][0]!] : null;
+                  const one =
+                    liveRef.current.sel.size === 1
+                      ? liveRef.current.page?.shapes[
+                          [...liveRef.current.sel][0]!
+                        ]
+                      : null;
                   if (one && hasChildren(one)) {
                     const id = one.id;
                     mutate((f2) => {
-                      const pg = f2.pages.find((p) => p.id === liveRef.current.page?.id);
+                      const pg = f2.pages.find(
+                        (p) => p.id === liveRef.current.page?.id,
+                      );
                       const s = pg?.shapes[id];
-                      if (s && hasChildren(s)) s.fills = [{ ...(s.fills[0] ?? { color: "#16161c", opacity: 1 }), image: j.path }];
+                      if (s && hasChildren(s))
+                        s.fills = [
+                          {
+                            ...(s.fills[0] ?? { color: "#16161c", opacity: 1 }),
+                            image: j.path,
+                          },
+                        ];
                     });
                   }
                 } finally {
@@ -1388,12 +1630,58 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           />
           <canvas
             ref={canvasRef}
-            className={tool === "select" ? "cursor-default" : "cursor-crosshair"}
+            className={
+              tool === "select" ? "cursor-default" : "cursor-crosshair"
+            }
             style={{ touchAction: "none" }}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              const cv = canvasRef.current;
+              if (!cv) return;
+              const r = cv.getBoundingClientRect();
+              const w = {
+                x: (e.clientX - r.left) / view.zoom - view.ox,
+                y: (e.clientY - r.top) / view.zoom - view.oy,
+              };
+              const target = hit(w.x, w.y);
+              setCtxMenu(null);
+              if (!target || !props.onAttachToChat) return;
+              const ids = sel.has(target.id) ? [...sel] : [target.id];
+              if (!sel.has(target.id)) setSel(new Set(ids));
+              setCtxMenu({ x: e.clientX, y: e.clientY, ids });
+            }}
           />
+          {/* D93: menu klik kanan — attach komponen ke chat */}
+          {ctxMenu && props.onAttachToChat && (
+            <div
+              className="fixed z-50 flex flex-col overflow-hidden rounded-lg2 border border-line bg-surface py-1 shadow-lg"
+              style={{
+                left: Math.min(ctxMenu.x, window.innerWidth - 250),
+                top: Math.min(ctxMenu.y, window.innerHeight - 80),
+              }}
+            >
+              <button
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-left text-[13px] text-secondary hover:bg-surface-raised hover:text-primary"
+                onClick={() => {
+                  const f = liveRef.current.file;
+                  const pid = liveRef.current.page?.id;
+                  if (f && pid) {
+                    const refs = makeDesignRefs(f, pid, ctxMenu.ids);
+                    if (refs.length > 0) props.onAttachToChat!(refs);
+                  }
+                  setCtxMenu(null);
+                }}
+              >
+                <ChatCircleDots size={14} className="shrink-0 text-accent" aria-hidden />
+                {ctxMenu.ids.length > 1
+                  ? `Attach ${ctxMenu.ids.length} components to chat`
+                  : "Attach component to chat"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* props panel */}
@@ -1417,7 +1705,9 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             />
           ) : (
             <div className="text-xs text-dim">
-              Select a shape to edit its properties. Persona edits appear here automatically (12s refresh); drag empty canvas to pan, Ctrl+wheel to zoom.
+              Select a shape to edit its properties. Persona edits appear here
+              automatically (12s refresh); drag empty canvas to pan, Ctrl+wheel
+              to zoom.
             </div>
           )}
         </aside>
@@ -1442,15 +1732,23 @@ function ShapeProps({
   onPickBackground?: () => void;
 }): React.ReactElement {
   // D91: label DI ATAS input (bukan samping) — layout stabil, tanpa overflow.
-  const label = "mb-1 block text-[11px] font-medium uppercase tracking-wide text-dim";
-  const input = "w-full rounded border border-line bg-inset px-2 py-1.5 text-[13px]";
+  const label =
+    "mb-1 block text-[11px] font-medium uppercase tracking-wide text-dim";
+  const input =
+    "w-full rounded border border-line bg-inset px-2 py-1.5 text-[13px]";
   const fill = shape.fills[0]?.color ?? "#000000";
   return (
     <div className="flex flex-col gap-3 text-[13px]">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">{shape.type}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+        {shape.type}
+      </div>
       <label>
         <span className={label}>Name</span>
-        <input className={input} value={shape.name} onChange={(e) => onChange({ name: e.target.value })} />
+        <input
+          className={input}
+          value={shape.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+        />
       </label>
       {/* D92 (#11/#12): image — fit + tombol jadikan background frame */}
       {shape.type === "image" && (
@@ -1459,7 +1757,9 @@ function ShapeProps({
             <span className={label}>Fit</span>
             <Select
               value={shape.fit ?? "cover"}
-              onChange={(e) => onChange({ fit: e.target.value } as Partial<DesignShape>)}
+              onChange={(e) =>
+                onChange({ fit: e.target.value } as Partial<DesignShape>)
+              }
               aria-label="Image fit"
               className="w-full"
             >
@@ -1468,7 +1768,12 @@ function ShapeProps({
               <option value="stretch">Stretch</option>
             </Select>
           </label>
-          <Button variant="ghost" className="w-full justify-center !py-1.5" title="Set this image as the background of its parent screen/frame" onClick={() => onUseAsBackground?.()}>
+          <Button
+            variant="ghost"
+            className="w-full justify-center !py-1.5"
+            title="Set this image as the background of its parent screen/frame"
+            onClick={() => onUseAsBackground?.()}
+          >
             Use as frame background
           </Button>
         </>
@@ -1479,7 +1784,10 @@ function ShapeProps({
           <span className={label}>Background image</span>
           {shape.fills[0]?.image ? (
             <div className="flex items-center gap-2">
-              <span className="min-w-0 flex-1 truncate text-[12px] text-dim" title={shape.fills[0].image}>
+              <span
+                className="min-w-0 flex-1 truncate text-[12px] text-dim"
+                title={shape.fills[0].image}
+              >
                 {shape.fills[0].image.split("/").pop()}
               </span>
               <Button
@@ -1488,7 +1796,11 @@ function ShapeProps({
                 title="Remove background image"
                 onClick={() =>
                   onChange({
-                    fills: [{ ...(shape.fills[0] ?? { color: "#16161c", opacity: 1 }) }].map(({ image: _img, ...rest }) => rest),
+                    fills: [
+                      {
+                        ...(shape.fills[0] ?? { color: "#16161c", opacity: 1 }),
+                      },
+                    ].map(({ image: _img, ...rest }) => rest),
                   } as Partial<DesignShape>)
                 }
               >
@@ -1498,7 +1810,12 @@ function ShapeProps({
           ) : (
             <span className="text-[12px] text-dim">Solid color only.</span>
           )}
-          <Button variant="ghost" className="w-full justify-center !py-1.5" title="Upload an image as this frame's background" onClick={() => onPickBackground?.()}>
+          <Button
+            variant="ghost"
+            className="w-full justify-center !py-1.5"
+            title="Upload an image as this frame's background"
+            onClick={() => onPickBackground?.()}
+          >
             Upload background…
           </Button>
         </div>
@@ -1511,7 +1828,11 @@ function ShapeProps({
               type="number"
               className={input}
               value={R(shape[k])}
-              onChange={(e) => onChange({ [k]: Number(e.target.value) } as Partial<DesignShape>)}
+              onChange={(e) =>
+                onChange({
+                  [k]: Number(e.target.value),
+                } as Partial<DesignShape>)
+              }
             />
           </label>
         ))}
@@ -1523,7 +1844,16 @@ function ShapeProps({
             type="color"
             className="h-8 w-full cursor-pointer rounded border border-line bg-inset"
             value={fill}
-            onChange={(e) => onChange({ fills: [{ color: e.target.value, opacity: shape.fills[0]?.opacity ?? 1 }] })}
+            onChange={(e) =>
+              onChange({
+                fills: [
+                  {
+                    color: e.target.value,
+                    opacity: shape.fills[0]?.opacity ?? 1,
+                  },
+                ],
+              })
+            }
           />
         </label>
       )}
@@ -1534,7 +1864,14 @@ function ShapeProps({
             type="color"
             className="h-8 w-full cursor-pointer rounded border border-line bg-inset"
             value={shape.stroke?.color ?? "#3a3a44"}
-            onChange={(e) => onChange({ stroke: { color: e.target.value, width: shape.stroke?.width ?? 1 } })}
+            onChange={(e) =>
+              onChange({
+                stroke: {
+                  color: e.target.value,
+                  width: shape.stroke?.width ?? 1,
+                },
+              })
+            }
           />
         </label>
         <label>
@@ -1544,14 +1881,28 @@ function ShapeProps({
             min={0}
             className={input}
             value={shape.stroke?.width ?? 0}
-            onChange={(e) => onChange({ stroke: { color: shape.stroke?.color ?? "#3a3a44", width: Number(e.target.value) } })}
+            onChange={(e) =>
+              onChange({
+                stroke: {
+                  color: shape.stroke?.color ?? "#3a3a44",
+                  width: Number(e.target.value),
+                },
+              })
+            }
           />
         </label>
       </div>
       {shape.type !== "text" && (
         <label>
           <span className={label}>Radius</span>
-          <input type="number" min={0} max={200} className={input} value={shape.radius ?? 0} onChange={(e) => onChange({ radius: Number(e.target.value) })} />
+          <input
+            type="number"
+            min={0}
+            max={200}
+            className={input}
+            value={shape.radius ?? 0}
+            onChange={(e) => onChange({ radius: Number(e.target.value) })}
+          />
         </label>
       )}
       {shape.type === "text" && (
@@ -1561,17 +1912,42 @@ function ShapeProps({
             <textarea
               className="min-h-16 w-full resize-y rounded border border-line bg-inset px-2 py-1.5 text-[13px]"
               value={shape.text}
-              onChange={(e) => onChange({ text: e.target.value } as Partial<DesignShape>)}
+              onChange={(e) =>
+                onChange({ text: e.target.value } as Partial<DesignShape>)
+              }
             />
           </label>
           <div className="grid grid-cols-2 gap-2">
             <label>
               <span className={label}>Size</span>
-              <input type="number" min={8} max={200} className={input} value={shape.fontSize} onChange={(e) => onChange({ fontSize: Number(e.target.value) } as Partial<DesignShape>)} />
+              <input
+                type="number"
+                min={8}
+                max={200}
+                className={input}
+                value={shape.fontSize}
+                onChange={(e) =>
+                  onChange({
+                    fontSize: Number(e.target.value),
+                  } as Partial<DesignShape>)
+                }
+              />
             </label>
             <label>
               <span className={label}>Weight</span>
-              <input type="number" step={100} min={100} max={900} className={input} value={shape.fontWeight ?? 400} onChange={(e) => onChange({ fontWeight: Number(e.target.value) } as Partial<DesignShape>)} />
+              <input
+                type="number"
+                step={100}
+                min={100}
+                max={900}
+                className={input}
+                value={shape.fontWeight ?? 400}
+                onChange={(e) =>
+                  onChange({
+                    fontWeight: Number(e.target.value),
+                  } as Partial<DesignShape>)
+                }
+              />
             </label>
           </div>
           <label>
@@ -1580,12 +1956,21 @@ function ShapeProps({
               type="color"
               className="h-8 w-full cursor-pointer rounded border border-line bg-inset"
               value={shape.color}
-              onChange={(e) => onChange({ color: e.target.value } as Partial<DesignShape>)}
+              onChange={(e) =>
+                onChange({ color: e.target.value } as Partial<DesignShape>)
+              }
             />
           </label>
           <label>
             <span className={label}>Align</span>
-            <Select value={shape.align ?? "left"} onChange={(e) => onChange({ align: e.target.value } as Partial<DesignShape>)} aria-label="Text align" className="w-full">
+            <Select
+              value={shape.align ?? "left"}
+              onChange={(e) =>
+                onChange({ align: e.target.value } as Partial<DesignShape>)
+              }
+              aria-label="Text align"
+              className="w-full"
+            >
               <option value="left">Left</option>
               <option value="center">Center</option>
               <option value="right">Right</option>
@@ -1594,7 +1979,9 @@ function ShapeProps({
         </>
       )}
       <label>
-        <span className={label}>Opacity · {Math.round((shape.opacity ?? 1) * 100)}%</span>
+        <span className={label}>
+          Opacity · {Math.round((shape.opacity ?? 1) * 100)}%
+        </span>
         <input
           type="range"
           min={0}
@@ -1606,15 +1993,26 @@ function ShapeProps({
       </label>
       <label className="flex cursor-pointer items-center justify-between gap-2">
         Hidden
-        <input type="checkbox" checked={Boolean(shape.hidden)} onChange={(e) => onChange({ hidden: e.target.checked })} />
+        <input
+          type="checkbox"
+          checked={Boolean(shape.hidden)}
+          onChange={(e) => onChange({ hidden: e.target.checked })}
+        />
       </label>
       {shape.type === "frame" && !shape.parentId ? (
-        <label className="flex cursor-pointer items-center justify-between gap-2" title="Root frames marked as screen appear in the prototype (Try it)">
+        <label
+          className="flex cursor-pointer items-center justify-between gap-2"
+          title="Root frames marked as screen appear in the prototype (Try it)"
+        >
           Screen (prototype)
           <input
             type="checkbox"
-            checked={Boolean((shape as { isScreen?: boolean }).isScreen !== false)}
-            onChange={(e) => onChange({ isScreen: e.target.checked } as Partial<DesignShape>)}
+            checked={Boolean(
+              (shape as { isScreen?: boolean }).isScreen !== false,
+            )}
+            onChange={(e) =>
+              onChange({ isScreen: e.target.checked } as Partial<DesignShape>)
+            }
           />
         </label>
       ) : null}
@@ -1627,7 +2025,13 @@ function ShapeProps({
             const v = e.target.value;
             onChange(
               v
-                ? ({ interaction: { event: "click", action: "navigate", target: v } } as Partial<DesignShape>)
+                ? ({
+                    interaction: {
+                      event: "click",
+                      action: "navigate",
+                      target: v,
+                    },
+                  } as Partial<DesignShape>)
                 : ({ interaction: null } as unknown as Partial<DesignShape>),
             );
           }}
@@ -1638,7 +2042,9 @@ function ShapeProps({
           {file.pages.flatMap((pg) =>
             pg.roots
               .map((r) => pg.shapes[r])
-              .filter((s): s is DesignShape => Boolean(s) && s!.type === "frame")
+              .filter(
+                (s): s is DesignShape => Boolean(s) && s!.type === "frame",
+              )
               .map((s) => (
                 <option key={s.id} value={s.id}>
                   {pg.id === pageId ? "→ " : "→ " + pg.name + " / "}
