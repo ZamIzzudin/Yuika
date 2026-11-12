@@ -1188,3 +1188,27 @@ remote karena file mungkin diupload dari HP.
       sudah built-in). Perlu build APK/native baru.
 - [x] Test relay e2e: portal.test.ts +2 (2 fragmen → progress + uploaded scope
       projects/p_demo/uploads/, evil.exe → upload_rejected ber-rid). api 72.
+
+### D90 — Polish Tab Design: layers panel ala Canva/Figma (SELESAI)
+Request user: bagian yang masih pakai dropdown (mis. dropdown Pages di
+panel kanan) diganti tree component ala Canva yang menampilkan tiap
+komponen di dalam screen-nya dan bisa diberi nama.
+- [x] DesignLayers.tsx BARU (panel kiri w-60): tree Pages → Screen
+      (frame root, badge Monitor) → komponen nested; z-order depan→
+      belakang (reverse children/roots ala Figma); count shape per page;
+      collapse per page/frame (auto-expand leluhur shape terpilih).
+- [x] Rename inline: double-click label → input (Enter/blur commit, Esc
+      batal) → mutate → autosave. Nama = kontrak komponen design-to-code.
+- [x] Eye toggle: hover → Hide; shape hidden menampilkan EyeSlash SELALU
+      (bukan hanya hover) agar status terlihat.
+- [x] Filter nama: input di atas tree; hasil flat lintas halaman dengan
+      breadcrumb Page / Frame; klik = pilih page+shape, double-click =
+      zoom ke shape.
+- [x] Crosshair (hover row) = zoom canvas ke shape (focusShape: fit +
+      center, zoom clamp 0.1–2).
+- [x] Klik row = select sinkron canvas (shift/ctrl = multi). Dropdown
+      Pages DIHAPUS dari panel kanan (props panel murni properti).
+- [x] Verifikasi live (Playwright headless, file Login Mobile + Santap
+      Flow): tree & badge tampil, filter login OK, rename persist
+      (Button Sign in → Primary CTA), hide/show, focus zoom 229%.
+      Typecheck 6/6, web build OK.

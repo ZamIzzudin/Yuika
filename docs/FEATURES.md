@@ -96,6 +96,13 @@ Sisa (2):
 
 ## F3 · Design-to-code (embedded canvas) — 65%
 
+> **Polish D90 (layers panel):** dropdown Pages diganti layers tree ala
+> Canva/Figma di panel kiri — Pages → Screen (badge Monitor) → komponen
+> nested (z-order depan-ke-belakang); rename inline double-click (nama =
+> kontrak komponen design-to-code), eye toggle hidden, filter nama lintas
+> halaman (breadcrumb), crosshair zoom-ke-shape, klik = select sinkron
+> canvas.
+
 > **Putusan ulang (D81, arahan user):** jalur connector Penpot self-host
 > (instance + token + RPC) DIBERHENTIKAN — terlalu berat (requirement stack
 > eksternal, token per user, schema ketat). Yang dipertahankan dari Penpot

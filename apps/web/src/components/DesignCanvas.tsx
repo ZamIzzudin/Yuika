@@ -19,7 +19,8 @@ import {
 } from "@phosphor-icons/react";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { apiUrl, authFetch } from "@/lib/api";
-import { Button, Chip, Select } from "./ui";
+import { Button, Chip, Select } from "@/components/ui";
+import { DesignLayers } from "@/components/DesignLayers";
 
 type Tool = "select" | "frame" | "rect" | "circle" | "text";
 type Pt = { x: number; y: number };
@@ -204,6 +205,24 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
   }, [load]);
 
   const page: DesignPage | null = useMemo(() => file?.pages.find((p) => p.id === pageId) ?? null, [file, pageId]);
+
+  /** D90: zoom + center ke satu shape (dipakai layers panel & filter). */
+  const focusShape = useCallback((id: string) => {
+    if (!page) return;
+    const s = page.shapes[id];
+    const stage = wrapRef.current;
+    if (!s || !stage) return;
+    const pos = canvasPos(s, page);
+    const bw = Math.max(40, s.width);
+    const bh = Math.max(40, s.height);
+    const pad = 140;
+    const z = Math.min(2, Math.max(0.1, Math.min((stage.clientWidth - pad) / bw, (stage.clientHeight - pad) / bh)));
+    setView({
+      zoom: z,
+      ox: stage.clientWidth / 2 / z - (pos.x + s.width / 2),
+      oy: stage.clientHeight / 2 / z - (pos.y + s.height / 2),
+    });
+  }, [page]);
 
   /** Fit semua konten halaman ke viewport (padding 60px). */
   const fitView = useCallback(() => {
@@ -610,6 +629,42 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       </div>
 
       <div className="flex min-h-0 flex-1">
+        {/* D90: layers tree ala Canva/Figma (menggantikan dropdown Pages) */}
+        {file ? (
+          <DesignLayers
+            key={file.id}
+            file={file}
+            pageId={page.id}
+            sel={sel}
+            onPage={setPageId}
+            onSelect={(id, additive) =>
+              setSel((cur) => {
+                if (!additive) return new Set([id]);
+                const n = new Set(cur);
+                if (n.has(id)) n.delete(id);
+                else n.add(id);
+                return n;
+              })
+            }
+            onRename={(id, name) =>
+              mutate((f) => {
+                const pg = f.pages.find((p) => p.id === page.id);
+                const s = pg?.shapes[id];
+                if (s) s.name = name;
+              })
+            }
+            onToggleHidden={(id, hidden) =>
+              mutate((f) => {
+                const pg = f.pages.find((p) => p.id === page.id);
+                const s = pg?.shapes[id];
+                if (s) s.hidden = hidden;
+              })
+            }
+            onFocus={focusShape}
+            onAddPage={() => void addPage()}
+          />
+        ) : null}
+
         {/* canvas */}
         <div
           ref={wrapRef}
@@ -643,21 +698,6 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
 
         {/* props panel */}
         <aside className="hidden w-64 shrink-0 flex-col gap-3 overflow-y-auto border-l border-line p-3 md:flex">
-          <div>
-            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-dim">Pages</div>
-            <div className="flex items-center gap-1.5">
-              <Select value={pageId} onChange={(e) => setPageId(e.target.value)} aria-label="Page" className="flex-1">
-              {file.pages.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </Select>
-              <Button variant="ghost" className="!px-2 !py-1" title="Add page" onClick={() => void addPage()}>
-                <Plus size={15} />
-              </Button>
-            </div>
-          </div>
           {selShape ? (
             <ShapeProps
               shape={selShape}

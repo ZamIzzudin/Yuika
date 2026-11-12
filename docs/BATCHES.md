@@ -535,3 +535,10 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - Mobile yuika-mobile: uploadSessionFile (fragmen 240k) + UI paperclip
   SessionChat (picker expo-file-system, chips, [files attached via chat]).
 - Test e2e relay: portal.test.ts +2 (fragmen + reject). api 72, typecheck 6/6.
+
+## Batch D90 — layers panel Tab Design
+
+- DesignLayers.tsx: tree Pages → Screen → komponen (badge Monitor,
+  z-order Figma-style), rename inline double-click, eye toggle, filter
+  nama + breadcrumb, crosshair zoom-ke-shape, select sinkron canvas.
+- Dropdown Pages dihapus dari panel kanan. FEATURES.md F3 catatan polish.
