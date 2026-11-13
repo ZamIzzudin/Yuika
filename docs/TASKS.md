@@ -1431,3 +1431,11 @@ lemah layout (padding rapat); (3) bagaimana cara memanggil skill.
   jarak teks, min height kontrol, checklist anti-rapat).
 - PERSONA Picasso: ui-polish-craft jadi WAJIB dibuka via skill_view
   sebelum menyusun layout/memperbaiki spacing; bisa dipicu eksplisit user.
+
+### D101 — panduan prompt Picasso (SELESAI)
+Keluhan: hasil desain Picasso masih jelek walau skill sudah dibundel; akar
+masalah umum = brief kosong + semua layar sekaligus + revisi tanpa angka.
+docs/PICASSO-PROMPT.md: kapan buat project baru, template prompt lengkap
+(konteks produk + kontrak proses buka 3 skill + aturan angka keras +
+satu layar per turn + berhenti untuk review), pola revisi spesifik angka,
+tahap QA mandiri / handoff Hiro / ekspor Figma.
