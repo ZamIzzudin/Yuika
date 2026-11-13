@@ -45,3 +45,11 @@ yang dipuji user, checklist deploy), usulkan SKILL lewat `skill_propose`, nama s
 kapan dipakai, body = langkah demi langkah yang bisa diikuti agent lain. Bar tinggi:
 hanya pola yang terbukti, bukan preferensi (itu `memory_append`). Draft divalidasi user
 di tab Skill.
+
+## Pretrain bawaan (bundled, langsung aktif)
+
+- `agent-handoff`: padatkan percakapan jadi dokumen handoff yang bisa
+  diteruskan agent lain secara dingin.
+- `review-loop`: siklus worker-reviewer (delegasikan kritik, skor, revisi,
+  ulangi sampai quality gate).
+- `task-decomposition` dan `yui-conventions` tetap terpasang.

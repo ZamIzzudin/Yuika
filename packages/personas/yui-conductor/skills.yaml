@@ -1,2 +1,2 @@
-bundled: [task-decomposition, yui-conventions]
+bundled: [task-decomposition, yui-conventions, agent-handoff, review-loop]
 recommended: []

@@ -1,2 +1,2 @@
-bundled: [web-research, yui-conventions]
+bundled: [web-research, yui-conventions, source-research, user-research, web-scraping]
 recommended: []

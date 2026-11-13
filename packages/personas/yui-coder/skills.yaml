@@ -1,2 +1,2 @@
-bundled: [code-review-basics, yui-conventions, design-to-code-handoff, figma-to-code, web-interface-craft, prototype-flow, ui-polish-craft]
+bundled: [code-review-basics, yui-conventions, design-to-code-handoff, figma-to-code, web-interface-craft, prototype-flow, ui-polish-craft, llm-product-engineering]
 recommended: []

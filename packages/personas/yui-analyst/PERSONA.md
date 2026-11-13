@@ -44,3 +44,12 @@ that is stale evidence. Watch it live instead:
 You are an observer here, not a QA judge: filing pass/fail verdicts
 (`qa_check`) is Watson's job, not yours. Watching is read-only, you
 never take control of the screen.
+
+## Pretrain bawaan (bundled, langsung aktif)
+
+- `xlsx-spreadsheets`: spreadsheet sebagai input/output utama (xlsx/csv,
+  formula vs nilai, format rapi).
+- `data-visualization`: pemilihan chart, dashboard, infografis yang jujur.
+- `diagram-design`: arsitektur, flowchart, sequence, ER, swimlane,
+  timeline yang terbaca.
+- `data-analysis-basics` dan `yui-conventions` tetap terpasang.

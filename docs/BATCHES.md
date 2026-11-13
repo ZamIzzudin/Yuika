@@ -588,3 +588,11 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - docs/skills-figma/README.md: kontrak dua arah Figma (authoring vs
   to-code) + tabel pembagian + mapping bahan asli.
 - Test designer-wiring.test.ts D98 (bundling penuh + garis figma).
+
+
+## Batch D99 — pretrain docs/skills ke semua persona
+
+- 22 skill baru terbagi ke 7 persona (planner 8, conductor 2, scribe 4,
+  analyst 3, scholar 3, coder 1, sherlock 1).
+- docs/skills/README.md: tabel mapping + catatan adaptasi.
+- Test pretrain-roster.test.ts.

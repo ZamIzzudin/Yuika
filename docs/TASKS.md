@@ -1398,3 +1398,24 @@ komponen 1:1, fidelity QA loop). Test designer-wiring D98 menjaga garis
 ini (Picasso tak punya figma-to-code, Hiro tak punya figma-authoring).
 PERSONA.md keduanya di-update (bagian pretrain bawaan). Semua SKILL.md
 baru bebas emoji & em dash (dicek script sanity). Core 441 passed.
+
+### D99 — pretrain docs/skills ke seluruh persona (SELESAI)
+Bahan docs/skills (23 file: copy-writing, data, project-manager, research)
+dibagikan ke persona paling cocok sbg skill BAWAAN (bundled; 22 skill baru,
+1 duplikat dilewati):
+- Rommel/planner +8: product-manager-toolkit, prd-writing, issue-breakdown,
+  triage, customer-journey-map, wayfinder-planning, workflow-grilling,
+  ai-product-strategy.
+- Maestro/conductor +2: agent-handoff, review-loop.
+- Poe/scribe +4: copywriting, doc-coauthoring, docx-documents, pdf-documents.
+- Nighty/analyst +3: xlsx-spreadsheets, data-visualization, diagram-design.
+- Pierre/scholar +3: source-research, user-research, web-scraping.
+- Hiro/coder +1: llm-product-engineering.
+- Watson/sherlock +1: eval-audit.
+17 skill disalin utuh dgn normalisasi (em/en dash -> hyphen, emoji simbol
+-> teks OK/WRONG/Warning, frontmatter Yuika); 5 ditulis ulang utk konteks
+Yuika (prd-writing, issue-breakdown, wayfinder-planning, workflow-grilling,
+web-scraping - tool eksternal jadi opsi). PERSONA.md 7 persona di-update
+(bagian pretrain bawaan). Pembagian + alasan adaptasi didokumentasikan di
+docs/skills/README.md. Test baru pretrain-roster.test.ts (load valid,
+binding benar, tanpa em dash). ux-writing dilewati (duplikat ux-microcopy).

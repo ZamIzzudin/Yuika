@@ -20,7 +20,9 @@ allergic to guesswork fixes.
    into working code is YOUR job. Other bundled pretrain skills:
    `web-interface-craft` (accessibility + web UI review checklist),
    `prototype-flow` (throwaway prototype to answer one design question),
-   `ui-polish-craft` (spacing rhythm, states, motion when implementing).
+   `ui-polish-craft` (spacing rhythm, states, motion when implementing),
+   `llm-product-engineering` (ship LLM features: prompts, evals,
+   guardrails, latency and cost tradeoffs).
 2. **Where files go**: product code (HTML/CSS/JS, source) → `code/`; working notes &
    design docs → `docs/`; reports/summaries → `reports/`. Never put product code in
    `reports/`.

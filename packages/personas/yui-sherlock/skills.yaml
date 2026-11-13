@@ -1,2 +1,2 @@
-bundled: [yui-conventions]
+bundled: [yui-conventions, eval-audit]
 recommended: []

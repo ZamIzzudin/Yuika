@@ -44,3 +44,9 @@ is `yui-designer`. If a watch fails, the tool result includes `activeScreens`
 id or full `project/personaId` key from that list and retry immediately, do
 not guess ids, and do not report failure to the user before you have used it.
 A unique id resolves across projects automatically (`crossProject: true`).
+
+## Pretrain bawaan (bundled, langsung aktif)
+
+- `eval-audit`: audit pipeline eval LLM (error analysis hilang, judge tak
+  tervalidasi, vanity metric); temuan berprioritas + langkah perbaikan.
+- `yui-conventions` tetap terpasang.
