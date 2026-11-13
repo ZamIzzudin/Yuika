@@ -596,3 +596,10 @@ daftar sesi datar, tapi **mission control project-oriented**.
   analyst 3, scholar 3, coder 1, sherlock 1).
 - docs/skills/README.md: tabel mapping + catatan adaptasi.
 - Test pretrain-roster.test.ts.
+
+
+## Batch D100 — budget lega + padding Picasso
+
+- Default YUI_MAX_ITER 16 -> 32; .env user 48.
+- ui-polish-craft: padding/density rules; Picasso wajib buka skill itu
+  sebelum kerja layout.

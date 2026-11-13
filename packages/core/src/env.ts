@@ -13,8 +13,10 @@ const int = (def: number, min: number, max: number) =>
   );
 
 const schema = z.object({
-  /** Budget iterasi tool-round per turn. */
-  maxIter: int(16, 1, 128),
+  /** Budget iterasi tool-round per turn. Default 32: model butuh banyak
+   * ronde baca-konteks sebelum menulis; 16 (default lama) terlalu sering
+   * mentok di tengah progres (D100). */
+  maxIter: int(32, 1, 128),
   /** Cap iterasi saat mode hardcore/auto-approve, selesaikan sampai tuntas. */
   maxIterHardcore: int(64, 1, 1024),
   /** Deadline approval (ms); 0 = tanpa timeout. */

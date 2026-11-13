@@ -1419,3 +1419,15 @@ web-scraping - tool eksternal jadi opsi). PERSONA.md 7 persona di-update
 (bagian pretrain bawaan). Pembagian + alasan adaptasi didokumentasikan di
 docs/skills/README.md. Test baru pretrain-roster.test.ts (load valid,
 binding benar, tanpa em dash). ux-writing dilewati (duplikat ux-microcopy).
+
+### D100 — iterasi budget lega + disiplin padding Picasso (SELESAI)
+Keluhan user: (1) sering kena "iteration budget reached"; (2) Picasso masih
+lemah layout (padding rapat); (3) bagaimana cara memanggil skill.
+- env.ts: default maxIter 16 -> 32 (ronde tool per turn; GLM butuh banyak
+  ronde baca konteks). .env.example di-update; .env user diset 48.
+  Mode Hardcore tetap 64 (YUI_MAX_ITER_HARDCORE).
+- ui-polish-craft: bagian baru "Padding and density (anti-cramped rules)"
+  (margin layar >=16/24, sibling padding sama, dua gap per kontainer,
+  jarak teks, min height kontrol, checklist anti-rapat).
+- PERSONA Picasso: ui-polish-craft jadi WAJIB dibuka via skill_view
+  sebelum menyusun layout/memperbaiki spacing; bisa dipicu eksplisit user.

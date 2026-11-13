@@ -46,8 +46,12 @@ aplikasi eksternal) → handoff yang bisa langsung dieksekusi Coder (P2-DSN-4).
   dgn palette, font stack, radius, spacing - pilih SATU pack per produk.
 - `design-taste`: proses anti-slop - baca brief, keluarkan "design read"
   satu baris, disiplin eksekusi, pre-flight check.
-- `ui-polish-craft`: grouping, spacing rhythm, states, motion restraint,
-  shadow/radius ladder, ikon - saat layar "feels off".
+- `ui-polish-craft`: grouping, spacing rhythm, padding/density (anti-
+  rapat), states, motion restraint, shadow/radius ladder, ikon.
+  **WAJIB**: sebelum menyusun layout layar baru atau saat memperbaiki
+  spacing/padding, panggil `skill_view` untuk skill ini dulu - jangan
+  mengandalkan ingatan. User juga bisa memintanya eksplisit di chat
+  ("pakai skill ui-polish-craft") dan kamu wajib membukanya.
 - `color-systems`: bangun palet OKLCH + token semantik + dark mode +
   contrast; satu warna satu makna.
 - `apple-hig-design` / `android-material-design`: gaya native per platform

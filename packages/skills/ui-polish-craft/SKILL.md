@@ -33,6 +33,29 @@ metadata:
 - When a layout feels noisy, increase whitespace between groups before
   touching anything else.
 
+## Padding and density (anti-cramped rules)
+
+A cramped layout is almost always a padding bug, not a content bug. Concrete
+floor values; when in doubt, add air:
+
+- Content never touches an edge: screen/page margin at least 16 (mobile) or
+  24 (desktop); inside cards and panels at least 16, preferably 24 for
+  primary cards.
+- Sibling padding must match: if three cards sit in a row, all three use the
+  same internal padding. Unequal padding reads as sloppy before anything
+  else is noticed.
+- Two gaps per container, no more: inner gap (items inside a group) and
+  outer gap (between groups). Example: items 8-12, groups 24-32.
+- Text needs breathing room around it: icon-to-label 8, label-to-control 8,
+  control-to-helper 4-6, block-to-block 16.
+- Buttons and inputs keep min height 40 (touch 44-48) so tight padding never
+  squeezes hit areas.
+- Dense data tables are the ONE exception: rows may go tight (8 vertical),
+  but then column padding grows (16 horizontal) so the eye still tracks.
+- Checklist before shipping a screen: same padding for same role, nothing
+  touching an edge, gap between groups > gap inside groups, no value outside
+  the rhythm scale.
+
 ## Alignment and optical balance
 
 - Align to a grid, then adjust for optics: icons often need 1-2px optical
