@@ -20,6 +20,7 @@ import {
   Plus,
   Rectangle,
   Stack,
+  Sticker,
   TextAa,
 } from "@phosphor-icons/react";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
@@ -45,6 +46,7 @@ function typeIcon(s: DesignShape): React.ReactNode {
   if (s.type === "text") return <TextAa size={12} />;
   if (s.type === "group") return <Stack size={12} />;
   if (s.type === "image") return <ImageIcon size={12} />;
+  if (s.type === "icon") return <Sticker size={12} />;
   return <Rectangle size={12} />;
 }
 

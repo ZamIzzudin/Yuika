@@ -608,3 +608,12 @@ daftar sesi datar, tapi **mission control project-oriented**.
 ## Batch D101 — panduan prompt Picasso
 
 - docs/PICASSO-PROMPT.md (template copy-paste + pola revisi).
+
+
+## Batch D102-D103 — font bank + icon bank Design tab
+
+- FONT_BANK Google Fonts (kategori+weights+vibe), substitusi brand font,
+  loading CDN runtime, dropdown props, export ./design/client.
+- 221 ikon Phosphor via generator; shape type icon; render canvas +
+  prototype; validasi nama; katalog di skill design-canvas-basics.
+- Test: design-fonts-icons + design-tools-fonticon (core 449 -> 456).

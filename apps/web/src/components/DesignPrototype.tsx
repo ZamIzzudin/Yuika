@@ -6,6 +6,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { ArrowLeft, Play, X } from "@phosphor-icons/react";
 import { apiUrl, authFetch } from "@/lib/api";
 import { getAssetUrl, useAssetNotify } from "@/lib/designAssets";
+import { iconUrl } from "@/lib/iconAssets";
+import { collectFontFamilies, ensureFont } from "@/lib/fontLoader";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { Button } from "./ui";
 
@@ -36,6 +38,27 @@ function ShapeNode({
   if (shape.hidden) return null;
   const fill = shape.fills[0];
   const clickable = Boolean(shape.interaction);
+  // D103: icon di prototype — <img> data URL pre-warna
+  if (shape.type === "icon") {
+    const u = iconUrl(shape.icon, fill?.color ?? "#a1a1aa");
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: shape.x,
+          top: shape.y,
+          width: shape.width,
+          height: shape.height,
+          opacity: shape.opacity ?? 1,
+          cursor: clickable ? "pointer" : undefined,
+        }}
+        className={clickable ? "transition hover:brightness-125 active:brightness-90" : undefined}
+        onClick={clickable ? () => onNavigate(shape.interaction!.target) : undefined}
+      >
+        {u ? <img src={u} alt="" draggable={false} style={{ width: "100%", height: "100%", display: "block" }} /> : null}
+      </div>
+    );
+  }
   // D92: image di prototype — render <img> (objectURL via authFetch cache)
   if (shape.type === "image") {
     const url = getAssetUrl(shape.src);
@@ -101,6 +124,7 @@ function ShapeNode({
           color: shape.color,
           fontSize: shape.fontSize,
           fontWeight: shape.fontWeight ?? 400,
+          fontFamily: shape.fontFamily ? `"${shape.fontFamily}", ui-sans-serif, system-ui, sans-serif` : undefined,
           lineHeight: shape.lineHeight ?? 1.35,
           textAlign: shape.align ?? "left",
           whiteSpace: "pre-wrap",
@@ -151,6 +175,15 @@ export function DesignPrototype({ fileId, onClose }: Props): React.ReactElement 
   const [history, setHistory] = useState<Array<{ pageId: string; frameId: string | null }>>([]);
   const [scale, setScale] = useState(1);
   useAssetNotify(); // D92: re-render saat aset image selesai dimuat
+  const [, setFontTick] = useState(0);
+  // D102: load Google Fonts yang dipakai file (prototype = DOM render)
+  useEffect(() => {
+    if (!file) return;
+    void (async () => {
+      await Promise.all(collectFontFamilies(file).map((f) => ensureFont(f)));
+      setFontTick((t) => t + 1);
+    })();
+  }, [file]);
   const viewportRef = useRef<HTMLDivElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
 

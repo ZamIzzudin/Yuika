@@ -15,6 +15,8 @@ import {
   validateColor,
   validateOpacity,
 } from "./model.js";
+import { validateFontFamily } from "./fonts.js";
+import { validateIconName } from "./icons.js";
 
 export function designDir(workspacePath: string): string {
   return path.join(workspacePath, "design");
@@ -216,6 +218,9 @@ export interface AddShapeInput {
   fontWeight?: number;
   align?: "left" | "center" | "right";
   color?: string; // warna teks
+  fontFamily?: string; // D102: Google Fonts bank
+  // D103: icon saja
+  icon?: string;
   // frame root saja
   isScreen?: boolean;
   // D92: image saja
@@ -251,8 +256,8 @@ export function addDesignShape(
   const file = mustGetDesignFile(workspacePath, fileId);
   const page = mustGetPage(file, pageId);
   const type = input.type;
-  if (!["frame", "rect", "circle", "text", "group", "image"].includes(type)) {
-    throw new Error('type must be one of: frame, rect, circle, text, group, image');
+  if (!["frame", "rect", "circle", "text", "group", "image", "icon"].includes(type)) {
+    throw new Error('type must be one of: frame, rect, circle, text, group, image, icon');
   }
   const width = num(input.width, -1);
   const height = num(input.height, -1);
@@ -310,6 +315,7 @@ export function addDesignShape(
   } else if (type === "text") {
     const text = String(input.text ?? "Text");
     if (text.length > 4000) throw new Error("text must be <= 4000 characters");
+    const fontFamily = validateFontFamily(input.fontFamily);
     shape = {
       ...base,
       type: "text",
@@ -317,12 +323,19 @@ export function addDesignShape(
       fontSize: Math.round(num(input.fontSize, 16)),
       ...(input.fontWeight !== undefined ? { fontWeight: num(input.fontWeight, 400) } : {}),
       ...(input.align !== undefined && ["left", "center", "right"].includes(input.align) ? { align: input.align } : {}),
+      ...(fontFamily ? { fontFamily } : {}),
       color: validateColor("color", input.color, "#f4f4f5"),
     };
+  } else if (type === "icon") {
+    shape = { ...base, type: "icon", icon: validateIconName(input.icon) };
   } else {
     shape = { ...base, type: "rect" };
   }
 
+  // ikon default: warna netral terang biar terlihat di frame gelap
+  if (type === "icon" && !input.fill) {
+    fills[0]!.color = "#a1a1aa";
+  }
   // attach ke parent (frame/group) atau root halaman
   if (parentId) {
     const parent = page.shapes[parentId];
@@ -361,6 +374,8 @@ const MUTABLE_COMMON = [
   "fontWeight",
   "align",
   "color",
+  "fontFamily",
+  "icon",
   "interaction",
   "isScreen",
   "src",
@@ -455,6 +470,9 @@ export function updateDesignShape(
     if (!["cover", "contain", "stretch"].includes(f)) throw new Error('fit must be one of: cover, contain, stretch');
     (s as { fit?: string }).fit = f as "cover" | "contain" | "stretch";
   }
+  if (p.icon !== undefined && s.type === "icon") {
+    (s as { icon: string }).icon = validateIconName(p.icon);
+  }
   if (p.strokeColor !== undefined || p.strokeWidth !== undefined) {
     const cur = s.stroke ?? { color: "#3a3a44", width: 1 };
     s.stroke = {
@@ -466,6 +484,11 @@ export function updateDesignShape(
     if (p.text !== undefined) s.text = String(p.text).slice(0, 4000);
     if (p.fontSize !== undefined) s.fontSize = Math.min(200, Math.max(8, Math.round(num(p.fontSize, 16))));
     if (p.fontWeight !== undefined) s.fontWeight = num(p.fontWeight, 400);
+    if (p.fontFamily !== undefined) {
+      const fam = validateFontFamily(p.fontFamily);
+      if (fam) s.fontFamily = fam;
+      else delete s.fontFamily;
+    }
     if (p.align !== undefined && ["left", "center", "right"].includes(String(p.align))) s.align = p.align;
     if (p.color !== undefined) s.color = validateColor("color", p.color, "#f4f4f5");
   }

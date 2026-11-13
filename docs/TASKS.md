@@ -1439,3 +1439,31 @@ docs/PICASSO-PROMPT.md: kapan buat project baru, template prompt lengkap
 (konteks produk + kontrak proses buka 3 skill + aturan angka keras +
 satu layar per turn + berhenti untuk review), pola revisi spesifik angka,
 tahap QA mandiri / handoff Hiro / ekspor Figma.
+
+### D102 — font bank Google Fonts di Design tab (SELESAI)
+Permintaan user: Picasso tidak hanya pakai font default. Text shape kini
+punya field fontFamily; bank kurasi Google Fonts (design/fonts.ts:
+sans/serif/mono/display/handwriting + weights + vibe) menutup SEMUA font
+yang dirujuk design-style-library (test menjaga; brand font non-Google
+auto-substitusi: Anthropic Sans/Google Sans -> Inter, Cossette Texte ->
+Libre Franklin). Web me-load via Google Fonts CDN runtime (link css2 +
+document.fonts) di canvas & prototype; offline -> fallback system font.
+Props panel: dropdown font per kategori. Export baru @yuika/core
+"./design/client" (barrel tanpa store/node:fs) supaya bundel web tetap
+bersih. Skill design-canvas-basics + katalog font + contoh.
+
+### D103 — icon bank SVG utk Picasso (SELESAI)
+Shape baru type "icon" (Phosphor regular, 221 ikon, 9 kategori:
+navigation/actions/media/objects/people/status/text/nature/misc).
+Generator scripts/gen-design-assets.cjs mengekstrak SVG dari
+@phosphor-icons/react (sudah dep web) -> apps/web/src/lib/iconBank.ts
+(markup) + core design/icons.ts (nama utk validasi). Warna ikon = fill
+shape (data URL pre-warna; offline, tanpa fetch). Render: canvas
+drawImage + prototype <img>; layers glyph Sticker; props panel dropdown
+nama + preview. Tools design_add_shape/update menerima type icon +
+field icon (nama divalidasi, pesan ENGLISH). Skill design-canvas-basics
++ katalog lengkap nama ikon + panduan pasang ikon+label gap 8.
+Test: design-fonts-icons.test.ts (coverage style-library, validasi,
+substitusi, patch) + design-tools-fonticon.test.ts (probe dispatch
+persis jalur Picasso). Bonus: normalisasi 3 em-dash tersisa di skill
+design-canvas-basics.

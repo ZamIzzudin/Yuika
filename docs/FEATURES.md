@@ -104,14 +104,17 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D102/D103: Design tab font bank (Google Fonts, 90+ family per kategori,
+load CDN runtime) + icon bank SVG (221 Phosphor, 9 kategori) - Picasso
+dan user bisa pilih dari props panel; validasi nama EN.
 D99: pretrain bawaan seluruh persona dari docs/skills (PM toolkit, PRD,
 issue breakdown, triage, journey map, wayfinder, workflow grilling, AI
 strategy; handoff + review loop; copywriting + docx/pdf; xlsx + dataviz +
 diagram; source/user research + web scraping; LLM product engineering;
-eval audit). Lihat docs/skills/README.md.
+eval audit).
 D98: pretrain bawaan Picasso (67 style pack + taste/color/platform/microcopy)
 dan Hiro (figma-to-code, web craft, prototype); Figma dua arah:
-Picasso authoring, Hiro konsumsi (docs/skills-figma).
+Picasso authoring, Hiro konsumsi (dijaga test designer-wiring).
 D97: semua persona dilarang emoji & em dash di output (prompt inti);
 skill Picasso +typography-basics +design-language-basics (gaya, ikon
 SVG pack, pairing font).

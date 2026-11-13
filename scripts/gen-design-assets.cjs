@@ -1,0 +1,96 @@
+#!/usr/bin/env node
+// D103: generator icon bank desain dari @phosphor-icons/react (sudah jadi dep web).
+// Baca preview SVG (base64) weight REGULAR di dist/csr/*.d.ts, buang rect
+// background putih, simpan inner markup per ikon.
+// Output (COMMIT hasilnya; script hanya dijalankan ulang saat kurasi berubah):
+//   1. apps/web/src/lib/iconBank.ts  (name kebab -> svg inner markup)
+//   2. packages/core/src/design/icons.ts (kategori -> nama, utk validasi store + skill)
+// Tanpa runtime dep baru; web render via <img src=data:...> / Image() di canvas.
+const fs = require("fs");
+const path = require("path");
+
+const ROOT = path.join(__dirname, "..");
+const DEFS = path.join(ROOT, "node_modules/@phosphor-icons/react/dist/csr");
+
+// kurasi (nama PascalCase phosphor). Kategori dipakai di skill + validasi.
+const CATS = [
+  ["navigation", ["House", "HouseSimple", "HouseLine", "Compass", "MagnifyingGlass", "MapPin", "SidebarSimple", "NavigationArrow", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "ArrowUpRight", "ArrowDownRight", "ArrowSquareOut", "ArrowClockwise", "ArrowCounterClockwise", "CaretUp", "CaretDown", "CaretLeft", "CaretRight", "CornersOut", "ArrowsOut"]],
+  ["actions", ["Plus", "Minus", "X", "Check", "CheckCircle", "Prohibit", "Trash", "TrashSimple", "PencilSimple", "PencilLine", "Eraser", "PaintBrush", "PaintBucket", "Scissors", "Copy", "Clipboard", "ClipboardText", "DownloadSimple", "UploadSimple", "ShareNetwork", "Lock", "LockOpen", "Eye", "EyeSlash", "Funnel", "SlidersHorizontal", "Gear", "Wrench", "Hammer", "MagicWand", "Sparkle", "Lightning", "Fire", "Rocket", "Flag", "Star", "Heart", "BookmarkSimple", "PushPin", "Bell", "BellSlash", "DotsThree", "DotsThreeVertical", "DotsSixVertical"]],
+  ["media", ["Play", "Pause", "Stop", "SkipBack", "SkipForward", "SpeakerHigh", "SpeakerSlash", "Microphone", "Camera", "VideoCamera", "Image", "Images", "FilmSlate", "MusicNote", "Headphones"]],
+  ["objects", ["File", "FileText", "Files", "Folder", "FolderOpen", "FolderSimple", "Archive", "Note", "Notebook", "Book", "Books", "Bookmark", "Calendar", "CalendarCheck", "Printer", "Tag", "Package", "ShoppingCart", "ShoppingBag", "Storefront", "Wallet", "Bank", "Money", "CurrencyDollar", "Receipt", "ChartBar", "ChartLine", "ChartLineUp", "ChartPie", "Graph", "Table", "Database", "Cloud", "CloudArrowUp", "CloudArrowDown", "HardDrives", "Cpu", "HardDrive", "Terminal", "Code", "CodeSimple", "GitBranch", "GitMerge", "GitCommit", "Bug", "TestTube", "Flask", "Atom", "Lightbulb", "Key"]],
+  ["people", ["User", "Users", "UserCircle", "UserPlus", "Handshake", "Chats", "ChatCircle", "ChatTeardrop", "Envelope", "Phone", "PhoneCall", "DeviceMobile", "Desktop", "DeviceTablet", "WifiHigh", "CellSignalHigh"]],
+  ["status", ["Info", "Warning", "WarningCircle", "XCircle", "Question", "ThumbsUp", "ThumbsDown", "Smiley", "SmileySad", "SealCheck", "ShieldCheck", "ShieldWarning", "SpinnerGap", "Hourglass", "Clock", "Timer"]],
+  ["text", ["TextAa", "TextB", "TextItalic", "List", "ListBullets", "ListChecks", "TextAlignLeft", "TextAlignCenter", "TextAlignRight", "Paragraph", "Quotes", "Hash", "At", "Link"]],
+  ["nature", ["Sun", "Moon", "MoonStars", "CloudSun", "CloudRain", "CloudLightning", "Snowflake", "Drop", "Leaf", "Tree", "Flower", "Plant", "Dog", "Cat"]],
+  ["misc", ["Coffee", "ForkKnife", "Airplane", "AirplaneTakeoff", "Car", "Bicycle", "Globe", "GlobeHemisphereWest", "Buildings", "Toolbox", "FirstAidKit", "Pill", "Stethoscope", "GraduationCap", "Medal", "Trophy", "Crown", "Diamond", "Gift", "Balloon", "Confetti", "PuzzlePiece", "Target", "Crosshair", "CrosshairSimple", "Binoculars", "Anchor", "TrendUp", "TrendDown"]],
+];
+
+const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+
+const bank = {};
+const cats = [];
+const missing = [];
+let dupes = [];
+for (const [cat, names] of CATS) {
+  const out = [];
+  for (const n of names) {
+    const key = kebab(n);
+    if (bank[key]) { dupes.push(key); continue; }
+    const dts = path.join(DEFS, n + ".d.ts");
+    if (!fs.existsSync(dts)) { missing.push(n); continue; }
+    const m = fs.readFileSync(dts, "utf8").match(/base64,([A-Za-z0-9+/=]+)/);
+    if (!m) { missing.push(n); continue; }
+    let svg = Buffer.from(m[1], "base64").toString("utf8");
+    // buang background putih + ukuran thumbnail; sisakan inner markup viewBox 256
+    svg = svg
+      .replace(/<rect width="256"[^>]*\/>/, "")
+      .replace(/^<svg[^>]*>/, "")
+      .replace(/<\/svg>$/, "")
+      .trim();
+    if (!svg) { missing.push(n); continue; }
+    bank[key] = svg;
+    out.push(key);
+  }
+  cats.push([cat, out]);
+}
+
+if (dupes.length) { console.error("DUPLICATE names:", dupes); process.exit(1); }
+if (missing.length) { console.error("MISSING icons (fix names):", missing.join(", ")); process.exit(1); }
+const total = Object.keys(bank).length;
+if (total < 150) { console.error("too few icons:", total); process.exit(1); }
+
+const NL = String.fromCharCode(10);
+// 1) web icon bank
+const web = [
+  "// GENERATED by scripts/gen-design-assets.cjs (D103) - do not edit by hand.",
+  "// Source: @phosphor-icons/react regular weight (MIT). key = kebab name.",
+  "// Value = inner SVG markup, viewBox 0 0 256 256, fill inherited.",
+  "export const ICON_BANK: Record<string, string> = {",
+  ...Object.entries(bank).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`),
+  "};",
+  "",
+].join(NL);
+fs.writeFileSync(path.join(ROOT, "apps/web/src/lib/iconBank.ts"), web);
+
+// 2) core: kategori + nama (validasi store + sumber katalog skill)
+const core = [
+  "// GENERATED by scripts/gen-design-assets.cjs (D103) - do not edit by hand.",
+  "// Nama ikon (kebab) per kategori utk validasi shape icon + katalog skill.",
+  "export const ICON_CATEGORIES: { name: string; icons: string[] }[] = [",
+  ...cats.map(([c, list]) => `  { name: ${JSON.stringify(c)}, icons: [${list.map((i) => JSON.stringify(i)).join(", ")}] },`),
+  "];",
+  "",
+  "const ALL = new Set(ICON_CATEGORIES.flatMap((c) => c.icons));",
+  "",
+  "/** Validasi nama ikon shape (pesan error ENGLISH). */",
+  "export function validateIconName(v: unknown): string {",
+  "  if (typeof v !== \"string\" || !v) throw new Error(\"icon must be a non-empty string (kebab-case, see design-canvas-basics skill)\");",
+  "  const k = v.trim().toLowerCase();",
+  "  if (!ALL.has(k)) throw new Error(`icon \"${v}\" not found in the icon bank; see design-canvas-basics skill for the catalog`);",
+  "  return k;",
+  "}",
+  "",
+].join(NL);
+fs.writeFileSync(path.join(ROOT, "packages/core/src/design/icons.ts"), core);
+
+console.log("icons:", total, "| categories:", cats.map(([c, l]) => `${c}:${l.length}`).join(" "));

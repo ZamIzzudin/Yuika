@@ -8,7 +8,7 @@
 // D92: "group" = wadah logis (z-order, gerak bareng) tanpa visual fill;
 // "image" = aset raster di-upload ke uploads/ (src = path relatif workspace
 // atau URL http(s)); Fill.image = background image pada frame (cover).
-export type DesignShapeType = "frame" | "rect" | "circle" | "text" | "group" | "image";
+export type DesignShapeType = "frame" | "rect" | "circle" | "text" | "group" | "image" | "icon";
 
 export interface DesignFill {
   color: string; // "#rrggbb"
@@ -68,6 +68,8 @@ export interface DesignTextShape extends DesignShapeCommon {
   text: string;
   fontSize: number;
   fontWeight?: number; // 400/500/600/700
+  /** D102: font Google dari bank (design/fonts.ts); undefined = system sans. */
+  fontFamily?: string;
   align?: "left" | "center" | "right";
   lineHeight?: number; // multiplier, default 1.4
   color: string; // warna teks (#rrggbb)
@@ -79,7 +81,8 @@ export type DesignShape =
   | DesignCircleShape
   | DesignTextShape
   | DesignGroupShape
-  | DesignImageShape;
+  | DesignImageShape
+  | DesignIconShape;
 
 /** D92: group — pengelompokan logis ala Figma (Ctrl+G). Koordinat & z-order
  *  persis seperti frame (child relatif group), tapi tidak punya visual sendiri
@@ -95,6 +98,13 @@ export interface DesignImageShape extends DesignShapeCommon {
   type: "image";
   src: string;
   fit?: "cover" | "contain" | "stretch";
+}
+
+/** D103: ikon SVG (Phosphor regular) dari icon bank — nama kebab-case,
+ * dikurasi di design/icons.ts; warna dari fills[0].color. */
+export interface DesignIconShape extends DesignShapeCommon {
+  type: "icon";
+  icon: string;
 }
 
 export interface DesignPage {

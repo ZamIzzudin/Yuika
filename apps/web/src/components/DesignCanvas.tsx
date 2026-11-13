@@ -26,6 +26,9 @@ import {
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { apiUrl, authFetch } from "@/lib/api";
 import { getAssetImage, loadAsset, useAssetNotify } from "@/lib/designAssets";
+import { getIconImage, loadIcon, useIconNotify, iconUrl } from "@/lib/iconAssets";
+import { collectFontFamilies, ensureFont } from "@/lib/fontLoader";
+import { FONT_BANK, ICON_CATEGORIES } from "@yuika/core/design/client";
 import { makeDesignRefs, type DesignRefPayload } from "@/lib/designRef";
 import { Button, Chip, Dropdown } from "@/components/ui";
 import { DesignLayers } from "@/components/DesignLayers";
@@ -202,7 +205,7 @@ function drawShape(
   } else if (shape.type === "text") {
     ctx.fillStyle = shape.color;
     const fs = shape.fontSize * view.zoom;
-    ctx.font = `${shape.fontWeight ?? 400} ${fs}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.font = `${shape.fontWeight ?? 400} ${fs}px ${shape.fontFamily ? `"${shape.fontFamily}", ` : ""}ui-sans-serif, system-ui, sans-serif`;
     ctx.textBaseline = "top";
     const lh = fs * (shape.lineHeight ?? 1.35);
     const lines = shape.text.split("\n");
@@ -232,6 +235,19 @@ function drawShape(
           ? "right"
           : "left";
     wrapped.forEach((t, i) => ctx.fillText(t, tx, y + i * lh));
+  } else if (shape.type === "icon") {
+    // D103: ikon SVG bank — image pre-warna (data URL), contain di kotak shape
+    const img = getIconImage(shape.icon, fill);
+    if (img) {
+      ctx.drawImage(img, x, y, w, h);
+    } else {
+      loadIcon(shape.icon, fill); // trigger decode; re-render saat siap
+      ctx.strokeStyle = "#52525b";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(x, y, w, h);
+      ctx.setLineDash([]);
+    }
   } else if (shape.type === "image") {
     const img = getAssetImage(shape.src);
     const r0 = Math.min(shape.radius ?? 0, w / 2, h / 2) * view.zoom;
@@ -468,6 +484,8 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
     sel,
   };
   const assetTick = useAssetNotify();
+  const iconTick = useIconNotify();
+  const [fontTick, setFontTick] = useState(0);
   const imgInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
 
@@ -656,7 +674,22 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       const s = page.shapes[id];
       if (s) drawShape(ctx, s, page, sel, view, 0, sel.size === 1);
     }
-  }, [file, page, sel, view, assetTick]);
+  }, [file, page, sel, view, assetTick, iconTick, fontTick]);
+
+  // D102: pastikan semua Google Fonts yang dipakai file ini termuat sebelum
+  // render teks (CDN gagal/offline -> fallback system font, tanpa error).
+  useEffect(() => {
+    if (!file) return;
+    let alive = true;
+    void (async () => {
+      const fams = collectFontFamilies(file);
+      await Promise.all(fams.map((f) => ensureFont(f)));
+      if (alive) setFontTick((t) => t + 1);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [file]);
 
   // D92: wheel NON-PASSIVE — React onWheel bersifat passive sehingga
   // preventDefault tidak mencegah zoom browser (Ctrl+wheel). Dipasang
@@ -2031,6 +2064,28 @@ function ShapeProps({
           onChange={(e) => onChange({ name: e.target.value })}
         />
       </label>
+      {/* D103: icon — pilih nama dari bank + preview warna fill */}
+      {shape.type === "icon" && (
+        <label>
+          <span className={label}>Icon</span>
+          <div className="flex items-center gap-2">
+            {(() => {
+              const u = iconUrl(shape.icon, shape.fills[0]?.color ?? "#a1a1aa");
+              return u ? (
+                <img src={u} alt="" aria-hidden className="size-5 shrink-0" />
+              ) : null;
+            })()}
+            <Dropdown
+              value={shape.icon}
+              menuClassName="w-56"
+              options={ICON_CATEGORIES.flatMap((c) =>
+                c.icons.map((i) => ({ value: i, label: i, title: c.name })),
+              )}
+              onChange={(v) => onChange({ icon: v } as Partial<DesignShape>)}
+            />
+          </div>
+        </label>
+      )}
       {/* D92 (#11/#12): image — fit + tombol jadikan background frame */}
       {shape.type === "image" && (
         <>
@@ -2185,6 +2240,25 @@ function ShapeProps({
       )}
       {shape.type === "text" && (
         <>
+          <label>
+            <span className={label}>Font (Google Fonts)</span>
+            <Dropdown
+              value={shape.fontFamily ?? ""}
+              options={[
+                { value: "", label: "Default (system)" },
+                ...FONT_BANK.map((f) => ({
+                  value: f.family,
+                  label: `${f.category} - ${f.family}`,
+                  title: f.vibe,
+                })),
+              ]}
+              onChange={(v) =>
+                onChange({
+                  fontFamily: v || undefined,
+                } as Partial<DesignShape>)
+              }
+            />
+          </label>
           <label>
             <span className={label}>Text</span>
             <textarea
