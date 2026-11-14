@@ -104,6 +104,9 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D107: Picasso ritme rolling: default satu layar tuntas per bagian (live di tab
+Design, lapor satu baris, lanjut otomatis); mode checkpoint tetap opsional via
+playbook PICASSO-PROMPT.
 D106: MCP Cloudflare Quick Tunnel: persona bisa publikasikan dev lokal ke
 URL publik tanpa login (cf_quick_start -> trycloudflare.com, URL terbaru
 di browser_open).

@@ -3,7 +3,17 @@
 Rencana desain yang buruk hampir selalu karena brief kosong ("desain dashboard
 dong") - Picasso terpaksa menebak, dan hasilnya generik. Formula yang berhasil:
 **konteks produk + kontrak proses (skill dibuka dulu) + aturan angka keras +
-satu layar per turn**.
+ritme yang eksplisit**. Ada dua ritme, pilih SATU di prompt:
+
+- **Rolling (default untuk melihat hasil per bagian)**: kerjakan layar satu
+  per satu secara berurutan dalam satu run. Setiap layar tuntas tampil live
+  di tab Design, Picasso lapor satu baris, lalu langsung lanjut layar
+  berikutnya. Tanpa berhenti di tengah, tanpa menunggu semua selesai baru
+  melapor. Cocok saat kamu sudah yakin dengan arah dan ingin menonton hasil
+  muncul bertahap, mereview sambil jalan.
+- **Checkpoint**: satu layar per turn, berhenti minta review tiap layar.
+  Cocok untuk layar pertama sebuah produk baru (arah belum teruji) atau saat
+  revisi besar; mencegah sampah terlipatgandakan ke layar berikutnya.
 
 ## Kapan buat project baru
 
@@ -38,9 +48,15 @@ Kontrak proses (WAJIB, jangan langkah):
 3. Pilih SATU style pack dari design-style-library, sebut nama + alasan
    satu baris. Pakai token pack APA ADANYA: palette, font, radius, spacing.
    Brand ku ada -> brand menang, pack hanya dipinjam strukturnya.
-4. Buat file desain baru bernama "[Produk] Redesign v1". Kerjakan SATU
-   LAYAR dulu (layar nomor 1). Selesai -> BERHENTI, minta reviewku,
-   jangan lanjut layar kedua sebelum kubilang oke.
+4. Ritme = [ROLLING / CHECKPOINT, pilih satu]:
+   - ROLLING: buka dengan daftar layar ringkas (satu baris per layar), lalu
+     eksekusi layar 1 sampai tuntas di canvas, lapor SATU baris ("Layar 1/4
+     ... selesai, fileId X"), LANGSUNG lanjut layar 2, dst, sampai semua
+     selesai baru rangkum. JANGAN berhenti untuk review di antara layar,
+     jangan tumpahkan semua hasil di pesan terakhir.
+   - CHECKPOINT: buat file desain baru "[Produk] Redesign v1", kerjakan
+     SATU LAYAR (layar nomor 1). Selesai -> BERHENTI, minta reviewku,
+     jangan lanjut layar kedua sebelum kubilang oke.
 
 Aturan eksekusi (angka keras, melanggar = revisi):
 - Grid 8px: semua spacing/padding kelipatan 8 (4 hanya untuk nudge optik).
@@ -73,9 +89,17 @@ Revisi layar 1 (jangan ubah yang lain):
 Setelah revisi, berhenti lagi untuk review.
 ```
 
-Kenapa satu layar per turn: (a) review dini mencegah sampah terlipatgandakan
-ke layar berikutnya; (b) iteration budget dipakai untuk satu layar penuh
-bukan tiga layar setengah jadi.
+Dalam mode ROLLING kamu tidak perlu menunggu run selesai: kirim catatan
+revisi lewat chat kapan saja mid-run (steering) - Picasso akan menyisipkan
+perbaikan setelah layar yang sedang dikerjakan tuntas, tanpa membatalkan
+sisa daftar layar.
+
+Kenapa ritme eksplisit: tanpa instruksi ritme, model cenderung merencanakan
+semua layar mendetail dulu lalu menumpahkan desain sekaligus di akhir
+(big-bang dump) dan kamu menunggu lama tanpa melihat apa pun. Rolling
+memaksa setiap layar tergambar live di canvas sebelum layar berikutnya
+direncanakan; checkpoint memberi gerbang review dini. Pilih rolling saat
+arah sudah jelas, checkpoint untuk arah baru yang berisiko.
 
 ## Setelah semua layar oke
 

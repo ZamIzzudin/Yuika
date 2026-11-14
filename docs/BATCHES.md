@@ -636,3 +636,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 + Wrapper cf_quick_start/status/stop (quick tunnel anonim, URL berubah per start).
 + Katalog MCP entry + test stdio; smoke nyata 200 dari edge.
+
+
+## Batch D107 — Picasso ritme rolling
+
++ PERSONA.md yui-designer: ritme rolling default (satu layar tuntas, lapor satu baris, lanjut otomatis).
++ PICASSO-PROMPT.md: pilihan ritme ROLLING vs CHECKPOINT + revisi mid-run.

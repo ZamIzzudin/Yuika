@@ -1511,3 +1511,20 @@ mcp-servers/cloudflared/index.mjs (stdio JSON-RPC minimal, pola tailscale):
 Smoke nyata: tunnel ke port 3000, URL ter-parse 5.6 dtk, GET publik 200
 dari edge Cloudflare, stop bersih. Test mcp-cloudflared.test.ts (handshake,
 tools/list, status stopped, port invalid isError EN).
+
+### D107 — Picasso ritme rolling: satu layar per bagian, tanpa big-bang dump (SELESAI)
+Feedback user: tanpa instruksi ritme eksplisit, Picasso merencanakan SEMUA
+layar mendetail dulu lalu menumpahkan desain sekaligus di akhir (big-bang
+dump) dan user menunggu lama tanpa melihat apa pun; ingin melihat hasil
+per bagian namun tetap berjalan terus (tidak berhenti tiap layar).
++ PERSONA.md designer: poin baru 'Ritme rolling (default)' setelah poin
+  canvas - (a) buka run dengan daftar layar ringkas per layar, bukan rencana
+  detail; (b) eksekusi satu layar sampai tuntas di canvas; (c) lapor SATU
+  baris + langsung lanjut layar berikutnya tanpa menunggu review; (d) rangkum
+  setelah semua selesai. DILARANG menumpuk/melapor semua di pesan terakhir;
+  setiap layar harus tergambar di canvas SEBELUM merencanakan layar berikutnya.
+  Berhenti hanya bila ambigu fatal, budget habis, atau user pilih checkpoint.
+  Penomoran poin setelahnya dirapikan (6 handoff, 7 dokumentasi).
++ PICASSO-PROMPT.md: dua ritme eksplisit (ROLLING vs CHECKPOINT) dipilih di
+  template item 4 + penjelasan kapan pakai yang mana + pola revisi mid-run
+  (steering lewat chat tanpa membatalkan sisa daftar layar).
