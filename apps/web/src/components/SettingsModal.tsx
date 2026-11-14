@@ -18,7 +18,7 @@ import { Skeleton } from "./Skeleton";
 import { toastErr, toastOk } from "./ui/toast";
 import { Button, Card, Dropdown, Field, Modal, TextInput } from "./ui";
 
-type Section = "provider" | "mcp" | "usage" | "account" | "danger";
+type Section = "provider" | "mcp" | "usage" | "backup" | "account" | "danger";
 
 const SECTIONS: { id: Section; label: string; hint: string }[] = [
   {
@@ -28,6 +28,7 @@ const SECTIONS: { id: Section; label: string; hint: string }[] = [
   },
   { id: "mcp", label: "MCP & Tools", hint: "catalog, trust, audit" },
   { id: "usage", label: "Usage", hint: "spend, limits, tokens" },
+  { id: "backup", label: "Backup", hint: "restore script, data bundle" },
   { id: "danger", label: "Reset", hint: "wipe host data" },
 ];
 
@@ -280,6 +281,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               <UsageDashboard />
             </section>
           )}
+          {section === "backup" && <BackupPanel />}
           {section === "account" && <AccountPanel />}
           {section === "danger" && <ResetPanel />}
         </div>
@@ -1265,6 +1267,56 @@ function AccountPanel() {
           </div>
         </Card>
       )}
+    </section>
+  );
+}
+
+// F2 Backup: unduh restore script (file .mjs yang dijalankan di host
+// tujuan) atau bundle JSON mentah. Upload ke portal utk share antar-host.
+function BackupPanel() {
+  const [busy, setBusy] = useState<"script" | "bundle" | "">("");
+  async function download(kind: "script" | "bundle") {
+    setBusy(kind);
+    try {
+      const res = await authFetch(apiUrl(kind === "script" ? "/api/backup/script" : "/api/backup"));
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "request failed");
+      const text = await res.text();
+      const blob = new Blob([text], { type: kind === "script" ? "text/javascript" : "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = kind === "script" ? "yuika-restore.mjs" : "yuika-backup.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : "backup failed");
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <section aria-label="Backup and restore" className="flex flex-col gap-4">
+      <div>
+        <h3 className="text-sm font-semibold">Backup & restore</h3>
+        <p className="mt-1 text-caption text-dim">
+          A restore script is a single self-contained file with all host data
+          embedded (custom personas, projects, designs, database). Run it with
+          Node.js inside the Yuika repo on any host to restore. Anyone with
+          the file can read the data, so only share it over channels you
+          trust, e.g. your portal account.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={!!busy} onClick={() => void download("script")}>
+          {busy === "script" ? "Building…" : "Download restore script (.mjs)"}
+        </Button>
+        <Button size="sm" variant="secondary" disabled={!!busy} onClick={() => void download("bundle")}>
+          {busy === "bundle" ? "Building…" : "Download raw bundle (.json)"}
+        </Button>
+      </div>
+      <p className="text-caption text-dim">
+        Restore: place the file anywhere inside the target repo, then run
+        node yuika-restore.mjs and confirm. Restart the api afterwards.
+      </p>
     </section>
   );
 }

@@ -23,9 +23,14 @@ import { buildPersonaGrowth } from "./personas/growth.js";
 import { loadPersonaShapes, savePersonaShape } from "./personas/shapes.js";
 import type { PersonaRename, PersonaRenamesResponse } from "@yuika/contracts";
 import { loadPersonaRenames, savePersonaRename, clearPersonaRename as clearPersonaRenameWs } from "./personas/rename.js";
-import { createCustomPersona as createCustomPersonaWs, updateCustomPersona as updateCustomPersonaWs, deleteCustomPersona as deleteCustomPersonaWs } from "./personas/custom.js";
-import { CustomPersonaResult, type CreateCustomPersonaRequest, type ForgeKit, type UpdateCustomPersonaRequest } from "@yuika/contracts";
-import { createBlindTest, BLIND_PROMPTS } from "./personas/blindtest.js";
+import {
+  createCustomPersona as createCustomPersonaWs,
+  updateCustomPersona as updateCustomPersonaWs,
+  deleteCustomPersona as deleteCustomPersonaWs,
+  exportPersona as exportPersonaWs,
+  importPersona as importPersonaWs,
+} from "./personas/custom.js";
+import { CUSTOM_ALLOWED_TOOLS, CustomPersonaResult, PersonaShareFile, type CreateCustomPersonaRequest, type ForgeKit, type UpdateCustomPersonaRequest } from "@yuika/contracts";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
 import { WorkflowEngine } from "./workflow/engine.js";
 import { loadSkillBindings, saveSkillBindings, applyBindingAction, effectiveSkillNames, type SkillBinding, type SkillBindingsFile } from "./skills/bindings.js";
@@ -65,6 +70,7 @@ import { registerSessionSearchTools } from "./tools/session-search.js";
 import { registerDocTools } from "./tools/doc-tools.js";
 import { registerDesignTools } from "./tools/design-tools.js";
 import { resolvePaths, resolveRepoRoot, type YuiPaths } from "./paths.js";
+import { buildBackupBundle, restoreScriptText, type BackupBundle } from "./backup/bundle.js";
 import { updateEnvFile } from "./env-file.js";
 import { env } from "./env.js";
 import { findUvx, installUv } from "./mcp/uv.js";
@@ -599,7 +605,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     return clearPersonaRenameWs(paths.workspacePath, personaId);
   }
 
-  // ---- F2 Persona Forge: persona custom clone-template (workspace/personas/) ----
+  // ---- F2 Persona Forge: persona custom mandiri (workspace/personas/) ----
   function forgePaths() {
     return { personasDir: paths.personasDir, skillsDir: paths.skillsDir, workspacePath: paths.workspacePath };
   }
@@ -614,7 +620,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       id: p.manifest.id,
       name: p.manifest.name,
       description: p.manifest.description,
-      base: p.manifest.base ?? "",
+      ...(p.manifest.base ? { base: p.manifest.base } : {}),
       custom: true,
       tools: p.manifest.tools,
     });
@@ -626,7 +632,43 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       id: p.manifest.id,
       name: p.manifest.name,
       description: p.manifest.description,
-      base: p.manifest.base ?? "",
+      ...(p.manifest.base ? { base: p.manifest.base } : {}),
+      custom: true,
+      tools: p.manifest.tools,
+    });
+  }
+
+  /** F2 backup: arsip seluruh data host (workspace + db) satu bundle JSON. */
+  async function backupBundle(): Promise<BackupBundle> {
+    return await buildBackupBundle({
+      workspacePath: paths.workspacePath,
+      dbPath: paths.dbPath,
+      repoRoot: resolveRepoRoot(),
+    });
+  }
+
+  /** F2 backup: script restore .mjs self-contained (data ter-embed) - file
+   *  yang bisa dijalankan user di host mana pun untuk memulihkan data. */
+  async function backupRestoreScript(): Promise<string> {
+    return restoreScriptText(await backupBundle());
+  }
+
+  /** F2 share: export persona custom jadi file JSON (dibagikan antar-install). */
+  function exportPersona(id: string): PersonaShareFile {
+    return exportPersonaWs(forgePaths(), id);
+  }
+
+  /** F2 share: import file share -> persona custom baru (validasi penuh). */
+  function importPersona(file: PersonaShareFile): CustomPersonaResult {
+    const parsed = PersonaShareFile.parse(file);
+    const p = importPersonaWs(forgePaths(), parsed);
+    if (parsed.shape) {
+      savePersonaShape(paths.workspacePath, p.manifest.id, parsed.shape, [p.manifest.id]);
+    }
+    return CustomPersonaResult.parse({
+      id: p.manifest.id,
+      name: p.manifest.name,
+      description: p.manifest.description,
       custom: true,
       tools: p.manifest.tools,
     });
@@ -644,11 +686,16 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
         name: p.manifest.name,
         description: p.manifest.description,
         personaMd: p.personaMd,
+        tools: p.manifest.tools,
         skills: p.manifest.skills.bundled,
         custom: p.manifest.custom,
         ...(p.manifest.base ? { base: p.manifest.base } : {}),
       })),
       skills: listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description })),
+      // Deskripsi native functions (tooltip wizard) dari registry live.
+      nativeTools: Object.fromEntries(
+        registry.toolSchemas([...CUSTOM_ALLOWED_TOOLS]).map((s) => [s.name, s.description]),
+      ),
     };
   }
 
@@ -658,18 +705,6 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   } {
     return { files: listDesignFiles(paths.workspacePath) };
   }
-
-  // ---- P1-PER-5: blind test persona (anti "hanya kosmetik") ----
-  const blindTest = createBlindTest({
-    workspacePath: paths.workspacePath,
-    createSession: (personaId, projectId) => createSession(personaId, projectId).sessionId,
-    runTurn: (sessionId, text) => runTurnInternal(sessionId, text),
-    lastAssistantText: (sessionId) => {
-      const msgs = store.getMessages(sessionId).filter((m) => m.role === "assistant");
-      return msgs.length ? (msgs[msgs.length - 1]!.content ?? null) : null;
-    },
-    validPersonaIds: () => listPersonas(paths.personasDir, paths.workspacePath).map((p) => p.manifest.id),
-  });
 
   function createSession(
     personaId: string,
@@ -932,9 +967,11 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     createCustomPersona,
     updateCustomPersona,
     deleteCustomPersona,
+    exportPersona,
+    importPersona,
+    backupBundle,
+    backupRestoreScript,
     forgeKit,
-    blindTest,
-    blindPrompts: BLIND_PROMPTS,
     designFiles,
     createSession,
     listProjectSessions,

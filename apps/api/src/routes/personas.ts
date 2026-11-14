@@ -1,4 +1,4 @@
-// @yuika/api, daftar persona + growth + bentuk maskot (menu Persona) + blind test.
+// @yuika/api, daftar persona + growth + bentuk maskot + Persona Forge (F2).
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import {
@@ -11,8 +11,6 @@ import {
   PersonaShapesResponse,
   SetPersonaRenameRequest,
   SetPersonaShapeRequest,
-  StartBlindTestRequest,
-  SubmitBlindGuessesRequest,
   UpdateCustomPersonaRequest,
 } from "@yuika/contracts";
 
@@ -22,47 +20,6 @@ export function registerPersonaRoutes(app: FastifyInstance, getRt: () => YuiRunt
   /** GET /api/personas/forge-kit — bahan baku wizard Persona Forge (F2):
    *  persona lengkap (lapisan prompt + skills) + bank skill. */
   app.get("/api/personas/forge-kit", async () => ForgeKit.parse(getRt().forgeKit()));
-
-  /** GET /api/personas/blindtest — prompt uji + riwayat run (anon view). */
-  app.get("/api/personas/blindtest", async () => ({
-    prompts: getRt().blindPrompts,
-    runs: getRt().blindTest.list(),
-  }));
-
-  /** POST /api/personas/blindtest — mulai run baru (2-6 persona × prompt). */
-  app.post("/api/personas/blindtest", async (req, reply) => {
-    const parsed = StartBlindTestRequest.safeParse(req.body);
-    if (!parsed.success) {
-      return reply.code(400).send({ error: "payload tidak valid (personaIds 2-6 + promptId)" });
-    }
-    try {
-      return getRt().blindTest.start(parsed.data.personaIds, parsed.data.promptId);
-    } catch (e) {
-      return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
-    }
-  });
-
-  /** GET /api/personas/blindtest/:id — view run (mapping rahasia s.d. submit). */
-  app.get("/api/personas/blindtest/:id", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const run = getRt().blindTest.get(id);
-    if (!run) return reply.code(404).send({ error: "run tidak ditemukan" });
-    return run;
-  });
-
-  /** POST /api/personas/blindtest/:id/guesses — submit tebakan + skor + reveal. */
-  app.post("/api/personas/blindtest/:id/guesses", async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const parsed = SubmitBlindGuessesRequest.safeParse(req.body);
-    if (!parsed.success) {
-      return reply.code(400).send({ error: "payload tidak valid (guesses letter→personaId)" });
-    }
-    try {
-      return getRt().blindTest.submit(id, parsed.data.guesses);
-    } catch (e) {
-      return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
-    }
-  });
 
   /** GET /api/personas/growth, growth persona (level + statistik nyata). */
   app.get("/api/personas/growth", async () => PersonaGrowth.array().parse(getRt().personaGrowth()));
@@ -114,13 +71,13 @@ export function registerPersonaRoutes(app: FastifyInstance, getRt: () => YuiRunt
   });
 
   // ── F2 Persona Forge ───────────────────────────────────────────────────
-  /** POST /api/personas/custom — forge persona baru dari template basis.
+  /** POST /api/personas/custom — buat persona custom baru (mandiri, bukan clone).
    *  Lapisan user: name/description/PERSONA.md/skills (+shape opsional);
    *  tools & delegation dikunci dari basis. */
   app.post("/api/personas/custom", async (req, reply) => {
     const parsed = CreateCustomPersonaRequest.safeParse(req.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: "invalid payload (baseId, name 1-40, description 1-120, personaMd, skills)" });
+      return reply.status(400).send({ error: "invalid payload (name 1-40, description 1-120, personaMd, tools, skills)" });
     }
     try {
       return { persona: getRt().createCustomPersona(parsed.data) };
@@ -133,12 +90,32 @@ export function registerPersonaRoutes(app: FastifyInstance, getRt: () => YuiRunt
   app.put("/api/personas/custom/:id", async (req, reply) => {
     const parsed = UpdateCustomPersonaRequest.safeParse(req.body);
     if (!parsed.success) {
-      return reply.status(400).send({ error: "invalid payload (name 1-40, description 1-120, personaMd, skills)" });
+      return reply.status(400).send({ error: "invalid payload (name 1-40, description 1-120, personaMd, tools, skills)" });
     }
     try {
       return { persona: getRt().updateCustomPersona(String((req.params as { id?: string }).id ?? ""), parsed.data) };
     } catch (e) {
       return reply.status(400).send({ error: e instanceof Error ? e.message : "failed to update the persona" });
+    }
+  });
+
+  /** GET /api/personas/custom/:id/export — file share persona (JSON). */
+  app.get("/api/personas/custom/:id/export", async (req, reply) => {
+    const id = String((req.params as { id?: string }).id ?? "");
+    try {
+      return getRt().exportPersona(id);
+    } catch (e) {
+      return reply.status(404).send({ error: e instanceof Error ? e.message : "persona not found" });
+    }
+  });
+
+  /** POST /api/personas/custom/import — pasang file share jadi persona
+   *  custom baru (semua validasi create dijalankan ulang). */
+  app.post("/api/personas/custom/import", async (req, reply) => {
+    try {
+      return { persona: getRt().importPersona(req.body as never) };
+    } catch (e) {
+      return reply.status(400).send({ error: e instanceof Error ? e.message : "failed to import the persona" });
     }
   });
 

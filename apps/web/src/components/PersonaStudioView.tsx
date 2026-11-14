@@ -23,7 +23,6 @@ import {
 } from "@phosphor-icons/react";
 import { PersonaFace } from "./PersonaPicker";
 import { CharacterStage } from "./CharacterStage";
-import { BlindTestPanel } from "./BlindTestPanel";
 import { Skeleton } from "./Skeleton";
 import { toastErr } from "./ui/toast";
 import {
@@ -94,7 +93,7 @@ export function PersonaStudioView({
   onBack: () => void;
   onOpenProject?: (projectId: string) => void;
 }) {
-  const [view, setView] = useState<"personas" | "missions" | "blind" | "history">(
+  const [view, setView] = useState<"personas" | "missions" | "history">(
     "personas",
   );
   const [dungeons, setDungeons] = useState<DungeonRow[] | null>(null);
@@ -406,7 +405,6 @@ export function PersonaStudioView({
           tabs={[
             { id: "personas", label: "Persona" },
             { id: "missions", label: "Missions" },
-            { id: "blind", label: "Blind test" },
             { id: "history", label: `Training history (${allRuns.length})` },
           ]}
         />
@@ -415,10 +413,6 @@ export function PersonaStudioView({
       {view === "personas" ? (
         <div className="min-h-0 w-full flex-1 overflow-y-auto">
           <CharacterStage personas={personas} onPersonaRenamed={onPersonaRenamed} onPersonasChanged={onPersonasChanged} />
-        </div>
-      ) : view === "blind" ? (
-        <div className="min-h-0 w-full flex-1 overflow-y-auto">
-          <BlindTestPanel personas={personas} />
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto pb-6">
@@ -651,7 +645,7 @@ export function PersonaStudioView({
                     )}
                     <Field
                       label="Pass criteria, one per line"
-                      hint="used by the blind eval later"
+                     
                       className="col-span-2"
                     >
                       <TextArea

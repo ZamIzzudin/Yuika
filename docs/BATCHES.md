@@ -680,3 +680,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 ## Batch F2 - Persona Forge (custom persona clone-template)
 + workspace/personas/custom-*/ dengan struktur file sama seperti built-in; tools + delegation terkunci dari basis; user membentuk nama, deskripsi, prompt, skill, maskot.
 + API forge-kit + CRUD custom; UI wizard ForgePersonaModal di Character Studio (Hammer = forge/reforge, Trash = delete custom saja).
+
+
+## Batch D115-F2v2-D116 — Persona closure + Backup host
++ Blind test dihapus total (core, route, UI, kontrak).
++ Persona Forge v2: persona baru mandiri + pilih native functions (8 kategori, tanpa delegation) + share import/export antar-install.
++ Backup host: bundle JSON + restore script .mjs self-contained (Settings > Backup); portal menyimpan file per akun (repo yuika-portal).

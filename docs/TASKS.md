@@ -1713,3 +1713,48 @@ jalur khusus; id SELALU custom-* (guard delete built-in).
 Catatan sesi: user kerja paralel (mission.ts seed phaser dihapus +
 model-prices.json di-delete di working tree, belum di-commit) - dungeon
 test merah karena itu, bukan F2; TIDAK disentuh.
+
+### D115+F2v2+D116 — Persona ditutup: hapus blind test, Forge v2 (persona
+mandiri + native functions + share), backup host + restore script (LOKAL)
+Keputusan user 2026-11-14: konsep blind test DIHAPUS TOTAL; custom persona
+yang dimaksud = persona BARU di luar 9 built-in (Mary jadi ke-10), BUKAN
+clone; forge = pilih native functions sendiri (di luar workflow); share
+persona antar-orang via file import; backup data host via portal dengan
+file yang bisa di-run untuk restore. Mobile dianggap CLEAR (F1 100%).
+
++ HAPUS BLIND TEST: core personas/blindtest.ts, BlindTestPanel.tsx, tab
+  blind di Studio, 4 route /api/personas/blindtest*, kontrak
+  Start/SubmitBlindGuesses, test blindtest.test.ts. F4 gerbang blind-test
+  live dihapus dari papan.
++ FORGE V2 (custom.ts rewrite): TANPA basis - persona berdiri sendiri;
+  tools = pilihan user dari TOOL_CATEGORIES (8 kategori: files, terminal,
+  browser, design, web, skills/memory/todo, vault, QA; delegate_task/
+  consult/mcp__* SENGAJA di luar = pelaksana, bukan orchestrator);
+  delegation.yaml tetap dikunci (can_spawn [], spawnable_by [user]);
+  template prompt ringan NEW_PERSONA_MD_TEMPLATE (prefill UI).
++ SHARE: exportPersona (custom -> PersonaShareFile JSON, format
+  yuika-persona v1) + importPersona (validasi PENUH ulang - file curang
+  (tool ilegal diselundupkan) ditolak). Route GET .../custom/:id/export +
+  POST .../custom/import. UI: tombol Import from file di modal (prefill),
+  tombol DownloadSimple (share) di kartu custom.
++ ForgePersonaModal v2: tanpa step basis; chips native functions per
+  kategori (tooltip dari registry via forgeKit.nativeTools); edit mode
+  prefill termasuk tools.
++ BACKUP HOST (D116): core backup/bundle.ts - buildBackupBundle (walk
+  workspace: custom personas + override + dungeons + design + projects +
+  uploads; file >8MB skip, total >256MB tolak; snapshot db via
+  better-sqlite3 backup API) + restoreScriptText (.mjs self-contained,
+  data ter-embed, konfirmasi y/N, cari repo root via turbo.json). Route
+  GET /api/backup (bundle JSON) + /api/backup/script (download .mjs).
+  Settings section Backup. API TIDAK PERNAH mengeksekusi restore - user
+  menjalankan file itu sendiri di host tujuan.
++ PORTAL (repo yuika-portal, commit terpisah): table backups (account-
+  scoped, kuota 10), /api/backups GET/POST/GET:id/DELETE + halaman
+  /account/backups (upload/download/delete) + nav Backups. Alur: unduh
+  restore script dari host -> upload ke portal -> unduh di mana saja ->
+  node file.mjs di repo Yuika host tujuan.
++ Test: personas-custom.test.ts rewrite (7), backup-bundle.test.ts (3 -
+  termasuk MENJALANKAN restore script node sungguhan: file+db kembali
+  identik; jawaban n = abort tanpa menulis), portal backups.test.ts (2).
+  Core 474 passed (dungeon.test 1 failed = perubahan lokal user, bukan
+  batch ini), typecheck 6/6, web+api build hijau, portal 44 passed.

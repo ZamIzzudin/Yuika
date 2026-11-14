@@ -18,6 +18,7 @@ import {
   Brain,
   CaretLeft,
   CaretRight,
+  DownloadSimple,
   ChartLine,
   Check,
   Code,
@@ -658,6 +659,25 @@ export function CharacterStage({
     }
   }
 
+  /** F2 share: unduh file share persona custom (dipasang di install lain). */
+  async function exportCustom() {
+    if (!persona?.custom) return;
+    try {
+      const r = await authFetch(apiUrl(`/api/personas/custom/${persona.id}/export`));
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? "request failed");
+      const data = await r.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.persona.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toastOk(`Share file for ${data.name} downloaded.`);
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : "failed to export the persona");
+    }
+  }
+
   async function openRename() {
     if (!persona) return;
     setRnName(persona.name);
@@ -934,6 +954,17 @@ export function CharacterStage({
             className="absolute top-3 right-[6rem] z-[3] grid size-7 cursor-pointer place-items-center rounded-[9px] border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-primary"
           >
             <Trash size={14} aria-hidden />
+          </button>
+        )}
+        {persona.custom && (
+          <button
+            type="button"
+            aria-label={`Share ${persona.name}`}
+            title="Download share file (import on another install)"
+            onClick={() => void exportCustom()}
+            className="absolute top-3 right-[8.75rem] z-[3] grid size-7 cursor-pointer place-items-center rounded-[9px] border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-primary"
+          >
+            <DownloadSimple size={14} aria-hidden />
           </button>
         )}
         <div className="flex flex-wrap gap-1.5 items-center justify-center mb-3">

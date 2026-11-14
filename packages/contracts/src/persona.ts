@@ -125,55 +125,92 @@ export type PersonaRenamesResponse = z.infer<typeof PersonaRenamesResponse>;
 export const SetPersonaRenameRequest = PersonaRename;
 export type SetPersonaRenameRequest = z.infer<typeof SetPersonaRenameRequest>;
 
-// ── F2 (Persona Forge): persona custom clone-template ────────────────────
+// ── F2 (Persona Forge): persona custom - persona baru di luar built-in ──
 
 /** Id persona custom SELALU berawalan `custom-` (validasi + guard delete:
- * built-in tidak bisa dihapus lewat jalur custom). */
+ *  built-in tidak bisa dihapus lewat jalur custom). */
 export const CUSTOM_PERSONA_ID_RE = /^custom-[a-z0-9-]+$/;
 
-/** POST /api/personas/custom - forge persona baru dari template basis.
- *  Tools & delegation DIKUNCI dari basis (kekuatan plafon: custom tidak
- *  lebih kuang dari template-nya). Yang dibentuk user: nama, deskripsi,
- *  lapisan prompt (PERSONA.md), pilihan skill dari bank. */
+/** Katalog native functions yang boleh dipilih persona custom, dikelompokkan
+ *  per kategori (UI Forge). Alat WORKFLOW/DELEGASI (delegate_task, consult)
+ *  SENGAJA di luar daftar: persona custom = pelaksana mandiri, bukan
+ *  orchestrator (konsisten dgn delegation.yaml terkunci can_spawn []). */
+export const TOOL_CATEGORIES = [
+  { id: "files", label: "Files & docs", tools: ["read_file", "write_file", "list_files", "search_files", "doc_read"] },
+  { id: "terminal", label: "Terminal & commands", tools: ["terminal", "run_command", "run_in_workshop"] },
+  { id: "browser", label: "Browser & screen", tools: ["browser_open", "browser_snapshot", "browser_click", "browser_type", "browser_press", "browser_scroll", "request_takeover", "request_login", "screen_status"] },
+  { id: "design", label: "Design canvas", tools: ["design_list", "design_create_file", "design_get_file", "design_add_page", "design_add_shape", "design_update_shape", "design_delete_shape", "design_delete_page", "design_delete_file"] },
+  { id: "web", label: "Web & research", tools: ["web_search", "web_fetch", "secret_http"] },
+  { id: "skills", label: "Skills, memory & todos", tools: ["skills_list", "skill_view", "skill_propose", "memory_append", "session_search", "todo_list", "todo_add", "todo_update"] },
+  { id: "vault", label: "Vault (secrets)", tools: ["vault_request", "vault_list", "vault_forget"] },
+  { id: "qa", label: "QA watch", tools: ["qa_check", "qa_snapshot", "qa_watch"] },
+] as const;
+
+/** Flat daftar tool yang diizinkan utk persona custom (validasi create/
+ *  update/import). Wildcard mcp__* TIDAK diizinkan - hanya native. */
+export const CUSTOM_ALLOWED_TOOLS: readonly string[] = TOOL_CATEGORIES.flatMap((c) => [...c.tools]);
+
+/** POST /api/personas/custom - buat persona baru (bukan clone): identitas +
+ *  lapisan prompt + pilihan native functions + skills dari bank (+shape).
+ *  Delegation tetap dikunci (can_spawn [], spawnable_by [user]). */
 export const CreateCustomPersonaRequest = z.object({
-  baseId: z.string().regex(/^[a-z0-9-]+$/),
   name: z.string().min(1).max(40),
   description: z.string().min(1).max(120),
   personaMd: z.string().min(1).max(40_000),
+  tools: z.array(z.string().min(1)).min(1).max(48),
   skills: z.array(z.string().min(1)).max(16),
   shape: OrinShapeKey.optional(),
 });
 export type CreateCustomPersonaRequest = z.infer<typeof CreateCustomPersonaRequest>;
 
-/** PUT /api/personas/custom/:id - ubah lapisan user (nama/deskripsi/prompt/
- *  skills). Tools, basis, delegation, id: tidak bisa diubah. */
+/** PUT /api/personas/custom/:id - ubah lapisan user SEMUANYA (termasuk
+ *  pilihan native functions). Id, delegation, custom flag: tetap. */
 export const UpdateCustomPersonaRequest = z.object({
   name: z.string().min(1).max(40),
   description: z.string().min(1).max(120),
   personaMd: z.string().min(1).max(40_000),
+  tools: z.array(z.string().min(1)).min(1).max(48),
   skills: z.array(z.string().min(1)).max(16),
 });
 export type UpdateCustomPersonaRequest = z.infer<typeof UpdateCustomPersonaRequest>;
 
-/** Hasil create/update: persona custom (id + identitas + basis + tools). */
+/** Hasil create/update: persona custom (id + identitas + tools aktif). */
 export const CustomPersonaResult = z.object({
   id: z.string().regex(CUSTOM_PERSONA_ID_RE),
   name: z.string(),
   description: z.string(),
-  base: z.string(),
+  base: z.string().optional(),
   custom: z.literal(true),
-  /** Tools terkunci (salinan basis saat forge) - informatif utk UI. */
   tools: z.array(z.string()),
 });
 export type CustomPersonaResult = z.infer<typeof CustomPersonaResult>;
 
-/** GET /api/personas/forge-kit - bahan baku wizard Persona Forge: seluruh
- *  persona (built-in + custom, dgn lapisan prompt & skills) + bank skill. */
+/** File share persona (export/import antar-install). Format = identitas +
+ *  prompt + native functions + skills; SEMUA divalidasi ulang saat import
+ *  (tidak ada kepercayaan buta pada file dari luar). */
+export const PERSONA_SHARE_FORMAT = "yuika-persona";
+
+export const PersonaShareFile = z.object({
+  format: z.literal(PERSONA_SHARE_FORMAT),
+  version: z.literal(1),
+  name: z.string().min(1).max(40),
+  description: z.string().min(1).max(120),
+  personaMd: z.string().min(1).max(40_000),
+  tools: z.array(z.string().min(1)).min(1).max(48),
+  skills: z.array(z.string().min(1)).max(16),
+  shape: OrinShapeKey.optional(),
+});
+export type PersonaShareFile = z.infer<typeof PersonaShareFile>;
+
+/** GET /api/personas/forge-kit - bahan baku wizard Persona Forge (F2):
+ *  persona lengkap (lapisan prompt + skills + tools) + bank skill +
+ *  deskripsi native functions (tooltip). */
 export const ForgeKitPersona = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
   personaMd: z.string(),
+  tools: z.array(z.string()),
   skills: z.array(z.string()),
   custom: z.boolean(),
   base: z.string().optional(),
@@ -183,20 +220,7 @@ export type ForgeKitPersona = z.infer<typeof ForgeKitPersona>;
 export const ForgeKit = z.object({
   personas: z.array(ForgeKitPersona),
   skills: z.array(z.object({ name: z.string(), description: z.string() })),
+  /** id -> deskripsi tool (tooltip; tool tak terdaftar = kosong). */
+  nativeTools: z.record(z.string(), z.string()),
 });
 export type ForgeKit = z.infer<typeof ForgeKit>;
-
-// ── P1-PER-5: blind test persona (anti "hanya kosmetik") ──────────────────
-
-/** POST /api/personas/blindtest — mulai run: 2-6 persona × satu prompt uji. */
-export const StartBlindTestRequest = z.object({
-  personaIds: z.array(z.string().regex(/^[a-z0-9-]+$/)).min(2).max(6),
-  promptId: z.string().min(1),
-});
-export type StartBlindTestRequest = z.infer<typeof StartBlindTestRequest>;
-
-/** POST /api/personas/blindtest/:id/guesses — tebakan penguji (letter→persona). */
-export const SubmitBlindGuessesRequest = z.object({
-  guesses: z.record(z.string().min(1).max(1), z.string().regex(/^[a-z0-9-]+$/)),
-});
-export type SubmitBlindGuessesRequest = z.infer<typeof SubmitBlindGuessesRequest>;

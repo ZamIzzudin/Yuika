@@ -117,6 +117,16 @@ export function registerSettingsRoutes(
     if (!r.ok) return reply.code(502).send({ error: r.error ?? "failed to start update" });
     return reply.code(202).send({ ok: true, updating: true });
   });
+
+  // ── F2 Backup: arsip data host + script restore (file yang dijalankan di
+  //    host tujuan; api TIDAK pernah mengeksekusinya). ────────────────────
+  app.get("/api/backup", async () => ({ bundle: await getRt().backupBundle() }));
+
+  app.get("/api/backup/script", async (_req, reply) => {
+    reply.header("content-type", "text/javascript; charset=utf-8");
+    reply.header("content-disposition", 'attachment; filename="yuika-restore.mjs"');
+    return await getRt().backupRestoreScript();
+  });
 }
 
 /** SSH ke host VPS dan jalankan update.sh ter-detach. Container API akan
@@ -157,4 +167,5 @@ function startHostUpdate(): { ok: boolean; error?: string } {
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
+
 }

@@ -1,13 +1,21 @@
-// F2 Persona Forge: persona custom clone-template.
-// Plafon by-construction: tools = salinan persis basis (jalur update tidak
-// menyentuh toolsets.yaml), delegation dikunci (can_spawn [], spawnable_by
-// [user]), skill harus dari bank. Custom dir = workspace/personas/custom-*.
+// F2 Persona Forge v2: persona custom = persona BARU di luar 9 built-in
+// (Mary jadi ke-10). Bukan clone: user pilih native functions sendiri
+// (validasi CUSTOM_ALLOWED_TOOLS - delegate_task/consult/mcp__* ditolak),
+// skill dari bank, prompt layer sendiri. Delegation terkunci (can_spawn [],
+// spawnable_by [user]). Share: export/import file JSON tervalidasi penuh.
 import { afterEach, describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { listPersonas } from "../personas/loader.js";
-import { createCustomPersona, deleteCustomPersona, updateCustomPersona, customPersonasDir } from "../personas/custom.js";
+import {
+  createCustomPersona,
+  updateCustomPersona,
+  deleteCustomPersona,
+  exportPersona,
+  importPersona,
+  customPersonasDir,
+} from "../personas/custom.js";
 import { listSkills } from "../skills/loader.js";
 
 let tmp = "";
@@ -28,77 +36,100 @@ function setup() {
 }
 
 const forgeInput = {
-  baseId: "yui-coder",
-  name: "Kohaku",
-  description: "TDD coder with a warm tone",
-  personaMd: "# Kohaku, Persona Layer\n\nYou are a careful coder.",
-  skills: ["code-review-basics"],
+  name: "Mary",
+  description: "Ops analyst with a calm voice",
+  personaMd: "# Mary, Persona Layer\n\nYou are a careful analyst.",
+  tools: ["read_file", "write_file", "terminal", "web_search"],
+  skills: ["web-research"],
 };
 
-describe("F2 Persona Forge", () => {
-  it("forge: file tercipta, manifest valid, tools = basis, delegation dikunci", () => {
+describe("F2 Persona Forge (persona mandiri)", () => {
+  it("create: file lengkap, manifest valid, tools = pilihan user, delegation dikunci", () => {
     const paths = setup();
     const p = createCustomPersona(paths, forgeInput);
-    expect(p.manifest.id).toBe("custom-kohaku");
+    expect(p.manifest.id).toBe("custom-mary");
     expect(p.manifest.custom).toBe(true);
-    expect(p.manifest.base).toBe("yui-coder");
-    expect(p.manifest.tools).toEqual(listPersonas(paths.personasDir).find((x) => x.manifest.id === "yui-coder")?.manifest.tools);
+    expect(p.manifest.base).toBeUndefined(); // bukan clone
+    expect(p.manifest.tools).toEqual(["read_file", "write_file", "terminal", "web_search"]);
     expect(p.manifest.delegation).toEqual({ can_spawn: [], spawnable_by: ["user"] });
-    expect(p.personaMd).toContain("Kohaku");
-    // file fisik lengkap
-    const dir = path.join(customPersonasDir(paths.workspacePath), "custom-kohaku");
+    expect(p.personaMd).toContain("Mary");
+    const dir = path.join(customPersonasDir(paths.workspacePath), "custom-mary");
     for (const f of ["persona.yaml", "PERSONA.md", "toolsets.yaml", "skills.yaml", "delegation.yaml"]) {
       expect(fs.existsSync(path.join(dir, f))).toBe(true);
     }
   });
 
-  it("listPersonas merge custom + built-in; rename overlay tetap jalan di atasnya", () => {
+  it("listPersonas merge custom + built-in (10 persona); rename overlay tetap jalan", () => {
     const paths = setup();
     createCustomPersona(paths, forgeInput);
     const all = listPersonas(paths.personasDir, paths.workspacePath);
     expect(all.some((x) => x.manifest.id === "yui-coder")).toBe(true);
-    const custom = all.find((x) => x.manifest.id === "custom-kohaku");
-    expect(custom?.manifest.name).toBe("Kohaku");
-    // rename F1 berlaku utk custom juga (satu jalur loader)
+    const mary = all.find((x) => x.manifest.id === "custom-mary");
+    expect(mary?.manifest.name).toBe("Mary");
+    expect(all.length).toBe(listPersonas(paths.personasDir).length + 1);
     fs.writeFileSync(
       path.join(paths.workspacePath, "persona-names.json"),
-      JSON.stringify({ renames: [{ personaId: "custom-kohaku", name: "Kohaku Prime", description: null }] }),
+      JSON.stringify({ renames: [{ personaId: "custom-mary", name: "Mary Prime", description: null }] }),
       "utf-8",
     );
-    const renamed = listPersonas(paths.personasDir, paths.workspacePath).find((x) => x.manifest.id === "custom-kohaku");
-    expect(renamed?.manifest.name).toBe("Kohaku Prime");
+    expect(
+      listPersonas(paths.personasDir, paths.workspacePath).find((x) => x.manifest.id === "custom-mary")?.manifest.name,
+    ).toBe("Mary Prime");
   });
 
-  it("validasi: basis tak dikenal / basis custom / skill di luar bank / nama duplikat suffix", () => {
+  it("validasi tools: kosong / di luar katalog (delegate_task, consult, mcp__*, unknown) ditolak", () => {
     const paths = setup();
-    expect(() => createCustomPersona(paths, { ...forgeInput, baseId: "yui-nobody" })).toThrow(/tidak dikenal/);
-    createCustomPersona(paths, forgeInput);
-    // basis custom → ditolak (tak terdaftar sbg basis built-in)
-    expect(() => createCustomPersona(paths, { ...forgeInput, baseId: "custom-kohaku" })).toThrow(/tidak dikenal/);
+    expect(() => createCustomPersona(paths, { ...forgeInput, tools: [] })).toThrow(/minimal satu/);
+    expect(() => createCustomPersona(paths, { ...forgeInput, tools: ["delegate_task"] })).toThrow(/tidak diizinkan/);
+    expect(() => createCustomPersona(paths, { ...forgeInput, tools: ["consult"] })).toThrow(/tidak diizinkan/);
+    expect(() => createCustomPersona(paths, { ...forgeInput, tools: ["mcp__filesystem"] })).toThrow(/tidak diizinkan/);
+    expect(() => createCustomPersona(paths, { ...forgeInput, tools: ["ray_gun"] })).toThrow(/tidak diizinkan/);
     expect(() => createCustomPersona(paths, { ...forgeInput, skills: ["not-a-skill"] })).toThrow(/skill tidak dikenal/);
-    // nama sama -> id suffix -2
-    const second = createCustomPersona(paths, { ...forgeInput, description: "Second take" });
-    expect(second.manifest.id).toBe("custom-kohaku-2");
+    // nama sama -> id suffix -2 (setelah satu Mary sukses dibuat)
+    createCustomPersona(paths, forgeInput);
+    expect(createCustomPersona(paths, { ...forgeInput, description: "Second take" }).manifest.id).toBe("custom-mary-2");
   });
 
-  it("update: hanya lapisan user; tools/toolsets.yaml tidak tersentuh", () => {
+  it("update: identitas/prompt/tools/skills berubah; delegation.yaml tidak tersentuh", () => {
     const paths = setup();
     createCustomPersona(paths, forgeInput);
-    const before = fs.readFileSync(path.join(customPersonasDir(paths.workspacePath), "custom-kohaku", "toolsets.yaml"), "utf-8");
+    const dir = path.join(customPersonasDir(paths.workspacePath), "custom-mary");
+    const before = fs.readFileSync(path.join(dir, "delegation.yaml"), "utf-8");
     const bank = listSkills(paths.skillsDir).map((s) => s.name);
-    const skill = bank.find((s) => s !== "code-review-basics") ?? "code-review-basics";
-    const updated = updateCustomPersona(paths, "custom-kohaku", {
-      name: "Kohaku Reforged",
-      description: "Same power, new words",
+    const updated = updateCustomPersona(paths, "custom-mary", {
+      name: "Mary Reforged",
+      description: "Wider mandate now",
       personaMd: "# Reforged\n\nNew instructions.",
-      skills: [skill],
+      tools: ["read_file", "browser_open", "browser_snapshot", "design_list"],
+      skills: [bank[0]!],
     });
-    expect(updated.manifest.name).toBe("Kohaku Reforged");
-    expect(updated.manifest.skills.bundled).toContain(skill);
-    expect(updated.personaMd).toContain("Reforged");
-    const after = fs.readFileSync(path.join(customPersonasDir(paths.workspacePath), "custom-kohaku", "toolsets.yaml"), "utf-8");
-    expect(after).toBe(before);
-    expect(() => updateCustomPersona(paths, "yui-coder", { name: "x", description: "y", personaMd: "z", skills: [] })).toThrow(/custom/);
+    expect(updated.manifest.name).toBe("Mary Reforged");
+    expect(updated.manifest.tools).toContain("browser_open");
+    expect(updated.manifest.tools).not.toContain("terminal");
+    expect(fs.readFileSync(path.join(dir, "delegation.yaml"), "utf-8")).toBe(before);
+    expect(() => updateCustomPersona(paths, "yui-coder", { ...forgeInput, name: "x" })).toThrow(/custom/);
+  });
+
+  it("share: export -> import round-trip (validasi penuh; id baru dari nama)", () => {
+    const paths = setup();
+    createCustomPersona(paths, forgeInput);
+    const file = exportPersona(paths, "custom-mary");
+    expect(file.format).toBe("yuika-persona");
+    expect(file.tools).toEqual(forgeInput.tools);
+    // import di "install lain" (workspace beda): persona ke-10 lahir utuh
+    const other = path.join(tmp, "ws2");
+    fs.mkdirSync(other, { recursive: true });
+    const imported = importPersona({ ...paths, workspacePath: other }, file);
+    expect(imported.manifest.id).toBe("custom-mary");
+    expect(imported.manifest.tools).toEqual(forgeInput.tools);
+    expect(imported.manifest.skills.bundled).toEqual(["web-research"]);
+    expect(imported.personaMd).toContain("Mary");
+    // import file curang (tool ilegal diselundupkan) -> ditolak
+    expect(() => importPersona({ ...paths, workspacePath: other }, { ...file, tools: ["delegate_task"] })).toThrow(
+      /tidak diizinkan/,
+    );
+    // export built-in -> ditolak (bukan custom)
+    expect(() => exportPersona(paths, "yui-coder")).toThrow(/custom/);
   });
 
   it("delete: custom hilang (+ override rename/shape ikut bersih), built-in ditolak, idempoten", () => {
@@ -106,15 +137,14 @@ describe("F2 Persona Forge", () => {
     createCustomPersona(paths, forgeInput);
     fs.writeFileSync(
       path.join(paths.workspacePath, "persona-shapes.json"),
-      JSON.stringify({ shapes: [{ personaId: "custom-kohaku", shape: "star" }] }),
+      JSON.stringify({ shapes: [{ personaId: "custom-mary", shape: "star" }] }),
       "utf-8",
     );
-    expect(deleteCustomPersona(paths, "custom-kohaku")).toBe(true);
-    expect(fs.existsSync(path.join(customPersonasDir(paths.workspacePath), "custom-kohaku"))).toBe(false);
-    expect(fs.readFileSync(path.join(paths.workspacePath, "persona-shapes.json"), "utf-8")).not.toContain("custom-kohaku");
-    expect(deleteCustomPersona(paths, "custom-kohaku")).toBe(false); // idempoten
+    expect(deleteCustomPersona(paths, "custom-mary")).toBe(true);
+    expect(fs.existsSync(path.join(customPersonasDir(paths.workspacePath), "custom-mary"))).toBe(false);
+    expect(fs.readFileSync(path.join(paths.workspacePath, "persona-shapes.json"), "utf-8")).not.toContain("custom-mary");
+    expect(deleteCustomPersona(paths, "custom-mary")).toBe(false);
     expect(() => deleteCustomPersona(paths, "yui-coder")).toThrow(/custom/);
-    // built-in tetap ada
     expect(listPersonas(paths.personasDir, paths.workspacePath).some((x) => x.manifest.id === "yui-coder")).toBe(true);
   });
 
@@ -125,7 +155,7 @@ describe("F2 Persona Forge", () => {
     fs.writeFileSync(path.join(customPersonasDir(paths.workspacePath), "custom-broken", "persona.yaml"), "id: [invalid");
     const all = listPersonas(paths.personasDir, paths.workspacePath);
     expect(all.some((x) => x.manifest.id === "yui-coder")).toBe(true);
-    expect(all.some((x) => x.manifest.id === "custom-kohaku")).toBe(true);
+    expect(all.some((x) => x.manifest.id === "custom-mary")).toBe(true);
     expect(all.some((x) => x.manifest.id === "custom-broken")).toBe(false);
   });
 });

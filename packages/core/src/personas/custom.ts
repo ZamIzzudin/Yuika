@@ -1,19 +1,27 @@
-// @yuika/core, F2 Persona Forge: persona custom clone-template.
-// Persona custom = direktori file di `workspace/personas/custom-*/` dengan
-// struktur SAMA seperti built-in (persona.yaml + PERSONA.md + toolsets.yaml +
-// skills.yaml + delegation.yaml), jadi loader/prompt/delegation polos tanpa
-// jalur khusus. Plafon kekuatan by-construction:
-//   - tools = salinan PERSIS toolsets.yaml basis saat forge, jalur update
-//     TIDAK menyentuhnya -> custom tidak pernah lebih kuang dari template;
-//   - delegation dikunci: can_spawn [] (bukan orchestrator), spawnable_by
-//     [user] (hanya user yang bisa memilihnya, Maestro tidak).
-// Yang dibentuk user: nama, deskripsi, lapisan prompt (PERSONA.md), pilihan
-// skill dari bank (subset nama skill yang valid).
+// @yuika/core, F2 Persona Forge: persona custom - persona BARU di luar
+// 9 built-in (Mary jadi persona ke-10). Bukan clone: user membentuk sendiri
+// identitas, lapisan prompt (PERSONA.md), pilihan NATIVE FUNCTIONS (terminal,
+// browser, design, dll - di luar workflow), dan skill dari bank.
+// Struktur file SAMA seperti built-in (persona.yaml + PERSONA.md +
+// toolsets.yaml + skills.yaml + delegation.yaml) di workspace/personas/,
+// jadi loader/prompt/growth polos tanpa jalur khusus.
+// Batas by-construction (persona custom = pelaksana mandiri, bukan
+// orchestrator): tools HARUS dari CUSTOM_ALLOWED_TOOLS (delegate_task/
+// consult/mcp__* tidak termasuk), delegation.yaml terkunci (can_spawn [],
+// spawnable_by [user] - hanya user yang bisa memilihnya).
+// Share: exportPersona/importPersona = file JSON divalidasi penuh ulang.
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
-import { CUSTOM_PERSONA_ID_RE, type CreateCustomPersonaRequest, type UpdateCustomPersonaRequest } from "@yuika/contracts";
-import { listPersonas, loadPersona, type Persona } from "./loader.js";
+import {
+  CUSTOM_ALLOWED_TOOLS,
+  CUSTOM_PERSONA_ID_RE,
+  PERSONA_SHARE_FORMAT,
+  type CreateCustomPersonaRequest,
+  type PersonaShareFile,
+  type UpdateCustomPersonaRequest,
+} from "@yuika/contracts";
+import { loadPersona, type Persona } from "./loader.js";
 import { listSkills } from "../skills/loader.js";
 import { clearPersonaRename } from "./rename.js";
 import { clearPersonaShape } from "./shapes.js";
@@ -23,7 +31,25 @@ export function customPersonasDir(workspacePath: string): string {
   return path.join(workspacePath, "personas");
 }
 
-/** Slug id dari nama: "My Coder 2" -> "my-coder-2". */
+/** Template ringan utk prompt layer baru (prefill UI; server tak memaksakan). */
+export const NEW_PERSONA_MD_TEMPLATE = (name: string): string =>
+  [
+    `# ${name}, Persona Layer`,
+    "",
+    "## Who you are",
+    "",
+    `You are ${name}, a member of the Yui team. Describe your specialty, tone,`,
+    "and how you prefer to work.",
+    "",
+    "## How you work",
+    "",
+    "1. First rule of how you operate.",
+    "2. Second rule (files, tools, verification habits).",
+    "3. How you report results back to the user.",
+    "",
+  ].join("\n");
+
+/** Slug id dari nama: "Mary Stone" -> "mary-stone". */
 export function slugifyPersonaName(name: string): string {
   const slug = name
     .toLowerCase()
@@ -44,6 +70,7 @@ function assertCustomId(id: string): void {
   }
 }
 
+/** Validasi + normalisasi skills: harus nama skill di bank, tanpa duplikat. */
 function validateSkills(skillsDir: string, skills: readonly string[]): string[] {
   const trimmed = skills.map((s) => s.trim());
   if (trimmed.some((s) => !s)) throw new Error("skills: empty entry");
@@ -53,6 +80,18 @@ function validateSkills(skillsDir: string, skills: readonly string[]): string[] 
   const missing = unique.filter((s) => !bank.has(s));
   if (missing.length > 0) {
     throw new Error(`skill tidak dikenal: ${missing.join(", ")}`);
+  }
+  return unique;
+}
+
+/** Validasi + normalisasi native functions: hanya dari katalog yang diizinkan. */
+function validateTools(tools: readonly string[]): string[] {
+  const unique = [...new Set(tools.map((t) => t.trim()).filter(Boolean))];
+  if (unique.length === 0) throw new Error("tools: pilih minimal satu native function");
+  const allowed = new Set(CUSTOM_ALLOWED_TOOLS);
+  const bad = unique.filter((t) => !allowed.has(t));
+  if (bad.length > 0) {
+    throw new Error(`tool tidak diizinkan untuk persona custom: ${bad.join(", ")}`);
   }
   return unique;
 }
@@ -74,51 +113,55 @@ export interface ForgePaths {
   workspacePath: string;
 }
 
-/** Forge persona baru: clone template basis + lapisan user. Return persona
- *  ter-load (manifest tervalidasi). Error EN-friendly via zod + eksplisit. */
-export function createCustomPersona(paths: ForgePaths, input: CreateCustomPersonaRequest): Persona {
-  const base = listPersonas(paths.personasDir).find((p) => p.manifest.id === input.baseId);
-  if (!base) throw new Error(`persona basis tidak dikenal: ${input.baseId}`);
-  if (base.manifest.custom) throw new Error("persona basis harus built-in, bukan custom");
-  const skills = validateSkills(paths.skillsDir, input.skills);
-
-  const id = uniqueId(paths.workspacePath, input.name);
-  const dir = dirOf(paths.workspacePath, id);
+function writePersonaFiles(
+  dir: string,
+  input: { name: string; description: string; personaMd: string; tools: string[]; skills: string[]; id: string },
+  extra?: Record<string, unknown>,
+): void {
   fs.mkdirSync(dir, { recursive: true });
-
   const manifest = {
-    id,
+    id: input.id,
     name: input.name.trim(),
     version: "0.1.0",
-    expertise: base.manifest.expertise,
-    tags: [...new Set(["custom", ...base.manifest.tags])],
+    expertise: "custom",
+    tags: ["custom"],
     description: input.description.trim(),
-    assets: base.manifest.assets,
-    model: base.manifest.model,
-    memory: base.manifest.memory,
+    assets: {
+      portrait: null,
+      riv: null,
+      expressions: ["idle", "thinking", "working", "awaiting_input", "done", "error", "celebrating"],
+    },
+    model: { primary: { quality: "high" }, aux: { quality: "low" } },
+    memory: { domain: "custom", learn: true },
     custom: true,
-    base: base.manifest.id,
+    ...extra,
   };
   fs.writeFileSync(path.join(dir, "persona.yaml"), YAML.stringify(manifest), "utf-8");
-  // Tools terkunci: salinan persis basis. Jalur update tidak menulis file ini.
-  fs.writeFileSync(
-    path.join(dir, "toolsets.yaml"),
-    YAML.stringify({ tools: base.manifest.tools }),
-    "utf-8",
-  );
-  fs.writeFileSync(path.join(dir, "skills.yaml"), YAML.stringify({ bundled: skills, recommended: [] }), "utf-8");
-  // Delegation dikunci: bukan orchestrator; hanya user yang bisa memilih.
+  fs.writeFileSync(path.join(dir, "toolsets.yaml"), YAML.stringify({ tools: input.tools }), "utf-8");
+  fs.writeFileSync(path.join(dir, "skills.yaml"), YAML.stringify({ bundled: input.skills, recommended: [] }), "utf-8");
+  // Delegation DIKUNCI: persona custom bukan orchestrator; hanya user yang
+  // bisa memilihnya (Maestro tidak melihatnya sebagai opsi spawn).
   fs.writeFileSync(path.join(dir, "delegation.yaml"), YAML.stringify({ can_spawn: [], spawnable_by: ["user"] }), "utf-8");
   fs.writeFileSync(path.join(dir, "PERSONA.md"), input.personaMd, "utf-8");
+}
+
+/** Buat persona custom baru. Return persona ter-load (manifest tervalidasi). */
+export function createCustomPersona(paths: ForgePaths, input: CreateCustomPersonaRequest): Persona {
+  const tools = validateTools(input.tools);
+  const skills = validateSkills(paths.skillsDir, input.skills);
+  const id = uniqueId(paths.workspacePath, input.name);
+  const dir = dirOf(paths.workspacePath, id);
+  writePersonaFiles(dir, { ...input, tools, skills, id });
   return loadPersona(dir);
 }
 
-/** Ubah lapisan user (nama/deskripsi/prompt/skills). Tools, basis, id, dan
- *  delegation tidak tersentuh. */
+/** Ubah semua lapisan user (identitas/prompt/tools/skills). Id & delegation
+ *  tidak tersentuh. */
 export function updateCustomPersona(paths: ForgePaths, id: string, input: UpdateCustomPersonaRequest): Persona {
   assertCustomId(id);
   const dir = dirOf(paths.workspacePath, id);
   if (!fs.existsSync(dir)) throw new Error(`persona custom tidak ditemukan: ${id}`);
+  const tools = validateTools(input.tools);
   const skills = validateSkills(paths.skillsDir, input.skills);
 
   const file = path.join(dir, "persona.yaml");
@@ -126,9 +169,41 @@ export function updateCustomPersona(paths: ForgePaths, id: string, input: Update
   manifest.name = input.name.trim();
   manifest.description = input.description.trim();
   fs.writeFileSync(file, YAML.stringify(manifest), "utf-8");
+  fs.writeFileSync(path.join(dir, "toolsets.yaml"), YAML.stringify({ tools }), "utf-8");
   fs.writeFileSync(path.join(dir, "skills.yaml"), YAML.stringify({ bundled: skills, recommended: [] }), "utf-8");
   fs.writeFileSync(path.join(dir, "PERSONA.md"), input.personaMd, "utf-8");
   return loadPersona(dir);
+}
+
+/** Export persona custom jadi file share (JSON, divalidasi penuh saat
+ *  di-import di install lain). */
+export function exportPersona(paths: ForgePaths, id: string): PersonaShareFile {
+  assertCustomId(id);
+  const dir = dirOf(paths.workspacePath, id);
+  if (!fs.existsSync(dir)) throw new Error(`persona custom tidak ditemukan: ${id}`);
+  const p = loadPersona(dir);
+  return {
+    format: PERSONA_SHARE_FORMAT,
+    version: 1,
+    name: p.manifest.name,
+    description: p.manifest.description,
+    personaMd: p.personaMd,
+    tools: p.manifest.tools,
+    skills: p.manifest.skills.bundled,
+  };
+}
+
+/** Import file share persona -> persona custom baru (id baru dari nama;
+ *  konflik -> suffix). Semua validasi create berlaku ulang. */
+export function importPersona(paths: ForgePaths, file: PersonaShareFile): Persona {
+  return createCustomPersona(paths, {
+    name: file.name,
+    description: file.description,
+    personaMd: file.personaMd,
+    tools: file.tools,
+    skills: file.skills,
+    ...(file.shape ? { shape: file.shape } : {}),
+  });
 }
 
 /** Hapus persona custom (built-in ditolak lewat assertCustomId). Override
