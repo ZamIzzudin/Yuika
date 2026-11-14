@@ -675,3 +675,8 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 ## Batch D114 — Workshop orphan sweep
 + listArtifacts/removeVolume di host docker; sweepOrphans saat boot membersihkan container/volume/row yatim milik project terhapus.
+
+
+## Batch F2 - Persona Forge (custom persona clone-template)
++ workspace/personas/custom-*/ dengan struktur file sama seperti built-in; tools + delegation terkunci dari basis; user membentuk nama, deskripsi, prompt, skill, maskot.
++ API forge-kit + CRUD custom; UI wizard ForgePersonaModal di Character Studio (Hammer = forge/reforge, Trash = delete custom saja).

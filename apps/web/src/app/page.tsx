@@ -1298,6 +1298,7 @@ export default function Home() {
             <PersonaStudioView
               personas={personas}
               onPersonaRenamed={() => void loadPersonas()}
+              onPersonasChanged={() => void loadPersonas()}
               onBack={() => setStudioOpen(false)}
               onOpenProject={(pid) => {
                 setActiveProjectId(pid); // buka ruangan latihan seperti project

@@ -7,10 +7,14 @@ export const PersonaInfo = z.object({
   id: z.string(),
   name: z.string(),
   expertise: z.string(),
- /** ≤ 60 char, standar deskripsi skill/persona (warisan Hermes, ). */
-  description: z.string().max(60),
+ /** ≤ 120 char (satu sumber kebenaran dgn manifest; F2 custom desc 120). */
+  description: z.string().max(120),
   portrait: z.string().nullable(),
   states: z.array(PersonaState),
+  /** F2: persona custom (forge, workspace) vs built-in (repo). */
+  custom: z.boolean().default(false),
+  /** F2: id basis built-in (hanya utk custom). */
+  base: z.string().optional(),
 });
 export type PersonaInfo = z.infer<typeof PersonaInfo>;
 

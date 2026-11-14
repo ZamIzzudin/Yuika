@@ -2,6 +2,9 @@
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import {
+  CreateCustomPersonaRequest,
+  CUSTOM_PERSONA_ID_RE,
+  ForgeKit,
   PersonaGrowth,
   PersonaRename,
   PersonaRenamesResponse,
@@ -10,10 +13,15 @@ import {
   SetPersonaShapeRequest,
   StartBlindTestRequest,
   SubmitBlindGuessesRequest,
+  UpdateCustomPersonaRequest,
 } from "@yuika/contracts";
 
 export function registerPersonaRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.get("/api/personas", async () => ({ personas: getRt().listPersonas() }));
+
+  /** GET /api/personas/forge-kit — bahan baku wizard Persona Forge (F2):
+   *  persona lengkap (lapisan prompt + skills) + bank skill. */
+  app.get("/api/personas/forge-kit", async () => ForgeKit.parse(getRt().forgeKit()));
 
   /** GET /api/personas/blindtest — prompt uji + riwayat run (anon view). */
   app.get("/api/personas/blindtest", async () => ({
@@ -103,5 +111,46 @@ export function registerPersonaRoutes(app: FastifyInstance, getRt: () => YuiRunt
     const { personaId } = PersonaRename.pick({ personaId: true }).parse(req.params);
     getRt().clearPersonaRename(personaId);
     return PersonaRenamesResponse.parse({ renames: getRt().personaRenames() });
+  });
+
+  // ── F2 Persona Forge ───────────────────────────────────────────────────
+  /** POST /api/personas/custom — forge persona baru dari template basis.
+   *  Lapisan user: name/description/PERSONA.md/skills (+shape opsional);
+   *  tools & delegation dikunci dari basis. */
+  app.post("/api/personas/custom", async (req, reply) => {
+    const parsed = CreateCustomPersonaRequest.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "invalid payload (baseId, name 1-40, description 1-120, personaMd, skills)" });
+    }
+    try {
+      return { persona: getRt().createCustomPersona(parsed.data) };
+    } catch (e) {
+      return reply.status(400).send({ error: e instanceof Error ? e.message : "failed to forge the persona" });
+    }
+  });
+
+  /** PUT /api/personas/custom/:id — ubah lapisan user persona custom. */
+  app.put("/api/personas/custom/:id", async (req, reply) => {
+    const parsed = UpdateCustomPersonaRequest.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "invalid payload (name 1-40, description 1-120, personaMd, skills)" });
+    }
+    try {
+      return { persona: getRt().updateCustomPersona(String((req.params as { id?: string }).id ?? ""), parsed.data) };
+    } catch (e) {
+      return reply.status(400).send({ error: e instanceof Error ? e.message : "failed to update the persona" });
+    }
+  });
+
+  /** DELETE /api/personas/custom/:id — hapus persona custom (built-in
+   *  ditolak lewat validasi id custom-*). */
+  app.delete("/api/personas/custom/:id", async (req, reply) => {
+    const id = String((req.params as { id?: string }).id ?? "");
+    if (!CUSTOM_PERSONA_ID_RE.test(id)) {
+      return reply.status(400).send({ error: "not a custom persona id (must start with 'custom-')" });
+    }
+    const removed = getRt().deleteCustomPersona(id);
+    if (!removed) return reply.status(404).send({ error: "custom persona not found" });
+    return { ok: true, id };
   });
 }

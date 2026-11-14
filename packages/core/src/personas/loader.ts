@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
+import { moduleLogger } from "../logger.js";
 import { PersonaManifest, type PersonaManifest as Manifest } from "@yuika/contracts";
 import { loadPersonaRenames } from "./rename.js";
 
@@ -37,6 +38,23 @@ export function listPersonas(personasDir: string, workspacePath?: string): Perso
     .map((d) => path.join(personasDir, d.name))
     .map(loadPersona)
     .sort((a, b) => a.manifest.id.localeCompare(b.manifest.id));
+  // F2 Persona Forge: persona custom = direktori di workspace/personas/.
+  //  Satu custom rusak (yaml korup dsb.) TIDAK boleh merobohkan seluruh
+  //  roster -> skip dengan warning (pola listSkills); built-in tetap fail-closed.
+  if (workspacePath) {
+    const customDir = path.join(workspacePath, "personas");
+    if (fs.existsSync(customDir)) {
+      for (const d of fs.readdirSync(customDir, { withFileTypes: true })) {
+        if (!d.isDirectory() || d.name.startsWith(".")) continue;
+        try {
+          personas.push(loadPersona(path.join(customDir, d.name)));
+        } catch (e) {
+          moduleLogger("personas").warn({ dir: d.name }, `custom persona skipped: ${e instanceof Error ? e.message : e}`);
+        }
+      }
+      personas.sort((a, b) => a.manifest.id.localeCompare(b.manifest.id));
+    }
+  }
   // F1 rename: override display name/description dari workspace (id tetap).
   if (workspacePath) {
     const renames = loadPersonaRenames(workspacePath);

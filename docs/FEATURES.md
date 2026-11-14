@@ -104,7 +104,7 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
-D114: Sapuan workshop yatim saat boot - container yuika-ws-* + volume +
+F2 Persona Forge: buat persona sendiri dari template built-in (Hiro, saat boot - container yuika-ws-* + volume +
 row registry milik project yang sudah dihapus dibersihkan otomatis
 (delete project sudah membersihkan miliknya; ini jaring pengaman yatim).
 D113: Image publik GHCR (yuika-api/yuika-web, auto-build tiap push main) +

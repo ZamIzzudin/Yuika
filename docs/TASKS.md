@@ -1679,3 +1679,37 @@ registry tua yang menumpuk tanpa pernah dibersihkan.
   lambat/tak ada tidak menahan boot api).
 + Test sweepOrphans (3): yatim dihapus + project hidup utuh + row ghost;
   idempoten 0/0/0; nama mirip tanpa projectId dibiarkan.
+
+### F2 Persona Forge - persona custom clone-template (SELESAI, lokal)
+Roadmap persona custom tahap 2 (setelah F1 rename). Persona custom =
+direktori file DI DALAM workspace (workspace/personas/custom-*/), struktur
+SAMA seperti built-in (persona.yaml + PERSONA.md + toolsets.yaml +
+skills.yaml + delegation.yaml) jadi loader/prompt/delegation polos tanpa
+jalur khusus; id SELALU custom-* (guard delete built-in).
++ Plafon kekuatan by-construction: tools = salinan PERSIS toolsets.yaml
+  basis saat forge (jalur update TIDAK menyentuhnya); delegation dikunci
+  (can_spawn [] = bukan orchestrator, spawnable_by [user] = hanya user
+  yang bisa memilih, Maestro tidak). Yang dibentuk user: nama, deskripsi,
+  lapisan prompt (PERSONA.md), skill dari bank (valid id, dedup, max 16),
+  bentuk maskot (via shapes.json yang sudah ada).
++ PersonaManifest + PersonaInfo: field custom + base; description
+  PersonaInfo diselaraskan ke 120 (satu sumber kebenaran dgn manifest).
++ Core personas/custom.ts: create/update/delete + slugify (custom-<slug>,
+  konflik -2, -3..); listPersonas merge custom (satu custom korup = skip
+  warn, built-in tetap fail-closed); rename overlay F1 berlaku juga utk
+  custom (satu jalur loader).
++ API: GET /api/personas/forge-kit (persona lengkap + bank skill),
+  POST/PUT/DELETE /api/personas/custom(/:id).
++ UI: ForgePersonaModal (wizard 2 langkah: pilih basis -> form nama/desc/
+  prompt/skills/shape; mode edit = prefill dari kit, basis terkunci);
+  CharacterStage tombol Hammer (built-in = forge baru, custom = reforge) +
+  Trash (custom saja, ConfirmDialog); badge & wire onPersonasChanged ke
+  page loadPersonas.
++ Test personas-custom.test.ts (6): forge file+manifest+tools=dasar+
+  delegation kunci; merge+rename overlay; validasi basis/skill/duplikat
+  suffix; update tak menyentuh toolsets.yaml; delete + bersihkan override
+  shape/rename + built-in ditolak + idempoten; custom korup tak merobohkan
+  roster.
+Catatan sesi: user kerja paralel (mission.ts seed phaser dihapus +
+model-prices.json di-delete di working tree, belum di-commit) - dungeon
+test merah karena itu, bukan F2; TIDAK disentuh.

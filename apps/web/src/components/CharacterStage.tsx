@@ -24,6 +24,7 @@ import {
   Compass,
   Fire,
   Gear,
+  Hammer,
   Lightning,
   MagnifyingGlass,
   PencilSimple,
@@ -31,10 +32,13 @@ import {
   Plus,
   Rocket,
   Sparkle,
+  Trash,
   Target,
   Wrench,
 } from "@phosphor-icons/react";
 import { OrinPortrait } from "./OrinPortrait";
+import { ForgePersonaModal } from "./ForgePersonaModal";
+import { ConfirmDialog } from "./ui/confirm";
 import { PersonaModelModal } from "./PersonaModelModal";
 import { Button, Modal } from "./ui";
 import {
@@ -536,9 +540,12 @@ function SkillLibraryModal({
 export function CharacterStage({
   personas,
   onPersonaRenamed,
+  onPersonasChanged,
 }: {
   personas: PersonaInfo[];
   onPersonaRenamed?: () => void;
+  /** F2 forge: persona custom dibuat/ubah/hapus -> refetch daftar. */
+  onPersonasChanged?: () => void;
 }) {
   const [selId, setSelId] = useState(personas[0]?.id ?? "");
   const [emote, setEmote] = useState<PersonaState>("idle");
@@ -553,6 +560,11 @@ export function CharacterStage({
   const [rnBusy, setRnBusy] = useState(false);
   // D104: modal library skill (buka dari tile + di akhir grid card skill).
   const [libOpen, setLibOpen] = useState(false);
+  // F2 Persona Forge: modal create/edit custom + konfirmasi delete.
+  const [forgeOpen, setForgeOpen] = useState(false);
+  const [forgeEditId, setForgeEditId] = useState<string | null>(null);
+  const [delOpen, setDelOpen] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
   // Tooltip skill melayang (layer stage, tak terpotong scroll card):
   // posisi = pusat-atas tile, relatif stage.
   const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(
@@ -628,6 +640,24 @@ export function CharacterStage({
 
   /** F1: buka modal rename; ambil nama default dari override store
    *  (bila sudah dioverride, persona.name = nama baru, default ada di entry). */
+  /** F2: hapus persona custom (built-in tak punya tombol ini). */
+  async function deleteCustom() {
+    if (!persona?.custom) return;
+    setDelBusy(true);
+    try {
+      const res = await authFetch(apiUrl(`/api/personas/custom/${persona.id}`), { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "request failed");
+      toastOk(`${persona.name} deleted.`);
+      setSelId(personas.find((p) => p.id !== persona.id)?.id ?? "");
+      onPersonasChanged?.();
+      setDelOpen(false);
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : "failed to delete the persona");
+    } finally {
+      setDelBusy(false);
+    }
+  }
+
   async function openRename() {
     if (!persona) return;
     setRnName(persona.name);
@@ -882,6 +912,30 @@ export function CharacterStage({
         >
           <PencilSimple size={14} aria-hidden />
         </button>
+        {/* F2 Persona Forge: custom -> reforge + delete; built-in -> forge baru. */}
+        <button
+          type="button"
+          aria-label={persona.custom ? `Reforge ${persona.name}` : "Forge a persona"}
+          title={persona.custom ? "Reforge (edit prompt layer)" : "Forge a persona"}
+          onClick={() => {
+            setForgeEditId(persona.custom ? persona.id : null);
+            setForgeOpen(true);
+          }}
+          className="absolute top-3 right-[3.25rem] z-[3] grid size-7 cursor-pointer place-items-center rounded-[9px] border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-primary"
+        >
+          <Hammer size={14} aria-hidden />
+        </button>
+        {persona.custom && (
+          <button
+            type="button"
+            aria-label={`Delete ${persona.name}`}
+            title="Delete custom persona"
+            onClick={() => setDelOpen(true)}
+            className="absolute top-3 right-[6rem] z-[3] grid size-7 cursor-pointer place-items-center rounded-[9px] border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-primary"
+          >
+            <Trash size={14} aria-hidden />
+          </button>
+        )}
         <div className="flex flex-wrap gap-1.5 items-center justify-center mb-3">
           <span
             className="rounded-pill border px-2 py-0.5 text-[11px] font-semibold"
@@ -1174,6 +1228,36 @@ export function CharacterStage({
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* F2 Persona Forge: wizard create/edit persona custom. */}
+      {forgeOpen && (
+        <ForgePersonaModal
+          editId={forgeEditId ?? undefined}
+          onClose={() => {
+            setForgeOpen(false);
+            setForgeEditId(null);
+          }}
+          onDone={() => onPersonasChanged?.()}
+        />
+      )}
+
+      {/* F2: konfirmasi hapus persona custom. */}
+      {delOpen && persona && (
+        <ConfirmDialog
+          open
+          title={`Delete ${persona.name}?`}
+          message={
+            <>
+              This permanently removes the custom persona and its prompt layer.
+              Existing chat history stays readable; roster entries using it
+              should be reassigned. Built-in personas are not affected.
+            </>
+          }
+          busy={delBusy}
+          onConfirm={() => void deleteCustom()}
+          onClose={() => setDelOpen(false)}
+        />
       )}
 
       {/* D104: library skill per kategori — equipped di awal, toggle langsung. */}

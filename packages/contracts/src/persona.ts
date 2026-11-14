@@ -56,6 +56,10 @@ export const PersonaManifest = z.object({
   delegation: DelegationRules.prefault({}),
   /** Daftar tool aktif; dukung wildcard prefix `mcp__*` (filter di registry). */
   tools: z.array(z.string()).default([]),
+  /** F2 Persona Forge: persona custom (clone-template, dir workspace). */
+  custom: z.boolean().default(false),
+  /** F2: id persona basis (built-in) yang jadi template custom ini. */
+  base: z.string().regex(/^[a-z0-9-]+$/).optional(),
 });
 export type PersonaManifest = z.infer<typeof PersonaManifest>;
 
@@ -120,6 +124,67 @@ export type PersonaRenamesResponse = z.infer<typeof PersonaRenamesResponse>;
 
 export const SetPersonaRenameRequest = PersonaRename;
 export type SetPersonaRenameRequest = z.infer<typeof SetPersonaRenameRequest>;
+
+// ── F2 (Persona Forge): persona custom clone-template ────────────────────
+
+/** Id persona custom SELALU berawalan `custom-` (validasi + guard delete:
+ * built-in tidak bisa dihapus lewat jalur custom). */
+export const CUSTOM_PERSONA_ID_RE = /^custom-[a-z0-9-]+$/;
+
+/** POST /api/personas/custom - forge persona baru dari template basis.
+ *  Tools & delegation DIKUNCI dari basis (kekuatan plafon: custom tidak
+ *  lebih kuang dari template-nya). Yang dibentuk user: nama, deskripsi,
+ *  lapisan prompt (PERSONA.md), pilihan skill dari bank. */
+export const CreateCustomPersonaRequest = z.object({
+  baseId: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1).max(40),
+  description: z.string().min(1).max(120),
+  personaMd: z.string().min(1).max(40_000),
+  skills: z.array(z.string().min(1)).max(16),
+  shape: OrinShapeKey.optional(),
+});
+export type CreateCustomPersonaRequest = z.infer<typeof CreateCustomPersonaRequest>;
+
+/** PUT /api/personas/custom/:id - ubah lapisan user (nama/deskripsi/prompt/
+ *  skills). Tools, basis, delegation, id: tidak bisa diubah. */
+export const UpdateCustomPersonaRequest = z.object({
+  name: z.string().min(1).max(40),
+  description: z.string().min(1).max(120),
+  personaMd: z.string().min(1).max(40_000),
+  skills: z.array(z.string().min(1)).max(16),
+});
+export type UpdateCustomPersonaRequest = z.infer<typeof UpdateCustomPersonaRequest>;
+
+/** Hasil create/update: persona custom (id + identitas + basis + tools). */
+export const CustomPersonaResult = z.object({
+  id: z.string().regex(CUSTOM_PERSONA_ID_RE),
+  name: z.string(),
+  description: z.string(),
+  base: z.string(),
+  custom: z.literal(true),
+  /** Tools terkunci (salinan basis saat forge) - informatif utk UI. */
+  tools: z.array(z.string()),
+});
+export type CustomPersonaResult = z.infer<typeof CustomPersonaResult>;
+
+/** GET /api/personas/forge-kit - bahan baku wizard Persona Forge: seluruh
+ *  persona (built-in + custom, dgn lapisan prompt & skills) + bank skill. */
+export const ForgeKitPersona = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  personaMd: z.string(),
+  skills: z.array(z.string()),
+  custom: z.boolean(),
+  base: z.string().optional(),
+});
+export type ForgeKitPersona = z.infer<typeof ForgeKitPersona>;
+
+export const ForgeKit = z.object({
+  personas: z.array(ForgeKitPersona),
+  skills: z.array(z.object({ name: z.string(), description: z.string() })),
+});
+export type ForgeKit = z.infer<typeof ForgeKit>;
 
 // ── P1-PER-5: blind test persona (anti "hanya kosmetik") ──────────────────
 

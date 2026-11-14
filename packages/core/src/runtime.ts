@@ -23,6 +23,8 @@ import { buildPersonaGrowth } from "./personas/growth.js";
 import { loadPersonaShapes, savePersonaShape } from "./personas/shapes.js";
 import type { PersonaRename, PersonaRenamesResponse } from "@yuika/contracts";
 import { loadPersonaRenames, savePersonaRename, clearPersonaRename as clearPersonaRenameWs } from "./personas/rename.js";
+import { createCustomPersona as createCustomPersonaWs, updateCustomPersona as updateCustomPersonaWs, deleteCustomPersona as deleteCustomPersonaWs } from "./personas/custom.js";
+import { CustomPersonaResult, type CreateCustomPersonaRequest, type ForgeKit, type UpdateCustomPersonaRequest } from "@yuika/contracts";
 import { createBlindTest, BLIND_PROMPTS } from "./personas/blindtest.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
 import { WorkflowEngine } from "./workflow/engine.js";
@@ -535,6 +537,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       description: p.manifest.description,
       portrait: p.manifest.assets.portrait,
       states: p.manifest.assets.expressions,
+      custom: p.manifest.custom,
+      ...(p.manifest.base ? { base: p.manifest.base } : {}),
     }));
   }
 
@@ -593,6 +597,59 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
 
   function clearPersonaRename(personaId: string): boolean {
     return clearPersonaRenameWs(paths.workspacePath, personaId);
+  }
+
+  // ---- F2 Persona Forge: persona custom clone-template (workspace/personas/) ----
+  function forgePaths() {
+    return { personasDir: paths.personasDir, skillsDir: paths.skillsDir, workspacePath: paths.workspacePath };
+  }
+
+  function createCustomPersona(input: CreateCustomPersonaRequest): CustomPersonaResult {
+    const p = createCustomPersonaWs(forgePaths(), input);
+    // Shape dipilih saat forge → tulis bersamaan (override eksplisit).
+    if (input.shape) {
+      savePersonaShape(paths.workspacePath, p.manifest.id, input.shape, [p.manifest.id]);
+    }
+    return CustomPersonaResult.parse({
+      id: p.manifest.id,
+      name: p.manifest.name,
+      description: p.manifest.description,
+      base: p.manifest.base ?? "",
+      custom: true,
+      tools: p.manifest.tools,
+    });
+  }
+
+  function updateCustomPersona(id: string, input: UpdateCustomPersonaRequest): CustomPersonaResult {
+    const p = updateCustomPersonaWs(forgePaths(), id, input);
+    return CustomPersonaResult.parse({
+      id: p.manifest.id,
+      name: p.manifest.name,
+      description: p.manifest.description,
+      base: p.manifest.base ?? "",
+      custom: true,
+      tools: p.manifest.tools,
+    });
+  }
+
+  function deleteCustomPersona(id: string): boolean {
+    return deleteCustomPersonaWs(forgePaths(), id);
+  }
+
+  /** F2: bahan baku wizard forge - persona lengkap (prompt + skills) + bank. */
+  function forgeKit(): ForgeKit {
+    return {
+      personas: listPersonas(paths.personasDir, paths.workspacePath).map((p) => ({
+        id: p.manifest.id,
+        name: p.manifest.name,
+        description: p.manifest.description,
+        personaMd: p.personaMd,
+        skills: p.manifest.skills.bundled,
+        custom: p.manifest.custom,
+        ...(p.manifest.base ? { base: p.manifest.base } : {}),
+      })),
+      skills: listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description })),
+    };
   }
 
   // ---- P3-CANVAS: daftar file desain untuk tab Design (editor embedded) ----
@@ -872,6 +929,10 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     personaRenames,
     setPersonaRename,
     clearPersonaRename,
+    createCustomPersona,
+    updateCustomPersona,
+    deleteCustomPersona,
+    forgeKit,
     blindTest,
     blindPrompts: BLIND_PROMPTS,
     designFiles,
