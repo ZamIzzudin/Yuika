@@ -1528,3 +1528,23 @@ per bagian namun tetap berjalan terus (tidak berhenti tiap layar).
 + PICASSO-PROMPT.md: dua ritme eksplisit (ROLLING vs CHECKPOINT) dipilih di
   template item 4 + penjelasan kapan pakai yang mana + pola revisi mid-run
   (steering lewat chat tanpa membatalkan sisa daftar layar).
+
+### D108 — Poe copy editor canvas: polish copy desain tanpa monopoli Picasso (SELESAI)
+Feedback user: desain jadi tapi copywriting kurang srek; ingin persona lain
+(yang capable) memperbaiki copy LANGSUNG di desain, polish bukan milik
+Picaso saja. Fakta: skill bisa dipinjam (D104 library), tapi tools tulis
+design_* hanya milik designer (coder read-only).
++ yui-scribe (Poe) jadi copy editor canvas:
+  - toolsets + design_list / design_get_file / design_update_shape (patch
+    partial; TANPA add/delete/create file - dia mengedit copy, bukan
+    merombak struktur).
+  - skills.yaml bundled + ux-microcopy (label, tombol, empty/error state,
+    tone); copywriting marketing sudah ada sebelumnya.
+  - PERSONA.md Poe seksi 'Copy editor for finished designs': muat
+    ux-microcopy dulu, audit semua text shape per layar, patch HANYA field
+    text (+width/height bila copy lebih panjang), jangan sentuh x/y/fills/
+    font/struktur; kalau copy tidak muat tanpa ubah layout, berhenti dan
+    laporkan; laporan before -> after per layar, user review live di tab
+    Design.
++ Test designer-wiring: scribe memuat 3 design tools, TIDAK memuat
+  add/delete/create; bundled ux-microcopy. Core 456 passed.

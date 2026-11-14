@@ -79,3 +79,14 @@ it("persona designer: bundled skills + toolset design_* terpasang", () => {
   expect(body).toContain("parentId");
   expect(body).toContain("design_update_shape");
 });
+
+it("persona scribe: copy editor canvas (read + partial update, no add/delete)", () => {
+  const p = loadPersona(root("personas/yui-scribe"));
+  expect(p.manifest.tools).toEqual(
+    expect.arrayContaining(["design_list", "design_get_file", "design_update_shape"]),
+  );
+  expect(p.manifest.tools).not.toContain("design_add_shape");
+  expect(p.manifest.tools).not.toContain("design_delete_shape");
+  expect(p.manifest.tools).not.toContain("design_create_file");
+  expect([...p.manifest.skills.bundled]).toContain("ux-microcopy");
+});

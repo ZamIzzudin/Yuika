@@ -104,6 +104,8 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D108: Poe copy editor canvas: minta Poe memperbaiki copywriting desain jadi
+langsung di file desain (patch text saja, layout tetap milik Picasso).
 D107: Picasso ritme rolling: default satu layar tuntas per bagian (live di tab
 Design, lapor satu baris, lanjut otomatis); mode checkpoint tetap opsional via
 playbook PICASSO-PROMPT.

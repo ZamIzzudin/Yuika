@@ -642,3 +642,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 + PERSONA.md yui-designer: ritme rolling default (satu layar tuntas, lapor satu baris, lanjut otomatis).
 + PICASSO-PROMPT.md: pilihan ritme ROLLING vs CHECKPOINT + revisi mid-run.
+
+
+## Batch D108 — Poe copy editor canvas
+
++ Scribe toolsets: design_list/get_file/update_shape (partial patch only).
++ Scribe skills + ux-microcopy; PERSONA.md: aturan edit copy tanpa sentuh layout.

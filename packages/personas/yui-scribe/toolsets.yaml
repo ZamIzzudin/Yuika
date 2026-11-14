@@ -11,3 +11,6 @@ tools:
   - memory_append
   - session_search
   - skill_propose
+  - design_list # D108: copy editor canvas - baca file desain proyek
+  - design_get_file # struktur shapes (frame/rect/circle/text) untuk audit copy
+  - design_update_shape # patch partial (mis. ganti field text saja), TANPA add/delete/create
