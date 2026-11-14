@@ -104,6 +104,9 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D111: design_get_file bertahap: file besar dijawab indeks frame (bbox absolut),
+lalu baca per jendela Y (yMin/yMax) atau per komponen (shapeId subtree) -
+desain 2704px tidak lagi terpotong di 20k chars.
 D110: Grouping komponen wajib utk Picasso: Card/Button/Navbar = frame berisi
 anak (geser/center 1 panggilan, layers terstruktur, handoff 1 frame = 1
 komponen).

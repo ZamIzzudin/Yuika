@@ -1585,3 +1585,31 @@ bukan anak Card).
 + PERSONA.md Picasso poin 4: instruksi grouping komponen WAJIB ringkas.
 + Test designer-wiring: skill memuat seksi Grouping + nama komponen
   contoh (Card Login, Button Sign in).
+
+### D111 — design_get_file bertahap: perbaiki desain tinggi terpotong (SELESAI)
+Bug nyata user: Hiro implement desain KodeKraf (frame 2704px, 131 shape,
+JSON summarize ~32k chars) via design-to-code-handoff; output tool terpotong
+di ~y1168 SETIAP KALI (loop memotong tool output 20k chars) dan guard lama
+(>60k) tetap mengirim seluruh struktur + note menyesatkan, tanpa cara meminta
+bagian berikutnya.
++ design_get_file params baru: pageId, yMin/yMax (region Y absolut), shapeId
+  (subtree satu komponen + ancestorChain).
++ Tanpa filter & > READ_LIMIT (18k, aman di bawah potongan 20k loop): dijawab
+  FRAME INDEX - tiap page: root frames + frame level-2 (seksi) dengan bbox
+  ABSOLUT (absX/absY/w/h) + jumlah subtree + note instruksi EN cara baca
+  bertahap.
++ Region: unit = root shape; root frame panjang yang overlap parsial difilter
+  ke anak level-2 yang overlap (root tetap disertakan sebagai konteks).
+  Hasil menyertakan unitFrames (bbox absolut) + note koordinat relatif.
+  Slice masih > 18k = error EN minta perkecil jendela.
++ Skill design-to-code-handoff: instruksi baru 'Reading LARGE designs in
+  stages' (indeks dulu, jendela Y 600-800px dari absY index, jangan menabrak
+  dua seksi, shapeId utk komponen tergrup, jangan asumsi desain berakhir di
+  akhir respons) + item 'Flat long designs' (laporkan balik utk diregroup,
+  sementara jendela 400-600px).
++ Test design-get-region.test.ts (4): index tooLarge + bbox level-2, region
+  seksi bawah tanpa konten atas, shapeId subtree + chain + invalid isError
+  EN, region seluruh halaman = error narrow.
++ Probe nyata file KodeKraf: index 512 chars; region y1200-2704 = 17.674
+  chars utuh (dulu terpotong). Bonus temuan: KodeKraf flat 131 anak langsung
+  root - kasus yang D110 cegah ke depan.

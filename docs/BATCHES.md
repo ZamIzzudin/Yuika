@@ -656,3 +656,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 + Skill/persona: grouping komponen wajib; contoh login ditulis ulang dengan
   Card/Button sebagai frame beranak.
+
+
+## Batch D111 — design_get_file staged reads
+
++ Params pageId/yMin/yMax/shapeId + frame index utk file besar (READ_LIMIT 18k).
++ Skill handoff: baca bertahap utk desain panjang.
