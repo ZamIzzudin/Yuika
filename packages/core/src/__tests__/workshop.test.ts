@@ -43,6 +43,13 @@ function fakeHost(): WorkshopHost & { states: Map<string, string>; execs: Array<
       const r: WorkshopExecResult = { exitCode: 0, stdout: `ran: ${cmd} ${args.join(" ")}`.trim(), stderr: "", durationMs: 1 };
       return r;
     },
+    listArtifacts: async () => ({
+      containers: [...states.keys()].filter((k) => k.startsWith("yuika-ws-")),
+      volumes: [...states.keys()].filter((k) => k.startsWith("vol:")).map((k) => k.slice(4)),
+    }),
+    removeVolume: async (v) => {
+      states.delete(`vol:${v}`);
+    },
   };
 }
 
@@ -249,4 +256,51 @@ describe.skipIf(!(await dockerUp()))("workshop docker asli ()", () => {
     expect(fs.readFileSync(path.join(dir, "mg.txt"), "utf8").trim()).toBe("migrasi");
     await m.destroy(pid);
   }, 120_000);
+});
+
+// D114: sapuan workshop yatim - container/volume yuika-ws-* tanpa project,
+// row registry tua; project yang masih hidup tidak tersentuh.
+describe("sweepOrphans (D114)", () => {
+  it("menghapus container + volume yatim, membiarkan project hidup utuh", async () => {
+    const host = fakeHost();
+    const m = managerWith(host);
+    // p_alive: project masih ada (container+volume hidup)
+    await m.start("p_alive");
+    // p_dead: artefak yatim (container exited + volume, project sudah tak ada)
+    host.states.set("yuika-ws-p_dead", "stopped");
+    host.states.set("vol:yuika-ws-vol-p_dead", "x");
+    // row registry yatim tanpa artefak docker
+    store.upsert(
+      { ...m.info("p_ghost"), state: "running" },
+      Date.now(),
+    );
+    const res = await m.sweepOrphans(["p_alive"]);
+    expect(res).toEqual({ containers: 1, volumes: 1, rows: 1 });
+    expect(host.states.has("yuika-ws-p_alive")).toBe(true);
+    expect(host.states.has("yuika-ws-p_dead")).toBe(false);
+    expect(host.states.has("vol:yuika-ws-vol-p_dead")).toBe(false);
+    expect(store.get("p_ghost")).toBeNull();
+    expect(store.get("p_alive")).toBeDefined();
+  });
+
+  it("tanpa yatim: tidak menyentuh apa pun (0/0/0), idempoten", async () => {
+    const host = fakeHost();
+    const m = managerWith(host);
+    await m.start("p_a");
+    await m.start("p_b");
+    const res = await m.sweepOrphans(["p_a", "p_b"]);
+    expect(res).toEqual({ containers: 0, volumes: 0, rows: 0 });
+    expect(store.list().length).toBe(2);
+    const res2 = await m.sweepOrphans(["p_a", "p_b"]);
+    expect(res2.containers).toBe(0);
+  });
+
+  it("nama mirip milik pihak lain tidak dianggap yatim Yuika", async () => {
+    const host = fakeHost();
+    const m = managerWith(host);
+    host.states.set("yuika-ws-", "running"); // tanpa projectId (garbage)
+    const res = await m.sweepOrphans([]);
+    expect(res.containers).toBe(0);
+    expect(host.states.has("yuika-ws-")).toBe(true); // dibiarkan
+  });
 });

@@ -1658,3 +1658,24 @@ supaya tinggal docker pull.
   time 127.0.0.1:3211), live browser perlu sidecar, listrik penuh VPS =
   docs/DEPLOY.md).
 + README: baris GHCR quick start + tabel compose entry baru.
+
+### D114 — Sapuan artefak workshop yatim saat boot (SELESAI, lokal)
+Latar: VPS user penuh oleh image/cache Dokploy (bukan Yuika - Yuika tidak
+pernah docker build; image sandbox/workshop = node:24 pull bersama). Audit:
+deleteProject SUDAH membersihkan container+volume workshop (destroy) dan
+sesi terminal (killSessionsUnder, --rm); MCP worker global --rm. Celah yang
+ditambal: YATIM - project terhapus saat docker mati / pra-cleanup versi
+lama meninggalkan container yuika-ws-* + volume yuika-ws-vol-* + row
+registry tua yang menumpuk tanpa pernah dibersihkan.
++ WorkshopHost.listArtifacts() (docker ps -a + volume ls filter prefix,
+  double-guard startsWith JS) + removeVolume(); LocalWorkshopHost =
+  kosong/noop.
++ WorkshopManager.sweepOrphans(validProjectIds): baca artefak DULU lalu
+  daftar valid (project baru saat sweep jalan tidak pernah dianggap yatim),
+  hapus container/volume berpola Yuika milik projectId yang tak ada + row
+  registry yatim (rings/lastActivity ikut). Best-effort per item (gagal =
+  warn, lanjut), log ring hasil.
++ Runtime boot: sweep fire-and-forget setelah idle watchdog (docker
+  lambat/tak ada tidak menahan boot api).
++ Test sweepOrphans (3): yatim dihapus + project hidup utuh + row ghost;
+  idempoten 0/0/0; nama mirip tanpa projectId dibiarkan.

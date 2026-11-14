@@ -104,6 +104,9 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D114: Sapuan workshop yatim saat boot - container yuika-ws-* + volume +
+row registry milik project yang sudah dihapus dibersihkan otomatis
+(delete project sudah membersihkan miliknya; ini jaring pengaman yatim).
 D113: Image publik GHCR (yuika-api/yuika-web, auto-build tiap push main) +
 compose pull-only + docs/TRY-YUIKA.md - nyoba Yuika 3 perintah tanpa clone.
 D112: Persona rename - user bisa menganti nama tampilan persona

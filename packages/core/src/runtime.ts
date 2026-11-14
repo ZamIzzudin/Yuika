@@ -192,6 +192,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
   });
   workshopManager.startIdleWatchdog();
+  // D114: sapu workshop yatim saat boot (container/volume yuika-ws-* tanpa
+  // project; row registry tua). Fire-and-forget: docker lambat/tak ada tidak
+  // boleh menahan boot api.
+  void workshopManager
+    .sweepOrphans(projectStore.listProjects().map((p) => p.id))
+    .catch((e: unknown) => moduleLogger("runtime").warn({ err: String(e) }, "workshop orphan sweep gagal (dilewati)"));
   // Settings: provider & model bisa di-swap panas (updateProviderSettings),
   // sesi baru langsung pakai; loopCache dikosongkan; delegateDeps objek yang
   // sama dimutasi propertinya agar delegasi ikut provider baru.

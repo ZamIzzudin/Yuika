@@ -671,3 +671,7 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 ## Batch D113 — GHCR publish
 + Workflow docker.yml (api+web ke ghcr.io/zamizzudin/yuika-*), compose pull-only, panduan docs/TRY-YUIKA.md.
+
+
+## Batch D114 — Workshop orphan sweep
++ listArtifacts/removeVolume di host docker; sweepOrphans saat boot membersihkan container/volume/row yatim milik project terhapus.

@@ -52,6 +52,11 @@ export interface WorkshopHost {
   /** "running" | "stopped" | "absent". */
   state(container: string): Promise<"running" | "stopped" | "absent">;
   exec(container: string, cmd: string, args: string[], opts: { timeoutMs: number; cwd?: string }): Promise<WorkshopExecResult>;
+  /** D114: inventori artefak workshop di host (container yuika-ws-* +
+   *  volume yuika-ws-vol-*), utk sapuan yatim saat boot. */
+  listArtifacts(): Promise<{ containers: string[]; volumes: string[] }>;
+  /** D114: hapus volume tanpa container (yatim volume). */
+  removeVolume(volume: string): Promise<void>;
 }
 
 /** Path docker-friendly (Windows backslash → slash), sama pola sandbox.mountPath. */
@@ -171,6 +176,21 @@ export class DockerWorkshopHost implements WorkshopHost {
     if (opts.volume) await run("docker", ["volume", "rm", opts.volume]);
   }
 
+  async listArtifacts(): Promise<{ containers: string[]; volumes: string[] }> {
+    // Filter name= prefix-match di docker CLI; startsWith JS memastikan hanya
+    // artefak Yuika workshop yang dianggap (bukan container lain mirip nama).
+    const c = await run("docker", ["ps", "-a", "--format", "{{.Names}}", "--filter", "name=yuika-ws-"], 15_000);
+    const v = await run("docker", ["volume", "ls", "--format", "{{.Name}}", "--filter", "name=yuika-ws-vol-"], 15_000);
+    return {
+      containers: c.code === 0 ? c.out.split(/\r?\n/).map((s) => s.trim()).filter((s) => s.startsWith("yuika-ws-")) : [],
+      volumes: v.code === 0 ? v.out.split(/\r?\n/).map((s) => s.trim()).filter((s) => s.startsWith("yuika-ws-vol-")) : [],
+    };
+  }
+
+  async removeVolume(volume: string): Promise<void> {
+    await run("docker", ["volume", "rm", volume]);
+  }
+
   async state(container: string): Promise<"running" | "stopped" | "absent"> {
     const r = await run("docker", ["inspect", "-f", "{{.State.Status}}", container], 8_000);
     if (r.code !== 0) return "absent";
@@ -260,6 +280,14 @@ export class LocalWorkshopHost implements WorkshopHost {
 
   async state(container: string): Promise<"running" | "stopped" | "absent"> {
     return this.dirs.has(container) ? "running" : "absent";
+  }
+
+  async listArtifacts(): Promise<{ containers: string[]; volumes: string[] }> {
+    return { containers: [], volumes: [] }; // lokal: tanpa artefak docker
+  }
+
+  async removeVolume(_volume: string): Promise<void> {
+    /* noop: volume lokal = dir, sudah dihapus remove() */
   }
 
   async exec(container: string, cmd: string, args: string[], opts: { timeoutMs: number; cwd?: string }): Promise<WorkshopExecResult> {
@@ -504,6 +532,58 @@ export class WorkshopManager {
     this.rings.delete(projectId);
     this.lastActivity.delete(projectId);
     this.deps.onEvent?.({ type: "workshop.state", projectId, from: info.state, to: "absent", reason: "destroy", ts: Date.now() });
+  }
+
+  /** D114: sapu artefak YATIM - container yuika-ws-* / volume yuika-ws-vol-*
+   *  / row registry yang projectId-nya tidak lagi ada (project terhapus saat
+   *  docker mati, versi pra-cleanup, dsb.). Aman by-construction: hanya nama
+   *  berpola Yuika yang dihitung, dan hanya bila projectId tak ada di daftar
+   *  valid. */
+  async sweepOrphans(
+    validProjectIds: readonly string[],
+  ): Promise<{ containers: number; volumes: number; rows: number }> {
+    const host = await this.resolveHost();
+    // Baca artefak DULU, daftar valid belakangan: project yang dibuat saat
+    // sweep jalan pasti masuk daftar valid (tidak pernah dianggap yatim).
+    const { containers, volumes } = await host.listArtifacts();
+    const valid = new Set(validProjectIds);
+    let removedContainers = 0;
+    let removedVolumes = 0;
+    for (const c of containers) {
+      const pid = c.slice("yuika-ws-".length);
+      if (!pid || valid.has(pid)) continue;
+      try {
+        await host.remove(c, {});
+        removedContainers++;
+        log.info({ container: c, projectId: pid }, "workshop yatim: container dihapus");
+      } catch (e) {
+        log.warn({ container: c, err: String(e) }, "workshop yatim: gagal hapus container");
+      }
+    }
+    for (const v of volumes) {
+      const pid = v.slice("yuika-ws-vol-".length);
+      if (!pid || valid.has(pid)) continue;
+      try {
+        await host.removeVolume(v);
+        removedVolumes++;
+        log.info({ volume: v, projectId: pid }, "workshop yatim: volume dihapus");
+      } catch (e) {
+        log.warn({ volume: v, err: String(e) }, "workshop yatim: gagal hapus volume");
+      }
+    }
+    // Row registry yatim: dibuang supaya koheren ulang (info() kembali absent).
+    let rows = 0;
+    for (const info of this.deps.store.list()) {
+      if (valid.has(info.projectId)) continue;
+      this.deps.store.delete(info.projectId);
+      this.rings.delete(info.projectId);
+      this.lastActivity.delete(info.projectId);
+      rows++;
+    }
+    if (removedContainers || removedVolumes || rows) {
+      log.info({ removedContainers, removedVolumes, rows }, "workshop orphan sweep selesai");
+    }
+    return { containers: removedContainers, volumes: removedVolumes, rows };
   }
 
   /** Eksekusi perintah (docker exec / lokal), audit by persona-first. */
