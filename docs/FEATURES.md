@@ -104,6 +104,8 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D113: Image publik GHCR (yuika-api/yuika-web, auto-build tiap push main) +
+compose pull-only + docs/TRY-YUIKA.md - nyoba Yuika 3 perintah tanpa clone.
 D112: Persona rename - user bisa menganti nama tampilan persona
 (id internal tetap; berlaku di prompt, picker, roster, growth, blind test).
 D111: design_get_file bertahap: file besar dijawab indeks frame (bbox absolut),

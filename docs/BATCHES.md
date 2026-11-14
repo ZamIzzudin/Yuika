@@ -667,3 +667,7 @@ daftar sesi datar, tapi **mission control project-oriented**.
 ## Batch D112 — F1 persona rename
 + Override nama tampilan persona per-install (workspace/persona-names.json), id internal tetap.
 + API renames + modal Rename di Character Studio.
+
+
+## Batch D113 — GHCR publish
++ Workflow docker.yml (api+web ke ghcr.io/zamizzudin/yuika-*), compose pull-only, panduan docs/TRY-YUIKA.md.

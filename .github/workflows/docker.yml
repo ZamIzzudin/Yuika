@@ -1,0 +1,94 @@
+# Docker (GHCR publish): build image api + web dan push ke GitHub Container
+# Registry supaya orang lain tinggal `docker compose pull` (docs/TRY-YUIKA.md).
+#
+# Trigger: push ke main (tag `latest` + sha) dan tag v* (mis. v0.8.1).
+# Manual: workflow_dispatch (rebuild tanpa commit baru).
+#
+# Image: ghcr.io/zamizzudin/yuika-api, ghcr.io/zamizzudin/yuika-web
+# (GHCR mewajibkan lowercase; owner GitHub ada huruf besar → dinormalisasi).
+#
+# Visibility: step terakhir best-effort membuat package PUBLIC via API
+# (repo ini public; teman yang mau nyoba tidak perlu PAT). Kalau step itu
+# merah, set manual sekali: GitHub → Packages → yuika-api → Package settings
+# → Change visibility → Public. Lanjutan tanpa crash (continue-on-error).
+#
+# Catatan v1: linux/amd64 saja. Apple Silicon jalan lewat Rosetta (Docker
+# Desktop default). arm64 native menunggu kebutuhan nyata (build QEMU berat:
+# turbo build web dua arsitektur bisa >30 menit).
+
+name: Docker (GHCR)
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: api
+            image: yuika-api
+          - target: web
+            image: yuika-web
+    steps:
+      - uses: actions/checkout@v4
+
+      # GHCR menolak huruf besar di nama image → owner repo dilowercase.
+      - name: Normalize owner to lowercase
+        id: owner
+        run: echo "name=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ steps.owner.outputs.name }}/${{ matrix.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build & push ${{ matrix.image }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Best-effort: buat package public (pull tanpa PAT). Hanya relevan saat
+      # pertama kali package dibuat; PATCH berikutnya idempoten.
+      - name: Make package public (best-effort)
+        continue-on-error: true
+        run: |
+          curl -sf -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/user/packages/container/${{ matrix.image }}/visibility" \
+            -d '{"state":"public"}' || echo "::warning::set visibility manually: Packages -> ${{ matrix.image }} -> settings"

@@ -81,6 +81,8 @@ tuned later from the in-app Settings.
 
 > Prefer Docker end-to-end? `docker compose up` builds both apps with
 > production settings; `docker-compose.smoke.yml` runs a tiny self-check stack.
+> No clone at all? Prebuilt images live on GHCR - the three-command quick
+> start is in [`docs/TRY-YUIKA.md`](docs/TRY-YUIKA.md) (Indonesian).
 
 ### Try these first
 
@@ -141,6 +143,7 @@ Which compose file to use:
 | File | What it is for |
 | --- | --- |
 | `docker-compose.prod.yml` | Option A: any plain VPS, the studio brings its own Caddy edge on ports 80/443 with automatic HTTPS |
+| `deploy/docker-compose.ghcr.yml` | No-repo try-out: pulls prebuilt images from GHCR, laptop-local |
 | `docker-compose.traefik.yml` | Option B: the server already runs Dokploy (or any Traefik) on ports 80/443; deploy via the Dokploy UI or CLI, no host ports taken |
 | `deploy/docker-compose.with-portal.yml` | Optional: one private VPS running studio, portal, and relay together |
 | `docker-compose.yml` + `docker-compose.smoke.yml` | Development only: local stack and isolated smoke tests. Not for servers |

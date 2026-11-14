@@ -1638,3 +1638,23 @@ stabil; hanya tampilan.
   blind test, dan semua UI lain.
 + Test persona-rename.test.ts (5): default tanpa file, apply name+desc id
   tetap, clear idempoten + desc default, validasi throw, korup fail-closed.
+
+### D113 — Publish image ke GHCR + quick start tanpa clone (SELESAI)
+Permintaan user: teman mau nyoba Yuika, minta image Docker di GitHub Packages
+supaya tinggal docker pull.
++ .github/workflows/docker.yml: matrix build target api/web dari Dockerfile
+  yang ada, push ghcr.io/zamizzudin/yuika-{api,web} (owner dilowercase, GHCR
+  tolak huruf besar). Tag: latest (main) + semver (v*) + sha. Cache GHA
+  (cache-from/to type=gha). linux/amd64 v1 (Apple Silicon via Rosetta; arm64
+  native menunggu kebutuhan, build QEMU dua arsitektur bisa >30 mnt).
+  Step akhir best-effort PATCH visibility public via API (repo public,
+  teman pull tanpa PAT); merah = set manual sekali, continue-on-error.
++ deploy/docker-compose.ghcr.yml: stack pull-only (api 3211 + web 3000,
+  bind 127.0.0.1, volume yuika-data, healthcheck, depends_on healthy). Tanpa
+  env wajib - API key model diisi via Settings UI.
++ docs/TRY-YUIKA.md: panduan Bahasa Indonesia utk teman (prasyarat, 3
+  perintah jalan, register akun lokal + Settings Provider, update pull,
+  hapus total, batasan mode: mesin-sama saja (NEXT_PUBLIC_API_BASE build-
+  time 127.0.0.1:3211), live browser perlu sidecar, listrik penuh VPS =
+  docs/DEPLOY.md).
++ README: baris GHCR quick start + tabel compose entry baru.
