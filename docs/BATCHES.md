@@ -695,3 +695,7 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 ## Batch D119 — dokumentasi fitur lengkap
 - README feature reference 17 area + portal docs page 9 seksi baru + Host backups; semua fitur terpetakan (no hidden features).
+
+
+## Batch D120 — backup host-only
+- Portal backups feature dibongkar total (routes/page/nav/table/test); studio backup copy + README host-only; docs page seksi backups dihapus.

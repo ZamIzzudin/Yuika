@@ -254,9 +254,8 @@ factory reset, and **auto-update** with one-click install and restart.
 - **Backup**: one click builds a full bundle of the workspace (files,
 databases, vault key, tokens; files over 8 MB skipped, 256 MB total) and
 wraps it into a **self-contained restore script** (`yuika-restore.mjs`:
-run it on the target host, confirm, done). Store the script on your portal
-account (10 backups, 300 MB each) or anywhere safe. Backups are plaintext
-files: keep them private.
+run it on the target host, confirm, done). Backup and restore live on
+the host itself; keep the file somewhere private, it is plaintext.
 - **Update**: `scripts/update.sh` pulls the newest release tag, rebuilds,
 waits for the healthcheck; the in-app Settings panel shows the running
 version and links the latest release. Prebuilt images on GHCR for a

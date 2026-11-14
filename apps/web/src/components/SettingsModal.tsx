@@ -1272,7 +1272,7 @@ function AccountPanel() {
 }
 
 // F2 Backup: unduh restore script (file .mjs yang dijalankan di host
-// tujuan) atau bundle JSON mentah. Upload ke portal utk share antar-host.
+// tujuan) atau bundle JSON mentah. Backup/restore hidup DI HOST saja.
 function BackupPanel() {
   const [busy, setBusy] = useState<"script" | "bundle" | "">("");
   async function download(kind: "script" | "bundle") {
@@ -1301,8 +1301,7 @@ function BackupPanel() {
           A restore script is a single self-contained file with all host data
           embedded (custom personas, projects, designs, database). Run it with
           Node.js inside the Yuika repo on any host to restore. Anyone with
-          the file can read the data, so only share it over channels you
-          trust, e.g. your portal account.
+          the file can read the data, so only store it somewhere private.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">

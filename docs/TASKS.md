@@ -1813,3 +1813,16 @@ README.md dan portal (page Documentation). Tidak ada hidden feature lagi.
 + Verifikasi: portal typecheck hijau, vitest 44/44, next build hijau 2x
   (kegagalan awal = flaky env Defender vs .next; terbukti tanpa edit pun
   bisa gagal lalu hijau dengan edit 2x berturut).
+
+## Batch D120 — Backup jadi host-only (keputusan user, konsep dibalik)
+User: backup & restore cukup di masing-masing host, TIDAK lewat portal.
+
++ Studio (this repo): API backup tetap (GET /api/backup, GET /api/backup/
+  script - generate bundle + restore script .mjs di host). BackupPanel:
+  copy dibersihkan dari sebutan portal (backup file = simpan sendiri,
+  privat). README: paragraf backup host-only.
++ Portal (repo yuika-portal) DI BONGKAR: routes /api/backups (list/upload/
+  download/delete), page /account/backups, tombol nav Backups, table
+  backups di lib/db.ts, test backups.test.ts. Table backups lama di DB
+  deploy dibiarkan (tidak dipakai lagi; DROP manual bila mau).
++ Docs page portal: seksi 'Host backups' dihapus (backup bukan fitur portal).
