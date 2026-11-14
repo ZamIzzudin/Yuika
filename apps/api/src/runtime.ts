@@ -25,13 +25,17 @@ export function getRuntime(): YuiRuntime {
         console.warn("[yui] dispose runtime lama gagal:", e instanceof Error ? e.message : e)
       );
     }
-    const baseUrl = process.env.YUI_OPENAI_BASE_URL;
-    const apiKey = process.env.YUI_OPENAI_API_KEY;
-    const model = process.env.YUI_MODEL;
-    if (!baseUrl || !apiKey || !model) {
-      throw new Error("Env belum lengkap: YUI_OPENAI_BASE_URL / YUI_OPENAI_API_KEY / YUI_MODEL (lihat .env.example)");
-    }
-    g.__yuiRuntime = createYuiRuntime({ provider: { baseUrl, apiKey, model, kind: process.env.YUI_PROVIDER_KIND } });
+    // Lazy-config (D49): API BOLEH boot tanpa provider — runtime hidup dengan
+    // nilai kosong; turn baru ditolak dengan pesan jelas (guard runTurn)
+    // sampai user mengisi provider lewat Settings (swap panas + persist .env).
+    g.__yuiRuntime = createYuiRuntime({
+      provider: {
+        baseUrl: process.env.YUI_OPENAI_BASE_URL ?? "",
+        apiKey: process.env.YUI_OPENAI_API_KEY ?? "",
+        model: process.env.YUI_MODEL ?? "",
+        kind: process.env.YUI_PROVIDER_KIND,
+      },
+    });
     g.__yuiRuntimeOwner = OWNER;
   }
   return g.__yuiRuntime;

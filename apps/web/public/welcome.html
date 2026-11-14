@@ -178,6 +178,27 @@
         .cards { flex-direction: column; gap: 16px; }
         body { padding: 24px; }
       }
+
+      /* Auto-update bar (packaged app) */
+      .updbar {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: rgba(37, 99, 235, 0.12);
+        border: 1px solid rgba(125, 176, 255, 0.35);
+        border-radius: 12px;
+        font-size: 13px;
+      }
+      .updbar span { flex: 1; }
+      .updbar .cta { width: auto; height: 34px; padding: 0 14px; flex: none; }
+      .updcheck { margin-top: 10px; text-align: center; }
+      .linkbtn {
+        background: none; border: none; color: var(--muted); font: inherit;
+        font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+      }
+      .linkbtn:hover { color: var(--fg); }
     </style>
   </head>
   <body>
@@ -232,6 +253,14 @@
         <p>To control a host session from a phone or a second browser (Portal remote control), pair that device at your Yuika Portal instead.</p>
       </footer>
 
+      <!-- Auto-update (packaged app only; dev server localhost skip) -->
+      <div class="updbar" id="updateBar" hidden>
+        <span id="updateLabel"></span>
+        <button class="cta secondary" id="updateInstall" type="button">Install &amp; restart</button>
+        <button class="cta secondary" id="updateLater" type="button">Later</button>
+      </div>
+      <p class="updcheck"><button type="button" id="updCheckBtn" class="linkbtn">Check for updates</button></p>
+
       <p class="fallback">
         You opened this page in a browser. Launch the Yuika desktop app to pick a mode, or
         <a href="./">continue in the browser</a>.
@@ -279,6 +308,7 @@
       </p>
       <div class="actions">
         <button class="cta secondary" type="button" data-close>Cancel</button>
+        <button class="cta secondary" type="button" id="envSkip">Skip - set up in the app</button>
         <button class="cta primary" type="submit" id="envSave">Save &amp; start</button>
       </div>
     </form>
@@ -331,6 +361,52 @@
       document.addEventListener("keydown", (ev) => {
         if (ev.key === "Escape") document.querySelectorAll(".scrim.open").forEach((s) => s.classList.remove("open"));
       });
+
+      // Auto-update (P2-DTL-3): cek endpoint updater (GitHub releases
+      // latest.json) saat welcome terbuka; dev server localhost skip.
+      // Draft release tak terlihat bagi endpoint latest — publish dulu.
+      let pendingUpdate = null;
+      const packagedApp = !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(location.host);
+      async function checkForUpdate(manual) {
+        if (!tauri || !packagedApp) {
+          if (manual) setStatus("Updates are checked in the installed app only.");
+          return;
+        }
+        try {
+          const upd = await tauri.core.invoke("plugin:updater|check", {});
+          if (upd && upd.version) {
+            pendingUpdate = upd;
+            document.getElementById("updateLabel").textContent =
+              "Update available: v" + upd.version + (upd.body ? " - " + String(upd.body).split("\n")[0] : "");
+            document.getElementById("updateBar").hidden = false;
+            if (manual) setStatus("");
+          } else {
+            pendingUpdate = null;
+            document.getElementById("updateBar").hidden = true;
+            if (manual) setStatus("You are on the latest version.");
+          }
+        } catch (e) {
+          if (manual) setErr(String(e));
+        }
+      }
+      document.getElementById("updateInstall").addEventListener("click", async () => {
+        if (!pendingUpdate) return;
+        const btn = document.getElementById("updateInstall");
+        btn.disabled = true;
+        setStatus("Downloading and installing update…", true);
+        try {
+          await tauri.core.invoke("plugin:updater|download_and_install", { rid: pendingUpdate.rid });
+          await tauri.core.invoke("plugin:process|restart");
+        } catch (e) {
+          btn.disabled = false;
+          setErr(String(e));
+        }
+      });
+      document.getElementById("updateLater").addEventListener("click", () => {
+        document.getElementById("updateBar").hidden = true;
+      });
+      document.getElementById("updCheckBtn").addEventListener("click", () => checkForUpdate(true));
+      checkForUpdate(false);
 
       // TIDAK ADA auto-resume: halaman pilihan SELALU tampil. Setup terakhir
       // hanya dipakai utk highlight + prefill — pilihan tetap milik user
@@ -419,6 +495,12 @@
           st && st.exists ? "Local engine configuration" : "Set up the local engine";
         openDialog(dialogs.env);
       }
+      // Lazy-config (D49): engine boleh boot tanpa provider — sesi chat baru
+      // ditolak jelas di dalam app sampai provider diisi lewat Settings.
+      document.getElementById("envSkip").addEventListener("click", () => {
+        closeDialog(dialogs.env);
+        startHost();
+      });
       envDialog.addEventListener("submit", async (ev) => {
         ev.preventDefault();
         const base = document.getElementById("envBase").value.trim();

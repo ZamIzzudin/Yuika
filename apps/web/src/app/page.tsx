@@ -1004,6 +1004,36 @@ export default function Home() {
   }
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Lazy-config (D49): provider belum diisi di host ini -> buka Settings
+  // (section Provider) sekali dengan toast. Poll 401 sampai login selesai.
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      for (let i = 0; i < 40 && alive; i++) {
+        try {
+          const r = await authFetch(apiUrl("/api/settings/provider"));
+          if (r.status === 401 || r.status === 403) {
+            await new Promise((s) => setTimeout(s, 3000));
+            continue;
+          }
+          if (r.ok) {
+            const st = (await r.json()) as { baseUrl?: string; model?: string; hasApiKey?: boolean };
+            if (alive && (!st.baseUrl || !st.model || !st.hasApiKey)) {
+              setSettingsOpen(true);
+              toastErr("Provider is not configured. Set base URL, API key and model to start.");
+            }
+            return;
+          }
+        } catch {
+          /* belum login / api belum siap -> retry */
+        }
+        await new Promise((s) => setTimeout(s, 3000));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
  // badge compact (sidebar kolaps) memancarkan event → buka Settings.
   useEffect(() => {
     const open = () => setSettingsOpen(true);

@@ -14,6 +14,7 @@ import { EventBus } from "./bus.js";
 import { OpenAICompatProvider } from "./provider/openai-compat.js";
 import { AnthropicProvider } from "./provider/anthropic.js";
 import { GeminiProvider } from "./provider/gemini.js";
+import type { ProviderAdapter } from "./provider/adapter.js";
 import type { ProviderKind } from "./provider/index.js";
 import { AgentLoop } from "./loop.js";
 import { registry } from "./registry.js";
@@ -212,9 +213,22 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   let providerKind: ProviderKind = (cfg.provider.kind as ProviderKind | undefined) ?? "openai-compat";
   let provider = makeProvider(cfg.provider.baseUrl, cfg.provider.apiKey);
   let providerBaseUrl = cfg.provider.baseUrl;
+  // Lazy-config (D49): apiKey dilacak eksplisit — runtime boleh boot dengan
+  // nilai kosong; providerConfigured() menutup celah trio-kosong vs swap panas.
+  let providerApiKey = cfg.provider.apiKey;
 
- /** satu titik pembuatan provider, adapter per kind. */
+ /** satu titik pembuatan provider, adapter per kind. Lazy-config (D49):
+   *  trio kosong -> stub yang melempar pesan jelas (SDK asli menolak
+   *  konstruksi dengan apiKey kosong; runtime tetap boleh boot). */
   function makeProvider(baseUrl: string, apiKey: string) {
+    if (!baseUrl || !apiKey) {
+      return {
+        id: "unconfigured",
+        chatStream: async () => {
+          throw new Error("Provider is not configured. Open Settings, set base URL, API key and model, then try again.");
+        },
+      } satisfies ProviderAdapter;
+    }
     return providerKind === "anthropic"
       ? new AnthropicProvider({ baseUrl, apiKey })
       : providerKind === "gemini"
@@ -812,6 +826,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
 
   /** Dipakai REST runTurn & dungeon runner (async, resolve saat turn selesai). */
   function runTurnInternal(sessionId: string, text: string): Promise<void> {
+    // Lazy-config (D49): tanpa provider, turn berakhir dengan pesan jelas
+    // (bukan error 500/healing panjang) — UI menunjuk ke Settings.
+    if (!providerBaseUrl || !providerApiKey || !model) {
+      const msg = "Provider is not configured. Open Settings, set base URL, API key and model, then try again.";
+      const e = store.appendEvent(sessionId, { type: "session.error", message: msg, recoverable: false });
+      EventBus.publish(sessionId, e);
+      return Promise.resolve();
+    }
  // admission control, cek rate limit & budget SEBELUM turn jalan.
     const emit = makeEmitter(store, EventBus, sessionId);
     const admit = admission.admitTurn(sessionId);
@@ -1345,14 +1367,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     },
     // ---- Settings: provider & model (swap panas) ----
     /** Config provider aktif (key disamarkan, jangan pernah balas key penuh). */
+    /** Lazy-config (D49): trio provider terisi? API boleh boot false; chat
+     *  baru ditolak runTurn guard sampai user isi provider di Settings. */
+    providerConfigured: () => Boolean(providerBaseUrl && providerApiKey && model),
     getProviderSettings: () => ({
       kind: providerKind,
       baseUrl: providerBaseUrl,
       model,
       fallbackModel: process.env.YUI_MODEL_FALLBACK ?? "",
       auxModel: process.env.YUI_AUX_MODEL ?? process.env.YUI_LEARN_MODEL ?? "",
-      hasApiKey: Boolean(process.env.YUI_API_KEY),
-      keyPreview: process.env.YUI_API_KEY ? `…${process.env.YUI_API_KEY.slice(-4)}` : "",
+      hasApiKey: Boolean(providerApiKey),
+      keyPreview: providerApiKey ? `…${providerApiKey.slice(-4)}` : "",
     }),
     // P1-MDL: model per persona, override untuk UI Settings (sumber: file JSON).
  // price book, indikator biaya metering (per persona/model).
@@ -1453,21 +1478,27 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const toWrite: Record<string, string | null> = {};
       if (input.kind && (input.kind === "openai-compat" || input.kind === "anthropic" || input.kind === "gemini") && input.kind !== providerKind) {
         providerKind = input.kind;
-        provider = makeProvider(providerBaseUrl, process.env.YUI_API_KEY ?? cfg.provider.apiKey);
+        provider = makeProvider(providerBaseUrl, providerApiKey);
         toWrite.YUI_PROVIDER_KIND = providerKind;
         process.env.YUI_PROVIDER_KIND = providerKind;
       }
       if (input.baseUrl?.trim()) {
         providerBaseUrl = input.baseUrl.trim();
-        provider = makeProvider(providerBaseUrl, process.env.YUI_API_KEY ?? cfg.provider.apiKey);
-        toWrite.YUI_BASE_URL = providerBaseUrl;
-        process.env.YUI_BASE_URL = providerBaseUrl;
+        provider = makeProvider(providerBaseUrl, providerApiKey);
+        // Nama var = persis var boot (bug lama: persist YUI_BASE_URL, boot
+        // baca YUI_OPENAI_BASE_URL — swap hilang setelah restart).
+        toWrite.YUI_OPENAI_BASE_URL = providerBaseUrl;
+        process.env.YUI_OPENAI_BASE_URL = providerBaseUrl;
       }
       if (input.apiKey?.trim()) {
-        provider = makeProvider(providerBaseUrl, input.apiKey.trim());
-        toWrite.YUI_API_KEY = input.apiKey.trim();
-        process.env.YUI_API_KEY = input.apiKey.trim();
+        providerApiKey = input.apiKey.trim();
+        provider = makeProvider(providerBaseUrl, providerApiKey);
+        toWrite.YUI_OPENAI_API_KEY = providerApiKey;
+        process.env.YUI_OPENAI_API_KEY = providerApiKey;
       }
+      // Bersihkan entri legacy (YUI_BASE_URL/YUI_API_KEY) dari .env lama.
+      toWrite.YUI_BASE_URL = null;
+      toWrite.YUI_API_KEY = null;
       if (input.model?.trim()) {
         model = input.model.trim();
         toWrite.YUI_MODEL = model;

@@ -1758,3 +1758,32 @@ file yang bisa di-run untuk restore. Mobile dianggap CLEAR (F1 100%).
   identik; jawaban n = abort tanpa menulis), portal backups.test.ts (2).
   Core 474 passed (dungeon.test 1 failed = perubahan lokal user, bukan
   batch ini), typecheck 6/6, web+api build hijau, portal 44 passed.
+
+## Batch D117-D118 — Desktop selesai: lazy-config + auto-update (F2 100%)
+Keputusan user: desktop tinggal lazy config + auto update, lalu Publish.
+
++ LAZY-CONFIG (D117, studio+shell): API BOLEH boot tanpa provider — apps/api
+  runtime tidak lagi throw; core makeProvider trio-kosong -> stub ProviderAdapter
+  (chatStream throw pesan jelas; SDK OpenAI menolak konstruk apiKey kosong).
+  providerConfigured() + guard runTurn (event session.error 'Provider is not
+  configured…') + guard POST /api/sessions (400 English). Web page.tsx poll
+  /api/settings/provider (tahan 401 sampai login) -> buka Settings + toast.
+  Welcome wizard dapat tombol 'Skip - set up in the app'. Desktop lib.rs:
+  gerbang engine_env_complete DIHAPUS (pick_host + monitor respawn factory).
++ BUG LATEN DITAMBAL: updateProviderSettings persist ke YUI_BASE_URL/
+  YUI_API_KEY padahal boot baca YUI_OPENAI_* — swap provider hilang setelah
+  restart. Sekarang persist YUI_OPENAI_* (nama var boot) + bersihkan legacy;
+  hasApiKey/keyPreview dari state runtime (bukan process.env lama).
++ AUTO-UPDATE (D118, repo Yuika-Desktop): tauri-plugin-updater + -process;
+  endpoint GitHub releases latest.json (draft release tak terlihat endpoint
+  latest — publish dulu); pubkey di tauri.conf (key di luar repo: D:/projects/
+  .yuika-desktop-updater.key — user HARUS set secret TAURI_SIGNING_PRIVATE_KEY
+  + optional PASSWORD di repo desktop). createUpdaterArtifacts: true; CI
+  menandatangani + rename stabil (yuika-setup-x64.exe/.sig) + tulis
+  latest.json + attach ke draft release. Welcome.html: cek update saat buka
+  (skip dev localhost), bar 'Install & restart' (passive NSIS) + 'Check for
+  updates' manual. capabilities: updater:default + process:allow-restart.
++ Test: lazy-config.test.ts (3: boot kosong; runTurn error jelas; persist
+  YUI_OPENAI_* + tidak menulis legacy). cargo check desktop bersih.
+  Core 476 passed (1 failed dungeon = perubahan lokal user), typecheck 6/6,
+  web build hijau. F2 Desktop -> 100%; berikutnya: F5 Publish.

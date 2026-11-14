@@ -6,6 +6,10 @@ import { CreateSessionRequest, SendMessageRequest } from "@yuika/contracts";
 
 export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRuntime): void {
   app.post("/api/sessions", async (req, reply) => {
+    // Lazy-config (D49): tanpa provider, jangan buat sesi — UI menunjuk Settings.
+    if (!getRt().providerConfigured()) {
+      return reply.code(400).send({ error: "Provider is not configured. Open Settings to set base URL, API key and model." });
+    }
     const body = CreateSessionRequest.parse(req.body);
     const { sessionId, persona, projectId } = getRt().createSession(body.personaId, body.projectId ?? null);
     return reply.code(200).send({ sessionId, persona, projectId });

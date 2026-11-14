@@ -23,7 +23,7 @@
 | Fitur | Progres | Sisa inti |
 | --- | --- | --- |
 | F1 Mobile remote (Yuika-Mobile) | 100% | CLEAR 2026-11-14 (keputusan user; sisanya dianggap selesai) |
-| F2 Desktop app (Yuika-Desktop) | 75% | auto-update, lazy-config first-run |
+| F2 Desktop app (Yuika-Desktop) | 100% | SELESAI (D117-D118): lazy-config + auto-update; secrets updater menunggu user |
 | F3 Design-to-code (embedded canvas) | 100% | SELESAI (D86): draw loop live + generate acceptance + golden path |
 | F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
@@ -87,9 +87,9 @@ Selesai (6):
 - [x] Remote watch (SCR-7, screen 1fps via relay) + ikon brand set (D66).
 
 Sisa (2):
-- [ ] **P2-DTL-3 / D49** Auto-update aplikasi (updater NSIS/tauri).
-- [ ] **D49 lazy-config** first-run penuh tanpa env file wajib (jalur
-      tanpa wizard pun bisa boot).
+- [x] **P2-DTL-3 / D49** Auto-update aplikasi (tauri-plugin-updater, endpoint latest.json, CI signing + stable artifact names).
+- [x] **D49 lazy-config** first-run penuh tanpa env file wajib (jalur
+      tanpa wizard pun bisa boot) — API boot kosong, guard + banner Settings.
 
 100% ketika: kedua sisa selesai dan installer teruji end-to-end
 (install bersih → pakai → update otomatis → reset factory).

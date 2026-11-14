@@ -686,3 +686,8 @@ daftar sesi datar, tapi **mission control project-oriented**.
 + Blind test dihapus total (core, route, UI, kontrak).
 + Persona Forge v2: persona baru mandiri + pilih native functions (8 kategori, tanpa delegation) + share import/export antar-install.
 + Backup host: bundle JSON + restore script .mjs self-contained (Settings > Backup); portal menyimpan file per akun (repo yuika-portal).
+
+
+## Batch D117-D118 — Desktop lazy-config + auto-update
+- API boot tanpa provider (stub adapter + guard runTurn/sessions + banner Settings); bug persist var-name provider ditambal (YUI_OPENAI_*).
+- Updater Tauri aktif (plugin updater/process, endpoint latest.json GitHub releases, CI signing + stable artifacts); welcome 'Install & restart'.
