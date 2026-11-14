@@ -23,6 +23,21 @@ export const MCP_CATALOG: McpCatalogEntry[] = [
     docsUrl: "https://tailscale.com/kb/1242/tailscale-serve",
   },
   {
+    id: "cloudflared",
+    name: "Cloudflare Quick Tunnel",
+    description:
+      "Ekspos dev lokal ke internet publik TANPA login: cf_quick_start(port=3000) menghasilkan https://<random>.trycloudflare.com. URL berubah tiap start (persona cukup browser_open URL terbaru). Membungkus CLI cloudflared.",
+    category: "dev",
+    risk: "tinggi",
+    command: "node",
+    args: [`${ws}/../mcp-servers/cloudflared/index.mjs`],
+    envKeys: [],
+    setupNote:
+      "Butuh CLI cloudflared terpasang di mesin Yuika (winget install Cloudflare.cloudflared / brew install cloudflared / apt). Tanpa akun Cloudflare. URL trycloudflare.com acak per sesi dan siapa pun yang tahu URL bisa membuka, gunakan hanya untuk preview dev.",
+    docsUrl:
+      "https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/",
+  },
+  {
     id: "codemagic",
     name: "Codemagic CI/CD",
     description:

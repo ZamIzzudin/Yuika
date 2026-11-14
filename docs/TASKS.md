@@ -1493,3 +1493,21 @@ draft). Typecheck 4/4, web build hijau.
 Feedback user: seksi Equipped di SkillLibraryModal dihapus; status
 terpasang cukup ditandai (border aksen + centang) di dalam grup
 kategorinya. Import icon X tidak terpakai ikut dibersihkan.
+
+### D106 — MCP Cloudflare Quick Tunnel (SELESAI)
+Feedback diskusi preview: localhost relatif mesin tempat browser bersama
+jalan; solusi tanpa kredensial = cloudflared quick tunnel. Wrapper baru
+mcp-servers/cloudflared/index.mjs (stdio JSON-RPC minimal, pola tailscale):
+- cf_quick_start(port): spawn `cloudflared tunnel --url http://127.0.0.1:<port>
+  --no-autoupdate`, parse URL trycloudflare.com dari stdout/stderr (poll
+  300ms, maks 30 dtk). Port sama = reuse; port beda = restart otomatis.
+  Tanpa binary = isError EN + hint instalasi (winget/brew/apt). Tanpa
+  login/akun Cloudflare sama sekali.
+- cf_quick_status / cf_quick_stop; cleanup child process saat MCP server
+  mati (tidak ada tunnel yatim).
+- Katalog MCP: entri cloudflared (dev, risiko tinggi - URL publik siapa
+  pun yang tahu bisa buka; URL berubah tiap start, by design: persona
+  tinggal browser_open URL terbaru).
+Smoke nyata: tunnel ke port 3000, URL ter-parse 5.6 dtk, GET publik 200
+dari edge Cloudflare, stop bersih. Test mcp-cloudflared.test.ts (handshake,
+tools/list, status stopped, port invalid isError EN).

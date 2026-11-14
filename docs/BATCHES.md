@@ -630,3 +630,9 @@ daftar sesi datar, tapi **mission control project-oriented**.
 ## Batch D105 — modal library tanpa seksi Equipped
 
 + Hapus seksi Equipped dari SkillLibraryModal; hanya grup kategori + drafts.
+
+
+## Batch D106 — MCP cloudflared quick tunnel
+
++ Wrapper cf_quick_start/status/stop (quick tunnel anonim, URL berubah per start).
++ Katalog MCP entry + test stdio; smoke nyata 200 dari edge.

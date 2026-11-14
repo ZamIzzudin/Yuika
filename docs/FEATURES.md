@@ -104,6 +104,9 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D106: MCP Cloudflare Quick Tunnel: persona bisa publikasikan dev lokal ke
+URL publik tanpa login (cf_quick_start -> trycloudflare.com, URL terbaru
+di browser_open).
 D104: card skill Persona = hanya terpasang + modal library per kategori
 (equipped chips di awal, toggle langsung; kategori = domain persona).
 D102/D103: Design tab font bank (Google Fonts, 90+ family per kategori,

@@ -20,7 +20,7 @@ import {
 
 const shapeFields = z
   .object({
-    type: z.enum(["frame", "rect", "circle", "text"]),
+    type: z.enum(["frame", "rect", "circle", "text", "icon"]),
     name: z.string().max(120).optional(),
     x: z.number().default(0),
     y: z.number().default(0),
@@ -39,9 +39,15 @@ const shapeFields = z
     fontSize: z.number().min(8).max(200).optional(),
     fontWeight: z.number().min(100).max(900).optional(),
     align: z.enum(["left", "center", "right"]).optional(),
+    fontFamily: z
+      .string()
+      .max(64)
+      .optional()
+      .describe("Google Fonts bank family utk text, mis. 'Playfair Display', 'JetBrains Mono', 'Space Grotesk'; katalog di skill design-canvas-basics"),
+    icon: z.string().max(64).optional().describe("nama ikon kebab-case utk type icon, mis. 'house', 'chart-line-up', 'magnifying-glass'; katalog di skill design-canvas-basics"),
     color: z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/).optional(),
   })
-  .describe("Shape fields; frame = artboard/container, text = label dengan content, group = wadah logis tanpa visual (D92), image = gambar upload (D92, pakai src)");
+  .describe("Shape fields; frame = artboard/container, text = label dengan content (fontFamily dari Google Fonts bank), group = wadah logis tanpa visual (D92), image = gambar upload (D92, pakai src), icon = ikon SVG dari bank (D103, pakai nama kebab-case di field icon)");
 
 /** Ringkas file untuk prompt persona (tanpa mengirim seluruh JSON). */
 function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, unknown> {
@@ -81,11 +87,13 @@ function summarize(file: ReturnType<typeof getDesignFile> & {}): Record<string, 
             ? {
                 text: s.text.slice(0, 120),
                 fontSize: s.fontSize,
+                ...(s.fontFamily ? { fontFamily: s.fontFamily } : {}),
                 ...(s.fontWeight ? { fontWeight: s.fontWeight } : {}),
                 ...(s.color ? { color: s.color } : {}),
                 ...(s.align ? { align: s.align } : {}),
               }
             : {}),
+          ...(s.type === "icon" ? { icon: s.icon } : {}),
           ...(s.type === "image" ? { src: s.src, fit: s.fit ?? "cover" } : {}),
           ...(s.fills[0]?.image ? { backgroundImage: s.fills[0].image } : {}),
           ...(s.type === "group" ? { children: s.children.length } : {}),
