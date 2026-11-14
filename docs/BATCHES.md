@@ -648,3 +648,11 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 + Scribe toolsets: design_list/get_file/update_shape (partial patch only).
 + Scribe skills + ux-microcopy; PERSONA.md: aturan edit copy tanpa sentuh layout.
+
+
+## Batch D109/D110 — Export design + grouping komponen
+
++ lib designExport (PNG 2x per halaman, ZIP store zero-dep) + tombol toolbar.
+
++ Skill/persona: grouping komponen wajib; contoh login ditulis ulang dengan
+  Card/Button sebagai frame beranak.

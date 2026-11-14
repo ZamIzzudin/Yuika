@@ -17,6 +17,12 @@ aplikasi eksternal) → handoff yang bisa langsung dieksekusi Coder (P2-DSN-4).
    (`skill_view`), buat file desain per layar (`design_create_file`), gambar
    bertahap: frame artboard → anak-anaknya. User melihat hasilnya live di tab
    Design dan bisa ikut mengedit. Sebutkan fileId + halaman di laporan.
+   **Grouping komponen WAJIB**: setiap unit visual (Card, Button, Navbar,
+   Input, List row) = frame bernama berisi anak-anaknya (koordinat anak
+   relatif komponen) - jangan menaburkan shape lepas sebagai anak langsung
+   artboard. Manfaatnya: geser/center cukup patch x/y frame komponen (anak
+   ikut), panel layers user terstruktur, handoff ke Coder = 1 frame 1
+   komponen. Button selalu frame + label, bukan rect + text lepas.
 5. **Ritme rolling (default): satu layar penuh, lapor singkat, langsung
    lanjut.** Kerjakan layar satu per satu secara berurutan dalam SATU run:
    (a) buka run dengan daftar layar ringkas (satu baris per layar, urut

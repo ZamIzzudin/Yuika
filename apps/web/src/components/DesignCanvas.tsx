@@ -22,14 +22,23 @@ import {
   ArrowsOutSimple,
   ChatCircleDots,
   SidebarSimple,
+  FilePng,
+  FileZip,
 } from "@phosphor-icons/react";
 import type { DesignFile, DesignPage, DesignShape } from "@yuika/core/design";
 import { apiUrl, authFetch } from "@/lib/api";
 import { getAssetImage, loadAsset, useAssetNotify } from "@/lib/designAssets";
-import { getIconImage, loadIcon, useIconNotify, iconUrl } from "@/lib/iconAssets";
+import {
+  getIconImage,
+  loadIcon,
+  useIconNotify,
+  iconUrl,
+} from "@/lib/iconAssets";
 import { collectFontFamilies, ensureFont } from "@/lib/fontLoader";
 import { FONT_BANK, ICON_CATEGORIES } from "@yuika/core/design/client";
 import { makeDesignRefs, type DesignRefPayload } from "@/lib/designRef";
+import { exportFileZip, exportPagePng } from "@/lib/designExport";
+import { toastOk, toastErr } from "./ui/toast";
 import { Button, Chip, Dropdown } from "@/components/ui";
 import { DesignLayers } from "@/components/DesignLayers";
 
@@ -434,7 +443,10 @@ function Ruler({
     }
   }, [view, dir, cursor, len]);
   return (
-    <div ref={boxRef} className={dir === "h" ? "h-full w-full" : "h-full w-full"}>
+    <div
+      ref={boxRef}
+      className={dir === "h" ? "h-full w-full" : "h-full w-full"}
+    >
       <canvas ref={ref} />
     </div>
   );
@@ -636,6 +648,33 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
       oy: (stage.clientHeight - bh * z) / 2 - by * z,
     });
   }, [page]);
+
+  // D109: export PNG halaman aktif / ZIP semua halaman (2x scale).
+  const [exporting, setExporting] = useState(false);
+  const doExportPng = useCallback(async () => {
+    if (!file || !page) return;
+    setExporting(true);
+    try {
+      const name = await exportPagePng(file, page);
+      toastOk(`Exported ${name}`);
+    } catch {
+      toastErr("Export failed, try again");
+    } finally {
+      setExporting(false);
+    }
+  }, [file, page]);
+  const doExportZip = useCallback(async () => {
+    if (!file) return;
+    setExporting(true);
+    try {
+      const name = await exportFileZip(file);
+      toastOk(`Exported ${name} (${file.pages.length} pages)`);
+    } catch {
+      toastErr("Export failed, try again");
+    } finally {
+      setExporting(false);
+    }
+  }, [file]);
 
   // ---- render loop ----
   useEffect(() => {
@@ -851,7 +890,9 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
           orig: mv,
           moved: false,
           bbox: { x0: bx0, y0: by0, x1: bx1, y1: by1 },
-          guides: page ? guideTargets(page, new Set(mv.keys())) : { xs: [], ys: [] },
+          guides: page
+            ? guideTargets(page, new Set(mv.keys()))
+            : { xs: [], ys: [] },
         };
       } else {
         setSel(new Set());
@@ -1622,7 +1663,11 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         <Button
           variant="ghost"
           className="!px-2 !py-1"
-          title={layersOpen ? "Hide layers panel (wider canvas)" : "Show layers panel"}
+          title={
+            layersOpen
+              ? "Hide layers panel (wider canvas)"
+              : "Show layers panel"
+          }
           aria-label="Toggle layers panel"
           onClick={toggleLayers}
         >
@@ -1786,6 +1831,27 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
         >
           <ArrowsIn size={15} />
         </Button>
+        <span className="mx-1 h-4 w-px bg-line" />
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Export this page as PNG (2x)"
+          aria-label="Export this page as PNG"
+          disabled={!file || !page || exporting}
+          onClick={() => void doExportPng()}
+        >
+          <FilePng size={15} />
+        </Button>
+        <Button
+          variant="ghost"
+          className="!px-2 !py-1"
+          title="Export all pages as a ZIP of PNGs"
+          aria-label="Export all pages as ZIP"
+          disabled={!file || file.pages.length === 0 || exporting}
+          onClick={() => void doExportZip()}
+        >
+          <FileZip size={15} />
+        </Button>
         <span className="ml-auto flex items-center gap-2">
           {props.headerRight}
         </span>
@@ -1877,7 +1943,7 @@ export function DesignCanvas(props: Props): React.ReactElement | null {
             ),
           )}
           {/* D92 (#10): status save jadi floating chip pojok kanan atas kanvas */}
-          <div className="pointer-events-none absolute right-2 top-2 z-10">
+          <div className="pointer-events-none absolute right-2 top-8 z-10">
             {dirty ? (
               <Chip size="sm" tone="warn">
                 {saving ? "Saving…" : "Unsaved"}
@@ -2376,7 +2442,8 @@ function ShapeProps({
               pg.roots
                 .map((r) => pg.shapes[r])
                 .filter(
-                  (sh): sh is DesignShape => Boolean(sh) && sh!.type === "frame",
+                  (sh): sh is DesignShape =>
+                    Boolean(sh) && sh!.type === "frame",
                 )
                 .map((sh) => ({
                   value: sh.id,

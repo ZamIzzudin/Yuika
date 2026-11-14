@@ -78,6 +78,10 @@ it("persona designer: bundled skills + toolset design_* terpasang", () => {
   const body = fs.readFileSync(root("skills/design-canvas-basics/SKILL.md"), "utf8");
   expect(body).toContain("parentId");
   expect(body).toContain("design_update_shape");
+  // D110: disiplin grouping komponen wajib ada di skill
+  expect(body).toContain("Grouping: komponen = frame");
+  expect(body).toContain("Card Login");
+  expect(body).toContain("Button Sign in");
 });
 
 it("persona scribe: copy editor canvas (read + partial update, no add/delete)", () => {

@@ -104,6 +104,11 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D110: Grouping komponen wajib utk Picasso: Card/Button/Navbar = frame berisi
+anak (geser/center 1 panggilan, layers terstruktur, handoff 1 frame = 1
+komponen).
+D109: Export design: tombol PNG (halaman aktif) dan ZIP (semua halaman) di
+toolbar Design; render 2x dengan font/icon/aset terpramuat.
 D108: Poe copy editor canvas: minta Poe memperbaiki copywriting desain jadi
 langsung di file desain (patch text saja, layout tetap milik Picasso).
 D107: Picasso ritme rolling: default satu layar tuntas per bagian (live di tab

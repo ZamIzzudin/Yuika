@@ -1548,3 +1548,40 @@ design_* hanya milik designer (coder read-only).
     Design.
 + Test designer-wiring: scribe memuat 3 design tools, TIDAK memuat
   add/delete/create; bundled ux-microcopy. Core 456 passed.
+
+### D109 — Export design: PNG per halaman + ZIP semua halaman (SELESAI)
+Fitur baru di toolbar tab Design (di sebelah zoom): tombol PNG (halaman
+aktif) dan ZIP (semua halaman file). Implementasi:
++ apps/web/src/lib/designExport.ts: renderer export mandiri (duplikat
+  perilaku drawShape canvas minus chrome editor: seleksi/handle/label
+  frame). renderPageCanvas(file, page, scale=2): bounding box semua shape
+  terlihat, transform -bbox*scale, background halaman, walk roots+children.
++ Prerender aset sebelum menggambar: Google Fonts (collectFontFamilies +
+  ensureFont), icon bank (loadIcon + poll getIconImage), image/frame-bg
+  (loadAsset + poll getAssetImage; maks 5 dtk) supaya PNG tidak polos.
++ ZIP = store tanpa kompresi, zero-dep: CRC32 table + local header +
+  central directory + EOCD, nama file ASCII slug (NN-nama-halaman.png),
+  dedup nama. Download via objectURL + a[download].
++ UI: 2 tombol ghost (FilePng/FileZip) disabled saat exporting; toast
+  sukses menyebut nama file; error toast EN.
+Smoke: zipStore diekstrak + dibuat zip 2 entri via eval murni, divalidasi
+bsdtar (tar -tf/-xOf) isi utuh. Typecheck 6/6, web build hijau.
+
+### D110 — Disiplin grouping komponen untuk Picasso (SELESAI)
+Feedback user: Picasso tidak memanfaatkan fitur Group tab Design; card
+seharusnya jadi satu group agar mudah dipilih/digeser/di-center, dan
+attach ke chat lebih mudah. Akar masalah: contoh di skill
+design-canvas-basics justru anti-pola (Heading/Button = anak artboard,
+bukan anak Card).
++ SKILL.md design-canvas-basics: seksi baru 'Grouping: komponen = frame'
+  (struktur pohon contoh, alasan: geser 1 panggilan via patch x/y frame,
+  centering dari bbox komponen, panel layers terstruktur, handoff 1 frame
+  = 1 komponen; aturan: nama = komponen kode, Button selalu frame + label,
+  nested maks 3 level, group type hanya untuk user Ctrl+G).
++ Contoh kartu login ditulis ulang: Card Login (frame) berisi Heading +
+  Button Sign in (frame nested berisi label, koordinat relatif); ditutup
+  demo patch y utk center Card 1 panggilan. Alur standar langkah baru
+  'Grouping komponen (WAJIB)' + bullet di Disiplin kualitas.
++ PERSONA.md Picasso poin 4: instruksi grouping komponen WAJIB ringkas.
++ Test designer-wiring: skill memuat seksi Grouping + nama komponen
+  contoh (Card Login, Button Sign in).
