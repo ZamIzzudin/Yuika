@@ -869,7 +869,7 @@ logout|me`; middleware preHandler Fastify: mode lokal selama 0 user
 ### D65 — Desktop packaged engine (P2-DTL-3) (SELESAI)
 - [x] Host mode packaged build: esbuild apps/api → yuika-api.cjs + node.exe + tree better-sqlite3 di-bundle sbg resources Tauri (repo Yuika-Desktop commit ad66228). Verifikasi lokal: engine listen 3211, runtime init OK dengan provider key dari `app_data_dir/yuika.env` (passthrough env dari Rust).
 - [x] Pitfall: strip prefix verbatim `\\?\` dari resource_dir (node EISDIR 'C:' sbg entry); versi node bundle dinamis dari ABI prebuilt better-sqlite3 terpasang (dev=137/node24, CI=127/node22); health timeout menampilkan ekor api.log (boot_failure_reason).
-- [ ] Menyusul: first-run UX tanpa file env (runtime lazy-config / settings UI sebelum runtime siap) — kandidat task studio berikutnya; auto-update (updater plugin) tetap open.
+- [x] Menyusul: first-run UX tanpa file env (runtime lazy-config) + auto-update — SELESAI D117-D118 (lihat batch terakhir).
 
 
 ### D67 — First-run env wizard desktop (SELESAI; repo Yuika-Desktop 8613d18)

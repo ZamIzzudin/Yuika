@@ -25,12 +25,12 @@
 | F1 Mobile remote (Yuika-Mobile) | 100% | CLEAR 2026-11-14 (keputusan user; sisanya dianggap selesai) |
 | F2 Desktop app (Yuika-Desktop) | 100% | SELESAI (D117-D118): lazy-config + auto-update; secrets updater menunggu user |
 | F3 Design-to-code (embedded canvas) | 100% | SELESAI (D86): draw loop live + generate acceptance + golden path |
-| F4 Persona training & QA | 83% | misi nyata lulus, blind test run penguji |
+| F4 Persona training & QA | 100% | CLOSED 2026-11-14: blind test dihapus (konsep), Forge v2 + share jadi penutup |
 | F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
 
 ```
-F1 [########·-] 85%   F2 [#######···] 75%   F3 [##########] 100%
-F4 [########·-] 83%   F5 [##········] 20%
+F1 [##########] 100%  F2 [##########] 100%  F3 [##########] 100%
+F4 [##########] 100%  F5 [##········] 20%
 ```
 
 Urutan eksekusi yang disarankan: **F1 → F2 → F4 → F5** (F3 selesai D86).
@@ -202,7 +202,12 @@ hijau 2x berturut + run nyata dua arah terverifikasi lewat trace.
 
 100% ketika: golden path jalan di project demo tanpa keluar platform.
 
-## F4 · Persona training & QA — 83%
+## F4 · Persona training & QA — 100% (CLOSED)
+
+> CLOSED 2026-11-14 (keputusan user): konsep blind test DIHAPUS TOTAL dari
+> semua lapisan; papan F4 ditutup lewat Persona Forge v2 (persona mandiri +
+> native functions + share import/export). Misi dungeon + readiness roster +
+> QA watch tetap hidup sebagai fitur pelatihan.
 
 Arena latihan + bukti kualitas persona: skill lahir dari misi nyata,
 dinilai buta, readiness terlihat di roster; QA persona menonton layar.
