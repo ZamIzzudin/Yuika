@@ -32,7 +32,6 @@ import {
   Sparkle,
   Target,
   Wrench,
-  X,
 } from "@phosphor-icons/react";
 import { OrinPortrait } from "./OrinPortrait";
 import { PersonaModelModal } from "./PersonaModelModal";
@@ -437,7 +436,6 @@ function SkillLibraryModal({
   onClose: () => void;
 }) {
   const { groups, drafts } = groupByCategory(skills);
-  const eq = skills.filter((s) => effective.includes(s.name));
 
   /** Satu row skill: glyph + nama + deskripsi + status terpasang. */
   const Row = ({ s }: { s: LibSkill }) => {
@@ -470,7 +468,12 @@ function SkillLibraryModal({
           </span>
         </span>
         {on ? (
-          <Check size={13} weight="bold" aria-hidden className="shrink-0 text-[var(--c)]" />
+          <Check
+            size={13}
+            weight="bold"
+            aria-hidden
+            className="shrink-0 text-[var(--c)]"
+          />
         ) : (
           <Plus size={13} aria-hidden className="shrink-0 text-dim" />
         )}
@@ -479,41 +482,23 @@ function SkillLibraryModal({
   };
 
   return (
-    <Modal open onClose={onClose} wide title={`Skill library for ${personaName}`}>
-      <div className="flex flex-col gap-5" style={{ "--c": accent } as React.CSSProperties}>
-        {/* Seksi awal: skill terpasang — cepat dilihat & dilepas. */}
-        <section aria-label="Equipped skills" className="flex flex-col gap-2">
-          <small className="text-caption font-semibold uppercase tracking-wide text-dim">
-            Equipped ({eq.length})
-          </small>
-          {eq.length === 0 ? (
-            <p className="text-caption text-dim">
-              Nothing equipped yet, pick from the categories below.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {eq.map((s) => (
-                <button
-                  key={s.name}
-                  type="button"
-                  title={`Detach ${s.name}`}
-                  onClick={() => onToggle(s.name)}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-pill border border-[var(--c)] bg-[color-mix(in_srgb,var(--c)_10%,transparent)] px-2.5 py-1 text-[11.5px] font-medium text-[var(--c)] transition-colors duration-200 hover:brightness-125"
-                >
-                  {s.name.replaceAll("-", " ")}
-                  <X size={11} weight="bold" aria-hidden />
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
+    <Modal open onClose={onClose} wide title={`${personaName}'s Skills`}>
+      <div
+        className="flex flex-col gap-5"
+        style={{ "--c": accent } as React.CSSProperties}
+      >
         {/* Semua skill siap pakai, dikelompokkan per kategori. */}
         {groups.map((g) => (
-          <section key={g.key} aria-label={g.label} className="flex flex-col gap-2">
+          <section
+            key={g.key}
+            aria-label={g.label}
+            className="flex flex-col gap-2"
+          >
             <small className="flex items-baseline gap-2 text-caption font-semibold uppercase tracking-wide text-dim">
               {g.label}
-              <span className="text-dim/70 tabular-nums">({g.skills.length})</span>
+              <span className="text-dim/70 tabular-nums">
+                ({g.skills.length})
+              </span>
             </small>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {g.skills.map((s) => (
@@ -528,7 +513,9 @@ function SkillLibraryModal({
           <section aria-label="Draft skills" className="flex flex-col gap-2">
             <small className="flex items-baseline gap-2 text-caption font-semibold uppercase tracking-wide text-dim">
               Drafts
-              <span className="text-dim/70 tabular-nums">({drafts.length})</span>
+              <span className="text-dim/70 tabular-nums">
+                ({drafts.length})
+              </span>
             </small>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {drafts.map((s) => (

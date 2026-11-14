@@ -625,3 +625,8 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - Modal library: Equipped chips di awal, grup per kategori, drafts bawah.
 - Core: Skill.category + payload bindings; backfill 48 SKILL.md.
 - Test: skills-category (core 452 passed).
+
+
+## Batch D105 — modal library tanpa seksi Equipped
+
++ Hapus seksi Equipped dari SkillLibraryModal; hanya grup kategori + drafts.

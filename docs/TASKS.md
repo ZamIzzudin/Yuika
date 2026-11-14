@@ -1488,3 +1488,8 @@ kan per kategori, seksi awal Equipped (n) berisi chip skill terpasang
   seksi Drafts terakhir. Tooltip tile card tetap.
 Test: skills-category.test.ts (48 skill berkategori valid + fallback
 draft). Typecheck 4/4, web build hijau.
+
+### D105 — modal library: hapus seksi Equipped (SELESAI)
+Feedback user: seksi Equipped di SkillLibraryModal dihapus; status
+terpasang cukup ditandai (border aksen + centang) di dalam grup
+kategorinya. Import icon X tidak terpakai ikut dibersihkan.
