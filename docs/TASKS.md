@@ -1613,3 +1613,28 @@ bagian berikutnya.
 + Probe nyata file KodeKraf: index 512 chars; region y1200-2704 = 17.674
   chars utuh (dulu terpotong). Bonus temuan: KodeKraf flat 131 anak langsung
   root - kasus yang D110 cegah ke depan.
+
+### D112 — F1 persona rename: nama tampilan custom per-install (SELESAI)
+Fase pertama fitur 'Create Your Own Persona': user bisa mengganti nama +
+deskripsi persona (misal 'Picasso Yui' jadi 'Rafa'). Id internal TIDAK
+berubah - roster, growth, delegation, riwayat sesi, dan prompt id tetap
+stabil; hanya tampilan.
++ packages/core/personas/rename.ts: store workspace/persona-names.json
+  (pola persona-shapes.json): loadPersonaRenames (fail-closed: korup = {}),
+  savePersonaRename (validasi persona terdaftar, name 1-40, desc ≤ 120,
+  desc null/empty = default manifest), clearPersonaRename (idempoten).
++ listPersonas(dir, workspacePath?) - apply rename ke manifest.name/
+  description SETELAH load, SEBELUM semua konsumen: system prompt builder,
+  listPersonaInfos (GET /api/personas), growth, roster assign, workflow
+  engine, delegation runner. Tanpa workspacePath = perilaku lama.
++ Contract: PersonaRename + PersonaRenamesResponse (item + defaultName utk
+  label 'Default: X' di UI).
++ API: GET/PUT /api/personas/renames, DELETE /api/personas/renames/:id
+  (reset ke default manifest).
++ UI: CharacterStage - tombol pencil (pojok kanan kartu identitas, mirror
+  gear model) membuka modal Rename (name, description opsional, label
+  default, Reset, Save; busy state, toast EN); setelah save/reset page.tsx
+  refetch /api/personas sehingga nama baru tampil di picker, TeamTree,
+  blind test, dan semua UI lain.
++ Test persona-rename.test.ts (5): default tanpa file, apply name+desc id
+  tetap, clear idempoten + desc default, validasi throw, korup fail-closed.

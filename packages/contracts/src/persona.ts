@@ -101,6 +101,26 @@ export const SetPersonaShapeRequest = z.object({
 });
 export type SetPersonaShapeRequest = z.infer<typeof SetPersonaShapeRequest>;
 
+// ── F1 (rename persona): override display name per-install, workspace-local ──
+
+/** Entri rename persona (tanpa entri = default manifest). id internal tidak
+ *  berubah, hanya tampilan nama + deskripsi. */
+export const PersonaRename = z.object({
+  personaId: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1).max(40),
+  /** null / kosong = kembali ke deskripsi default manifest. */
+  description: z.string().max(120).nullable().default(null),
+});
+export type PersonaRename = z.infer<typeof PersonaRename>;
+
+export const PersonaRenamesResponse = z.object({
+  renames: z.array(PersonaRename.extend({ defaultName: z.string() })),
+});
+export type PersonaRenamesResponse = z.infer<typeof PersonaRenamesResponse>;
+
+export const SetPersonaRenameRequest = PersonaRename;
+export type SetPersonaRenameRequest = z.infer<typeof SetPersonaRenameRequest>;
+
 // ── P1-PER-5: blind test persona (anti "hanya kosmetik") ──────────────────
 
 /** POST /api/personas/blindtest — mulai run: 2-6 persona × satu prompt uji. */

@@ -81,10 +81,13 @@ const DEFAULT_ACC: Record<"research" | "documents", string[]> = {
 // ---------------------------------------------------------------------------
 export function PersonaStudioView({
   personas,
+  onPersonaRenamed,
   onBack,
   onOpenProject,
 }: {
   personas: PersonaInfo[];
+  /** F1 rename: selesai rename/reset → refetch daftar persona (nama baru tampil di semua UI). */
+  onPersonaRenamed?: () => void;
   onBack: () => void;
   onOpenProject?: (projectId: string) => void;
 }) {
@@ -408,7 +411,7 @@ export function PersonaStudioView({
 
       {view === "personas" ? (
         <div className="min-h-0 w-full flex-1 overflow-y-auto">
-          <CharacterStage personas={personas} />
+          <CharacterStage personas={personas} onPersonaRenamed={onPersonaRenamed} />
         </div>
       ) : view === "blind" ? (
         <div className="min-h-0 w-full flex-1 overflow-y-auto">

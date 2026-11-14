@@ -169,14 +169,18 @@ export default function Home() {
     void loadProjects();
   }, [loadProjects]);
 
-  useEffect(() => {
-    authFetch(apiUrl("/api/personas"))
+  const loadPersonas = useCallback(() => {
+    return authFetch(apiUrl("/api/personas"))
       .then((r) => (r.ok ? r.json() : { personas: [] }))
       .then((d: { personas: PersonaInfo[] }) =>
         setPersonas(Array.isArray(d.personas) ? d.personas : []),
       )
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    void loadPersonas();
+  }, [loadPersonas]);
 
   // Override wujud persona (menu Persona): muat sekali, setShapeOverrides
   // membuat SEMUA PersonaFace/OrinPortrait reaktif (module-store + listener).
@@ -1293,6 +1297,7 @@ export default function Home() {
           {studioOpen ? (
             <PersonaStudioView
               personas={personas}
+              onPersonaRenamed={() => void loadPersonas()}
               onBack={() => setStudioOpen(false)}
               onOpenProject={(pid) => {
                 setActiveProjectId(pid); // buka ruangan latihan seperti project

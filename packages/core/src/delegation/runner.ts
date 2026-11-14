@@ -66,7 +66,7 @@ export function runChildPersona(
   context: string | null,
   parentEmit: Emit,
 ): ChildRunHandle {
-  const personas = listPersonas(deps.personasDir);
+  const personas = listPersonas(deps.personasDir, deps.workspacePath);
   const persona = personas.find((p) => p.manifest.id === personaId);
   if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
   if (!persona.manifest.delegation.spawnable_by.includes("yui") && !persona.manifest.delegation.spawnable_by.includes("user")) {

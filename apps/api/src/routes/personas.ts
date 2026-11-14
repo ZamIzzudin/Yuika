@@ -3,7 +3,10 @@ import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
 import {
   PersonaGrowth,
+  PersonaRename,
+  PersonaRenamesResponse,
   PersonaShapesResponse,
+  SetPersonaRenameRequest,
   SetPersonaShapeRequest,
   StartBlindTestRequest,
   SubmitBlindGuessesRequest,
@@ -74,5 +77,31 @@ export function registerPersonaRoutes(app: FastifyInstance, getRt: () => YuiRunt
     } catch (e) {
       return reply.status(400).send({ error: e instanceof Error ? e.message : "gagal menyimpan bentuk" });
     }
+  });
+
+  /** GET /api/personas/renames — override nama tampilan (F1). */
+  app.get("/api/personas/renames", async () =>
+    PersonaRenamesResponse.parse({ renames: getRt().personaRenames() }));
+
+  /** PUT /api/personas/renames — set/ganti nama tampilan persona
+   *  (id internal tetap; name 1-40, description ≤ 120 → 400 bila tidak). */
+  app.put("/api/personas/renames", async (req, reply) => {
+    const parsed = SetPersonaRenameRequest.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "invalid payload (personaId + name 1-40 chars, description ≤ 120)" });
+    }
+    try {
+      getRt().setPersonaRename(parsed.data.personaId, parsed.data.name, parsed.data.description);
+      return PersonaRenamesResponse.parse({ renames: getRt().personaRenames() });
+    } catch (e) {
+      return reply.status(400).send({ error: e instanceof Error ? e.message : "failed to save the name" });
+    }
+  });
+
+  /** DELETE /api/personas/renames/:personaId — reset ke nama default manifest. */
+  app.delete("/api/personas/renames/:personaId", async (req, reply) => {
+    const { personaId } = PersonaRename.pick({ personaId: true }).parse(req.params);
+    getRt().clearPersonaRename(personaId);
+    return PersonaRenamesResponse.parse({ renames: getRt().personaRenames() });
   });
 }

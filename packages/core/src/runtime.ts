@@ -21,6 +21,8 @@ import { ApprovalEngine, resolvePendingApproval, getApprovalMode, setApprovalMod
 import { listPersonas } from "./personas/loader.js";
 import { buildPersonaGrowth } from "./personas/growth.js";
 import { loadPersonaShapes, savePersonaShape } from "./personas/shapes.js";
+import type { PersonaRename, PersonaRenamesResponse } from "@yuika/contracts";
+import { loadPersonaRenames, savePersonaRename, clearPersonaRename as clearPersonaRenameWs } from "./personas/rename.js";
 import { createBlindTest, BLIND_PROMPTS } from "./personas/blindtest.js";
 import { createSessionWithPrompt } from "./runtime-helpers.js";
 import { WorkflowEngine } from "./workflow/engine.js";
@@ -259,7 +261,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     projects: projectStore,
     workspacePath: paths.workspacePath,
  // domain persona pemanggil tool (dari manifest, cache-friendly).
-    domainOfPersona: (personaId) => listPersonas(paths.personasDir).find((p) => p.manifest.id === personaId)?.manifest.memory.domain ?? null,
+    domainOfPersona: (personaId) => listPersonas(paths.personasDir, paths.workspacePath).find((p) => p.manifest.id === personaId)?.manifest.memory.domain ?? null,
   });
   // Objek deps delegasi DI-MUTASI saat provider swap (spread terjadi di call time).
  // router model per persona, override file (Settings) → persona.yaml → default.
@@ -520,7 +522,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
   retentionTimer.unref?.();
 
   function listPersonaInfos(): PersonaInfo[] {
-    return listPersonas(paths.personasDir).map((p) => ({
+    return listPersonas(paths.personasDir, paths.workspacePath).map((p) => ({
       id: p.manifest.id,
       name: p.manifest.name,
       expertise: p.manifest.expertise,
@@ -533,7 +535,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
  /** growth persona, dikurasi dari sesi/turn/task nyata. */
   function personaGrowth(): PersonaGrowth[] {
     return buildPersonaGrowth(
-      listPersonas(paths.personasDir).map((p) => ({ id: p.manifest.id, name: p.manifest.name, domain: p.manifest.memory.domain })),
+      listPersonas(paths.personasDir, paths.workspacePath).map((p) => ({ id: p.manifest.id, name: p.manifest.name, domain: p.manifest.memory.domain })),
       store,
       projectStore,
     );
@@ -554,8 +556,37 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       paths.workspacePath,
       personaId,
       shape,
+      listPersonas(paths.personasDir, paths.workspacePath).map((p) => p.manifest.id),
+    );
+  }
+
+  /** F1 rename: daftar override nama tampilan (id internal tidak berubah). */
+  function personaRenames(): PersonaRenamesResponse["renames"] {
+    const defaults = new Map(
+      listPersonas(paths.personasDir).map((p) => [p.manifest.id, { name: p.manifest.name, description: p.manifest.description }]),
+    );
+    return Object.values(loadPersonaRenames(paths.workspacePath))
+      .filter((r) => defaults.has(r.personaId))
+      .map((r) => ({
+        personaId: r.personaId,
+        name: r.name,
+        description: r.description,
+        defaultName: defaults.get(r.personaId)!.name,
+      }))
+      .sort((a, b) => a.personaId.localeCompare(b.personaId));
+  }
+
+  function setPersonaRename(personaId: string, name: string, description?: string | null): PersonaRename {
+    return savePersonaRename(
+      paths.workspacePath,
+      personaId,
+      { name, description: description ?? null },
       listPersonas(paths.personasDir).map((p) => p.manifest.id),
     );
+  }
+
+  function clearPersonaRename(personaId: string): boolean {
+    return clearPersonaRenameWs(paths.workspacePath, personaId);
   }
 
   // ---- P3-CANVAS: daftar file desain untuk tab Design (editor embedded) ----
@@ -574,14 +605,14 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const msgs = store.getMessages(sessionId).filter((m) => m.role === "assistant");
       return msgs.length ? (msgs[msgs.length - 1]!.content ?? null) : null;
     },
-    validPersonaIds: () => listPersonas(paths.personasDir).map((p) => p.manifest.id),
+    validPersonaIds: () => listPersonas(paths.personasDir, paths.workspacePath).map((p) => p.manifest.id),
   });
 
   function createSession(
     personaId: string,
     projectId?: string | null,
   ): { sessionId: string; persona: PersonaInfo; projectId: string | null } {
-    const persona = listPersonas(paths.personasDir).find((p) => p.manifest.id === personaId);
+    const persona = listPersonas(paths.personasDir, paths.workspacePath).find((p) => p.manifest.id === personaId);
     if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
     if (projectId && !projectStore.getProject(projectId)) {
       throw new Error(`project tidak ditemukan: ${projectId}`);
@@ -737,7 +768,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     smokeRunning = true;
     try {
       const models = new Set<string>([model, process.env.YUI_MODEL_FALLBACK ?? ""].filter(Boolean));
-      for (const p of listPersonas(paths.personasDir)) {
+      for (const p of listPersonas(paths.personasDir, paths.workspacePath)) {
         const r = modelRouter.route(p.manifest.id);
         if (r.model) models.add(r.model);
         if (r.fallback) models.add(r.fallback);
@@ -758,7 +789,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
  /** assign SEMUA persona ke roster project (merge), dipanggil
    *  saat workflow run dimulai (satu run = seluruh tim ter-assign). */
   function rtAssignAll(projectId: string): RosterEntryIn[] {
-    const ids = listPersonas(paths.personasDir).map((p) => p.manifest.id);
+    const ids = listPersonas(paths.personasDir, paths.workspacePath).map((p) => p.manifest.id);
     return rtMergeAssign(projectId, ids);
   }
 
@@ -769,7 +800,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     let next = cur;
     for (const pid of personaIds) {
       if (next.some((r) => r.personaId === pid)) continue;
-      const p = listPersonas(paths.personasDir).find((x) => x.manifest.id === pid);
+      const p = listPersonas(paths.personasDir, paths.workspacePath).find((x) => x.manifest.id === pid);
       if (!p) throw new Error(`persona tidak ditemukan: ${pid}`);
       next = [...next, { personaId: pid, role: p.manifest.expertise, phases: [], mcp: [] }];
     }
@@ -832,6 +863,9 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     personaGrowth,
     personaShapes,
     setPersonaShape,
+    personaRenames,
+    setPersonaRename,
+    clearPersonaRename,
     blindTest,
     blindPrompts: BLIND_PROMPTS,
     designFiles,
@@ -921,7 +955,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       resources?: string[];
       acceptance: string[];
     }) => {
-      if (!listPersonas(paths.personasDir).some((p) => p.manifest.id === input.personaId)) throw new Error(`persona '${input.personaId}' tidak dikenal`);
+      if (!listPersonas(paths.personasDir, paths.workspacePath).some((p) => p.manifest.id === input.personaId)) throw new Error(`persona '${input.personaId}' tidak dikenal`);
       return writeMission(paths.workspacePath, {
         title: input.title,
         persona: input.personaId,
@@ -1242,7 +1276,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
           slug: path.basename(s.dir),
         })),
       ];
-      const personas = listPersonas(paths.personasDir).map((p) => {
+      const personas = listPersonas(paths.personasDir, paths.workspacePath).map((p) => {
         const bundled = p.manifest.skills.bundled;
         const b = bindings[p.manifest.id];
         const effective = effectiveSkillNames(bundled, b, undefined);
@@ -1258,7 +1292,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       return { skills, personas };
     },
     setSkillBinding: (personaId: string, skill: string, action: "attach" | "detach") => {
-      const personas = listPersonas(paths.personasDir);
+      const personas = listPersonas(paths.personasDir, paths.workspacePath);
       const persona = personas.find((p) => p.manifest.id === personaId);
       if (!persona) throw new Error(`persona tidak ditemukan: ${personaId}`);
       if (!listSkills(paths.skillsDir).some((s) => s.name === skill)) throw new Error(`skill tidak ditemukan: ${skill}`);
@@ -1299,12 +1333,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       defaultModel: model,
       defaultFallback: process.env.YUI_MODEL_FALLBACK ?? "",
       overrides: loadModelOverrides(modelOverridesFile),
-      personas: listPersonas(paths.personasDir).map((p) => ({ id: p.manifest.id, name: p.manifest.name })),
+      personas: listPersonas(paths.personasDir, paths.workspacePath).map((p) => ({ id: p.manifest.id, name: p.manifest.name })),
     }),
     /** Simpan override model satu persona ("" = hapus → ikut default). loopCache.clear()
      *  supaya sesi baru langsung memakai route baru. */
     updateModelRoute: (personaId: string, o: { model?: string; fallback?: string }) => {
-      if (!listPersonas(paths.personasDir).some((p) => p.manifest.id === personaId)) throw new Error(`persona ${personaId} tidak dikenal`);
+      if (!listPersonas(paths.personasDir, paths.workspacePath).some((p) => p.manifest.id === personaId)) throw new Error(`persona ${personaId} tidak dikenal`);
       saveModelOverride(modelOverridesFile, personaId, o);
       loopCache.clear();
     },
@@ -1450,7 +1484,7 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       ),
     saveProjectRoster: (projectId: string, roster: RosterEntryIn[]): RosterEntryIn[] => {
       projectRoot(projectId); // validasi project ada
-      const known = new Set(listPersonas(paths.personasDir).map((p) => p.manifest.id));
+      const known = new Set(listPersonas(paths.personasDir, paths.workspacePath).map((p) => p.manifest.id));
       const seen = new Set<string>();
       for (const r of roster) {
         if (!known.has(r.personaId)) throw new Error(`persona tidak ditemukan: ${r.personaId}`);

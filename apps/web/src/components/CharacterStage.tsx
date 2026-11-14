@@ -26,6 +26,7 @@ import {
   Gear,
   Lightning,
   MagnifyingGlass,
+  PencilSimple,
   PuzzlePiece,
   Plus,
   Rocket,
@@ -35,7 +36,7 @@ import {
 } from "@phosphor-icons/react";
 import { OrinPortrait } from "./OrinPortrait";
 import { PersonaModelModal } from "./PersonaModelModal";
-import { Modal } from "./ui";
+import { Button, Modal } from "./ui";
 import {
   MiniFace,
   PERSONA_SHAPE,
@@ -532,12 +533,24 @@ function SkillLibraryModal({
 // ---------------------------------------------------------------------------
 // Stage utama.
 // ---------------------------------------------------------------------------
-export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
+export function CharacterStage({
+  personas,
+  onPersonaRenamed,
+}: {
+  personas: PersonaInfo[];
+  onPersonaRenamed?: () => void;
+}) {
   const [selId, setSelId] = useState(personas[0]?.id ?? "");
   const [emote, setEmote] = useState<PersonaState>("idle");
   const [busyShape, setBusyShape] = useState<OrinShapeKey | null>(null);
   const [greeted, setGreeted] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
+  // F1 rename: modal edit nama tampilan persona (id internal tetap).
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [rnName, setRnName] = useState("");
+  const [rnDesc, setRnDesc] = useState("");
+  const [rnDefault, setRnDefault] = useState("");
+  const [rnBusy, setRnBusy] = useState(false);
   // D104: modal library skill (buka dari tile + di akhir grid card skill).
   const [libOpen, setLibOpen] = useState(false);
   // Tooltip skill melayang (layer stage, tak terpotong scroll card):
@@ -612,6 +625,85 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
     const r = el.getBoundingClientRect();
     setTip({ name, x: r.left + r.width / 2 - b.left, y: r.top - b.top });
   }, []);
+
+  /** F1: buka modal rename; ambil nama default dari override store
+   *  (bila sudah dioverride, persona.name = nama baru, default ada di entry). */
+  async function openRename() {
+    if (!persona) return;
+    setRnName(persona.name);
+    setRnDesc("");
+    setRnDefault("");
+    setRenameOpen(true);
+    try {
+      const r = await authFetch(apiUrl("/api/personas/renames"));
+      if (r.ok) {
+        const { renames } = (await r.json()) as {
+          renames: { personaId: string; name: string; description: string | null; defaultName: string }[];
+        };
+        const e = renames.find((x) => x.personaId === persona.id);
+        setRnDefault(e?.defaultName ?? persona.name);
+        setRnDesc(e?.description ?? "");
+      } else {
+        setRnDefault(persona.name);
+      }
+    } catch {
+      setRnDefault(persona.name);
+    }
+  }
+
+  async function saveRename() {
+    if (!persona || rnBusy) return;
+    const name = rnName.trim();
+    if (!name) {
+      toastErr("Name cannot be empty.");
+      return;
+    }
+    setRnBusy(true);
+    try {
+      const r = await authFetch(apiUrl("/api/personas/renames"), {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          personaId: persona.id,
+          name,
+          description: rnDesc.trim() || null,
+        }),
+      });
+      if (!r.ok)
+        throw new Error(
+          (await r.json().catch(() => ({})))?.error ?? "failed to save the name",
+        );
+      setRenameOpen(false);
+      onPersonaRenamed?.();
+      toastOk(`Now known as “${name}” everywhere.`);
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : "failed to save the name");
+    } finally {
+      setRnBusy(false);
+    }
+  }
+
+  async function resetRename() {
+    if (!persona || rnBusy) return;
+    setRnBusy(true);
+    try {
+      const r = await authFetch(
+        apiUrl(`/api/personas/renames/${persona.id}`),
+        { method: "DELETE" },
+      );
+      if (!r.ok)
+        throw new Error(
+          (await r.json().catch(() => ({})))?.error ?? "failed to reset the name",
+        );
+      setRenameOpen(false);
+      onPersonaRenamed?.();
+      toastOk(`Back to “${rnDefault || persona.name}”.`);
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : "failed to reset the name");
+    } finally {
+      setRnBusy(false);
+    }
+  }
 
   async function pickShape(k: OrinShapeKey) {
     if (!persona || busyShape) return;
@@ -779,6 +871,16 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           className="absolute top-3 left-3 z-[3] grid size-7 cursor-pointer place-items-center rounded-[9px] border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-primary"
         >
           <Gear size={14} weight="duotone" aria-hidden />
+        </button>
+        {/* F1: rename display name (mirror gear, pojok kanan). */}
+        <button
+          type="button"
+          aria-label={`Rename ${persona.name}`}
+          title="Rename"
+          onClick={() => void openRename()}
+          className="absolute top-3 right-3 z-[3] grid size-7 cursor-pointer place-items-center rounded-[9px] border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-primary"
+        >
+          <PencilSimple size={14} aria-hidden />
         </button>
         <div className="flex flex-wrap gap-1.5 items-center justify-center mb-3">
           <span
@@ -1017,6 +1119,61 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           personaName={persona.name}
           onClose={() => setModelOpen(false)}
         />
+      )}
+
+      {/* F1: rename persona — nama tampilan saja, id internal tetap. */}
+      {renameOpen && persona && (
+        <Modal
+          open
+          onClose={() => setRenameOpen(false)}
+          title={`Rename ${persona.name}`}
+        >
+          <div className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5 text-caption text-muted">
+              Display name
+              <input
+                autoFocus
+                value={rnName}
+                maxLength={40}
+                onChange={(e) => setRnName(e.target.value)}
+                placeholder={rnDefault || persona.name}
+                className="rounded-[10px] border border-line bg-surface px-3 py-2 text-sm text-primary outline-none focus:border-line-strong"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-caption text-muted">
+              Description (optional)
+              <input
+                value={rnDesc}
+                maxLength={120}
+                onChange={(e) => setRnDesc(e.target.value)}
+                placeholder={persona.description}
+                className="rounded-[10px] border border-line bg-surface px-3 py-2 text-sm text-primary outline-none focus:border-line-strong"
+              />
+            </label>
+            <p className="text-caption text-dim">
+              Default: {rnDefault || persona.name}. The persona id stays the
+              same; chat history, roster, and delegation are untouched.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={rnBusy || !rnDefault || rnDefault === persona.name}
+                onClick={() => void resetRename()}
+                title="Remove the override and restore the default name"
+              >
+                Reset
+              </Button>
+              <Button
+                size="sm"
+                disabled={rnBusy || !rnName.trim() || rnName.trim() === persona.name}
+                onClick={() => void saveRename()}
+              >
+                {rnBusy ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* D104: library skill per kategori — equipped di awal, toggle langsung. */}

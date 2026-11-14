@@ -99,7 +99,7 @@ export class WorkflowEngine {
     this.deps.ensureFullRoster?.(opts.projectId);
     const runId = `wf_${randomUUID().slice(0, 8)}`;
 
-    const personas = listPersonas(this.deps.personasDir);
+    const personas = listPersonas(this.deps.personasDir, this.deps.workspacePath);
     const conductor = personas.find((p) => p.manifest.id === "yui-conductor");
     if (!conductor) throw new Error("persona yui-conductor tidak ditemukan (roster wajib utk workflow lead)");
 

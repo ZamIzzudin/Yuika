@@ -662,3 +662,8 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 + Params pageId/yMin/yMax/shapeId + frame index utk file besar (READ_LIMIT 18k).
 + Skill handoff: baca bertahap utk desain panjang.
+
+
+## Batch D112 — F1 persona rename
++ Override nama tampilan persona per-install (workspace/persona-names.json), id internal tetap.
++ API renames + modal Rename di Character Studio.
