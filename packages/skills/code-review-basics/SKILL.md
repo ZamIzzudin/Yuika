@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   yui:
     tags: [code-review, quality, software-development]
-    category: software-development
+    category: qa
     personas: [yui-coder]
 ---
 

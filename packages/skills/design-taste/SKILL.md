@@ -4,6 +4,7 @@ description: Anti-slop design process. Read the brief, infer the real design dir
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, process, taste]

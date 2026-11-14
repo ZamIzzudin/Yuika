@@ -29,6 +29,9 @@ export interface Skill extends SkillIndexEntry {
   status: "draft" | "tested" | "ready";
   /** Persona pemilik (metadata.yui.personas), inventory “apa yang persona bisa”. */
   personas: string[];
+  /** Kategori utk pengelompokan UI (metadata.yui.category; D104). Draft tanpa
+   *  kategori (hasil skill_propose) jatuh ke “general”. */
+  category: string;
 }
 
 function parseSkillMd(text: string): { frontmatter: SkillFrontmatter; body: string } {
@@ -54,6 +57,7 @@ export function loadSkill(dir: string): Skill {
     dir,
     status,
     personas: frontmatter.metadata?.yui?.personas ?? [],
+    category: frontmatter.metadata?.yui?.category?.trim() || "general",
   };
 }
 

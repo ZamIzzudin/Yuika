@@ -3,6 +3,7 @@ name: issue-breakdown
 description: Break a plan, spec, or PRD into independently grabbable tasks using tracer-bullet vertical slices, tracked in the project task list. Use when turning an approved plan into executable work items.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [product, planning, tasks]

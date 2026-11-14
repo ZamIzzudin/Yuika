@@ -3,6 +3,7 @@ name: workflow-grilling
 description: Run a grilling session that spec-by-spec pins down recurring workflows worth automating - one round of pointed questions at a time, each with a recommended answer. Use when hunting for automation candidates or designing workflow specs with the user.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [workflow, discovery]

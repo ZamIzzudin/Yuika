@@ -3,6 +3,7 @@ name: wayfinder-planning
 description: Plan a huge chunk of work (more than one session can hold) as a map of investigation tickets resolved one at a time until the destination is clear. Use when the project is too big to plan upfront and needs discovery-then-commit planning.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [planning, discovery]

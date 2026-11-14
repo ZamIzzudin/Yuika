@@ -3,6 +3,7 @@ name: prd-writing
 description: Synthesize the current conversation and project context into a PRD (problem, solution, seams, success criteria) published to project docs. Use when the user wants a PRD from the discussion, without re-interviewing them.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [product, planning, docs]

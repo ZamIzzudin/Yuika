@@ -4,6 +4,7 @@ description: Implement code from an existing Figma design (read via Figma MCP or
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-coder]
     tags: [figma, frontend, handoff, implementation]

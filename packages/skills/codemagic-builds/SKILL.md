@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   yui:
     tags: [build, mobile, android, ios, ci, release, codemagic]
-    category: build
+    category: software-development
     personas: [yui-coder, yui-neo]
 ---
 

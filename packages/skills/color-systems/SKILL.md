@@ -4,6 +4,7 @@ description: Build and use color systems with OKLCH and semantic tokens. Generat
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, color, tokens]

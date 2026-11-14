@@ -3,6 +3,7 @@ name: docx-documents
 description: Create, read, edit, and manipulate Word documents (.docx). Use for any mention of Word docs, .docx files, docx generation or editing.
 metadata:
   yui:
+    category: documents
     status: ready
     personas: [yui-scribe]
     tags: [documents, office]

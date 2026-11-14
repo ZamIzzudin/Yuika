@@ -3,6 +3,7 @@ name: copywriting
 description: Write conversion-focused marketing copy (landing pages, ads, emails). Use when the task is selling, persuading, or announcing a product.
 metadata:
   yui:
+    category: documents
     status: ready
     personas: [yui-scribe]
     tags: [writing, marketing]

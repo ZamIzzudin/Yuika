@@ -617,3 +617,11 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - 221 ikon Phosphor via generator; shape type icon; render canvas +
   prototype; validasi nama; katalog di skill design-canvas-basics.
 - Test: design-fonts-icons + design-tools-fonticon (core 449 -> 456).
+
+
+## Batch D104 — persona skill card + library modal kategori
+
+- Card skill page Persona: hanya skill terpasang + tombol tambah.
+- Modal library: Equipped chips di awal, grup per kategori, drafts bawah.
+- Core: Skill.category + payload bindings; backfill 48 SKILL.md.
+- Test: skills-category (core 452 passed).

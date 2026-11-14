@@ -3,6 +3,7 @@ name: ai-product-strategy
 description: Define AI product strategy - where to apply AI in the product, roadmap, build vs buy, risk. Use when deciding what AI capabilities to build and why.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [ai, product, strategy]

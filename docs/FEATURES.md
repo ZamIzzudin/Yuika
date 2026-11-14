@@ -104,6 +104,8 @@ persona design_delete_file).
 D96 canvas: ruler atas/kiri + indikator kursor; smart guides snap
 (edge/tengah) saat drag; props panel pakai Dropdown custom; layers
 panel bisa di-fold (canvas lebih lebar).
+D104: card skill Persona = hanya terpasang + modal library per kategori
+(equipped chips di awal, toggle langsung; kategori = domain persona).
 D102/D103: Design tab font bank (Google Fonts, 90+ family per kategori,
 load CDN runtime) + icon bank SVG (221 Phosphor, 9 kategori) - Picasso
 dan user bisa pilih dari props panel; validasi nama EN.

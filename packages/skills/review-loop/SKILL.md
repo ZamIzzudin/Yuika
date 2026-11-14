@@ -3,6 +3,7 @@ name: review-loop
 description: Iterative worker-reviewer cycle - delegate a critic review of the work, score it, revise, repeat until the quality gate is met. Use when quality matters more than speed.
 metadata:
   yui:
+    category: orchestration
     status: ready
     personas: [yui-conductor]
     tags: [quality, delegation]

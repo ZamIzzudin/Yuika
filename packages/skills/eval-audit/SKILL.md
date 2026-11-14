@@ -3,6 +3,7 @@ name: eval-audit
 description: Audit an LLM eval pipeline and surface problems - missing error analysis, unvalidated judges, vanity metrics. Use when inheriting or distrusting an eval system.
 metadata:
   yui:
+    category: qa
     status: ready
     personas: [yui-sherlock]
     tags: [eval, qa]

@@ -4,6 +4,7 @@ description: Design modern Android interfaces with Material 3 (Material You). To
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, mobile, android, material]

@@ -3,6 +3,7 @@ name: web-scraping
 description: Search, scrape, and extract structured data from web pages using Yuika research tools (search providers, fetch, cache) or a scraping CLI in the workshop when available. Use when asked to scrape a page, grab content from a URL, extract tables/lists, or monitor a page.
 metadata:
   yui:
+    category: research
     status: ready
     personas: [yui-scholar]
     tags: [research, scraping]

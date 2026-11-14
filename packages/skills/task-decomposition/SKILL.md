@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   yui:
     tags: [planning, delegation, orchestration]
-    category: productivity
+    category: planning
     personas: [yui-conductor]
 ---
 

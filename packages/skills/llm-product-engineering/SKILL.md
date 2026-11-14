@@ -3,6 +3,7 @@ name: llm-product-engineering
 description: Ship LLM features to production - prompts, evals, guardrails, latency and cost tradeoffs, model choice. Use when building AI-powered product features.
 metadata:
   yui:
+    category: software-development
     status: ready
     personas: [yui-coder]
     tags: [ai, engineering]

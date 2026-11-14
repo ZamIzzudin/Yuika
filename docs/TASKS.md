@@ -1467,3 +1467,24 @@ Test: design-fonts-icons.test.ts (coverage style-library, validasi,
 substitusi, patch) + design-tools-fonticon.test.ts (probe dispatch
 persis jalur Picasso). Bonus: normalisasi 3 em-dash tersisa di skill
 design-canvas-basics.
+
+### D104 — skill card per-persona + modal library per kategori (SELESAI)
+Permintaan user: card skill di page Persona (tab Persona) susah dipilih;
+konsep baru: card hanya menampilkan skill TERPASANG persona aktif, tile
+tambah di akhir grid membuka modal library berisi SEMUA skill, dikelompok-
+kan per kategori, seksi awal Equipped (n) berisi chip skill terpasang
+(klik chip = lepas). Implementasi:
+- Backfill metadata.yui.category ke 48 SKILL.md (kosakata domain persona
+  + qa: design 17, planning 10, documents 5, data 4, research 4,
+  software-development 4, orchestration 2, qa 2; normalisasi kategori
+  lama productivity/build; ponytail CRLF trap: sisipan duplikat metadata
+  diperbaiki manual, semua frontmatter tervalidasi parse YAML).
+- Loader: Skill.category (fallback general utk draft hasil skill_propose).
+- runtime.getSkillBindings payload + category (skills + drafts).
+- CharacterStage: grid = effective only + tile Plus (dashed); modal
+  SkillLibraryModal (primitive Modal wide): seksi Equipped chips, lalu
+  grup kategori (2 kolom, glyph+nama+deskripsi, Check bila terpasang,
+  Plus bila belum; klik = toggle attach/detach, draft = accept+attach),
+  seksi Drafts terakhir. Tooltip tile card tetap.
+Test: skills-category.test.ts (48 skill berkategori valid + fallback
+draft). Typecheck 4/4, web build hijau.

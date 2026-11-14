@@ -4,6 +4,7 @@ description: Build throwaway prototypes that answer one design question fast, ei
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-coder]
     tags: [frontend, prototype, workflow]

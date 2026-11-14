@@ -3,6 +3,7 @@ name: product-manager-toolkit
 description: Essential tools and frameworks for product management, from discovery to delivery. Use when doing product discovery, prioritization, roadmap, or metrics work.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [product, planning]

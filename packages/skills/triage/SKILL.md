@@ -3,6 +3,7 @@ name: triage
 description: Move issues and external PRs through a triage state machine - categorize, verify, grill if needed, and write agent-ready briefs. Use when processing a backlog or issue queue.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [product, process]

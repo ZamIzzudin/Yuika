@@ -3,6 +3,7 @@ name: user-research
 description: Plan, conduct, and synthesize user research - research plans, interview guides, usability tests, surveys. Use when the product team needs evidence from users.
 metadata:
   yui:
+    category: research
     status: ready
     personas: [yui-scholar]
     tags: [research, ux]

@@ -3,6 +3,7 @@ name: doc-coauthoring
 description: Structured co-authoring workflow for documentation, proposals, technical specs, and decision docs. Use when writing documents WITH the user instead of for them.
 metadata:
   yui:
+    category: documents
     status: ready
     personas: [yui-scribe]
     tags: [writing, docs]

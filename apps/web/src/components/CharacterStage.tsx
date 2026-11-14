@@ -27,6 +27,7 @@ import {
   Lightning,
   MagnifyingGlass,
   PuzzlePiece,
+  Plus,
   Rocket,
   Sparkle,
   Target,
@@ -35,6 +36,7 @@ import {
 } from "@phosphor-icons/react";
 import { OrinPortrait } from "./OrinPortrait";
 import { PersonaModelModal } from "./PersonaModelModal";
+import { Modal } from "./ui";
 import {
   MiniFace,
   PERSONA_SHAPE,
@@ -159,10 +161,35 @@ interface BindingsPayload {
     name: string;
     description: string;
     status: string;
+    category: string;
     slug: string | null;
   }[];
   personas: BindingPersona[];
 }
+
+/** Kategori skill (D104) — kosakata domain persona + qa; urutan tampil modal. */
+const CATEGORY_ORDER = [
+  "design",
+  "planning",
+  "software-development",
+  "research",
+  "data",
+  "documents",
+  "orchestration",
+  "qa",
+  "general",
+];
+const CATEGORY_LABEL: Record<string, string> = {
+  design: "Design",
+  planning: "Planning",
+  "software-development": "Engineering",
+  research: "Research",
+  data: "Data",
+  documents: "Docs",
+  orchestration: "Orchestration",
+  qa: "QA",
+  general: "General",
+};
 
 function useBindings() {
   const [data, setData] = useState<BindingsPayload | null>(null);
@@ -364,6 +391,158 @@ function RadarChart({
 }
 
 // ---------------------------------------------------------------------------
+// Modal library skill (D104): seluruh skill dikelompokkan per kategori,
+// skill terpasang ditandai & muncul di seksi awal "Equipped". Klik row =
+// toggle attach/detach (draft otomatis accept dulu, jalur sama dgn card).
+// ---------------------------------------------------------------------------
+type LibSkill = BindingsPayload["skills"][number];
+
+function groupByCategory(skills: LibSkill[]): {
+  groups: { key: string; label: string; skills: LibSkill[] }[];
+  drafts: LibSkill[];
+} {
+  const byCat = new Map<string, LibSkill[]>();
+  const drafts: LibSkill[] = [];
+  for (const s of skills) {
+    if (s.slug !== null) drafts.push(s);
+    else byCat.set(s.category, [...(byCat.get(s.category) ?? []), s]);
+  }
+  const order = CATEGORY_ORDER.filter((k) => byCat.has(k));
+  for (const k of [...byCat.keys()].sort())
+    if (!CATEGORY_ORDER.includes(k) && k !== "general") order.push(k);
+  if (byCat.has("general")) order.push("general");
+  return {
+    groups: order.map((k) => ({
+      key: k,
+      label: CATEGORY_LABEL[k] ?? k,
+      skills: byCat.get(k) ?? [],
+    })),
+    drafts,
+  };
+}
+
+function SkillLibraryModal({
+  personaName,
+  accent,
+  skills,
+  effective,
+  onToggle,
+  onClose,
+}: {
+  personaName: string;
+  accent: string;
+  skills: LibSkill[];
+  effective: string[];
+  onToggle: (name: string) => void;
+  onClose: () => void;
+}) {
+  const { groups, drafts } = groupByCategory(skills);
+  const eq = skills.filter((s) => effective.includes(s.name));
+
+  /** Satu row skill: glyph + nama + deskripsi + status terpasang. */
+  const Row = ({ s }: { s: LibSkill }) => {
+    const on = effective.includes(s.name);
+    const Glyph = skillGlyph(s.name);
+    return (
+      <button
+        type="button"
+        aria-pressed={on}
+        aria-label={`${s.name}, ${s.description}`}
+        onClick={() => onToggle(s.name)}
+        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-[12px] border px-2.5 py-2 text-left transition-colors duration-200 ${
+          on
+            ? "border-[var(--c)] bg-[color-mix(in_srgb,var(--c)_10%,transparent)]"
+            : "border-line hover:border-line-strong hover:bg-hover"
+        }`}
+      >
+        <span
+          className={`grid size-7 shrink-0 place-items-center rounded-[9px] border ${on ? "border-transparent text-[var(--c)]" : "border-line text-muted"}`}
+          style={on ? { backgroundColor: `${accent}1a` } : undefined}
+        >
+          <Glyph size={14} aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <b className="block truncate text-[12.5px] font-semibold text-primary capitalize">
+            {s.name.replaceAll("-", " ")}
+          </b>
+          <span className="block truncate text-caption text-muted">
+            {s.description}
+          </span>
+        </span>
+        {on ? (
+          <Check size={13} weight="bold" aria-hidden className="shrink-0 text-[var(--c)]" />
+        ) : (
+          <Plus size={13} aria-hidden className="shrink-0 text-dim" />
+        )}
+      </button>
+    );
+  };
+
+  return (
+    <Modal open onClose={onClose} wide title={`Skill library for ${personaName}`}>
+      <div className="flex flex-col gap-5" style={{ "--c": accent } as React.CSSProperties}>
+        {/* Seksi awal: skill terpasang — cepat dilihat & dilepas. */}
+        <section aria-label="Equipped skills" className="flex flex-col gap-2">
+          <small className="text-caption font-semibold uppercase tracking-wide text-dim">
+            Equipped ({eq.length})
+          </small>
+          {eq.length === 0 ? (
+            <p className="text-caption text-dim">
+              Nothing equipped yet, pick from the categories below.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {eq.map((s) => (
+                <button
+                  key={s.name}
+                  type="button"
+                  title={`Detach ${s.name}`}
+                  onClick={() => onToggle(s.name)}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-pill border border-[var(--c)] bg-[color-mix(in_srgb,var(--c)_10%,transparent)] px-2.5 py-1 text-[11.5px] font-medium text-[var(--c)] transition-colors duration-200 hover:brightness-125"
+                >
+                  {s.name.replaceAll("-", " ")}
+                  <X size={11} weight="bold" aria-hidden />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Semua skill siap pakai, dikelompokkan per kategori. */}
+        {groups.map((g) => (
+          <section key={g.key} aria-label={g.label} className="flex flex-col gap-2">
+            <small className="flex items-baseline gap-2 text-caption font-semibold uppercase tracking-wide text-dim">
+              {g.label}
+              <span className="text-dim/70 tabular-nums">({g.skills.length})</span>
+            </small>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {g.skills.map((s) => (
+                <Row key={s.name} s={s} />
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {/* Draft hasil latihan: pakai setelah di-accept (klik = accept+attach). */}
+        {drafts.length > 0 && (
+          <section aria-label="Draft skills" className="flex flex-col gap-2">
+            <small className="flex items-baseline gap-2 text-caption font-semibold uppercase tracking-wide text-dim">
+              Drafts
+              <span className="text-dim/70 tabular-nums">({drafts.length})</span>
+            </small>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {drafts.map((s) => (
+                <Row key={s.name} s={s} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Stage utama.
 // ---------------------------------------------------------------------------
 export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
@@ -372,6 +551,8 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
   const [busyShape, setBusyShape] = useState<OrinShapeKey | null>(null);
   const [greeted, setGreeted] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
+  // D104: modal library skill (buka dari tile + di akhir grid card skill).
+  const [libOpen, setLibOpen] = useState(false);
   // Tooltip skill melayang (layer stage, tak terpotong scroll card):
   // posisi = pusat-atas tile, relatif stage.
   const [tip, setTip] = useState<{ name: string; x: number; y: number } | null>(
@@ -721,33 +902,42 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           <b className="shrink-0 text-[13px] font-semibold text-secondary">
             Skills ({bp?.effective.length ?? 0})
           </b>
+          {/* D104: card hanya menampilkan skill TERPASANG utk persona ini;
+              tombol tambah di akhir grid membuka library modal per kategori. */}
           <div className="grid min-h-0 flex-1 grid-cols-5 content-start gap-2 overflow-y-auto pr-0.5">
-            {bindings?.skills.map((s) => {
-              const on = bp?.effective.includes(s.name) ?? false;
-              const Glyph = skillGlyph(s.name);
-              return (
-                <button
-                  key={s.name}
-                  type="button"
-                  data-skill-tile={s.name}
-                  aria-pressed={on}
-                  aria-label={`${s.name}, ${s.description}`}
-                  onFocus={(e) => tipAt(s.name, e.currentTarget)}
-                  onMouseEnter={(e) => tipAt(s.name, e.currentTarget)}
-                  onMouseLeave={() => setTip(null)}
-                  onBlur={() => setTip(null)}
-                  onClick={() => toggleSkill(s.name)}
-                  className={`grid aspect-square cursor-pointer place-items-center rounded-[12px] border transition-all duration-200 hover:-translate-y-0.5 ${
-                    on
-                      ? "border-[var(--c)] text-[var(--c)]"
-                      : "border-line text-muted hover:border-line-strong hover:text-primary"
-                  }`}
-                  style={on ? { backgroundColor: `${accent}1a` } : undefined}
-                >
-                  <Glyph size={15} aria-hidden />
-                </button>
-              );
-            })}
+            {bindings?.skills
+              .filter((s) => bp?.effective.includes(s.name))
+              .map((s) => {
+                const Glyph = skillGlyph(s.name);
+                return (
+                  <button
+                    key={s.name}
+                    type="button"
+                    data-skill-tile={s.name}
+                    aria-pressed
+                    aria-label={`${s.name}, ${s.description}`}
+                    onFocus={(e) => tipAt(s.name, e.currentTarget)}
+                    onMouseEnter={(e) => tipAt(s.name, e.currentTarget)}
+                    onMouseLeave={() => setTip(null)}
+                    onBlur={() => setTip(null)}
+                    onClick={() => toggleSkill(s.name)}
+                    className="grid aspect-square cursor-pointer place-items-center rounded-[12px] border border-[var(--c)] text-[var(--c)] transition-all duration-200 hover:-translate-y-0.5"
+                    style={{ backgroundColor: `${accent}1a` }}
+                  >
+                    <Glyph size={15} aria-hidden />
+                  </button>
+                );
+              })}
+            <button
+              type="button"
+              data-skill-add=""
+              aria-label={`Add a skill to ${persona.name}`}
+              title="Browse the skill library"
+              onClick={() => setLibOpen(true)}
+              className="grid aspect-square cursor-pointer place-items-center rounded-[12px] border border-dashed border-line-strong text-muted transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--c)] hover:text-[var(--c)]"
+            >
+              <Plus size={15} weight="bold" aria-hidden />
+            </button>
           </div>
         </div>
       </aside>
@@ -839,6 +1029,18 @@ export function CharacterStage({ personas }: { personas: PersonaInfo[] }) {
           personaId={persona.id}
           personaName={persona.name}
           onClose={() => setModelOpen(false)}
+        />
+      )}
+
+      {/* D104: library skill per kategori — equipped di awal, toggle langsung. */}
+      {libOpen && persona && bindings && (
+        <SkillLibraryModal
+          personaName={persona.name}
+          accent={accent}
+          skills={bindings.skills}
+          effective={bp?.effective ?? []}
+          onToggle={toggleSkill}
+          onClose={() => setLibOpen(false)}
         />
       )}
     </div>

@@ -3,6 +3,7 @@ name: source-research
 description: Investigate a question against high-trust primary sources (official docs, source code, specs, first-party APIs) and capture findings as a cited Markdown note. Use when a topic needs researched or facts gathered.
 metadata:
   yui:
+    category: research
     status: ready
     personas: [yui-scholar]
     tags: [research]

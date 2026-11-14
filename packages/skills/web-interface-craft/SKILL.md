@@ -4,6 +4,7 @@ description: Review and implement web UI against interface best practices - acce
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-coder]
     tags: [frontend, web, accessibility, review]

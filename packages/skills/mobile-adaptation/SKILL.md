@@ -4,6 +4,7 @@ description: Adapt a desktop design into a native-feeling mobile version (390px 
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, mobile, responsive]

@@ -3,6 +3,7 @@ name: customer-journey-map
 description: Create an end-to-end customer journey map with stages, touchpoints, emotions, pain points, and opportunities. Use when mapping customer experience or finding friction.
 metadata:
   yui:
+    category: planning
     status: ready
     personas: [yui-planner]
     tags: [product, planning]

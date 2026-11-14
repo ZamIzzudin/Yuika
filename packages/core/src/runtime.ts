@@ -1233,11 +1233,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       // diterima & dipasang langsung dari sini, jalur terima di tab Skill hanya
       // ada saat project aktif, jadikan mapping self-sufficient).
       const skills = [
-        ...listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description, status: s.status, slug: null as string | null })),
+        ...listSkills(paths.skillsDir).map((s) => ({ name: s.name, description: s.description, status: s.status, category: s.category, slug: null as string | null })),
         ...listDrafts(paths.skillsDir).map((s) => ({
           name: s.name,
           description: s.description,
           status: s.status,
+          category: s.category,
           slug: path.basename(s.dir),
         })),
       ];

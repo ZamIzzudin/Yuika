@@ -4,6 +4,7 @@ description: Write effective microcopy for interfaces - buttons, errors, empty s
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, writing, ux]

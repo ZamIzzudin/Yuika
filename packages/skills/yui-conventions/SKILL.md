@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   yui:
     tags: [conventions, workspace]
-    category: productivity
+    category: software-development
 ---
 
 # Yui Workspace Conventions Skill

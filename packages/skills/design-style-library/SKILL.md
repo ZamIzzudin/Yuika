@@ -5,6 +5,7 @@ license: MIT
 metadata:
   author: typeui.sh (adapted for Yuika)
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, styles, catalog]

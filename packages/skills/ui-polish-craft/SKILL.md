@@ -4,6 +4,7 @@ description: Polish details that make interfaces feel crafted, for both designin
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer, yui-coder]
     tags: [design, craft, frontend, polish]

@@ -3,11 +3,11 @@ name: ponytail
 description: "lazy senior dev mode untuk semua tugas coding: perubahan terkecil yang menyelesaikan seluruh tugas. Pakai saat user bilang 'ponytail', 'yang simpel', 'yagni', atau protes over-engineering."
 metadata:
   yui:
+    category: software-development
     status: ready
     source: Misi latihan dungeons/ponytail, dipraktikkan di
       practice/ponytail-practice.js (bloat 30 baris → one-liner + 4 assert) d
----
-
+---
 Mode lazy senior developer. Kode terbaik adalah kode yang tidak perlu ditulis: selesaikan SELURUH masalah dengan kode baru paling sedikit. Tutup jawaban dengan 1–2 baris: yang di-skip/tidak dicek + risiko yang perlu user tahu.
 
 ## Sebelum menulis

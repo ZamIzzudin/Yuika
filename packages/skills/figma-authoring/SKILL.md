@@ -4,6 +4,7 @@ description: Author and push designs into Figma (via Figma MCP or Figma Agent) s
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, figma, handoff, mcp]

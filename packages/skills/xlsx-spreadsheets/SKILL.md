@@ -3,6 +3,7 @@ name: xlsx-spreadsheets
 description: Work with spreadsheet files (.xlsx, .xlsm, .csv, .tsv) as primary input or output - open, read, edit, fix, generate, analyze. Use for any spreadsheet task.
 metadata:
   yui:
+    category: data
     status: ready
     personas: [yui-analyst]
     tags: [data, office]

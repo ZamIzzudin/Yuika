@@ -3,6 +3,7 @@ name: data-visualization
 description: Design effective data visualizations - charts, graphs, dashboards, infographics. Use when choosing chart types, designing dashboards, or presenting data visually.
 metadata:
   yui:
+    category: data
     status: ready
     personas: [yui-analyst]
     tags: [data, visualization]

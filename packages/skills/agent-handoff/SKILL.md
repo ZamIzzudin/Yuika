@@ -3,6 +3,7 @@ name: agent-handoff
 description: Compact the current conversation into a handoff document another agent can pick up cold - context, decisions, next steps. Use when transferring work between agents or sessions.
 metadata:
   yui:
+    category: orchestration
     status: ready
     personas: [yui-conductor]
     tags: [delegation, handoff]

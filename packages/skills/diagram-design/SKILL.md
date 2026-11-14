@@ -3,6 +3,7 @@ name: diagram-design
 description: Create clear diagrams - architecture, flowchart, sequence, state machine, ER/data model, timeline, swimlane, quadrant. Use when a diagram must explain structure or flow.
 metadata:
   yui:
+    category: data
     status: ready
     personas: [yui-analyst]
     tags: [data, diagrams]

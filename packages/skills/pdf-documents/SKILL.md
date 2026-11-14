@@ -3,6 +3,7 @@ name: pdf-documents
 description: Work with PDF files - read or extract text/tables, merge, split, and manipulate. Use whenever a PDF is the primary input or output.
 metadata:
   yui:
+    category: documents
     status: ready
     personas: [yui-scribe]
     tags: [documents, office]

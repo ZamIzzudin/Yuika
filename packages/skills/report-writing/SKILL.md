@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   yui:
     tags: [writing, reports, markdown]
-    category: productivity
+    category: documents
     personas: [yui-scribe]
 ---
 

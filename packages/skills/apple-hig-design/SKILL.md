@@ -4,6 +4,7 @@ description: Design unmistakably Apple-like, iOS-native mobile interfaces. SF-st
 license: MIT
 metadata:
   yui:
+    category: design
     status: ready
     personas: [yui-designer]
     tags: [design, mobile, ios, apple]
