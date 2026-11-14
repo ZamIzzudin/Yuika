@@ -691,3 +691,7 @@ daftar sesi datar, tapi **mission control project-oriented**.
 ## Batch D117-D118 — Desktop lazy-config + auto-update
 - API boot tanpa provider (stub adapter + guard runTurn/sessions + banner Settings); bug persist var-name provider ditambal (YUI_OPENAI_*).
 - Updater Tauri aktif (plugin updater/process, endpoint latest.json GitHub releases, CI signing + stable artifacts); welcome 'Install & restart'.
+
+
+## Batch D119 — dokumentasi fitur lengkap
+- README feature reference 17 area + portal docs page 9 seksi baru + Host backups; semua fitur terpetakan (no hidden features).

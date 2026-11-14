@@ -41,6 +41,229 @@ Everything in Yuika follows one loop:
    is traced, and token usage is metered per turn, per persona, per model
    from provider-reported numbers only.
 
+## Feature reference
+
+Everything Yuika ships today, in one place. No hidden features: if it is
+listed here it exists in the app; if it is in the app it is listed here.
+
+### Workspace and projects
+
+Your work lives in **projects**. Each project is an isolated workspace with
+its own files, sessions, design files, browser history, workflow runs, roster
+and sandbox containers.
+
+- **Dashboard** per project: activity feed, live session tiles, roster.
+- **Task board** (TeamTree): break work into tasks, assign them to personas,
+  track state per task.
+- **Files**: tree, editor, revisions with diff, search; `read_file`,
+  `write_file`, `list_files`, `search_files` tools for personas.
+- **Uploads**: bring your own material (size capped, type checked) for study,
+  training or design.
+- **Project deletion is a sweep**: design files, browser visits, workflow
+  runs, orphan delegation rows and docker containers/volumes owned by the
+  project are all removed together.
+
+### Personas
+
+A persona is a **character**, not a prompt template: identity (PERSONA.md),
+toolsets, delegation rules, skills, model route, growth history and a
+portrait of the Orin mascot family. Nine specialists ship built in:
+
+| Id | Name | Role |
+| --- | --- | --- |
+| `yui-planner` | Rommel | breaks goals into plans and tasks |
+| `yui-conductor` | Maestro | the maestro: delegates and conducts teams |
+| `yui-scribe` | Poe | documents, notes, reports; reads docx/pdf |
+| `yui-analyst` | Nighty | analysis and data work |
+| `yui-scholar` | Pierre | research and study |
+| `yui-coder` | Hiro | codes, runs commands, ships |
+| `yui-sherlock` | Watson | QA: watches and checks other personas |
+| `yui-designer` | Picasso | draws on the design canvas |
+| `yui-operator` | Neo | operates the screen and tools |
+
+- Every persona has a **model route** (its own model choice) and a skill
+  loadout you can tune per persona.
+- **Rename** any persona: display name changes everywhere (prompt, picker,
+  roster, growth) while the internal id stays stable.
+- **Growth history**: milestone events per persona, visible in the studio.
+- Pretrain packs are bundled for all personas (PM toolkit, PRD writing,
+  research, copywriting, xlsx/dataviz, LLM product engineering, and more).
+- House style is enforced in the core prompt: no emoji, no em dashes.
+
+### Persona Forge (custom personas)
+
+Build your own persona, standalone by construction (no hidden base).
+
+- Pick a name, description and **native functions** from 47 tools in 8
+categories (files, terminal, browser, design, web, skills, vault, QA).
+- Custom personas are executors, not orchestrators: `delegate_task`,
+`consult` and MCP tools are excluded, delegation is locked.
+- **Share as a file**: export any custom persona to a `.persona.json` file,
+import it elsewhere. Imports are fully revalidated, tampered files are
+rejected.
+
+### Chat sessions
+
+- Live streaming chat (SSE) with any persona in a project.
+- **Steering**: redirect or reassign a persona mid-run.
+- Sessions survive restarts: events replay from the ledger, long histories
+compress automatically (slim context), and `session_search` lets personas
+quote older sessions.
+- **Trace**: per-turn event timeline (tool calls, timings, tokens) in the
+Logs tab.
+- Right-click a design component to **attach it to chat** as context.
+
+### Delegation (teams)
+
+- Ask the Conductor and it splits work, then spawns **child personas with
+isolated sessions** of their own.
+- Live delegation cards stream progress; pause, resume or steer each child.
+- Isolation is guaranteed and tested: a child never sees its parent's
+secrets or unrelated sessions.
+
+### Workflow runs
+
+- Multi-step workflows from a template plus your brief (chat-driven).
+- Steps, **gates** and approvals render live on a workflow board; each run
+is steerable and fully traced.
+
+### Approvals and trust
+
+- Risky tool calls (commands, file writes, takeovers) require **explicit
+approval with a deadline**; approvals persist across restarts and can be
+answered from any paired device (mobile included).
+- `request_login` asks you to fill a login through the vault; `request_takeover`
+asks you to hand over the shared screen for a manual step (login, captcha).
+
+### Execution: sandbox, terminal, workshop
+
+- **Sandbox**: commands run in disposable Docker containers with no network,
+capped CPU/RAM, read-only filesystem and a hard timeout. Fork bombs die
+there. Without Docker, execution falls back to local `node` with a clear
+warning.
+- **Egress allowlist**: a container that legitimately needs network (for
+example `npm install`) goes through the host-side proxy, which only
+forwards allowlisted hosts (default: npm registry). Configure per project
+in `.yuika/egress.json`.
+- **Terminal**: every session can open a real terminal in its own container;
+commands are logged.
+- **Workshop**: a persistent container per project (volume survives,
+sleeps and wakes quickly) for long-running work; orphaned workshop
+containers are swept automatically.
+
+### Research and the live browser
+
+- **Research stack** behind `web_search` and `web_fetch`: DuckDuckGo,
+SearXNG, GitHub, Hacker News, news, social, StackExchange, Wikipedia,
+docsites and market lookups; robots.txt respected, results cached, rate
+budgeted.
+- **Live browser** (headless Chrome): `browser_open`, `browser_snapshot`,
+`browser_click`, `browser_type`, `browser_scroll`, `browser_press`. Snapshots
+are read-only text, so browsing never needs approval unless it acts.
+
+### Screen watch and QA
+
+- The host screen can be **leased and watched**: live view in the studio,
+picture-in-picture, or 1fps watch from the desktop app via the relay.
+- **Watson (QA)** can watch another persona's screen (`qa_watch`,
+`qa_snapshot`, `qa_check`) and file non-blocking QA reports.
+
+### Design studio (embedded canvas)
+
+A zero-dependency 2D canvas editor built into the web app. You and Picasso
+draw in the same file.
+
+- Pages, frames, shapes (rect, circle, text), fills, stroke, radius,
+opacity, z-order, nested components, multi-page.
+- Figma-grade interactions: 8-handle resize, drag-and-drop reparent,
+group/ungroup, copy/paste/duplicate, ctrl+wheel zoom, rulers, smart guides,
+layers tree with rename and visibility.
+- **Font bank** (90+ Google Fonts) and **icon bank** (221 Phosphor SVG
+icons, 9 categories) in the properties panel.
+- **Prototype mode ("Try it")**: run the file as a live prototype with
+screen-to-screen wiring; edits sync live.
+- Export the current page as PNG or all pages as ZIP.
+- Personas read designs through staged fetches (large files answer an index
+of frames first, then windows or subtrees), so a 2704px design never
+truncates.
+- **Design-to-code**: Hiro reads a design file and generates components with
+matching structure and color tokens; regenerate picks up your edits.
+- Poe can patch copywriting directly inside a design file.
+
+### Training dungeons and skills
+
+- **Dungeon**: send a persona on a training mission (mission.yaml: goal,
+resources, acceptance criteria, target skill). The runner studies material
+or the web in a sandbox, then proposes a **skill draft**; you accept, edit
+or reject it.
+- **Skill lifecycle**: draft, tested, ready. Only ready skills gate a persona
+as project-ready in the roster.
+- **Skill library** (agentskills.io-compatible SKILL.md): browse by
+category, equip per persona; personas can `skills_list`, `skill_view` and
+`skill_propose` new skills themselves.
+
+### Vault and memory
+
+- **Vault**: encrypted secret store (site logins, API keys). Personas ask
+with `vault_request`; fills happen without the secret entering the prompt,
+and everything is redacted from logs. `secret_http` performs authenticated
+HTTP calls server-side without leaking keys.
+- **Memory**: personas keep persistent notes (`memory_append`), a user
+profile (user.md) and domain memory; a nudge system resurfaces the right
+memory at the right time.
+
+### MCP servers
+
+- Install servers from a **catalog** (first-party: Tailscale status,
+Cloudflare quick tunnels, Codemagic builds) or point `mcp.json` at any
+server (filesystem, git, memory, time, fetch, context7,
+sequential-thinking by default).
+- Every server is **trusted on first use** and every MCP call lands in an
+**audit log**.
+- Cloudflare quick tunnels let a persona publish a local dev server to a
+public URL in one call.
+
+### Metering, budgets, models
+
+- Token usage metered **per turn, per persona, per model, per project**
+from provider-reported numbers only (never estimated).
+- Spend budget per workspace, checked before a turn starts (in-flight holds
+counted); usage ledger visible in Settings.
+- **Providers**: OpenAI-compatible, Anthropic or Gemini; per-persona model
+routes, a model price table, and a one-click **smoke test** per provider.
+
+### Accounts, remote control, companion apps
+
+- **Sign-in**: local accounts for private installs, or "Sign in with Yuika
+Portal" SSO (OAuth-style with PKCE). The studio itself keeps no passwords.
+- **Portal** ([yuika.notu.dev](https://yuika.notu.dev), self-hostable):
+accounts, device pairing (QR, 120 seconds, single use), the **relay** that
+carries end-to-end encrypted traffic between your devices, and **host
+backups storage**.
+- **Mobile** (Yuika-Mobile, React Native): your pocket remote. Chat with
+resume, answer approvals from anywhere, watch screens, browse projects and
+files, Mission Control mini (live delegations across projects), persona
+picker with portraits, push notifications (approval requests).
+- **Desktop** (Yuika-Desktop, Tauri 2): the host shell. Onboards into a
+local engine (packaged node + sqlite) or connects to a remote host; welcome
+wizard with provider setup (skippable, everything configurable in-app),
+factory reset, and **auto-update** with one-click install and restart.
+
+### Backups and operations
+
+- **Backup**: one click builds a full bundle of the workspace (files,
+databases, vault key, tokens; files over 8 MB skipped, 256 MB total) and
+wraps it into a **self-contained restore script** (`yuika-restore.mjs`:
+run it on the target host, confirm, done). Store the script on your portal
+account (10 backups, 300 MB each) or anywhere safe. Backups are plaintext
+files: keep them private.
+- **Update**: `scripts/update.sh` pulls the newest release tag, rebuilds,
+waits for the healthcheck; the in-app Settings panel shows the running
+version and links the latest release. Prebuilt images on GHCR for a
+no-clone try-out (`docs/TRY-YUIKA.md`).
+- **Reset**: full workspace reset with a documented runbook
+(`docs/PLAN-RESET-DATA.md`).
+
 ## Getting started
 
 ### Prerequisites

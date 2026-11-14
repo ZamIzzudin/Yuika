@@ -1787,3 +1787,29 @@ Keputusan user: desktop tinggal lazy config + auto update, lalu Publish.
   YUI_OPENAI_* + tidak menulis legacy). cargo check desktop bersih.
   Core 476 passed (1 failed dungeon = perubahan lokal user), typecheck 6/6,
   web build hijau. F2 Desktop -> 100%; berikutnya: F5 Publish.
+
+## Batch D119 — Dokumentasi fitur lengkap (no hidden features)
+Arahan user: dokumentasikan SEMUA fitur dengan konsep + fungsionalitas, di
+README.md dan portal (page Documentation). Tidak ada hidden feature lagi.
+
++ README.md: seksi 'Feature reference' baru (17 area): workspace/project,
+  personas (tabel 9 + model route + rename + growth + pretrain), Persona
+  Forge (47 tools/8 kategori, delegation locked, export/import), chat
+  (steer/compress/heal/search/trace/attach-design), delegation isolation,
+  workflow, approvals (persist + remote + request_login/takeover), sandbox
+  (no-net/cap/ro/timeout) + egress allowlist proxy + terminal + workshop
+  persist + orphan sweep, research stack (10 provider) + browser 6 tool +
+  screen lease/QA watch, design studio (canvas + font/icon bank +
+  prototype + export + staged get_file + to-code + Poe copy), dungeon +
+  skill lifecycle + library, vault + memory + metering/budget/model route
+  + provider 3 kind + smoke, auth/portal/mobile/desktop, backup (bundle
+  8MB/256MB + restore .mjs + kuota portal 10x300MB) + ops (update/reset/
+  GHCR). Tool list diverifikasi dari registry (50 native).
++ Portal (repo yuika-portal): page Documentation diperluas 9 seksi baru
+  (studio tour, personas+forge, trust/sandbox/tools, research/browser/
+  screens, design, dungeons+skills, vault/memory/metering, mobile+desktop)
+  + seksi 'Host backups' (fitur backups portal akhirnya terdokumentasi:
+  kuota + restore + plaintext privacy note). Sidebar 16 seksi.
++ Verifikasi: portal typecheck hijau, vitest 44/44, next build hijau 2x
+  (kegagalan awal = flaky env Defender vs .next; terbukti tanpa edit pun
+  bisa gagal lalu hijau dengan edit 2x berturut).
