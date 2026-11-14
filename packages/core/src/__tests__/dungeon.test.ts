@@ -31,13 +31,13 @@ targetSkill:
 `;
 
 describe("dungeon mission ()", () => {
-  it("loadMissions: seed contoh (phaser) dibuat & ter-parse", () => {
+  it("loadMissions: seed contoh (design-mockup) dibuat & ter-parse", () => {
     const missions = loadMissions(dir);
-    expect(missions.some((m) => m.id === "phaser-research")).toBe(true);
-    const phaser = missions.find((m) => m.id === "phaser-research")!;
-    expect(phaser.persona).toBe("yui-scholar");
-    expect(phaser.acceptance.length).toBeGreaterThan(0);
-    expect(Mission.safeParse(phaser).success).toBe(true);
+    expect(missions.some((m) => m.id === "design-mockup")).toBe(true);
+    const design = missions.find((m) => m.id === "design-mockup")!;
+    expect(design.persona).toBe("yui-designer");
+    expect(design.acceptance.length).toBeGreaterThan(0);
+    expect(Mission.safeParse(design).success).toBe(true);
   });
 
   it("runner: misi kustom parse → run sandbox; status done + summary; sweep restart", async () => {

@@ -13,24 +13,6 @@ export const DUNGEONS_DIRNAME = "dungeons";
 /** Misi contoh (dibuat bila dungeons/ kosong, acceptance
  *  "misi contoh riset dokumentasi Phaser parse & jalan"). */
 const SEED_MISSIONS: Record<string, string> = {
-  "phaser-research": `id: phaser-research
-title: "Riset dokumentasi Phaser"
-persona: yui-scholar
-goal: >
-  Pelajari dasar game framework Phaser (scene lifecycle, sprites, input,
-  physics arcade) dari dokumentasi resmi, lalu susun ringkasan praktis
-  untuk developer yang mau mulai proyek game 2D.
-resources:
-  - https://phaser.io/docs
-  - https://phaser.io/tutorials/making-your-first-phaser-3-game
-acceptance:
-  - Menjelaskan scene lifecycle (create vs update) dengan benar
-  - Menyertakan contoh kode minimal sprite + input keyboard yang jalan
-  - Ringkasan ≤ 500 kata, berbahasa Indonesia, tanpa istilah yang tidak dijelaskan
-targetSkill:
-  name: phaser-basics
-  description: "Dasar Phaser 3, scene, sprite, input, physics arcade, untuk memulai game 2D."
-`,
   "design-mockup": `id: design-mockup
 title: "Desain produk di canvas studio"
 persona: yui-designer

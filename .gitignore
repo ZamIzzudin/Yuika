@@ -51,3 +51,7 @@ smoke-policy.tmp.*
 # D71 update runner key (auto-generated on the VPS by update.sh)
 update_key
 update_key.pub
+
+# Runtime reset log (D70)
+reset.log
+/model-prices.json
