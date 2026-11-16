@@ -72,6 +72,9 @@ const fake = {
     return { url, title: "Doc", contentType: "text/html", html: "<h1>Hi</h1>" };
   },
   listBrowserVisits: () => [{ id: 1, url: "https://example.com", title: "E", byRole: "agent", createdAt: 1 }],
+  // D117 guard: route sessions mengecek provider sebelum membuat sesi;
+  // contract test mengasumsikan provider terkonfigurasi.
+  providerConfigured: () => true,
 } as unknown as YuiRuntime;
 
 const app = buildApp(fake);

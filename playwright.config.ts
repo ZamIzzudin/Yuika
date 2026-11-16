@@ -11,6 +11,9 @@ const DOUBLE_PORT = 3110; // P1-PRT-6: claim stub + SpecRelay (portal double)
 
 export default defineConfig({
   testDir: "./e2e",
+  // staging.spec.ts hanya untuk playwright.staging.config.ts (G-ALPHA,
+  // target URL nyata); suite lokal jangan menjalankannya.
+  testIgnore: /staging\.spec\.ts/,
   timeout: 120_000,
   // satu worker: mock provider & api memakai DB single-file + state global,
   // paralelisme antar file belum aman (dan smoke memang serial).

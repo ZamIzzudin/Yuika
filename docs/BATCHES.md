@@ -699,3 +699,26 @@ daftar sesi datar, tapi **mission control project-oriented**.
 
 ## Batch D120 — backup host-only
 - Portal backups feature dibongkar total (routes/page/nav/table/test); studio backup copy + README host-only; docs page seksi backups dihapus.
+
+## Batch D121 — publish prep wave 1 (F5 20% -> 60%)
+- Smoke staging: e2e/staging.spec.ts + playwright.staging.config.ts (SSO portal
+  login+consent nyata; owner-lock 403 akun lain terdokumentasi; skip tanpa
+  STAGING_EMAIL/PASSWORD); testIgnore staging di config lokal.
+- Sandbox no-escape: sandbox-escape.test.ts (gated YUI_SANDBOX_IT: path escape,
+  host surface socket/su, network, fork bomb pids-limit) + docs/SANDBOX-CHECKLIST.md
+  (matrix vektor -> kontrol -> bukti unit/nyata).
+- Runbook alpha: docs/RUNBOOK-ALPHA.md (health sweep, metering, prosedur update/
+  reset/smoke/load, known issues, cara lapor, definisi alpha hijau).
+- Metering: scripts/usage-report.mjs (rollup per model + price book + --expect
+  akurasi vs tagihan <2% PASS/FAIL; teruji db sintetis 0.99% PASS).
+- Load: scripts/load-test.mjs (N sesi paralel, SSE time-to-first-event p50/p95/
+  p99; terukur 100/100 OK p95 0.83s wall 32.6s, stack lokal tsx + mock provider).
+- PUB-1: scripts/gen-notices.mjs + THIRD-PARTY-NOTICES.md (268 paket prod,
+  @yuika/* dikecualikan, special notices sharp/libvips LGPL + caniuse-lite CC-BY).
+- PUB-3: docs/PUB-AUDIT.md - scan secret 343 commit (5 match semuanya fixture
+  test), Orin Playground.md/html dihapus, keputusan tersisa (URL notu.dev).
+- PUB-4: CONTRIBUTING.md (DCO tanpa CLA, trademark Yuika/Orin, konvensi
+  docs-driven + UI English + no emoji).
+- npm audit dev-deps TERTUTUP: vitest 2.1.9 -> 5.1.0 semua workspace, total
+  0 vulnerabilities (prod & dev); fake runtime api.test.ts +providerConfigured;
+  semua suite hijau (core 474+skip, api 73, contracts 36, crypto 45, relay 15).

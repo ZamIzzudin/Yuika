@@ -26,11 +26,11 @@
 | F2 Desktop app (Yuika-Desktop) | 100% | SELESAI (D117-D118): lazy-config + auto-update; secrets updater menunggu user |
 | F3 Design-to-code (embedded canvas) | 100% | SELESAI (D86): draw loop live + generate acceptance + golden path |
 | F4 Persona training & QA | 100% | CLOSED 2026-11-14: blind test dihapus (konsep), Forge v2 + share jadi penutup |
-| F5 Publish prep (GERBANG) | 20% | alpha/beta gates, repo publik PUB-1..4 |
+| F5 Publish prep (GERBANG) | 60% | 9/15 gerbang; sisa: PUB-2 lisensi, smoke rutin, sandbox run staging, 10 user, mobile push, analytics, feedback, sec-review |
 
 ```
 F1 [##########] 100%  F2 [##########] 100%  F3 [##########] 100%
-F4 [##########] 100%  F5 [##········] 20%
+F4 [##########] 100%  F5 [######····] 60%
 ```
 
 Urutan eksekusi yang disarankan: **F1 → F2 → F4 → F5** (F3 selesai D86).
@@ -243,10 +243,12 @@ ke project nyata (arena terbukti menghasilkan persona terbedakan dan
 siap pakai). Keduanya hanya butuh provider live di studio Anda; semua
 mekanika sudah terpasang dan teruji.
 
-## F5 · Publish prep (GERBANG TERAKHIR) — 20%
+## F5 · Publish prep (GERBANG TERAKHIR) — 60%
 
 TIDAK BOLEH dikerjakan sebelum F1-F4 100% (dikembangkan dan teruji).
-Isi = gerbang alpha → beta → publik. Basis hitung: 3/15 gerbang.
+Isi = gerbang alpha → beta → publik. Basis hitung: 9/15 gerbang
+(6 baru di D121: runbook, load 100-sesi p95 0.83s, PUB-1, PUB-3,
+PUB-4, audit dev-deps).
 
 Selesai (3):
 - [x] Staging live: studio + portal + relay produksi (notu.dev), TLS,
@@ -256,25 +258,46 @@ Selesai (3):
 - [x] Self-host docs lengkap (DEPLOY.md dua opsi + backup + update).
 
 Sisa alpha (internal):
-- [ ] Smoke E2E + skenario persona hijau di staging (G-ALPHA).
+- [ ] Smoke E2E + skenario persona hijau di staging (G-ALPHA). ✅ D121: spec siap
+      (`e2e/staging.spec.ts` + `playwright.staging.config.ts`; WAJIB akun owner -
+      studio single-owner 403 utk akun lain; `STAGING_EMAIL/PASSWORD` env);
+      menunggu run berkalanya (lihat RUNBOOK-ALPHA.md).
 - [ ] Metering akurat < 2% vs tagihan provider; saldo tak pernah minus.
+      ✅ D121: `scripts/usage-report.mjs` (rollup per model + harga price book +
+      `--expect` akurasi vs tagihan, PASS/FAIL <2%); verifikasi mingguan vs
+      tagihan nyata = rutinitas runbook.
 - [ ] Sandbox no-escape checklist (path, network, resource, fork bomb).
+      ✅ D121: matrix lengkap `docs/SANDBOX-CHECKLIST.md` + suite gated
+      `sandbox-escape.test.ts` (path escape, host surface, network, fork bomb
+      pids-limit); menunggu satu run di host staging dengan Docker hidup.
 - [ ] 10 pengguna internal aktif 1 minggu tanpa data loss.
-- [ ] Runbook alpha (known issues + cara lapor).
+- [x] Runbook alpha (known issues + cara lapor). ✅ D121: docs/RUNBOOK-ALPHA.md
+      (health sweep harian, metering mingguan, smoke staging, load, known
+      issues, cara lapor, definisi alpha hijau).
 
 Sisa beta (closed):
 - [ ] Mobile distribusi internal track + push E2E < 10 detik.
-- [ ] Load 100 sesi paralel, p95 turn-start < 2 detik.
+- [x] Load 100 sesi paralel, p95 turn-start < 2 detik. ✅ D121:
+      `scripts/load-test.mjs` (zero-dep, SSE time-to-first-event p50/p95/p99);
+      terukur 100/100 OK, p95 0.83 dtk, wall 32.6 dtk (stack lokal tsx + mock
+      provider, laptop; rerun di VPS saat beta sebagai bukti produksi).
 - [ ] Analytics dasar (activation, retention, cost per workspace).
 - [ ] Support channel + feedback widget + triage SLA internal.
 - [ ] Security review ulang terminal/browser/relay scope.
 
 Sisa publik repo:
-- [ ] **PUB-1** THIRD-PARTY-NOTICES.md regenerasi.
+- [x] **PUB-1** THIRD-PARTY-NOTICES.md regenerasi. ✅ D121: 268 paket via
+      `scripts/gen-notices.mjs` + special notices (docs/PUB-AUDIT.md).
 - [ ] **PUB-2** Keputusan lisensi final (BSL/PolyForm/open-core).
-- [ ] **PUB-3** Bersih artefak internal + audit secrets/history git.
-- [ ] **PUB-4** CONTRIBUTING.md + CLA/DCO + cek trademark Yuika/Orin.
-- [ ] `npm audit` dev-deps (6 vuln toolchain dev) ditutup atau waivered.
+- [x] **PUB-3** Bersih artefak internal + audit secrets/history git. ✅ D121:
+      343 commit discan (semua match = fixture test), Orin Playground dihapus,
+      temuan di docs/PUB-AUDIT.md (URL notu.dev: keputusan scrub terakhir).
+- [x] **PUB-4** CONTRIBUTING.md + CLA/DCO + cek trademark Yuika/Orin. ✅ D121:
+      CONTRIBUTING.md (DCO tanpa CLA + trademark note); pendaftaran PDKI di
+      luar repo.
+- [x] `npm audit` dev-deps (6 vuln toolchain dev) ditutup atau waivered.
+      ✅ D121: vitest 2.1.9 -> 5.1.0 semua workspace; total 0 vulnerabilities
+      (prod & dev), tanpa waiver; semua suite hijau pasca upgrade.
 
 100% = siap push repo publik dan mengundang beta tester.
 

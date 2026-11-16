@@ -354,16 +354,16 @@ _Exit: skenario lulus 2× berturut tanpa intervensi manual._
 > **wajib sebelum push publik pertama**, jangan MIT/Apache-kan repo utama tanpa
 > putuskan ulang model bisnis (one-way door).
 
-- [ ] **PUB-1** THIRD-PARTY-NOTICES.md, regenerasi dari skrip audit (sharp/libvips LGPL,
-      caniuse-lite CC-BY-4.0, lightningcss MPL-2.0, expand-template MIT, dsb) · _B · 0.5d_
+- [x] **PUB-1** THIRD-PARTY-NOTICES.md, regenerasi dari skrip audit (sharp/libvips LGPL,
+      caniuse-lite CC-BY-4.0, lightningcss MPL-2.0, expand-template MIT, dsb) · _B · 0.5d_, ✅ D121: `scripts/gen-notices.mjs` (zero-dep, `npm ls --omit=dev --parseable`) + `THIRD-PARTY-NOTICES.md` 268 paket + special notices sharp/libvips & caniuse-lite; regenerate tiap perubahan dep produksi (lihat docs/PUB-AUDIT.md)
 - [ ] **PUB-2** Keputusan lisensi publik final: tetap proprietary / BSL 1.1 (Additional
       Use Grant + Change Date) / PolyForm (Noncommercial/Small Business) / open-core
       (core engine permissive + apps proprietary) · _A · keputusan_, bikin teks LICENSE
       edisi publik + `LicenseRef-*` SPDX bila non-OSI
-- [ ] **PUB-3** Bersih-bersih pra-publik: hapus artefak internal (docs/Orin*.html berisi
-      prompt kerja), audit secrets/history git, .gitignore data workspace · *B · 0.5d\*
-- [ ] **PUB-4** CONTRIBUTING.md + CLA/DCO (syarat agar bisa relicense/dual-license
-      di masa depan) + cek trademark "Yuika"/"Orin" (PDKI kelas 9 & 42) · _B · 1d_
+- [x] **PUB-3** Bersih-bersih pra-publik: hapus artefak internal (docs/Orin*.html berisi
+      prompt kerja), audit secrets/history git, .gitignore data workspace · *B · 0.5d\*, ✅ D121: scan 343 commit pola secret (5 match semuanya fixture test, aman), artefak Orin Playground dihapus, temuan + keputusan tersisa di docs/PUB-AUDIT.md
+- [x] **PUB-4** CONTRIBUTING.md + CLA/DCO (syarat agar bisa relicense/dual-license
+      di masa depan) + cek trademark "Yuika"/"Orin" (PDKI kelas 9 & 42) · _B · 1d_, ✅ D121: CONTRIBUTING.md (DCO sign-off, TANPA CLA, trademark note Yuika/Orin maintainer); pendaftaran trademark PDKI = tindakan hukum di luar repo
 - [x] **PUB-5** CI: gerbang `npm audit --omit=dev --audit-level=high` (saat ini 2 high =
       zod; hilang setelah upgrade zod v4) + regenerasi laporan lisensi berkala · _C · 0.5d_, ✅ 2026-11: step **Security audit gate (prod deps)** di ci.yml setelah `npm ci` (audit prod = 0 vulnerabilities pasca zod v4 + openai 7.51); waiver hanya lewat keputusan eksplisit + catatan di LICENSE-AUDIT §4. Regenerasi laporan lisensi berkala = manual (skrip audit lokal, §LICENSE-AUDIT), dijalankan tiap tambah dep signifikan.
 
