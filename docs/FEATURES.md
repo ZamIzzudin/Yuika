@@ -49,7 +49,9 @@ Selesai (9):
 - [x] Chat streaming + resume (B8, envelope relay, snapshot). ✅ D123:
       riwayat panjang dimuat bertahap (windowed hydration + tombol "Load
       earlier" di host, action `load_older` di remote) - sesi lama tak lagi
-      menarik seluruh event/pesan sekaligus.
+      menarik seluruh event/pesan sekaligus. ✅ D124: hydration host jadi
+      berbasis PESAN (bubble user tampil, tiap load memuat banyak pesan, tak
+      ada lagi loop "blitz").
 - [x] Approvals remote (B8; approve/reject dari HP).
 - [x] Remote control UI + bukti e2e fake-relay 13/13.
 - [x] Pipeline build APK: GitHub Actions hijau + codemagic.yaml

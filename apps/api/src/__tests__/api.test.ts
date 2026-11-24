@@ -275,10 +275,12 @@ describe("apps/api REST contract", () => {
   it("D123 GET /messages?beforeSeq=&limit= → window user/assistant + hasMore", async () => {
     const r = await app.inject({ method: "GET", url: "/api/sessions/s1/messages?beforeSeq=4&limit=10" });
     expect(r.statusCode).toBe(200);
-    const d = r.json() as { messages: { seq: number; role: string }[]; hasMore: boolean };
+    const d = r.json() as { messages: { seq: number; role: string }[]; hasMore: boolean; firstSeq?: number };
     // tool difilter; hanya user/assistant tersisa
     expect(d.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
     expect(d.hasMore).toBe(false);
+    // firstSeq = batas mentah halaman (kursor prepend), bukan messages[0]
+    expect(d.firstSeq).toBe(1);
     // tanpa param → perilaku lama (semua)
     const all = await app.inject({ method: "GET", url: "/api/sessions/s1/messages" });
     expect(all.json().messages).toHaveLength(2);

@@ -112,9 +112,10 @@ rejected.
 compress automatically (slim context), and `session_search` lets personas
 quote older sessions.
 - **Long history loading**: opening an old session hydrates only the tail of
-the conversation; a "Load earlier messages" button pages older events in on
-demand (keyset cursor), so huge sessions open instantly. The mobile remote
-uses the same paging (`load_older`) to scroll back past the initial snapshot.
+the conversation (user/assistant messages, plus a tail window of action events)
+and loads instantly; a "Load earlier messages" button pages older messages in on
+demand (keyset cursor). The mobile remote uses the same paging (`load_older`) to
+scroll back past the initial snapshot.
 - **Trace**: per-turn event timeline (tool calls, timings, tokens) in the
 Logs tab.
 - Right-click a design component to **attach it to chat** as context.

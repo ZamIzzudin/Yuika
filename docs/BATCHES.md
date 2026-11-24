@@ -769,3 +769,35 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - Test: history-window (store, 5), remote contract (3), api route window (2),
   portal load_older (1). Suite hijau: core 485+skip, api 77, contracts 38,
   crypto 45, relay 15; typecheck 6/6; web build hijau.
+
+## Batch D124 — fix regresi D123: bubble user hilang + "blitz" load earlier
+- REGRESI (dilaporkan user pasca-D123):
+  1. Tiap klik "Load earlier" hanya memuat SEGELINTIR pesan.
+  2. Setelah 3x klik, scroll hanya "blitz" (kedip) tanpa memuat lagi.
+  3. Bubble chat USER tidak ditampilkan sama sekali.
+- AKAR MASALAH:
+  1. Hydration D123 memaginasi per-EVENT, padahal makeEmitter mempersist
+     SETIAP message.delta per-chunk -> satu halaman 100 event = 1-2 pesan nyata.
+  2. ChatView punya window lokal (visibleCount 8/16) yang MENYEMBUNYIKAN item
+     yang baru di-prepend -> scroll terpaku di atas -> onScroll memicu
+     loadEarlier berulang; diperparah rehydrate() setItems([]) transien +
+     efek restore scroll dengan key `items` mengonsumsi metrik saat kosong.
+  3. Bubble user hanya di-merge saat open() awal (heuristik sawUserEvent);
+     rehydrate() berikutnya membangun items dari event saja -> bubble user hilang.
+- SOLUSI (web hydration jadi BERBASIS PESAN, sejajar desain mobile/relay):
+  - page.tsx: hydrateFromStore(sid) = Promise.all GET /messages?limit=50
+    (bubble user+assistant, sumber bersih) + GET /events?limit=80 (seed kursor
+    SSE + kartu aksi). Bubble dirender dari messages; kartu (approval/delegasi/
+    screen/login/vault/...) di-replay dari event, bubble konten dilewati.
+    Trailing delta setelah message.done terakhir ikut direplay (turn yang
+    masih berjalan saat sesi dibuka). Kursor SSE = id event ekor.
+  - loadEarlierMessages(): GET /messages?beforeSeq=&limit=50 -> prepend (TANPA
+    reset state, tak ada render kosong transien). Guard in-flight ref sinkron
+    (loadingEarlierRef) cegah fetch ganda dari scroll cepat.
+  - API messages route: kembalikan firstSeq (batas ATAS halaman MENTAH sebelum
+    filter user/assistant) -> kursor prepend tak macet bila halaman penuh tool row.
+  - ChatView: buang window lokal (visibleCount/WINDOW_FIRST/STEP); render SEMUA
+    bubble yang dimuat (server sudah batasi 50/halaman). Efek restore scroll
+    jadi useLayoutEffect keyed `items` (dipulihkan sebelum paint, hanya bila
+    metrik prepend terisi). Tombol "Load earlier messages" tanpa hitungan lokal.
+- Test: api messages window +firstSeq (api 77 hijau). typecheck 6/6. web build hijau.

@@ -1844,3 +1844,19 @@ seluruh event sejak 0; remote mobile hanya dapat 50 pesan terakhir).
 + TEST: history-window 5, remote contract 3, api window 2, portal 1.
   Suite: core 485+skip, api 77, contracts 38, crypto 45, relay 15; typecheck
   6/6; web build hijau.
+## Batch D124 — Fix regresi D123 (bubble user hilang + "blitz" load earlier)
+User (pasca-D123): tiap "Load earlier" hanya memuat sedikit pesan; setelah 3x
+scroll hanya berkedip tanpa memuat; bubble user TIDAK tampil.
+
++ AKAR: hydration D123 memaginasi per-EVENT (message.delta dipersist
+  per-chunk = 1 halaman 100 event -> 1-2 pesan). ChatView masih punya window
+  lokal visibleCount yang menyembunyikan item prepend -> scroll terpaku atas
+  -> loadEarlier berulang ("blitz"). Bubble user hanya di-merge saat open()
+  awal; rehydrate() berikutnya membangun dari event saja -> hilang.
++ FIX web hydration jadi BERBASIS PESAN: hydrateFromStore = messages (bubble
+  user+assistant) + events ekor (kartu aksi + kursor SSE). loadEarlierMessages
+  prepend via /messages?beforeSeq (tanpa reset state) + guard in-flight ref.
+  API messages kembalikan firstSeq (batas mentah halaman) supaya kursor tak
+  macet. ChatView buang window lokal; render semua bubble dimuat; restore
+  scroll jadi useLayoutEffect.
++ TEST: api 77 hijau (+firstSeq), typecheck 6/6, web build hijau.

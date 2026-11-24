@@ -43,7 +43,16 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
         ...(q.beforeSeq ? { beforeSeq: Number(q.beforeSeq) } : {}),
         ...(q.limit ? { limit: Number(q.limit) } : {}),
       });
-      return { messages: w.messages.filter((r) => r.msg.role === "user" || r.msg.role === "assistant").map(shape), hasMore: w.hasMore };
+      // firstSeq = batas ATAS halaman MENTAH (semua role). Klien memakai ini
+      // sebagai kursor prepend, bukan messages[0].seq yang bisa melompat bila
+      // baris terdepan yang lolos filter user/assistant jauh di belakang - atau
+      // tak ada sama sekali (halaman penuh tool row) sehingga kursor macet.
+      const firstSeq = w.messages[0]?.seq;
+      return {
+        messages: w.messages.filter((r) => r.msg.role === "user" || r.msg.role === "assistant").map(shape),
+        hasMore: w.hasMore,
+        ...(typeof firstSeq === "number" ? { firstSeq } : {}),
+      };
     }
     return {
       messages: getRt().getMessagesWithSeq(id).filter((r) => r.msg.role === "user" || r.msg.role === "assistant").map(shape),

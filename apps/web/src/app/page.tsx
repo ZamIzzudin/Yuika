@@ -52,6 +52,25 @@ import type {
   YuiEvent,
 } from "@yuika/contracts";
 
+/** D123 (fix): baris messages table → item bubble (user/assistant). Nudge
+ *  internal ([sistem]) & konten kosong dibuang; steering user tetap tampil. */
+function messagesToBubbles(
+  msgs: Array<{ seq: number; role: string; content: string }>,
+): ChatItem[] {
+  return msgs
+    .filter(
+      (m) =>
+        (m.role === "user" || m.role === "assistant") &&
+        m.content.trim().length > 0 &&
+        !(m.role === "user" && m.content.startsWith("[sistem]")),
+    )
+    .map((m) => ({
+      kind: "msg" as const,
+      role: m.role as "user" | "assistant",
+      text: m.content,
+    }));
+}
+
 /** Prompt saran per persona (pola ConversationPrompts OpenBot, klik = kirim). */
 const SUGGESTIONS: Record<string, string[]> = {
   "yui-conductor": [
@@ -112,14 +131,18 @@ export default function Home() {
   const [personaState, setPersonaState] = useState<PersonaState>("idle");
   const [busy, setBusy] = useState(false);
   const lastEventId = useRef(0);
-  // D123: windowed hydration + "load earlier". eventsRef = seluruh event yang
-  // sudah dimuat (naik); hasEarlier = masih ada riwayat lebih tua di server.
-  const eventsRef = useRef<YuiEvent[]>([]);
-  const oldestEventId = useRef<number | null>(null);
+  // D123 (fix): windowed hydration + "load earlier".
+  // oldestSeq = seq pesan tertua yang sudah dimuat (cursor prepend);
+  // hasEarlier = masih ada riwayat lebih tua di server.
+  const oldestSeq = useRef<number | null>(null);
   const [hasEarlier, setHasEarlier] = useState(false);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
-  // 100 event lebih dari cukup untuk satu layar; guard payload sesi panjang.
-  const HYDRATE_LIMIT = 100;
+  // Guard sinkron: state `loadingEarlier` baru terlihat pada render berikutnya,
+  // sedangkan scroll memicu beberapa event per tick → cegah fetch ganda.
+  const loadingEarlierRef = useRef(false);
+  // Halaman bubble (pesan) per load + jendela event ekor untuk kartu aksi.
+  const HYDRATE_MSGS = 50;
+  const HYDRATE_CARD_EVENTS = 80;
 
  // Project scope ( shell v0): sesi yang dibuat melekat ke project aktif,
  // file-ops & tasklist agent otomatis ter-scope .
@@ -213,14 +236,14 @@ export default function Home() {
   // Reasoning streaming (fix dev-10): item sendiri, kolaps-able.
   const openReasoning = useRef<number | null>(null);
 
-  const applyEvent = useCallback((e: YuiEvent) => {
-    // Dedupe: SSE replay+live bisa overlap saat reconnect (safety net, server sudah
-    // dedupe by id; id monotonic per sesi).
-    if (e.id <= lastEventId.current) return;
-    lastEventId.current = Math.max(lastEventId.current, e.id);
-    // D123: simpan event ke window agar "load earlier" bisa menyusun ulang
-    // transcript (re-reduce) tanpa kehilangan event hidup.
-    eventsRef.current.push(e);
+  const applyEvent = useCallback((e: YuiEvent, opts?: { replay?: boolean }) => {
+    // Dedupe: SSE replay+live bisa overlap saat reconnect (safety net, server
+    // sudah dedupe by id; id monotonic per sesi). Replay (hydration) TIDAK
+    // menyentuh kursor SSE - kursor di-set ke id ekor setelah replay.
+    if (!opts?.replay) {
+      if (e.id <= lastEventId.current) return;
+      lastEventId.current = Math.max(lastEventId.current, e.id);
+    }
     if (
       e.type !== "message.delta" &&
       e.type !== "reasoning.delta" &&
@@ -622,55 +645,128 @@ export default function Home() {
     }
   }, []);
 
-  /** D123: susun ulang seluruh transcript dari daftar event (urut naik).
-   *  Dipakai hydration awal & "load earlier": setItems([]) + replay sinkron
-   *  (React batch = satu render). refs streaming di-reset supaya delta lama
-   *  tak nyambung ke item baru. */
-  const rehydrate = useCallback(
-    (events: YuiEvent[]) => {
-      // kosongkan dulu: applyEvent di bawah meng-push ulang tiap event (urut
-      // naik, id > 0) sehingga eventsRef = tepat daftar `events` (tanpa ganda).
-      eventsRef.current = [];
-      lastEventId.current = 0;
+  /** D123 (fix): hydration awal. Bubble user+assistant dari messages table
+   *  (halaman ekor) + kartu aksi dari jendela event ekor (approval/delegasi/
+   *  screen/...). Kursor SSE di-set ke id event ekor setelah replay supaya
+   *  streaming hidup nyambung tanpa menarik seluruh riwayat. */
+  const hydrateFromStore = useCallback(
+    async (sid: string, isAlive?: () => boolean) => {
       openAssistant.current = null;
       openReasoning.current = null;
       pendingUser.current = null;
-      setItems([]);
-      for (const e of events) applyEvent(e);
+      // 1) jendela event ekor: seed kursor SSE + kartu aksi (bubble dilewati).
+      let events: YuiEvent[] = [];
+      let eventsOk = false;
+      try {
+        const er = await authFetch(
+          apiUrl(`/api/sessions/${sid}/events?limit=${HYDRATE_CARD_EVENTS}`),
+        );
+        if (er.ok) {
+          events = ((await er.json()) as { events: YuiEvent[] }).events;
+          eventsOk = true;
+        }
+      } catch {
+        /* fallback: event-sourced via SSE sejak 0 */
+      }
+      if (isAlive && !isAlive()) return;
+      const tailId = events.reduce((m, e) => Math.max(m, e.id), 0);
+      // 2) halaman bubble dari messages table (sumber bersih user/assistant).
+      let bubbles: ChatItem[] = [];
+      let oldest: number | null = null;
+      let more = false;
+      try {
+        const mr = await authFetch(
+          apiUrl(`/api/sessions/${sid}/messages?limit=${HYDRATE_MSGS}`),
+        );
+        if (mr.ok) {
+          const md = (await mr.json()) as {
+            messages: Array<{ seq: number; role: string; content: string }>;
+            hasMore?: boolean;
+            firstSeq?: number;
+          };
+          oldest = md.firstSeq ?? md.messages[0]?.seq ?? null;
+          more = md.hasMore === true;
+          bubbles = messagesToBubbles(md.messages);
+        }
+      } catch {
+        /* bubble kosong; SSE replay mengisi bila eventsOk=false */
+      }
+      if (isAlive && !isAlive()) return;
+      oldestSeq.current = oldest;
+      setHasEarlier(more);
+      // events gagal → jangan set bubble (hindari ganda saat SSE replay sejak 0).
+      setItems(eventsOk ? bubbles : []);
+      // 3) replay event ekor: kartu aksi SELALU; konten (delta/done/reasoning)
+      // hanya yang BELUM masuk messages table, yaitu sesudah message.done
+      // terakhir (mis. turn yang masih berjalan saat sesi dibuka). Delta
+      // sebelum itu sudah tercakup bubble messages table.
+      let lastDone = -1;
+      for (let i = 0; i < events.length; i++) {
+        if (events[i]!.type === "message.done") lastDone = i;
+      }
+      for (let i = 0; i < events.length; i++) {
+        const e = events[i]!;
+        // user.message selalu ada di messages table → jangan gandakan bubble.
+        if (e.type === "user.message") continue;
+        if (
+          (e.type === "message.delta" ||
+            e.type === "message.done" ||
+            e.type === "reasoning.delta") &&
+          i <= lastDone
+        ) {
+          continue;
+        }
+        applyEvent(e, { replay: true });
+      }
+      lastEventId.current = tailId;
     },
-    [applyEvent],
+    [applyEvent, HYDRATE_MSGS, HYDRATE_CARD_EVENTS],
   );
 
-  /** D123: muat satu halaman riwayat LEBIH TUA (cursor before) lalu prepend
-   *  + rehydrate. Dipakai tombol "Load earlier messages" di ChatView. */
+  /** D123 (fix): muat satu halaman pesan LEBIH TUA lalu prepend (tanpa reset
+   *  state - tidak ada render transien kosong yang dulu memicu "blitz"). */
   const loadEarlierMessages = useCallback(async () => {
-    if (!sessionId || loadingEarlier || !hasEarlier) return;
-    const before = oldestEventId.current;
+    if (!sessionId || loadingEarlierRef.current || !hasEarlier) return;
+    const before = oldestSeq.current;
     if (before === null) return;
+    loadingEarlierRef.current = true;
     setLoadingEarlier(true);
     try {
       const r = await authFetch(
-        apiUrl(`/api/sessions/${sessionId}/events?before=${before}&limit=${HYDRATE_LIMIT}`),
+        apiUrl(
+          `/api/sessions/${sessionId}/messages?beforeSeq=${before}&limit=${HYDRATE_MSGS}`,
+        ),
       );
       if (r.ok) {
-        const d = (await r.json()) as { events: YuiEvent[]; hasMore: boolean };
-        const older = d.events.filter((e) => eventsRef.current.every((x) => x.id !== e.id));
-        const first = older[0]?.id;
-        if (typeof first === "number") oldestEventId.current = first;
-        setHasEarlier(d.hasMore);
-        if (older.length > 0) rehydrate([...older, ...eventsRef.current]);
+        const d = (await r.json()) as {
+          messages: Array<{ seq: number; role: string; content: string }>;
+          hasMore: boolean;
+          firstSeq?: number;
+        };
+        const older = messagesToBubbles(d.messages);
+        const first = d.firstSeq ?? d.messages[0]?.seq;
+        if (typeof first === "number") oldestSeq.current = first;
+        setHasEarlier(d.hasMore === true);
+        if (older.length > 0) {
+          // prepend menggeser indeks: jaga ref streaming tetap menunjuk item yang
+          // sama agar delta turn yang sedang jalan tidak nyasar ke bubble lama.
+          if (openAssistant.current !== null) openAssistant.current += older.length;
+          if (openReasoning.current !== null) openReasoning.current += older.length;
+          setItems((prev) => [...older, ...prev]);
+        }
       }
     } catch {
       /* biarkan; user bisa klik lagi */
     } finally {
+      loadingEarlierRef.current = false;
       setLoadingEarlier(false);
     }
-  }, [sessionId, loadingEarlier, hasEarlier, rehydrate, HYDRATE_LIMIT]);
+  }, [sessionId, hasEarlier, HYDRATE_MSGS]);
 
-  /** D123: reset window riwayat saat ganti/tutup sesi (hydrate ulang dari nol). */
+  /** D123 (fix): reset cursor riwayat saat ganti/tutup sesi. */
   const resetHistory = useCallback(() => {
-    eventsRef.current = [];
-    oldestEventId.current = null;
+    oldestSeq.current = null;
+    loadingEarlierRef.current = false;
     setHasEarlier(false);
     setLoadingEarlier(false);
   }, []);
@@ -687,72 +783,11 @@ export default function Home() {
     let attempt = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const open = async () => {
-      // D123 windowed hydration: tarik HANYA halaman ekor (bukan seluruh
-      // riwayat) - sesi panjang tak lagi memuat ribuan event sekaligus.
-      // Kalau masih ada lebih tua, ChatView menampilkan "Load earlier".
+      // D123 (fix): hydration berbasis PESAN (bubble) + event ekor (kartu).
+      // Halaman event hanya berisi segelintir pesan karena message.delta
+      // dipersist per-chunk; messages table = sumber bersih user/assistant.
       if (lastEventId.current === 0) {
-        try {
-          const r = await authFetch(
-            apiUrl(`/api/sessions/${sessionId}/events?limit=${HYDRATE_LIMIT}`),
-          );
-          if (r.ok) {
-            const d = (await r.json()) as { events: YuiEvent[]; hasMore: boolean };
-            const first = d.events[0]?.id;
-            oldestEventId.current = typeof first === "number" ? first : null;
-            setHasEarlier(d.hasMore);
-            rehydrate(d.events);
-            // Sesi LAMA (dibuat sebelum event user.message): bubble user tidak
-            // ada di event stream → sisipkan dari messages table, interleave
-            // per posisi bubble assistant (best-effort, hanya dlm window ini).
-            const sawUserEvent = d.events.some((e) => e.type === "user.message");
-            if (!sawUserEvent) {
-              try {
-                const mr = await authFetch(
-                  apiUrl(`/api/sessions/${sessionId}/messages?limit=${HYDRATE_LIMIT}`),
-                );
-                if (mr.ok) {
-                  const md = (await mr.json()) as {
-                    messages: Array<{ role: string; content: string }>;
-                  };
-                  const users = md.messages
-                    .filter(
-                      (m) =>
-                        m.role === "user" &&
-                        // nudge internal sistem TIDAK jadi bubble user
-                        !m.content.startsWith("[sistem]"),
-                    )
-                    .map((m) => m.content);
-                  if (users.length > 0) {
-                    setItems((prev) => {
-                      const next = [...prev];
-                      let ui = 0;
-                      let placed = 0;
-                      for (let i = 0; i < next.length && ui < users.length; i++) {
-                        const it = next[i]!;
-                        if (it.kind === "msg" && it.role === "assistant") {
-                          next.splice(i, 0, { kind: "msg", role: "user", text: users[ui]! });
-                          ui++;
-                          placed++;
-                          i++;
-                        }
-                      }
-                      // user tanpa balasan (turn terputus) → ekor, urut asli
-                      for (; ui < users.length; ui++) {
-                        next.push({ kind: "msg", role: "user", text: users[ui]! });
-                        placed++;
-                      }
-                      return placed > 0 ? next : prev;
-                    });
-                  }
-                }
-              } catch {
-                /* merge best-effort */
-              }
-            }
-          }
-        } catch {
-          /* fallback: SSE replay seperti biasa */
-        }
+        await hydrateFromStore(sessionId, () => !dead);
       }
       if (dead) return;
       es = new EventSource(
@@ -784,7 +819,7 @@ export default function Home() {
       if (timer) clearTimeout(timer);
       es?.close();
     };
-  }, [sessionId, applyEvent]);
+  }, [sessionId, applyEvent, hydrateFromStore]);
 
   // Resync saat window kembali fokus: tarik snapshot event sejak lastEventId,
   // menutup celah apa pun yang terlewat (SSE mati saat tab di background, dll).

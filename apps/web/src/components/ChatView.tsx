@@ -8,7 +8,7 @@ import { buildDesignAttachmentText, designRefLabel, parseDesignAttachment, type 
  * Logika event tetap dari page.tsx (semua tipe @yuika/contracts).
  * Tailwind semantik + komponen ui/*, tanpa CSS kustom (docs/DESIGN-SYSTEM.md).
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { PersonaState } from "@yuika/contracts";
 import {
   Brain,
@@ -512,19 +512,16 @@ export function ChatView({
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
-  // ---- Windowing riwayat chat (konsep sama dgn mobile): render 8 item
-  // terakhir; scroll dekat atas (atau klik chip) → muat +16 lebih lama.
-  // Skeleton sesaat + offset scroll dipertahankan (metrik disimpan sebelum
-  // batch baru dirender, dipulihkan setelah re-render) supaya tidak melompat.
-  // D123: window LOKAL ini hanya membatasi render; riwayat lebih tua di server
-  // ditarik via onLoadEarlier (cursor event), bukan dirender semua sekaligus.
-  const WINDOW_FIRST = 8;
-  const WINDOW_STEP = 16;
-  const [visibleCount, setVisibleCount] = useState(WINDOW_FIRST);
-  const [loadingEarlierLocal, setLoadingEarlierLocal] = useState(false);
-  const loadingEarlier = loadingEarlierLocal || loadingEarlierProp;
-  const loadTimer = useRef<number | null>(null);
+  // D123 (fix blitz): render SEMUA bubble yang sudah dimuat (server membatasi
+  // tiap halaman ke 50), riwayat lebih tua ditarik via onLoadEarlier. Window
+  // lokal (visibleCount) dibuang: ia menyembunyikan item yang baru di-prepend
+  // sehingga scroll terpaku di atas dan onScroll memicu fetch berulang ("blitz").
+  const loadingEarlier = loadingEarlierProp;
   const prevMetrics = useRef<{ offset: number; height: number } | null>(null);
+  // Deteksi prepend (bukan append streaming): hanya pulihkan scroll bila item
+  // di DEPAN berubah DAN total bertambah. Streaming menambah di ekor (head tetap).
+  const prevHead = useRef<ChatItem | undefined>(undefined);
+  const prevLen = useRef(0);
 
   // Auto-scroll: MOUNT/switch sesi → selalu ke bawah; setelah itu hanya bila user
   // memang di dekat bawah (tidak mencuri scroll saat user membaca ke atas).
@@ -534,47 +531,35 @@ export function ChatView({
     if (el && stickRef.current) el.scrollTop = el.scrollHeight;
   }, [items, personaState]);
 
-  // ganti sesi/persona → window reset ke 8 terakhir + kembali nempel bawah
+  // ganti sesi/persona → kembali nempel bawah
   useEffect(() => {
-    setVisibleCount(WINDOW_FIRST);
-    setLoadingEarlierLocal(false);
     stickRef.current = true;
-    if (loadTimer.current) window.clearTimeout(loadTimer.current);
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [sessionKey]);
 
   /** Pulihkan posisi scroll setelah item lama di-prepend (anti lompat).
-   *  Key `items` menangani halaman server (load earlier) yang menambah item
-   *  tanpa mengubah visibleCount; key `visibleCount` menangani window lokal. */
-  useEffect(() => {
+   *  useLayoutEffect: dipulihkan SEBELUM paint (tak ada frame melompat).
+   *  Hanya aktif bila prevMetrics terisi (prepend), jadi render streaming
+   *  (tambah item di bawah) tidak terganggu. */
+  useLayoutEffect(() => {
     const el = scrollRef.current;
-    if (el && prevMetrics.current) {
+    const head = items[0];
+    const prepended = items.length > prevLen.current && head !== prevHead.current;
+    if (el && prevMetrics.current && prepended) {
       el.scrollTop = el.scrollHeight - prevMetrics.current.height + prevMetrics.current.offset;
       prevMetrics.current = null;
     }
+    prevHead.current = head;
+    prevLen.current = items.length;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleCount, items]);
+  }, [items]);
 
   function loadEarlier() {
-    if (loadingEarlier) return;
-    // window lokal masih menyimpan item tersembunyi → cukup buka lebih banyak.
-    if (hiddenBefore > 0) {
-      setLoadingEarlierLocal(true);
-      const el = scrollRef.current;
-      if (el) prevMetrics.current = { offset: el.scrollTop, height: el.scrollHeight };
-      loadTimer.current = window.setTimeout(() => {
-        setVisibleCount((v) => v + WINDOW_STEP);
-        setLoadingEarlierLocal(false);
-      }, 350);
-      return;
-    }
-    // window lokal habis TAPI server masih punya riwayat → tarik halaman baru.
-    if (hasEarlier && onLoadEarlier) {
-      const el = scrollRef.current;
-      if (el) prevMetrics.current = { offset: el.scrollTop, height: el.scrollHeight };
-      onLoadEarlier();
-    }
+    if (loadingEarlier || !hasEarlier || !onLoadEarlier) return;
+    const el = scrollRef.current;
+    if (el) prevMetrics.current = { offset: el.scrollTop, height: el.scrollHeight };
+    onLoadEarlier();
   }
 
   // Textarea auto-grow
@@ -590,8 +575,6 @@ export function ChatView({
   // tetap terkumpul (dipakai indikator dot tab Chat/Team).
   const steps = items.filter((it) => it.kind === "activity");
   const rest = items.filter((it) => it.kind !== "activity");
-  const hiddenBefore = Math.max(0, rest.length - visibleCount);
-  const windowed = hiddenBefore > 0 ? rest.slice(rest.length - visibleCount) : rest;
   const showTyping = personaState === "thinking" || personaState === "working";
 
   function submit(e: React.FormEvent) {
@@ -646,11 +629,11 @@ export function ChatView({
           stickRef.current =
             el.scrollHeight - el.scrollTop - el.clientHeight < 160;
           // dekat atas & masih ada history (lokal atau di server) → muat lagi
-          if (el.scrollTop < 80 && !loadingEarlier && (hiddenBefore > 0 || hasEarlier)) loadEarlier();
+          if (el.scrollTop < 80 && !loadingEarlier && hasEarlier) loadEarlier();
         }}
       >
         <div className="mx-auto flex w-full flex-col gap-3">
-          {hiddenBefore > 0 || hasEarlier || loadingEarlier ? (
+          {hasEarlier || loadingEarlier ? (
             <div className="flex flex-col items-center gap-2 py-1">
               {loadingEarlier ? (
                 <div className="flex w-full flex-col gap-3" aria-live="polite">
@@ -666,9 +649,7 @@ export function ChatView({
                   className="cursor-pointer rounded-pill border border-line bg-surface px-3 py-1 text-caption text-secondary transition-colors hover:border-line-strong hover:text-primary"
                   onClick={loadEarlier}
                 >
-                  {hiddenBefore > 0
-                    ? `Load earlier messages (${hiddenBefore} more)`
-                    : "Load earlier messages"}
+                  Load earlier messages
                 </button>
               )}
             </div>
@@ -678,7 +659,7 @@ export function ChatView({
               {emptySlot}
             </div>
           ) : null}
-          {windowed.map((it, i) => {
+          {rest.map((it, i) => {
             if (it.kind === "msg" && it.role === "user") {
               return (
                 <div key={`r${i}`} className="msg-in flex justify-end">
