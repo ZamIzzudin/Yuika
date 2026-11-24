@@ -36,13 +36,44 @@ export interface ToolDefinition {
 const tools = new Map<string, ToolDefinition>();
 const isZod = (p: ToolDefinition["parameters"]): p is z.ZodTypeAny => typeof (p as z.ZodTypeAny).safeParse === "function";
 
-/** Per-tool ajv validator (compiled once; hot dispatch never recompiles). */
+/** Per-tool ajv validator (compiled once; hot dispatch never recompiles).
+ *
+ * FIX berulang "no schema with key or ref …draft/2020-12" yang memutus
+ * iterasi: schema MCP (zod v4 / server modern) menyatakan $schema
+ * 2020-12 sedangkan build ajv ini tidak mendaftarkan meta-schema itu;
+ * sebaliknya draft-04 boolean exclusiveMinimum/Maximum ditolak kodenya.
+ * Solusi: PERSIAPAN schema sebelum compile - (1) buang $schema (semantik
+ * subset yang dipakai tool identik antar draft; ref meta tak dibutuhkan),
+ * (2) konversi exclusiveMinimum/Maximum boolean → numeric (sama seperti
+ * normalizeToolSchema sisi provider). Satu instance, semua varian aman. */
 const ajv = new Ajv({ allErrors: true, strict: false });
 const ajvCache = new Map<string, ValidateFunction>();
+function prepareForAjv(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(prepareForAjv);
+  if (!node || typeof node !== "object") return node;
+  const src = node as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(src)) {
+    if (k === "$schema") continue; // sumber "no schema with key or ref"
+    if ((k === "exclusiveMinimum" || k === "exclusiveMaximum") && typeof v === "boolean") {
+      const bound = k === "exclusiveMinimum" ? src.minimum : src.maximum;
+      if (v && typeof bound === "number") out[k] = bound; // true → angka batas
+      continue; // false / tanpa batas → tidak bermakna, buang
+    }
+    out[k] = prepareForAjv(v);
+  }
+  return out;
+}
 function jsonSchemaValidator(name: string, schema: Record<string, unknown>): ValidateFunction {
   let fn = ajvCache.get(name);
   if (!fn) {
-    fn = ajv.compile(schema);
+    try {
+      fn = ajv.compile(prepareForAjv(schema) as Record<string, unknown>);
+    } catch (e) {
+      throw new Error(
+        `tool ${name}: JSON Schema tidak bisa dikompilasi: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
     ajvCache.set(name, fn);
   }
   return fn;

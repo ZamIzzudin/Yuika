@@ -57,6 +57,8 @@ and sandbox containers.
   track state per task.
 - **Files**: tree, editor, revisions with diff, search; `read_file`,
   `write_file`, `list_files`, `search_files` tools for personas.
+- **Artifact download**: one click grabs a single file or the whole project
+  as a `.zip` archive (Files tab → Download).
 - **Uploads**: bring your own material (size capped, type checked) for study,
   training or design.
 - **Project deletion is a sweep**: design files, browser visits, workflow

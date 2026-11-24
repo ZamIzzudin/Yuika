@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./project/diff": "./src/project/diff.ts",
+    "./project/files": "./src/project/files.ts",
     "./design": "./src/design/index.ts",
     "./design/client": "./src/design/client.ts"
   },

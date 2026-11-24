@@ -80,6 +80,7 @@ import { smokeModel } from "./provider/smoke.js";
 import type { ModelSmokeResult } from "@yuika/contracts";
 import { acceptDraft, listDrafts, readUsage, rejectDraft, updateDraft } from "./skills/manager.js";
 import { buildFileTree, readProjectFile, safeProjectPath } from "./project/files.js";
+import { buildZip, collectZipEntries } from "./project/zip.js";
 import { readBrowserPolicy, readBrowserPage, writeBrowserPolicy } from "./browser/reader.js";
 import { FileRevisionStore } from "./project/revisions.js";
 import { listSkills } from "./skills/loader.js";
@@ -830,7 +831,8 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
     // (bukan error 500/healing panjang) — UI menunjuk ke Settings.
     if (!providerBaseUrl || !providerApiKey || !model) {
       const msg = "Provider is not configured. Open Settings, set base URL, API key and model, then try again.";
-      const e = store.appendEvent(sessionId, { type: "session.error", message: msg, recoverable: false });
+      const e = store.appendEvent(sessionId, { type: "session.error", message: msg, recoverable: false });
+
       EventBus.publish(sessionId, e);
       return Promise.resolve();
     }
@@ -1185,6 +1187,17 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       const p = projectStore.getProject(id);
       if (!p) throw new Error("project tidak ditemukan");
       return readProjectFile(projectRoot(id), relPath);
+    },
+ // D122: download artefact - seluruh project jadi .zip (zero-dep writer).
+    buildProjectArtifactZip: (id: string) => {
+      const p = projectStore.getProject(id);
+      if (!p) throw new Error("project tidak ditemukan");
+      const root = projectRoot(id);
+      const entries = collectZipEntries(root);
+      if (entries.length === 0) throw new Error("project has no files to download");
+      const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 12);
+      const safeName = p.name.replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "project";
+      return { filename: `${safeName}-${stamp}.zip`, data: buildZip(entries) };
     },
  // revisi & diff, snapshot lama direkam otomatis oleh write_file.
     listFileRevisions: (id: string, relPath: string) => {

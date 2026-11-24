@@ -17,6 +17,7 @@ import {
   BracketsCurly,
   CaretDown,
   CaretRight,
+  DownloadSimple,
   File,
   FileCss,
   FileDoc,
@@ -310,6 +311,37 @@ export function FileTab({ projectId }: { projectId: string }) {
   // mode tampilan .md / run report: rendered (default, pengalaman baca) vs source
   const [view, setView] = useState<"rendered" | "source">("rendered");
 
+  /** D122: download artefact - file terpilih mentah, atau seluruh project .zip. */
+  const [downloading, setDownloading] = useState(false);
+  async function downloadArtifact(path?: string) {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const r = await authFetch(
+        apiUrl(`/api/projects/${projectId}/artifact${path ? `?path=${encodeURIComponent(path)}` : ""}`),
+      );
+      if (!r.ok) {
+        toastErr(((await r.json().catch(() => ({}))) as { error?: string }).error ?? "download failed");
+        return;
+      }
+      const blob = await r.blob();
+      const name = path
+        ? path.split("/").pop() ?? "artifact"
+        : `${projectId}-artifacts.zip`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+      toastOk(path ? `${name} downloaded` : "Artifacts archive downloaded");
+    } catch (e) {
+      toastErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   const loadTree = useCallback(async () => {
     try {
       const [t, rs] = await Promise.all([
@@ -517,6 +549,14 @@ export function FileTab({ projectId }: { projectId: string }) {
           </label>
           <Button
             size="md"
+            onClick={() => void downloadArtifact()}
+            disabled={downloading || fileCount === 0}
+            title="Download all project files as .zip"
+          >
+            <DownloadSimple size={12} aria-hidden /> Download
+          </Button>
+          <Button
+            size="md"
             onClick={() => void loadTree()}
             title="Reload file list"
           >
@@ -625,6 +665,18 @@ export function FileTab({ projectId }: { projectId: string }) {
                   <b className="min-w-0 flex-1 truncate font-mono text-caption font-semibold text-primary">
                     {selLabel}
                   </b>
+                  {sel.kind === "file" && (
+                    <button
+                      type="button"
+                      onClick={() => void downloadArtifact(sel.path)}
+                      disabled={downloading}
+                      title="Download this file"
+                      aria-label={`Download ${sel.path}`}
+                      className="shrink-0 cursor-pointer rounded-md2 border border-line px-2 py-0.5 text-[11px] font-medium text-dim transition-colors hover:bg-hover hover:text-primary disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      <DownloadSimple size={12} aria-hidden />
+                    </button>
+                  )}
                   {isMd && (
                     <span
                       className="flex shrink-0 overflow-hidden rounded-md2 border border-line"

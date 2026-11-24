@@ -33,6 +33,12 @@ const fake = {
   resumeDelegation: (id: string) => id !== "s_missing",
   resolveApproval: () => true,
   getProject: (id: string) => (id === "p_ok" ? { id, name: "demo" } : null),
+  // D122 artifact download: kontrak route /artifact (zip + file tunggal).
+  buildProjectArtifactZip: (id: string) => {
+    if (id !== "p_ok") throw new Error("project tidak ditemukan");
+    return { filename: "demo-artifact.zip", data: Buffer.from("PK\u0003\u0004fake-zip") };
+  },
+  projectWorkspacePath: (id: string) => (id === "p_ok" ? "D:/nonexistent-ws" : ""),
   getProjectActivity: () => [
     { at: 2, sessionId: "s1", personaId: "yui-scholar", kind: "tool", label: "web_fetch https://example.com", isError: false },
   ],
@@ -197,6 +203,22 @@ describe("apps/api REST contract", () => {
     expect(r.statusCode).toBe(200);
     expect(r.headers["access-control-allow-origin"]).toBe("http://localhost:3990");
     expect(r.headers["content-type"]).toContain("text/event-stream");
+  });
+
+  it("D122 GET /artifact: zip attachment + 400 project hilang; ?path= traversal ditolak", async () => {
+    const r = await app.inject({ method: "GET", url: "/api/projects/p_ok/artifact" });
+    expect(r.statusCode).toBe(200);
+    expect(r.headers["content-type"]).toBe("application/zip");
+    expect(r.headers["content-disposition"]).toContain('attachment; filename="demo-artifact.zip"');
+    expect(r.body).toContain("PK");
+
+    const miss = await app.inject({ method: "GET", url: "/api/projects/p_missing/artifact" });
+    expect(miss.statusCode).toBe(400);
+
+    // ?path= traversal → safeProjectPath menolak (400, bukan 500)
+    const trav = await app.inject({ method: "GET", url: "/api/projects/p_ok/artifact?path=../../etc/passwd" });
+    expect(trav.statusCode).toBe(400);
+    expect(trav.json().error).toContain("di luar project");
   });
 });
 

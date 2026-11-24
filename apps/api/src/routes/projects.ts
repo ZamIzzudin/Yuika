@@ -1,6 +1,9 @@
 // @yuika/api, routes project (P1-PRJ-*) + files/tasks/tree/roster/delegations/uploads.
 import type { FastifyInstance } from "fastify";
 import type { YuiRuntime } from "@yuika/core";
+import { safeProjectPath } from "@yuika/core/project/files";
+import fs from "node:fs";
+import path from "node:path";
 import { CreateProjectRequest, CreateTaskRequest, DelegationJob, lintTaskList, SaveRosterRequest, UpdateProjectRequest, UpdateTaskRequest } from "@yuika/contracts";
 
 
@@ -63,6 +66,36 @@ export function registerProjectRoutes(app: FastifyInstance, getRt: () => YuiRunt
         return getRt().readProjectFile(id, p);
       }
       return { tree: getRt().listProjectFiles(id) };
+    } catch (e) {
+      return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  /** GET /api/projects/:id/artifact (D122): download artefact.
+   * Tanpa ?path → .zip seluruh project; ?path=… → file tunggal mentah
+   * (attachment, TANPA cap 256KB baca UI; anti path-traversal via
+   * safeProjectPath, cap 100 MB). */
+  app.get("/api/projects/:id/artifact", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    try {
+      const sp = req.query as Record<string, string | undefined>;
+      const p = sp.path;
+      if (!p) {
+        const { filename, data } = getRt().buildProjectArtifactZip(id);
+        reply.header("content-type", "application/zip");
+        reply.header("content-disposition", `attachment; filename="${filename}"`);
+        return reply.send(data);
+      }
+      const rt = getRt();
+      if (!rt.getProject(id)) return reply.code(404).send({ error: "project tidak ditemukan" });
+      const abs = safeProjectPath(rt.projectWorkspacePath(id), p);
+      const st = await fs.promises.stat(abs);
+      if (!st.isFile() || st.size > 100 * 1024 * 1024) {
+        return reply.code(400).send({ error: "bukan file atau terlalu besar (>100 MB)" });
+      }
+      reply.header("content-type", "application/octet-stream");
+      reply.header("content-disposition", `attachment; filename="${encodeURIComponent(path.basename(p))}"`);
+      return reply.send(fs.createReadStream(abs));
     } catch (e) {
       return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
     }

@@ -722,3 +722,15 @@ daftar sesi datar, tapi **mission control project-oriented**.
 - npm audit dev-deps TERTUTUP: vitest 2.1.9 -> 5.1.0 semua workspace, total
   0 vulnerabilities (prod & dev); fake runtime api.test.ts +providerConfigured;
   semua suite hijau (core 474+skip, api 73, contracts 36, crypto 45, relay 15).
+
+## Batch D122 — fix ajv 2020-12 (iterasi putus) + download artefact
+- FIX registry: error berulang "no schema with key or ref …draft/2020-12"
+  memutus iterasi agent (tool MCP schema zod v4). Persiapan schema sebelum
+  compile: buang $schema + konversi exclusiveMinimum/Maximum boolean ->
+  numeric (satu instance ajv, semua varian draft aman). Regresi test 3 kasus
+  (2020-12 eksplisit, draft-07 boolean, hybrid tanpa $schema).
+- FITUR download artefact: GET /api/projects/:id/artifact (zip seluruh
+  project via writer DEFLATE zero-dep baru packages/core/src/project/zip.ts;
+  ?path=... = file tunggal mentah, anti-traversal, cap 100 MB) + tombol
+  Download (zip) & per-file di FileTab. Verifikasi live: unzip utuh,
+  content-disposition benar. Test: artifact-zip 3 + api contract 1.
