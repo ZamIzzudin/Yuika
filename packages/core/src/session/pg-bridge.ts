@@ -11,10 +11,10 @@ import type { ISessionStore } from "./store.js";
 
 const METHODS = [
   "createSession", "getSession", "listProjectSessions", "personaSessionCounts", "personaDoneTurnCounts",
-  "appendMessage", "searchMessages", "getMessages", "getMessagesWithSeq",
+  "appendMessage", "searchMessages", "getMessages", "getMessagesWithSeq", "getMessagesWindow",
   "saveContextCheckpoint", "latestContextCheckpoint",
   "startDelegationJob", "finishDelegationJob", "findRunningDelegationJobs", "listDelegationJobs",
-  "archiveOldEvents", "appendEvent", "getEvents", "findInterruptedTurns",
+  "archiveOldEvents", "appendEvent", "getEvents", "getEventsWindow", "findInterruptedTurns",
   "insertApproval", "settleApproval", "listPendingApprovals", "rememberApproval", "getRememberedTools",
   "expirePendingApprovals", "deleteProjectSessions",
 ] as const;

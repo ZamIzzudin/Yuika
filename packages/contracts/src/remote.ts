@@ -90,6 +90,19 @@ export const RemoteAction = z.discriminatedUnion("act", [
     /** resume: seq terakhir yang diterima remote per sesi (map sessionId→seq) */
     sinceSeq: z.record(z.string(), z.number().int()).optional(),
   }),
+  /** D123: muat SATU halaman riwayat lebih tua (cursor beforeSeq) untuk chat
+   *  panjang - snapshot awal hanya mengirim ekor (SNAPSHOT_MSGS), halaman ini
+   *  menggulir ke belakang tanpa host memuat seluruh transcript. Dibalas
+   *  session.snapshot ber-rid SAMA (messages = halaman lebih tua, hasOlder). */
+  z.object({
+    proto: z.literal(1),
+    act: z.literal("load_older"),
+    rid: z.string(),
+    sessionId: z.string(),
+    /** seq pesan TERLAMA yang sudah dimiliki remote; halaman = pesan < seq ini */
+    beforeSeq: z.number(),
+    limit: z.number().int().optional(),
+  }),
   z.object({
     proto: z.literal(1),
     act: z.literal("unsubscribe"),
@@ -229,14 +242,22 @@ export const RemoteEvent = z.discriminatedUnion("ev", [
     ev: z.literal("session.snapshot"),
     rid: z.string().optional(),
     sessionId: z.string(),
-    /** transcript ringkas (≤ 50 pesan terakhir) untuk render cepat */
+    /** transcript ringkas (≤ 50 pesan terakhir) untuk render cepat;
+     *  D123: tiap entri membawa `seq` + snapshot `hasOlder` agar remote bisa
+     *  memuat halaman lebih tua via load_older (chat panjang). */
     messages: z.array(z.object({
       role: z.enum(["user", "assistant", "tool"]),
       personaId: z.string().optional(),
       text: z.string(),
       at: z.number().int(),
+      seq: z.number().optional(),
     })),
     latestSeq: z.number().int(),
+    /** true = masih ada pesan lebih tua di luar halaman ini. */
+    hasOlder: z.boolean().optional(),
+    /** true = balasan load_older (halaman lampau) - remote TIDAK menimpanya
+     *  ke transcript, hanya di-prepend via jalur promise request(). */
+    older: z.boolean().optional(),
   }),
   z.object({
     proto: z.literal(1),

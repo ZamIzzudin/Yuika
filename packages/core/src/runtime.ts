@@ -1051,7 +1051,12 @@ export function createYuiRuntime(cfg: YuiRuntimeConfig) {
       EventBus.publish(sessionId, e);
     },
     getEvents: (sessionId: string, since = 0): YuiEvent[] => store.getEvents(sessionId, since),
+    // D123: jendela history berbasis cursor (hydration ringkas + load earlier).
+    getEventsWindow: (sessionId: string, opts?: { beforeId?: number; limit?: number }) =>
+      store.getEventsWindow(sessionId, opts),
     getMessagesWithSeq: (sessionId: string) => store.getMessagesWithSeq(sessionId),
+    getMessagesWindow: (sessionId: string, opts?: { beforeSeq?: number; limit?: number }) =>
+      store.getMessagesWindow(sessionId, opts),
     subscribe: (sessionId: string, listener: (e: YuiEvent) => void) => EventBus.subscribe(sessionId, listener),
     subscribeAll: (listener: (e: YuiEvent) => void) => EventBus.subscribeAll(listener),
     // ---- projects ----

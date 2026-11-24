@@ -35,6 +35,11 @@ export interface ISessionStore {
   searchMessages(q: { query: string; projectId?: string | null; limit?: number }): { sessionId: string; personaId: string; role: string; snippet: string; createdAt: number }[];
   getMessages(sessionId: string): InternalMessage[];
   getMessagesWithSeq(sessionId: string): Array<{ seq: number; msg: InternalMessage }>;
+  /** D123: jendela pesan keyset (cursor `beforeSeq`, urut NAIK). Baca hanya
+   *  satu halaman dari DB (bukan seluruh tabel lalu slice di JS) - dasar
+   *  hydration ringkas & "load earlier" chat panjang. hasMore = masih ada
+   *  pesan lebih tua di luar halaman. */
+  getMessagesWindow(sessionId: string, opts?: { beforeSeq?: number; limit?: number }): { messages: Array<{ seq: number; msg: InternalMessage }>; hasMore: boolean };
   saveContextCheckpoint(sessionId: string, uptoSeq: number, summary: string, model: string): void;
   latestContextCheckpoint(sessionId: string): { uptoSeq: number; summary: string; model: string } | null;
   startDelegationJob(input: { parentSessionId: string; parentTurnId: string; childSessionId: string; personaId: string; goal: string }): number;
@@ -44,6 +49,9 @@ export interface ISessionStore {
   archiveOldEvents(retentionDays: number, nowMs?: number): { archived: number; sessions: number };
   appendEvent(sessionId: string, draft: EventDraft): YuiEventType;
   getEvents(sessionId: string, sinceId?: number): YuiEventType[];
+  /** D123: jendela event keyset (cursor `beforeId`), termasuk events_archive,
+   *  urut NAIK. Baca satu halaman saja dari DB untuk hydration UI yang ringan. */
+  getEventsWindow(sessionId: string, opts?: { beforeId?: number; limit?: number }): { events: YuiEventType[]; hasMore: boolean };
   findInterruptedTurns(): Array<{ sessionId: string; personaId: string; lastTurnEventId: number }>;
   insertApproval(row: { requestId: string; sessionId: string; tool: string; args: Record<string, unknown>; reason: string }): void;
   settleApproval(requestId: string, status: "approved" | "denied" | "expired", remember?: boolean): boolean;
@@ -59,6 +67,14 @@ export interface ISessionStore {
     contextCheckpoints: number;
   };
   close(): void;
+}
+
+/** Batas halaman default window history (D123): scope chat, 1 halaman lebih
+ *  dari cukup untuk satu layar gulir; guard agar payload tak meledak. */
+export const WINDOW_LIMIT_DEFAULT = 100;
+const WINDOW_LIMIT_MAX = 1000;
+function clampWindowLimit(limit?: number): number {
+  return Math.max(1, Math.min(Math.floor(limit ?? WINDOW_LIMIT_DEFAULT) || WINDOW_LIMIT_DEFAULT, WINDOW_LIMIT_MAX));
 }
 
 /** Factory driver : YUI_DB_DRIVER=sqlite (default) | postgres.
@@ -334,6 +350,30 @@ export class SessionStore implements ISessionStore {
     }));
   }
 
+ /** D123: satu halaman pesan keyset (cursor beforeSeq), urut NAIK.
+   *  Ambil limit+1 (DESC) untuk deteksi hasMore, lalu balik urutannya. */
+  getMessagesWindow(sessionId: string, opts: { beforeSeq?: number; limit?: number } = {}): { messages: Array<{ seq: number; msg: InternalMessage }>; hasMore: boolean } {
+    const limit = clampWindowLimit(opts.limit);
+    const before = opts.beforeSeq ?? Number.MAX_SAFE_INTEGER;
+    const rows = this.db
+      .prepare("SELECT * FROM messages WHERE session_id = ? AND seq < ? ORDER BY seq DESC LIMIT ?")
+      .all(sessionId, before, limit + 1) as { seq: number; role: string; content: string; tool_calls: string | null; tool_call_id: string | null }[];
+    const hasMore = rows.length > limit;
+    const page = (hasMore ? rows.slice(0, limit) : rows).reverse();
+    return {
+      messages: page.map((r) => ({
+        seq: r.seq,
+        msg: {
+          role: r.role as InternalMessage["role"],
+          content: r.content,
+          toolCalls: r.tool_calls ? (JSON.parse(r.tool_calls) as InternalMessage["toolCalls"]) : undefined,
+          toolCallId: r.tool_call_id ?? undefined,
+        },
+      })),
+      hasMore,
+    };
+  }
+
  /** simpan checkpoint kompresi (append-only, tidak mengubah messages). */
   saveContextCheckpoint(sessionId: string, uptoSeq: number, summary: string, model: string): void {
     this.db
@@ -484,6 +524,32 @@ export class SessionStore implements ISessionStore {
       const payload = JSON.parse(r.payload) as Record<string, unknown>;
       return YuiEvent.parse({ ...payload, id: r.id, ts: r.ts, sessionId });
     });
+  }
+
+ /** D123: satu halaman event keyset (cursor beforeId), gabungan events + arsip.
+   *  Ambil limit+1 (DESC) → deteksi hasMore, balik ke urut NAIK. Dipakai
+   *  hydration UI (ekor dulu) + "load earlier" tanpa menarik seluruh riwayat. */
+  getEventsWindow(sessionId: string, opts: { beforeId?: number; limit?: number } = {}): { events: YuiEventType[]; hasMore: boolean } {
+    const limit = clampWindowLimit(opts.limit);
+    const before = opts.beforeId ?? Number.MAX_SAFE_INTEGER;
+    const rows = this.db
+      .prepare(
+        `SELECT id, payload, ts FROM (
+           SELECT id, payload, ts FROM events WHERE session_id = ? AND id < ?
+           UNION ALL
+           SELECT id, payload, ts FROM events_archive WHERE session_id = ? AND id < ?
+         ) ORDER BY id DESC LIMIT ?`
+      )
+      .all(sessionId, before, sessionId, before, limit + 1) as { id: number; payload: string; ts: number }[];
+    const hasMore = rows.length > limit;
+    const page = (hasMore ? rows.slice(0, limit) : rows).reverse();
+    return {
+      events: page.map((r) => {
+        const payload = JSON.parse(r.payload) as Record<string, unknown>;
+        return YuiEvent.parse({ ...payload, id: r.id, ts: r.ts, sessionId });
+      }),
+      hasMore,
+    };
   }
 
   /** P0 reliabilitas (boot heal): sesi yang `turn.started` TERAKHIRNYA tidak

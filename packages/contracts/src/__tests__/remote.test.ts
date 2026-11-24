@@ -59,6 +59,23 @@ describe("RemoteEvent (CONTRACTS-REMOTE v1)", () => {
     expect(RemoteEvent.safeParse({ proto: 1, ev: "session.snapshot", rid: "r", sessionId: "s", messages: [], latestSeq: 3 }).success).toBe(true);
   });
 
+  // ── D123: pagination riwayat (load_older + seq/hasOlder/older) ──
+  it("D123 load_older: butuh sessionId & beforeSeq; limit opsional", () => {
+    expect(RemoteAction.safeParse({ proto: 1, act: "load_older", rid: "r", sessionId: "s", beforeSeq: 120 }).success).toBe(true);
+    expect(RemoteAction.safeParse({ proto: 1, act: "load_older", rid: "r", sessionId: "s", beforeSeq: 120, limit: 30 }).success).toBe(true);
+    expect(RemoteAction.safeParse({ proto: 1, act: "load_older", rid: "r", sessionId: "s" }).success).toBe(false);
+  });
+
+  it("D123 session.snapshot: seq per pesan + hasOlder/older aditif (remote lama tetap parse)", () => {
+    // remote lama (tanpa field baru) tetap valid
+    expect(RemoteEvent.safeParse({ proto: 1, ev: "session.snapshot", sessionId: "s", latestSeq: 3, messages: [{ role: "user", text: "hi", at: 0 }] }).success).toBe(true);
+    // remote baru: seq + hasOlder + older
+    expect(RemoteEvent.safeParse({
+      proto: 1, ev: "session.snapshot", rid: "r", sessionId: "s", latestSeq: 9, hasOlder: true, older: true,
+      messages: [{ role: "assistant", text: "ok", at: 0, seq: 4 }],
+    }).success).toBe(true);
+  });
+
   it("barrel index mengekspor kontrak remote", async () => {
     const mod = await import("../index.js");
     expect(mod.RemoteAction).toBe(RemoteAction);

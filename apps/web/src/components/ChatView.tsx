@@ -369,6 +369,9 @@ export function ChatView({
   workflow,
   onOpenScreen,
   sessionKey,
+  hasEarlier = false,
+  loadingEarlier: loadingEarlierProp = false,
+  onLoadEarlier,
   designRefs,
   onRemoveDesignRef,
   onClearDesignRefs,
@@ -395,6 +398,11 @@ export function ChatView({
   /** Identitas sesi utk reset window (ganti sesi → kembali ke 8 terakhir). */
   sessionKey: string;
   busy: boolean;
+  /** D123: masih ada riwayat LEBIH TUA di server (windowed hydration).
+   *  ChatView memanggil onLoadEarlier saat window lokal habis & user di atas. */
+  hasEarlier?: boolean;
+  loadingEarlier?: boolean;
+  onLoadEarlier?: () => void;
   /** D93: komponen desain di-attach dari canvas → chip composer; saat kirim
    *  snapshot JSON ditanam ke teks pesan (bisa dirujuk persona). */
   designRefs?: DesignRefPayload[];
@@ -508,10 +516,13 @@ export function ChatView({
   // terakhir; scroll dekat atas (atau klik chip) → muat +16 lebih lama.
   // Skeleton sesaat + offset scroll dipertahankan (metrik disimpan sebelum
   // batch baru dirender, dipulihkan setelah re-render) supaya tidak melompat.
+  // D123: window LOKAL ini hanya membatasi render; riwayat lebih tua di server
+  // ditarik via onLoadEarlier (cursor event), bukan dirender semua sekaligus.
   const WINDOW_FIRST = 8;
   const WINDOW_STEP = 16;
   const [visibleCount, setVisibleCount] = useState(WINDOW_FIRST);
-  const [loadingEarlier, setLoadingEarlier] = useState(false);
+  const [loadingEarlierLocal, setLoadingEarlierLocal] = useState(false);
+  const loadingEarlier = loadingEarlierLocal || loadingEarlierProp;
   const loadTimer = useRef<number | null>(null);
   const prevMetrics = useRef<{ offset: number; height: number } | null>(null);
 
@@ -526,14 +537,16 @@ export function ChatView({
   // ganti sesi/persona → window reset ke 8 terakhir + kembali nempel bawah
   useEffect(() => {
     setVisibleCount(WINDOW_FIRST);
-    setLoadingEarlier(false);
+    setLoadingEarlierLocal(false);
     stickRef.current = true;
     if (loadTimer.current) window.clearTimeout(loadTimer.current);
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [sessionKey]);
 
-  /** Pulihkan posisi scroll setelah item lama di-prepend (anti lompat). */
+  /** Pulihkan posisi scroll setelah item lama di-prepend (anti lompat).
+   *  Key `items` menangani halaman server (load earlier) yang menambah item
+   *  tanpa mengubah visibleCount; key `visibleCount` menangani window lokal. */
   useEffect(() => {
     const el = scrollRef.current;
     if (el && prevMetrics.current) {
@@ -541,17 +554,27 @@ export function ChatView({
       prevMetrics.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleCount]);
+  }, [visibleCount, items]);
 
   function loadEarlier() {
     if (loadingEarlier) return;
-    setLoadingEarlier(true);
-    const el = scrollRef.current;
-    if (el) prevMetrics.current = { offset: el.scrollTop, height: el.scrollHeight };
-    loadTimer.current = window.setTimeout(() => {
-      setVisibleCount((v) => v + WINDOW_STEP);
-      setLoadingEarlier(false);
-    }, 350);
+    // window lokal masih menyimpan item tersembunyi → cukup buka lebih banyak.
+    if (hiddenBefore > 0) {
+      setLoadingEarlierLocal(true);
+      const el = scrollRef.current;
+      if (el) prevMetrics.current = { offset: el.scrollTop, height: el.scrollHeight };
+      loadTimer.current = window.setTimeout(() => {
+        setVisibleCount((v) => v + WINDOW_STEP);
+        setLoadingEarlierLocal(false);
+      }, 350);
+      return;
+    }
+    // window lokal habis TAPI server masih punya riwayat → tarik halaman baru.
+    if (hasEarlier && onLoadEarlier) {
+      const el = scrollRef.current;
+      if (el) prevMetrics.current = { offset: el.scrollTop, height: el.scrollHeight };
+      onLoadEarlier();
+    }
   }
 
   // Textarea auto-grow
@@ -622,12 +645,12 @@ export function ChatView({
           if (!el) return;
           stickRef.current =
             el.scrollHeight - el.scrollTop - el.clientHeight < 160;
-          // dekat atas & masih ada history → muat batch sebelumnya
-          if (el.scrollTop < 80 && hiddenBefore > 0 && !loadingEarlier) loadEarlier();
+          // dekat atas & masih ada history (lokal atau di server) → muat lagi
+          if (el.scrollTop < 80 && !loadingEarlier && (hiddenBefore > 0 || hasEarlier)) loadEarlier();
         }}
       >
         <div className="mx-auto flex w-full flex-col gap-3">
-          {hiddenBefore > 0 || loadingEarlier ? (
+          {hiddenBefore > 0 || hasEarlier || loadingEarlier ? (
             <div className="flex flex-col items-center gap-2 py-1">
               {loadingEarlier ? (
                 <div className="flex w-full flex-col gap-3" aria-live="polite">
@@ -643,7 +666,9 @@ export function ChatView({
                   className="cursor-pointer rounded-pill border border-line bg-surface px-3 py-1 text-caption text-secondary transition-colors hover:border-line-strong hover:text-primary"
                   onClick={loadEarlier}
                 >
-                  Load earlier messages ({hiddenBefore} more)
+                  {hiddenBefore > 0
+                    ? `Load earlier messages (${hiddenBefore} more)`
+                    : "Load earlier messages"}
                 </button>
               )}
             </div>

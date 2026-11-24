@@ -27,21 +27,44 @@ export function registerSessionRoutes(app: FastifyInstance, getRt: () => YuiRunt
   app.post("/api/sessions/:id/cancel", async (req) => ({ cancelled: getRt().cancelTurn((req.params as { id: string }).id) }));
 
   /** Riwayat pesan mentah (messages table, seq monoton): sumber bubble
-   *  USER utk sesi lama sebelum event user.message ada (fix 2026-11). */
+   *  USER utk sesi lama sebelum event user.message ada (fix 2026-11).
+   *  D123: `?beforeSeq=&limit=` → satu halaman keyset (hydration chat
+   *  panjang + "load earlier"); tanpa param = perilaku lama (semua). */
   app.get("/api/sessions/:id/messages", async (req) => {
     const { id } = req.params as { id: string };
-    const rows = getRt().getMessagesWithSeq(id);
+    const q = req.query as Record<string, string | undefined>;
+    const shape = (r: { seq: number; msg: { role: string; content: string } }) => ({
+      seq: r.seq,
+      role: r.msg.role,
+      content: r.msg.content,
+    });
+    if (q.beforeSeq !== undefined || q.limit !== undefined) {
+      const w = getRt().getMessagesWindow(id, {
+        ...(q.beforeSeq ? { beforeSeq: Number(q.beforeSeq) } : {}),
+        ...(q.limit ? { limit: Number(q.limit) } : {}),
+      });
+      return { messages: w.messages.filter((r) => r.msg.role === "user" || r.msg.role === "assistant").map(shape), hasMore: w.hasMore };
+    }
     return {
-      messages: rows
-        .filter((r) => r.msg.role === "user" || r.msg.role === "assistant")
-        .map((r) => ({ seq: r.seq, role: r.msg.role, content: r.msg.content })),
+      messages: getRt().getMessagesWithSeq(id).filter((r) => r.msg.role === "user" || r.msg.role === "assistant").map(shape),
     };
   });
 
-  /** Replay event (resume/reconnect), pola events.since Hermes. */
+  /** Replay event (resume/reconnect), pola events.since Hermes.
+   *  D123: `?before=&limit=` → satu halaman keyset terbaru-dulu-batas (tail
+   *  bila `before` absen), respons `{ events, hasMore }` untuk hydration UI
+   *  ringkas + tombol "load earlier" (chat panjang tanpa replay penuh). */
   app.get("/api/sessions/:id/events", async (req) => {
     const { id } = req.params as { id: string };
-    const since = Number((req.query as Record<string, string | undefined>).since ?? 0);
+    const q = req.query as Record<string, string | undefined>;
+    if (q.before !== undefined || q.limit !== undefined) {
+      const w = getRt().getEventsWindow(id, {
+        ...(q.before ? { beforeId: Number(q.before) } : {}),
+        ...(q.limit ? { limit: Number(q.limit) } : {}),
+      });
+      return { events: w.events, hasMore: w.hasMore };
+    }
+    const since = Number(q.since ?? 0);
     return { events: getRt().getEvents(id, since) };
   });
 

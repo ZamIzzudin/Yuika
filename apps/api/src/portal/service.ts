@@ -412,6 +412,14 @@ export class PortalHostService {
         }
         return;
       }
+      // D123: halaman riwayat lebih tua (chat panjang). Host membaca satu
+      // halaman keyset dari DB dan membalas session.snapshot ber-rid sama.
+      case "load_older": {
+        this.known.add(action.sessionId);
+        this.track(from.deviceId, action.sessionId);
+        await this.sendSnapshot(from.deviceId, action.sessionId, action.rid, action.beforeSeq);
+        return;
+      }
       case "watch_screen":
         return void this.startWatch(from, action.key, action.rid);
       // ── v1.2: mission-control project-oriented (mobile remote) ────────
@@ -729,18 +737,31 @@ export class PortalHostService {
     set.add(sessionId);
   }
 
-  private async sendSnapshot(toRemote: string, sessionId: string, rid?: string): Promise<void> {
+  private async sendSnapshot(toRemote: string, sessionId: string, rid?: string, beforeSeq?: number): Promise<void> {
     const rt = this.rt!;
-    const msgs = rt.store.getMessages(sessionId).slice(-SNAPSHOT_MSGS).map((m) => ({
-      role: (m.role === "user" || m.role === "assistant" ? m.role : "tool") as "user" | "assistant" | "tool",
-      text: m.content,
+    // D123: baca SATU halaman dari DB (bukan getMessages() seluruh tabel lalu
+    // slice di JS). Tanpa beforeSeq = ekor (hydration awal); dengan beforeSeq =
+    // halaman lebih tua (load_older dari remote). seq & hasOlder dikirim agar
+    // remote bisa menggulir ke belakang.
+    const page = rt.store.getMessagesWindow(sessionId, {
+      ...(beforeSeq !== undefined ? { beforeSeq } : {}),
+      limit: SNAPSHOT_MSGS,
+    });
+    const msgs = page.messages.map(({ seq, msg }) => ({
+      role: (msg.role === "user" || msg.role === "assistant" ? msg.role : "tool") as "user" | "assistant" | "tool",
+      text: msg.content,
       at: 0, // InternalMessage tak membawa timestamp (urutan array sudah kronologis)
+      seq,
     }));
     await this.host!.sendEvent(toRemote, {
       proto: 1, ev: "session.snapshot",
       ...(rid ? { rid } : {}),
       sessionId, messages: msgs,
       latestSeq: this.seq.get(sessionId) ?? 0,
+      hasOlder: page.hasMore,
+      // balasan load_older: remote TIDAK menimpanya ke transcript (bus),
+      // hanya di-prepend via promise request() - tandai agar bisa dibedakan.
+      ...(beforeSeq !== undefined ? { older: true } : {}),
     });
   }
 }

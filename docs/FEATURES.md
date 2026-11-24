@@ -46,7 +46,10 @@ Selesai (9):
 - [x] Interop crypto relay (Ed25519/X25519 noble, seal/open dua arah).
 - [x] Shell + login portal (OAuth client `yuika-mobile`, redirect
       `yuika://auth/callback`; fix param `client` + splash 9eadb0a).
-- [x] Chat streaming + resume (B8, envelope relay, snapshot).
+- [x] Chat streaming + resume (B8, envelope relay, snapshot). ✅ D123:
+      riwayat panjang dimuat bertahap (windowed hydration + tombol "Load
+      earlier" di host, action `load_older` di remote) - sesi lama tak lagi
+      menarik seluruh event/pesan sekaligus.
 - [x] Approvals remote (B8; approve/reject dari HP).
 - [x] Remote control UI + bukti e2e fake-relay 13/13.
 - [x] Pipeline build APK: GitHub Actions hijau + codemagic.yaml

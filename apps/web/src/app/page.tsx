@@ -112,6 +112,14 @@ export default function Home() {
   const [personaState, setPersonaState] = useState<PersonaState>("idle");
   const [busy, setBusy] = useState(false);
   const lastEventId = useRef(0);
+  // D123: windowed hydration + "load earlier". eventsRef = seluruh event yang
+  // sudah dimuat (naik); hasEarlier = masih ada riwayat lebih tua di server.
+  const eventsRef = useRef<YuiEvent[]>([]);
+  const oldestEventId = useRef<number | null>(null);
+  const [hasEarlier, setHasEarlier] = useState(false);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
+  // 100 event lebih dari cukup untuk satu layar; guard payload sesi panjang.
+  const HYDRATE_LIMIT = 100;
 
  // Project scope ( shell v0): sesi yang dibuat melekat ke project aktif,
  // file-ops & tasklist agent otomatis ter-scope .
@@ -210,6 +218,9 @@ export default function Home() {
     // dedupe by id; id monotonic per sesi).
     if (e.id <= lastEventId.current) return;
     lastEventId.current = Math.max(lastEventId.current, e.id);
+    // D123: simpan event ke window agar "load earlier" bisa menyusun ulang
+    // transcript (re-reduce) tanpa kehilangan event hidup.
+    eventsRef.current.push(e);
     if (
       e.type !== "message.delta" &&
       e.type !== "reasoning.delta" &&
@@ -611,6 +622,59 @@ export default function Home() {
     }
   }, []);
 
+  /** D123: susun ulang seluruh transcript dari daftar event (urut naik).
+   *  Dipakai hydration awal & "load earlier": setItems([]) + replay sinkron
+   *  (React batch = satu render). refs streaming di-reset supaya delta lama
+   *  tak nyambung ke item baru. */
+  const rehydrate = useCallback(
+    (events: YuiEvent[]) => {
+      // kosongkan dulu: applyEvent di bawah meng-push ulang tiap event (urut
+      // naik, id > 0) sehingga eventsRef = tepat daftar `events` (tanpa ganda).
+      eventsRef.current = [];
+      lastEventId.current = 0;
+      openAssistant.current = null;
+      openReasoning.current = null;
+      pendingUser.current = null;
+      setItems([]);
+      for (const e of events) applyEvent(e);
+    },
+    [applyEvent],
+  );
+
+  /** D123: muat satu halaman riwayat LEBIH TUA (cursor before) lalu prepend
+   *  + rehydrate. Dipakai tombol "Load earlier messages" di ChatView. */
+  const loadEarlierMessages = useCallback(async () => {
+    if (!sessionId || loadingEarlier || !hasEarlier) return;
+    const before = oldestEventId.current;
+    if (before === null) return;
+    setLoadingEarlier(true);
+    try {
+      const r = await authFetch(
+        apiUrl(`/api/sessions/${sessionId}/events?before=${before}&limit=${HYDRATE_LIMIT}`),
+      );
+      if (r.ok) {
+        const d = (await r.json()) as { events: YuiEvent[]; hasMore: boolean };
+        const older = d.events.filter((e) => eventsRef.current.every((x) => x.id !== e.id));
+        const first = older[0]?.id;
+        if (typeof first === "number") oldestEventId.current = first;
+        setHasEarlier(d.hasMore);
+        if (older.length > 0) rehydrate([...older, ...eventsRef.current]);
+      }
+    } catch {
+      /* biarkan; user bisa klik lagi */
+    } finally {
+      setLoadingEarlier(false);
+    }
+  }, [sessionId, loadingEarlier, hasEarlier, rehydrate, HYDRATE_LIMIT]);
+
+  /** D123: reset window riwayat saat ganti/tutup sesi (hydrate ulang dari nol). */
+  const resetHistory = useCallback(() => {
+    eventsRef.current = [];
+    oldestEventId.current = null;
+    setHasEarlier(false);
+    setLoadingEarlier(false);
+  }, []);
+
   // SSE: buka saat sesi ada. DUA jalur pemulihan (bug "UI diam walau trace jalan"):
   //  (a) browser auto-reconnect (CONNECTING), aman, applyEvent dedupe by id;
   //  (b) FATAL (CLOSED, mis. route 500 sesaat / dev recompile), browser TIDAK
@@ -623,42 +687,28 @@ export default function Home() {
     let attempt = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const open = async () => {
-      // Fix 2026-11 ("timelapse"): sesi lama (since=0) → tarik snapshot dalam
-      // SATU fetch lalu apply sinkron dalam satu tick (React batch = satu render,
-      // tanpa efek streaming ulang), baru buka SSE live dari seq terakhir.
+      // D123 windowed hydration: tarik HANYA halaman ekor (bukan seluruh
+      // riwayat) - sesi panjang tak lagi memuat ribuan event sekaligus.
+      // Kalau masih ada lebih tua, ChatView menampilkan "Load earlier".
       if (lastEventId.current === 0) {
         try {
           const r = await authFetch(
-            apiUrl(`/api/sessions/${sessionId}/stream?since=0&snapshot=1`),
+            apiUrl(`/api/sessions/${sessionId}/events?limit=${HYDRATE_LIMIT}`),
           );
           if (r.ok) {
-            const text = await r.text();
-            let last = 0;
-            let sawUserEvent = false;
-            for (const block of text.split("\n\n")) {
-              const idLine = block
-                .split("\n")
-                .find((l) => l.startsWith("id: "));
-              if (idLine) last = Math.max(last, Number(idLine.slice(4)) || 0);
-              const line = block
-                .split("\n")
-                .find((l) => l.startsWith("data: "));
-              if (!line) continue;
-              if (line.includes('"user.message"')) sawUserEvent = true;
-              try {
-                applyEvent(JSON.parse(line.slice(6)) as YuiEvent);
-              } catch {
-                /* blok tidak lengkap */
-              }
-            }
-            if (last > 0) lastEventId.current = last;
+            const d = (await r.json()) as { events: YuiEvent[]; hasMore: boolean };
+            const first = d.events[0]?.id;
+            oldestEventId.current = typeof first === "number" ? first : null;
+            setHasEarlier(d.hasMore);
+            rehydrate(d.events);
             // Sesi LAMA (dibuat sebelum event user.message): bubble user tidak
             // ada di event stream → sisipkan dari messages table, interleave
-            // per posisi bubble assistant (urutan user/assistant bergantian).
+            // per posisi bubble assistant (best-effort, hanya dlm window ini).
+            const sawUserEvent = d.events.some((e) => e.type === "user.message");
             if (!sawUserEvent) {
               try {
                 const mr = await authFetch(
-                  apiUrl(`/api/sessions/${sessionId}/messages`),
+                  apiUrl(`/api/sessions/${sessionId}/messages?limit=${HYDRATE_LIMIT}`),
                 );
                 if (mr.ok) {
                   const md = (await mr.json()) as {
@@ -772,6 +822,7 @@ export default function Home() {
     setPersonaState("idle");
     openAssistant.current = null;
     lastEventId.current = 0;
+    resetHistory();
     const projectId =
       projectIdOverride !== undefined ? projectIdOverride : activeProjectId;
     const res = await authFetch(apiUrl("/api/sessions"), {
@@ -866,6 +917,7 @@ export default function Home() {
     setPersonaState("idle");
     openAssistant.current = null;
     lastEventId.current = 0;
+    resetHistory();
     setSessionId(s.sessionId);
     setBusy(false);
   }
@@ -897,6 +949,7 @@ export default function Home() {
     setPersonaState("idle");
     lastEventId.current = 0;
     openAssistant.current = null;
+    resetHistory();
   }
 
   /** Ganti persona di tengah project (mis. bicara langsung ke spesialis) → sesi baru. */
@@ -1602,6 +1655,9 @@ export default function Home() {
                           approvalMode={approvalMode}
                           onToggleApprovalMode={toggleApprovalMode}
                           busy={busy}
+                          hasEarlier={hasEarlier}
+                          loadingEarlier={loadingEarlier}
+                          onLoadEarlier={() => void loadEarlierMessages()}
                           emptySlot={
                             <>
                               <div className="w-[220px]">
@@ -1678,6 +1734,9 @@ export default function Home() {
                           approvalMode={approvalMode}
                           onToggleApprovalMode={toggleApprovalMode}
                           busy={busy}
+                          hasEarlier={hasEarlier}
+                          loadingEarlier={loadingEarlier}
+                          onLoadEarlier={() => void loadEarlierMessages()}
                         />
                       )}
                     </div>

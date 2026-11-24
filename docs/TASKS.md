@@ -1826,3 +1826,21 @@ User: backup & restore cukup di masing-masing host, TIDAK lewat portal.
   backups di lib/db.ts, test backups.test.ts. Table backups lama di DB
   deploy dibiarkan (tidak dipakai lagi; DROP manual bila mau).
 + Docs page portal: seksi 'Host backups' dihapus (backup bukan fitur portal).
+## Batch D123 — Load history chat sesi panjang (windowed hydration + keyset)
+Masalah user: buka sesi lama lambat/tak bisa memuat riwayat (host memuat
+seluruh event sejak 0; remote mobile hanya dapat 50 pesan terakhir).
+
++ CORE: ISessionStore.getMessagesWindow/getEventsWindow (keyset cursor
+  beforeSeq/beforeId, limit+1 untuk hasMore, urut NAIK, gabung events +
+  events_archive). Paritas SQLite + PG (+ pg-bridge METHODS), clamp limit
+  (default 100 maks 1000), runtime ekspos.
++ API: GET /api/sessions/:id/events?before=&limit= + /messages?beforeSeq=&
+  limit= -> {.., hasMore}; tanpa param perilaku lama tetap.
++ WEB: hydration ekor (limit 100) + tombol "Load earlier messages" (prepend
+  halaman lama, rehydrate sinkron, posisi scroll dipertahankan).
++ REMOTE: action load_older{sessionId,beforeSeq,limit?}; snapshot +seq/
+  hasOlder/older; portal sendSnapshot pakai getMessagesWindow (tak lagi
+  memuat seluruh tabel); mobile prepend halaman lama (scroll-up).
++ TEST: history-window 5, remote contract 3, api window 2, portal 1.
+  Suite: core 485+skip, api 77, contracts 38, crypto 45, relay 15; typecheck
+  6/6; web build hijau.

@@ -22,6 +22,38 @@ const fake = {
   },
   listProjectSessions: () => [],
   getEvents: (_id: string, since: number) => [{ id: since + 1, ts: 1, sessionId: "s1", type: "turn.started", turnId: "t1" }],
+  // D123: windowed history (pagination) - kontrak route /events & /messages.
+  getEventsWindow: (_id: string, opts?: { beforeId?: number; limit?: number }) => {
+    const limit = opts?.limit ?? 100;
+    const before = opts?.beforeId ?? 12;
+    const start = Math.max(1, before - limit);
+    return {
+      events: Array.from({ length: before - start }, (_, i) => ({
+        id: start + i,
+        ts: 1,
+        sessionId: "s1",
+        type: "turn.started" as const,
+        turnId: "t1",
+      })),
+      hasMore: start > 1,
+    };
+  },
+  getMessagesWithSeq: () => [
+    { seq: 1, msg: { role: "user", content: "hi" } },
+    { seq: 2, msg: { role: "assistant", content: "hello" } },
+    { seq: 3, msg: { role: "tool", content: "x" } },
+  ],
+  getMessagesWindow: (_id: string, opts?: { beforeSeq?: number; limit?: number }) => {
+    const limit = opts?.limit ?? 100;
+    const before = opts?.beforeSeq ?? 4;
+    const rows = [
+      { seq: 1, msg: { role: "user", content: "hi" } },
+      { seq: 2, msg: { role: "assistant", content: "hello" } },
+      { seq: 3, msg: { role: "tool", content: "x" } },
+    ].filter((r) => r.seq < before);
+    const page = rows.slice(-limit);
+    return { messages: page as Array<{ seq: number; msg: { role: string; content: string } }>, hasMore: rows.length > limit };
+  },
   subscribe: () => () => undefined,
   cancelTurn: () => true,
   emitSessionError: () => undefined,
@@ -219,6 +251,37 @@ describe("apps/api REST contract", () => {
     const trav = await app.inject({ method: "GET", url: "/api/projects/p_ok/artifact?path=../../etc/passwd" });
     expect(trav.statusCode).toBe(400);
     expect(trav.json().error).toContain("di luar project");
+  });
+
+  it("D123 GET /events?limit= → window + hasMore; ?before= bergeser mundur", async () => {
+    const tail = await app.inject({ method: "GET", url: "/api/sessions/s1/events?limit=5" });
+    expect(tail.statusCode).toBe(200);
+    const td = tail.json() as { events: { id: number }[]; hasMore: boolean };
+    expect(td.events).toHaveLength(5);
+    expect(td.events.at(-1)!.id).toBe(11);
+    expect(td.hasMore).toBe(true);
+
+    const older = await app.inject({ method: "GET", url: "/api/sessions/s1/events?before=7&limit=5" });
+    const od = older.json() as { events: { id: number }[]; hasMore: boolean };
+    expect(od.events.every((e) => e.id < 7)).toBe(true);
+    expect(od.events.at(-1)!.id).toBe(6);
+    expect(od.hasMore).toBe(true);
+
+    // tanpa param → perilaku lama (since) tetap jalan
+    const legacy = await app.inject({ method: "GET", url: "/api/sessions/s1/events?since=3" });
+    expect(legacy.json().events.at(-1).id).toBe(4);
+  });
+
+  it("D123 GET /messages?beforeSeq=&limit= → window user/assistant + hasMore", async () => {
+    const r = await app.inject({ method: "GET", url: "/api/sessions/s1/messages?beforeSeq=4&limit=10" });
+    expect(r.statusCode).toBe(200);
+    const d = r.json() as { messages: { seq: number; role: string }[]; hasMore: boolean };
+    // tool difilter; hanya user/assistant tersisa
+    expect(d.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect(d.hasMore).toBe(false);
+    // tanpa param → perilaku lama (semua)
+    const all = await app.inject({ method: "GET", url: "/api/sessions/s1/messages" });
+    expect(all.json().messages).toHaveLength(2);
   });
 });
 

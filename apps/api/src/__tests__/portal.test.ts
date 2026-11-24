@@ -90,6 +90,7 @@ function fakeRuntime() {
   };
   return {
     emit,
+    seedMessages: (sessionId: string, rows: Array<{ role: string; content: string }>) => { messages.set(sessionId, rows); },
     createSession: (personaId: string, projectId?: string | null) => {
       const id = `s_${Math.random().toString(36).slice(2, 10)}`;
       sessions.set(id, { personaId, projectId: projectId ?? null });
@@ -103,6 +104,15 @@ function fakeRuntime() {
       getMessages: (sessionId: string) => (messages.get(sessionId) ?? []).map((m) => ({
         role: m.role as "user" | "assistant" | "tool", content: m.content,
       })),
+      // D123: sendSnapshot kini membaca SATU halaman keyset dari store.
+      getMessagesWindow: (sessionId: string, opts?: { beforeSeq?: number; limit?: number }) => {
+        const all = (messages.get(sessionId) ?? []).map((m, i) => ({ seq: i + 1, msg: { role: m.role, content: m.content } }));
+        const before = opts?.beforeSeq ?? Number.MAX_SAFE_INTEGER;
+        const limit = opts?.limit ?? 50;
+        const rows = all.filter((r) => r.seq < before);
+        const hasMore = rows.length > limit;
+        return { messages: (hasMore ? rows.slice(-limit) : rows) as Array<{ seq: number; msg: { role: string; content: string } }>, hasMore };
+      },
       listProjectSessions: (projectId: string) =>
         [...sessions.entries()].filter(([, s]) => (s as { projectId?: string | null }).projectId === projectId)
           .map(([id, s]) => ({ id, personaId: s.personaId, createdAt: 1, lastEventAt: 2, lastEventId: 1 })),
@@ -184,13 +194,14 @@ function fakeRuntime() {
     resolveApproval: (id: string) => id === "ap_ok",
     emitSessionError: (sessionId: string, message: string) =>
       emit(sessionId, { type: "session.error", message, recoverable: false } as YuiEvent),
-  } as unknown as YuiRuntime & { emit: typeof emit; uploads: typeof uploadsLog };
+  } as unknown as YuiRuntime & { emit: typeof emit; uploads: typeof uploadsLog; seedMessages: (s: string, r: Array<{ role: string; content: string }>) => void };
 }
 
 let relay: ReturnType<typeof createSpecRelay>;
 let svc: PortalHostService;
 let remote: RelayRemote;
 let rc: RelayClient;
+let fakeRt: ReturnType<typeof fakeRuntime>;
 const hostKeys = generateDeviceKeys();
 const remoteKeys = generateDeviceKeys();
 const events: import("@yuika/contracts").RemoteEvent[] = [];
@@ -205,6 +216,7 @@ beforeAll(async () => {
   });
   await new Promise((r) => setTimeout(r, 300));
   const rt = fakeRuntime();
+  fakeRt = rt;
   (globalThis as unknown as { __rt?: YuiRuntime }).__rt = rt;
   svc = new PortalHostService();
   await svc.start(rt, {
@@ -284,6 +296,30 @@ describe("portal host worker", () => {
     expect(events.some((e) => e.ev === "message.done" && e.seq === 2)).toBe(true);
     // snapshot ikut terkirim (render cepat)
     expect(events.some((e) => e.ev === "session.snapshot" && e.sessionId === sid)).toBe(true);
+  });
+
+  // ── D123: load_older = halaman riwayat lebih tua (chat panjang mobile) ──
+  it("D123 load_older → session.snapshot{rid, older} berisi halaman lebih tua", async () => {
+    const sid = (events.find((e) => e.ev === "session.snapshot") as { sessionId: string }).sessionId;
+    // 60 pesan: snapshot awal (limit 50) menyisakan 10 lebih tua.
+    fakeRt.seedMessages(sid, Array.from({ length: 60 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", content: `m${i + 1}` })));
+    events.length = 0;
+    await remote.sendAction({ proto: 1, act: "subscribe", rid: "r-3", sessions: [sid] });
+    await waitUntil(() => events.some((e) => e.ev === "session.snapshot" && e.rid === "r-3"));
+    const snap = events.find((e) => e.ev === "session.snapshot" && e.rid === "r-3") as { messages: unknown[]; hasOlder: boolean };
+    expect(snap.messages).toHaveLength(50);
+    expect(snap.hasOlder).toBe(true);
+
+    events.length = 0;
+    await remote.sendAction({ proto: 1, act: "load_older", rid: "r-4", sessionId: sid, beforeSeq: 11, limit: 10 });
+    await waitUntil(() => events.some((e) => e.ev === "session.snapshot" && e.rid === "r-4"));
+    const older = events.find((e) => e.ev === "session.snapshot" && e.rid === "r-4") as {
+      messages: { seq: number; text: string }[]; older?: boolean; hasOlder: boolean;
+    };
+    expect(older.older).toBe(true); // bus remote TIDAK menimpanya
+    expect(older.messages).toHaveLength(10);
+    expect(older.messages.at(-1)!.seq).toBe(10);
+    expect(older.hasOlder).toBe(false); // tidak ada lagi sebelum seq 1
   });
 
   it("approve id salah → error unknown_approval (rid)", async () => {

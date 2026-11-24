@@ -734,3 +734,38 @@ daftar sesi datar, tapi **mission control project-oriented**.
   ?path=... = file tunggal mentah, anti-traversal, cap 100 MB) + tombol
   Download (zip) & per-file di FileTab. Verifikasi live: unzip utuh,
   content-disposition benar. Test: artifact-zip 3 + api contract 1.
+
+## Batch D123 — load history chat sesi panjang (windowed hydration + keyset)
+- MASALAH: buka sesi lama menarik SELURUH event dari awal (?since=0&snapshot=1)
+  - payload multi-MB, parse + render ribuan bubble sekaligus (host). Remote
+  (mobile) hanya dapat 50 pesan terakhir: getMessages() memuat seluruh tabel
+  lalu slice di JS, dan riwayat > 50 pesan TAK PERNAH bisa dimuat.
+- SOLUSI pihak-1 (host web): hydration hanya HALAMAN EKOR (?limit) + tombol
+  "Load earlier messages" (cursor before) yang menyusun ulang transcript.
+- SOLUSI pihak-2 (remote/mobile): snapshot ekor ber-seq + action load_older
+  (beforeSeq) untuk prepend halaman lebih tua.
+- CORE: ISessionStore.getMessagesWindow(sessionId,{beforeSeq,limit}) +
+  getEventsWindow(sessionId,{beforeId,limit}) -> {.., hasMore}; keyset
+  (seq/id < cursor), ambil limit+1 DESC -> hasMore, balik urut NAIK; gabung
+  events + events_archive (retensi tetap terlihat). Paritas SQLite + PG
+  (pg-session async, terdaftar di pg-bridge METHODS). clampWindowLimit
+  (default 100, maks 1000). Runtime mengekspos keduanya.
+- API: GET /api/sessions/:id/events?before=&limit= -> {events,hasMore};
+  GET /api/sessions/:id/messages?beforeSeq=&limit= -> {messages,hasMore}
+  (filter user/assistant); tanpa param = perilaku lama (since/semua).
+- WEB: page.tsx hydrate ekor (HYDRATE_LIMIT 100) via eventsRef + oldestEventId
+  + hasEarlier; loadEarlierMessages() prepend halaman lama lalu rehydrate
+  (setItems([]) + replay sinkron = satu render). ChatView: window lokal
+  (WINDOW_FIRST 8 / STEP 16) kini memanggil onLoadEarlier saat window lokal
+  habis & server masih punya riwayat; metrik scroll disimpan sebelum prepend
+  & dipulihkan sesudah (anti lompat); reset window saat ganti sesi.
+- KONTRAK remote: action load_older{sessionId,beforeSeq,limit?}; entri
+  session.snapshot dapat seq opsional + hasOlder + older (balasan load_older
+  tak menimpa transcript di bus). Portal sendSnapshot pakai getMessagesWindow
+  (tak lagi memuat seluruh tabel); load_older -> snapshot{rid, older, hasOlder}.
+- MOBILE (repo yuika-mobile): RelaySession.loadOlder(); SessionChat prepend
+  halaman lama + pertahankan posisi baca, scroll atas saat window lokal habis
+  -> tarik dari host; hint "older" di header.
+- Test: history-window (store, 5), remote contract (3), api route window (2),
+  portal load_older (1). Suite hijau: core 485+skip, api 77, contracts 38,
+  crypto 45, relay 15; typecheck 6/6; web build hijau.

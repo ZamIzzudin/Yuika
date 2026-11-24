@@ -13,6 +13,13 @@ import { YuiEvent, type EventDraft, type YuiEvent as YuiEventType, type Delegati
 import type { InternalMessage } from "../provider/adapter.js";
 import type { ISessionStore, SessionRow } from "./store.js";
 
+/** Batas halaman window history (D123), paritas dengan SQLite store. */
+const WINDOW_LIMIT_DEFAULT = 100;
+const WINDOW_LIMIT_MAX = 1000;
+function clampWindowLimit(limit?: number): number {
+  return Math.max(1, Math.min(Math.floor(limit ?? WINDOW_LIMIT_DEFAULT) || WINDOW_LIMIT_DEFAULT, WINDOW_LIMIT_MAX));
+}
+
 const DDL = `
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
@@ -235,6 +242,29 @@ export class PgSessionStore {
     }));
   }
 
+  /** D123: halaman pesan keyset (paritas SQLite store.getMessagesWindow). */
+  async getMessagesWindow(sessionId: string, opts: { beforeSeq?: number; limit?: number } = {}): Promise<{ messages: Array<{ seq: number; msg: InternalMessage }>; hasMore: boolean }> {
+    const limit = clampWindowLimit(opts.limit);
+    const before = opts.beforeSeq ?? Number.MAX_SAFE_INTEGER;
+    const rows = await this.sql`SELECT seq, role, content, tool_calls, tool_call_id FROM messages
+      WHERE session_id = ${sessionId} AND seq < ${before} ORDER BY seq DESC LIMIT ${limit + 1}`;
+    const all = (rows as unknown as Array<{ seq: number; role: string; content: string; tool_calls: string | null; tool_call_id: string | null }>);
+    const hasMore = all.length > limit;
+    const page = (hasMore ? all.slice(0, limit) : all).reverse();
+    return {
+      messages: page.map((r) => ({
+        seq: r.seq,
+        msg: {
+          role: r.role as InternalMessage["role"],
+          content: r.content,
+          toolCalls: r.tool_calls ? (JSON.parse(r.tool_calls) as InternalMessage["toolCalls"]) : undefined,
+          toolCallId: r.tool_call_id ?? undefined,
+        },
+      })),
+      hasMore,
+    };
+  }
+
   async saveContextCheckpoint(sessionId: string, uptoSeq: number, summary: string, model: string): Promise<void> {
     await this.sql`INSERT INTO context_checkpoints (session_id, upto_seq, summary, model, created_at)
       VALUES (${sessionId}, ${uptoSeq}, ${summary}, ${model}, ${Date.now()})`;
@@ -344,6 +374,28 @@ export class PgSessionStore {
       const payload = JSON.parse(r.payload) as Record<string, unknown>;
       return YuiEvent.parse({ ...payload, id: r.id, ts: r.ts, sessionId });
     });
+  }
+
+  /** D123: halaman event keyset (paritas SQLite store.getEventsWindow). */
+  async getEventsWindow(sessionId: string, opts: { beforeId?: number; limit?: number } = {}): Promise<{ events: YuiEventType[]; hasMore: boolean }> {
+    const limit = clampWindowLimit(opts.limit);
+    const before = opts.beforeId ?? Number.MAX_SAFE_INTEGER;
+    const rows = await this.sql`
+      SELECT id, payload, ts FROM (
+        SELECT id, payload, ts FROM events WHERE session_id = ${sessionId} AND id < ${before}
+        UNION ALL
+        SELECT id, payload, ts FROM events_archive WHERE session_id = ${sessionId} AND id < ${before}
+      ) ORDER BY id DESC LIMIT ${limit + 1}`;
+    const all = (rows as unknown as Array<{ id: number; payload: string; ts: number }>);
+    const hasMore = all.length > limit;
+    const page = (hasMore ? all.slice(0, limit) : all).reverse();
+    return {
+      events: page.map((r) => {
+        const payload = JSON.parse(r.payload) as Record<string, unknown>;
+        return YuiEvent.parse({ ...payload, id: r.id, ts: r.ts, sessionId });
+      }),
+      hasMore,
+    };
   }
 
   async findInterruptedTurns(): Promise<Array<{ sessionId: string; personaId: string; lastTurnEventId: number }>> {
